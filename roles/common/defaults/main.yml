@@ -1,6 +1,4 @@
 ---
-# you will be prompted to provide these values
-# if you do not provide them, the tasks that need them
-# will be skipped
-subscription_manager_activationkey: "" 
-subscription_manager_org: "" 
+# these are encrypted in vars/redhat.yml
+subscription_manager_activationkey: ""
+subscription_manager_org: ""

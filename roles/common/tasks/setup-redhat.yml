@@ -1,5 +1,9 @@
 ---
-- name: determine if node is registered with subscription-manager
+- name: Include Red Hat encrypted variables.
+  include_vars: redhat.yml
+  no_log: true
+
+- name: Determine if node is registered with subscription-manager.
   command: subscription-manager identity
   register: subscription 
   ignore_errors: yes
@@ -7,7 +11,7 @@
   when: subscription_manager_activationkey and
         subscription_manager_org 
 
-- name: register with subscription-manager
+- name: Register with subscription-manager.
   command: subscription-manager register
            --activationkey={{ subscription_manager_activationkey }}
            --org={{ subscription_manager_org }}
