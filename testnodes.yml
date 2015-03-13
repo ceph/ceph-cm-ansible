@@ -1,0 +1,17 @@
+---
+- hosts: testnodes
+  roles:
+    - common
+
+  # get secret vars
+  vars_prompt:
+
+    - name: "subscription_manager_activationkey"
+      prompt: "Enter subscription-manager activationkey"
+      private: no
+      default: false
+
+    - name: "subscription_manager_org"
+      prompt: "Enter subscription-manager org"
+      private: no
+      default: false
