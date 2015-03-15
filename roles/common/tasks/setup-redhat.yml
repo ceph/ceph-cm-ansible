@@ -8,11 +8,9 @@
   register: subscription 
   ignore_errors: yes
   changed_when: false
-  when: subscription_manager_activationkey and
-        subscription_manager_org 
 
 - name: Register with subscription-manager.
   command: subscription-manager register
            --activationkey={{ subscription_manager_activationkey }}
            --org={{ subscription_manager_org }}
-  when: subscription is defined and subscription.rc != 0
+  when: subscription.rc != 0
