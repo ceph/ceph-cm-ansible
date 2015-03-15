@@ -1,0 +1,16 @@
+---
+- name: Create /home/ubuntu/.pip
+  file:
+    path: /home/ubuntu/.pip
+    owner: ubuntu
+    group: ubuntu
+    mode: 0644
+    state: directory
+
+- name: Create pip.conf and configure it to use our mirror
+  template:
+    src: pip.conf
+    dest: /home/ubuntu/.pip/pip.conf
+    owner: ubuntu
+    group: ubuntu
+    mode: 0644

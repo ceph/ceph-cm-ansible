@@ -1,4 +1,7 @@
 ---
-# Setup/install tasks.
- - include: setup-redhat.yml
-   when: ansible_os_family == 'RedHat'
+# configure pip to use our mirror
+- include: pip.yml
+
+# configure red hat specific things
+- include: setup-redhat.yml
+  when: ansible_os_family == 'RedHat'
