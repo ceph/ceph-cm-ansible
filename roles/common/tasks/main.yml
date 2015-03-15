@@ -2,6 +2,14 @@
 # configure pip to use our mirror
 - include: pip.yml
 
+- name: Set a high max open files limit
+  copy:
+    dest: /etc/security/limits.d/ubuntu.conf
+    owner: root
+    group: root
+    mode: 0755
+    content: ubuntu hard nofile 16384
+
 # configure red hat specific things
 - include: setup-redhat.yml
   when: ansible_os_family == 'RedHat'
