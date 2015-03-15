@@ -1,0 +1,12 @@
+---
+yum_repos:
+  rhel-7.1-beta-repo:
+    name: My Red Hat Enterprise Linux $releasever - $basearch
+    baseurl: http://apt-mirror.front.sepia.ceph.com/rhel7.1-beta-repo/server/
+    enabled: 1
+    gpgcheck: 0
+  rhel-7.1-beta-optional:
+    name: My Red Hat Enterprise Linux $releasever - $basearch
+    baseurl: http://apt-mirror.front.sepia.ceph.com/rhel7.1-beta-repo/server-optional/
+    enabled: 1
+    gpgcheck: 0
