@@ -4,6 +4,15 @@
 
 - name: Setup local repo files.
   include: redhat/repos.yml
+  tags:
+    - repos
 
 - name: Register with subscription-manager.
   include: redhat/entitlements.yml
+  tags:
+    - entitlements
+
+- name: Installing packages with yum.
+  include: redhat/packages.yml
+  tags:
+    - packages

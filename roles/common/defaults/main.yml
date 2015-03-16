@@ -5,6 +5,7 @@ pip_mirror_url: "http://apt-mirror.front.sepia.ceph.com/pypi/simple"
 subscription_manager_activationkey: ""
 subscription_manager_org: ""
 
+# repos common to all versions of rhel
 common_yum_repos:
   epel:
     name: Extra Packages for Enterprise Linux 7 - $basearch
@@ -16,17 +17,81 @@ common_yum_repos:
     baseurl: http://apt-mirror.front.sepia.ceph.com/rhel7repo/extras
     enabled: 1
     gpgcheck: 0
-  rhel7-fcgi-ceph:
+  rhel-7-fcgi-ceph:
     name: RHEL 7 Local fastcgi Repo
     baseurl: http://gitbuilder.ceph.com/mod_fastcgi-rpm-rhel7-x86_64-basic/ref/master/
     enabled: 1
     gpgcheck: 0
     priority: 2
   lab-extras:
-    name: RHEL 7 Local fastcgi Repo
+    name: lab-extras
     baseurl: http://apt-mirror.front.sepia.ceph.com/lab-extras/rhel7/
     enabled: 1
     gpgcheck: 0
     priority: 2
 
+# version specific repos, defined in the version specific vars file
 yum_repos: {}
+
+# list of packages to install
+packages:
+  - yum-plugin-priorities
+  - redhat-lsb
+  - sysstat
+  - gdb
+  - python-configobj
+  - libedit
+  - openssl098e
+  - gperftools-devel
+  - boost-thread
+  - xfsprogs
+  - xfsprogs-devel
+  - gdisk
+  - parted
+  - libgcrypt
+  - cryptopp-devel
+  - cryptopp
+  - fuse
+  - fuse-libs
+  - openssl
+  - libuuid
+  - btrfs-progs
+  - attr
+  - valgrind
+  - python-nose
+  - mpich
+  - ant
+  - dbench
+  - fuse-sshfs
+  - lsof
+  - iozone
+  - libtool
+  - automake
+  - gettext
+  - libuuid-devel
+  - libacl-devel
+  - bc
+  - xfsdump
+  - blktrace
+  - numpy
+  - python-matplotlib
+  - usbredir
+  - genisoimage
+  - qemu-img-rhev-1.5.3-60_ceph.el7.5
+  - qemu-kvm-rhev-1.5.3-60_ceph.el7.5
+  - qemu-kvm-tools-rhev-1.5.3-60_ceph.el7.5
+  - httpd
+  - httpd-devel
+  - httpd-tools
+  - mod_ssl
+  - mod_fastcgi-2.4.7-1.ceph.el7
+  - python-pip
+  - libevent-devel
+  - perl-JSON-XS
+  - perl-XML-Twig
+  - java-1.6.0-openjdk-devel
+  - junit4
+  - scsi-target-utils
+  - iscsi-initiator-utils
+  - smartmontools
+  - nfs-utils
