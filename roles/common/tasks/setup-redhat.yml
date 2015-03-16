@@ -18,3 +18,8 @@
   include: redhat/packages.yml
   tags:
     - packages
+
+- name: Stop firewalld
+  service:
+    name: firewalld
+    state: stopped
