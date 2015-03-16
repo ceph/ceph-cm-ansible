@@ -27,6 +27,11 @@
     owner: root
     mode: 0644
 
+- name: Set mode on /etc/fuse.conf
+  file:
+    path: /etc/fuse.conf
+    mode: 0644
+
 - name: Include version specific tasks.
   include: redhat/rhel_7.0.yml
   when: ansible_distribution_version == "7.0"
