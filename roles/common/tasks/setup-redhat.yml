@@ -32,6 +32,11 @@
     path: /etc/fuse.conf
     mode: 0644
 
+- name: Add user ubuntu to group kvm
+  user:
+    name: ubuntu
+    group: kvm
+
 - name: Include version specific tasks.
   include: redhat/rhel_7.0.yml
   when: ansible_distribution_version == "7.0"
