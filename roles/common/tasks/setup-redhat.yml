@@ -23,3 +23,11 @@
   service:
     name: firewalld
     state: stopped
+
+- name: Create remote.conf
+  template:
+    src: remote.conf
+    dest: /etc/security/limits.d/remote.conf
+    group: root
+    owner: root
+    mode: 0644
