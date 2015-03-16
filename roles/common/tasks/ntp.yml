@@ -1,0 +1,22 @@
+---
+- name: Install ntp package on rpm based systems.
+  yum:
+    name: ntp
+    state: present
+  when: ansible_pkg_mgr  == "yum"
+
+- name: Install ntp package on deb based systems.
+  apt:
+    name: ntp
+    state: present
+  when: ansible_pkg_mgr  == "deb"
+
+- name: Create the ntp.conf file.
+  template:
+    src: ntp.conf
+    dest: /etc/ntp.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - restart ntp

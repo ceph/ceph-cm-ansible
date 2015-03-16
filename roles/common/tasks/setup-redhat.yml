@@ -1,6 +1,8 @@
 ---
 - name: Including version specific variables.
   include_vars: "rhel_{{ ansible_distribution_version }}.yml"
+  tags:
+    - vars
 
 - name: Setup local repo files.
   include: redhat/repos.yml

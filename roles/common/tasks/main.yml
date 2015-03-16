@@ -1,4 +1,9 @@
 ---
+- name: Include package type specific vars.
+  include_vars: "{{ ansible_pkg_mgr }}_systems.yml"
+  tags:
+    - vars
+
 # configure pip to use our mirror
 - include: pip.yml
 
@@ -9,6 +14,11 @@
     group: root
     mode: 0755
     content: ubuntu hard nofile 16384
+
+# configure ntp
+- include: ntp.yml
+  tags:
+    - ntp-client
 
 # configure red hat specific things
 - include: setup-redhat.yml
