@@ -19,11 +19,6 @@
   tags:
     - packages
 
-- name: Stop firewalld
-  service:
-    name: firewalld
-    state: stopped
-
 - name: Create remote.conf
   template:
     src: remote.conf
@@ -31,3 +26,7 @@
     group: root
     owner: root
     mode: 0644
+
+- name: Include version specific tasks.
+  include: redhat/rhel_7.0.yml
+  when: ansible_distribution_version == "7.0"

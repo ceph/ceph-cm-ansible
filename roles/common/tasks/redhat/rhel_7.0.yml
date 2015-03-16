@@ -1,0 +1,20 @@
+---
+- name: Stop firewalld
+  service:
+    name: firewalld
+    state: stopped
+
+- name: Get hostname.
+  command: hostname
+  register: existing_hostname
+  changed_when: false
+
+- name: Remove lab domain from hostname.
+  shell: hostname | cut -d'.' -f1
+  register: new_hostname
+  when: existing_hostname.stdout.find("{{ lab_domain | mandatory }}") != -1
+
+- name: Set hostname.
+  hostname:
+     name: "{{ new_hostname.stdout }}"
+  when: existing_hostname.stdout.find("{{ lab_domain | mandatory }}") != -1
