@@ -102,6 +102,23 @@
   tags:
     - nfs
 
+- name: Configure /etc/sudoers.
+  template:
+    src: sudoers
+    dest: /etc/sudoers
+    owner: root
+    group: root
+    mode: 0440
+    validate: visudo -cf %s
+
+- name: Configure /etc/security/limits.conf
+  template:
+    src: limits.conf
+    dest: /etc/security/limits.conf
+    group: root
+    owner: root
+    mode: 0644
+
 - name: Include version specific tasks.
   include: redhat/rhel_7.0.yml
   when: ansible_distribution_version == "7.0"
