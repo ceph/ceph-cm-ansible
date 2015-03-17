@@ -90,6 +90,18 @@
   tags:
     - ssh
 
+- name: Upload a dummy nfs export so that the nfs kernel server starts.
+  template:
+    src: exports
+    dest: /etc/exports
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - start nfs-server
+  tags:
+    - nfs
+
 - name: Include version specific tasks.
   include: redhat/rhel_7.0.yml
   when: ansible_distribution_version == "7.0"

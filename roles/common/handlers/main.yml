@@ -8,3 +8,8 @@
   service:
     name: sshd
     state: restarted
+
+- name: start nfs-server
+  service:
+    name: nfs-server
+    state: started 
