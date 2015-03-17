@@ -68,6 +68,28 @@
     - raid.pl
     - diskusage.pl
 
+- name: Upload rhel version specific sshd_config.
+  template:
+    src: "ssh/sshd_config_rhel_{{ ansible_distribution_version }}"
+    dest: /etc/ssh/sshd_config
+    owner: root 
+    group: root
+    mode: 0755
+  notify:
+    - restart sshd
+  tags:
+    - ssh
+
+- name: Upload ssh_config.
+  template:
+    src: ssh/ssh_config
+    dest: /etc/ssh/ssh_config
+    owner: root
+    group: root
+    mode: 0755
+  tags:
+    - ssh
+
 - name: Include version specific tasks.
   include: redhat/rhel_7.0.yml
   when: ansible_distribution_version == "7.0"
