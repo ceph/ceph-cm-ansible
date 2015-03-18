@@ -1,2 +1,13 @@
 ---
 ntp_service_name: ntpd
+
+ceph_packages:
+  - ceph
+  - ceph-common
+  - ceph-debuginfo
+  - ceph-release
+  - libcephfs1
+  - ceph-radosgw
+  - python-ceph
+  - librbd1
+  - librados2

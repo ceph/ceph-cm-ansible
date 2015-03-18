@@ -1,4 +1,12 @@
 ---
+- name: Ensure ceph packages are not present.
+  yum:
+    name: "{{ item }}"
+    state: absent
+  with_items: ceph_packages
+  tags:
+    - remove-ceph
+
 - name: Define rpm_packages.
   set_fact:
     rpm_packages: "{{ packages | list }}"
