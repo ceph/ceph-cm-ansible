@@ -18,3 +18,47 @@
   hostname:
      name: "{{ new_hostname.stdout }}"
   when: existing_hostname.stdout.find("{{ lab_domain | mandatory }}") != -1
+
+- name: Add ubuntu CPAN config directory.
+  file:
+    path: /home/ubuntu/.cpan/CPAN/
+    owner: ubuntu
+    group: ubuntu
+    mode: 0755
+    recurse: yes
+    state: directory
+
+- name: Add root CPAN config directory.
+  file:
+    path: /root/.cpan/CPAN/
+    owner: root
+    group: root
+    mode: 0755
+    recurse: yes
+    state: directory
+
+- name: Upload CPAN config for ubuntu.
+  template:
+    src: ../../templates/cpan_config.pm
+    dest: /home/ubuntu/.cpan/CPAN/MyConfig.pm
+    owner: ubuntu
+    group: ubuntu
+    mode: 0755
+
+- name: Upload CPAN config for root.
+  template:
+    src: ../../templates/cpan_config.pm
+    dest: /root/.cpan/CPAN/MyConfig.pm
+    owner: root
+    group: root
+    mode: 0755
+
+- name: "Check to see if Amazon::S3 is installed."
+  command: "perldoc -l Amazon::S3"
+  register: cpan_check
+  ignore_errors: true
+  changed_when: false
+
+- name: "Install Amazon::S3."
+  command: "cpan  Amazon::S3"
+  when: cpan_check.rc != 0
