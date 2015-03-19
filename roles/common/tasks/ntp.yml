@@ -4,12 +4,16 @@
     name: ntp
     state: present
   when: ansible_pkg_mgr  == "yum"
+  tags:
+    - packages
 
 - name: Install ntp package on deb based systems.
   apt:
     name: ntp
     state: present
   when: ansible_pkg_mgr  == "deb"
+  tags:
+    - packages
 
 - name: Create the ntp.conf file.
   template:
