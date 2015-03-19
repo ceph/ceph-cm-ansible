@@ -1,6 +1,7 @@
 ---
 ntp_service_name: ntpd
 
+# ceph packages that we ensure do not exist
 ceph_packages:
   - ceph
   - ceph-common
@@ -11,3 +12,68 @@ ceph_packages:
   - python-ceph
   - librbd1
   - librados2
+
+# packages to be installed
+# we might need to separate this
+# into distro specific lists at some point
+packages:
+  - yum-plugin-priorities
+  - redhat-lsb
+  - sysstat
+  - gdb
+  - python-configobj
+  - libedit
+  - openssl098e
+  - gperftools-devel
+  - boost-thread
+  - xfsprogs
+  - xfsprogs-devel
+  - gdisk
+  - parted
+  - libgcrypt
+  - cryptopp-devel
+  - cryptopp
+  - fuse
+  - fuse-libs
+  - openssl
+  - libuuid
+  - btrfs-progs
+  - attr
+  - valgrind
+  - python-nose
+  - mpich
+  - ant
+  - dbench
+  - fuse-sshfs
+  - lsof
+  - iozone
+  - libtool
+  - automake
+  - gettext
+  - libuuid-devel
+  - libacl-devel
+  - bc
+  - xfsdump
+  - blktrace
+  - numpy
+  - python-matplotlib
+  - usbredir
+  - genisoimage
+  - qemu-img-rhev-1.5.3-60_ceph.el7.5
+  - qemu-kvm-rhev-1.5.3-60_ceph.el7.5
+  - qemu-kvm-tools-rhev-1.5.3-60_ceph.el7.5
+  - httpd
+  - httpd-devel
+  - httpd-tools
+  - mod_ssl
+  - mod_fastcgi-2.4.7-1.ceph.el7
+  - python-pip
+  - libevent-devel
+  - perl-JSON-XS
+  - perl-XML-Twig
+  - java-1.6.0-openjdk-devel
+  - junit4
+  - scsi-target-utils
+  - iscsi-initiator-utils
+  - smartmontools
+  - nfs-utils
