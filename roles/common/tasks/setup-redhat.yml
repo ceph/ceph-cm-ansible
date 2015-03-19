@@ -37,37 +37,6 @@
     name: ubuntu
     group: kvm
 
-- name: Upload megacli and cli64 for raid monitoring and smart.pl to /usr/sbin/.
-  copy:
-    src: "../files/sbin/{{ item }}"
-    dest: "/usr/sbin/{{ item }}"
-    owner: root
-    group: root
-    mode: 0755
-  with_items:
-    - megacli
-    - cli64
-
-- name: Create /usr/libexec.
-  file:
-    path: /usr/libexec
-    owner: root
-    group: root
-    mode: 0755
-    state: directory
-
-- name: Upload custom netsaint scripts for raid/disk/smart/monitoring to /usr/libexec/.
-  copy:
-    src: "../files/libexec/{{ item }}"
-    dest: "/usr/libexec/{{ item }}"
-    owner: root
-    group: root
-    mode: 0755
-  with_items:
-    - smart.pl
-    - raid.pl
-    - diskusage.pl
-
 - name: Upload rhel version specific sshd_config.
   template:
     src: "ssh/sshd_config_rhel_{{ ansible_distribution_version }}"

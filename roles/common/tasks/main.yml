@@ -20,6 +20,11 @@
   tags:
     - ntp-client
 
+# upload custom disk monitoring scripts
+- include: disk_monitoring.yml
+  tags:
+    - monitoring-scripts
+
 # configure red hat specific things
 - include: setup-redhat.yml
   when: ansible_os_family == 'RedHat'
