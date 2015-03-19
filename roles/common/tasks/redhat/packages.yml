@@ -7,13 +7,8 @@
   tags:
     - remove-ceph
 
-- name: Define rpm_packages.
-  set_fact:
-    rpm_packages: "{{ packages | list }}"
-  when: rpm_packages is not defined
-
 - name: Install packages
   yum:
     name: "{{ item }}"
     state: present 
-  with_items: rpm_packages
+  with_items: packages
