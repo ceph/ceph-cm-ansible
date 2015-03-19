@@ -8,12 +8,12 @@
 - include: pip.yml
 
 - name: Set a high max open files limit
-  copy:
+  template:
+    src: security_limits.conf
     dest: /etc/security/limits.d/ubuntu.conf
     owner: root
     group: root
     mode: 0755
-    content: ubuntu hard nofile 16384
 
 # configure ntp
 - include: ntp.yml
