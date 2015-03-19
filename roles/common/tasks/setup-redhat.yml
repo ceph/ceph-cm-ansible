@@ -14,7 +14,7 @@
   tags:
     - entitlements
 
-- name: Installing packages with yum.
+- name: Perform package related tasks for rhel.
   include: redhat/packages.yml
   tags:
     - packages
