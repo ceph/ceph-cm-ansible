@@ -1,5 +1,7 @@
 #!/usr/bin/perl
 
+# {{ ansible_managed }}
+
 use strict;
 
 my $warn;
