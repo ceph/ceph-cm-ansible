@@ -7,10 +7,10 @@
 # configure pip to use our mirror
 - include: pip.yml
 
-- name: Set a high max open files limit
+- name: Set a high max open files limit for the teuthology user.
   template:
     src: security_limits.conf
-    dest: /etc/security/limits.d/ubuntu.conf
+    dest: "/etc/security/limits.d/{{ teuthology_user }}.conf"
     owner: root
     group: root
     mode: 0755

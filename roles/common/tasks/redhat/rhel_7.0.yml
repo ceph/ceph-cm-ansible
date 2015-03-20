@@ -19,16 +19,16 @@
      name: "{{ new_hostname.stdout }}"
   when: existing_hostname.stdout.find("{{ lab_domain | mandatory }}") != -1
 
-- name: Add ubuntu CPAN config directory.
+- name: Add CPAN config directory for the teuthology user.
   file:
-    path: /home/ubuntu/.cpan/CPAN/
-    owner: ubuntu
-    group: ubuntu
+    path: "/home/{{ teuthology_user }}/.cpan/CPAN/"
+    owner: "{{ teuthology_user }}"
+    group: "{{ teuthology_user }}"
     mode: 0755
     recurse: yes
     state: directory
 
-- name: Add root CPAN config directory.
+- name: Add CPAN config directory for the root user.
   file:
     path: /root/.cpan/CPAN/
     owner: root
@@ -37,12 +37,12 @@
     recurse: yes
     state: directory
 
-- name: Upload CPAN config for ubuntu.
+- name: Upload CPAN config for the teuthology user.
   template:
     src: ../../templates/cpan_config.pm
-    dest: /home/ubuntu/.cpan/CPAN/MyConfig.pm
-    owner: ubuntu
-    group: ubuntu
+    dest: "/home/{{ teuthology_user }}/.cpan/CPAN/MyConfig.pm"
+    owner: "{{ teuthology_user }}"
+    group: "{{ teuthology_user }}"
     mode: 0755
 
 - name: Upload CPAN config for root.

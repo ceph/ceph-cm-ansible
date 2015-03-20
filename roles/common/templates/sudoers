@@ -42,4 +42,4 @@ root	ALL=(ALL) 	ALL
 ## Allows people in group wheel to run all commands
 %wheel	ALL=(ALL)	ALL
 
-ubuntu ALL=(ALL) NOPASSWD:ALL
+{{ teuthology_user }} ALL=(ALL) NOPASSWD:ALL

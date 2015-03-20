@@ -1,16 +1,16 @@
 ---
-- name: Create /home/ubuntu/.pip
+- name: Create the .pip directory for the teuthology user.
   file:
-    path: /home/ubuntu/.pip
-    owner: ubuntu
-    group: ubuntu
+    path: "/home/{{ teuthology_user }}/.pip"
+    owner: "{{ teuthology_user }}"
+    group: "{{ teuthology_user }}"
     mode: 0644
     state: directory
 
 - name: Create pip.conf and configure it to use our mirror
   template:
     src: pip.conf
-    dest: /home/ubuntu/.pip/pip.conf
-    owner: ubuntu
-    group: ubuntu
+    dest: "/home/{{ teuthology_user }}/.pip/pip.conf"
+    owner: "{{ teuthology_user }}"
+    group: "{{ teuthology_user }}"
     mode: 0644

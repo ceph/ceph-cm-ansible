@@ -37,3 +37,6 @@ yum_repos: {}
 # packages are defined in the pkg manager
 # specific var files.
 packages: []
+
+# the user teuthology will use
+teuthology_user: "ubuntu"

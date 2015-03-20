@@ -32,9 +32,9 @@
     path: /etc/fuse.conf
     mode: 0644
 
-- name: Add user ubuntu to group kvm
+- name: Add the teuthology user to group kvm
   user:
-    name: ubuntu
+    name: "{{ teuthology_user }}"
     group: kvm
 
 - name: Upload rhel version specific sshd_config.
