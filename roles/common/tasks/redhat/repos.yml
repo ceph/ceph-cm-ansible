@@ -23,5 +23,5 @@
 
 - name: Clean yum cache
   shell: yum clean all
-  changed_when: False
+  changed_when: false
   when: repo_file and repo_file.changed
