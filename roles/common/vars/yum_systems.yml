@@ -67,7 +67,6 @@ packages:
   - httpd-tools
   - mod_ssl
   - mod_fastcgi-2.4.7-1.ceph.el7
-  - python-pip
   - libevent-devel
   - perl-JSON-XS
   - perl-XML-Twig
