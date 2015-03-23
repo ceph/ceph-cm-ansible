@@ -1,0 +1,136 @@
+---
+# vars specific to rhel 6.x
+
+common_yum_repos:
+  epel:
+    name: "{{ yum_repo_prefix }} Extra Packages for Enterprise Linux 6 - $basearch"
+    baseurl: http://apt-mirror.front.sepia.ceph.com/epel6/
+    enabled: 1
+    gpgcheck: 0
+  rhel6:
+    name: "{{ yum_repo_prefix }} My Red Hat Enterprise Linux Server $releasever - $basearch"
+    baseurl: http://apt-mirror.front.sepia.ceph.com/rhel6repo-server/
+    enabled: 1
+    gpgcheck: 0
+  rhel6-server-optional:
+    name: "{{ yum_repo_prefix }} My Red Hat Enterprise Linux Optional $releasever - $basearch" 
+    baseurl: http://apt-mirror.front.sepia.ceph.com/rhel6repo-server-optional 
+    enabled: 1
+    gpgcheck: 0
+  centos6-qemu-ceph:
+    name: "{{ yum_repo_prefix }} Cent OS 6 Local Qemu Repo" 
+    baseurl: http://ceph.com/packages/ceph-extras/rpm/rhel6/x86_64/
+    enabled: 1
+    gpgcheck: 0
+    priority: 2
+  lab-extras:
+    name: "{{ yum_repo_prefix }} lab-extras" 
+    baseurl: http://apt-mirror.front.sepia.ceph.com/lab-extras/rhel6/
+    enabled: 1
+    gpgcheck: 0
+    priority: 2
+  centos6-fcgi-ceph:
+    name: "{{ yum_repo_prefix }} Cent OS 6 Local fastcgi Repo" 
+    baseurl: http://gitbuilder.ceph.com/mod_fastcgi-rpm-rhel6-x86_64-basic/ref/master/
+    enabled: 1
+    gpgcheck: 0
+    priority: 2
+  centos6-misc-ceph:
+    name: "{{ yum_repo_prefix }} Cent OS 6 Local misc Repo" 
+    baseurl: http://apt-mirror.front.sepia.ceph.com/misc-rpms/
+    enabled: 1
+    gpgcheck: 0
+    priority: 2
+  centos6-ceph:
+    name: "{{ yum_repo_prefix }} Cent OS 6 Local ceph Repo" 
+    baseurl: http://ceph.com/rpm-cuttlefish/rhel6/x86_64/
+    enabled: 1
+    gpgcheck: 0
+    priority: 2
+
+packages:
+  - yum-plugin-priorities
+  - redhat-lsb
+  - sysstat
+  - gdb
+  - python-configobj
+  # for running ceph
+  - libedit
+  - openssl098e
+  - gperftools-devel
+  - boost-thread
+  - xfsprogs
+  - gdisk
+  - parted
+  - libgcrypt
+  - cryptopp-devel
+  - cryptopp
+  - fuse
+  - fuse-libs
+  ###
+  # for ceph-deploy
+  - python-virtualenv
+  ###
+  # for setting BIOS settings
+  - smbios-utils
+  ###
+  - openssl
+  - libuuid
+  - btrfs-progs
+  # used by workunits
+  - attr
+  - valgrind
+  - python-nose
+  - mpich2
+  - ant
+  - dbench
+  - bonnie++
+  - fuse-sshfs
+  - fsstress 
+  - iozone
+  ###
+  # used by the xfstests tasks
+  - libtool
+  - automake
+  - gettext
+  - libuuid-devel
+  - libacl-devel
+  - bc
+  - xfsdump
+  ###
+  # for blktrace and seekwatcher
+  - blktrace
+  - numpy
+  - python-matplotlib
+  ###
+  # for qemu
+  - usbredir
+  - genisoimage
+  - qemu-img-0.12.1.2-2.415.el6.3ceph
+  - qemu-kvm-0.12.1.2-2.415.el6.3ceph
+  - qemu-kvm-tools-0.12.1.2-2.415.el6.3ceph
+  - qemu-guest-agent-0.12.1.2-2.415.el6.3ceph
+  ###
+  # for apache and rgw
+  - httpd
+  - httpd-devel
+  - httpd-tools
+  - mod_ssl
+  - mod_fastcgi-2.4.7-1.ceph.el6
+  ###
+  - libevent-devel
+  # for json_xs to investigate JSON by hand
+  - perl-JSON-XS
+  # for pretty-printing xml
+  - perl-XML-Twig
+  # for java bindings, hadoop, etc.
+  - java-1.6.0-openjdk-devel
+  - junit4
+  ###
+  # tgt & open-iscsi
+  - scsi-target-utils
+  - iscsi-initiator-utils
+  # for disk/etc monitoring
+  - smartmontools
+  # for nfs
+  - nfs-utils
