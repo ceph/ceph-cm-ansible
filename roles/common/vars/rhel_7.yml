@@ -3,23 +3,23 @@
 
 common_yum_repos:
   epel:
-    name: "{{ yum_repo_prefix }} Extra Packages for Enterprise Linux 6 - $basearch"
+    name: "Extra Packages for Enterprise Linux 7 - $basearch"
     baseurl: http://apt-mirror.front.sepia.ceph.com/epel7/
     enabled: 1
     gpgcheck: 0
   rhel-7-extras:
-    name: "{{ yum_repo_prefix }} My Red Hat Enterprise Linux $releasever - $basearch"
+    name: "My Red Hat Enterprise Linux $releasever - $basearch"
     baseurl: http://apt-mirror.front.sepia.ceph.com/rhel7repo/extras
     enabled: 1
     gpgcheck: 0
   rhel-7-fcgi-ceph:
-    name: "{{ yum_repo_prefix }} RHEL 7 Local fastcgi Repo"
+    name: "RHEL 7 Local fastcgi Repo"
     baseurl: http://gitbuilder.ceph.com/mod_fastcgi-rpm-rhel7-x86_64-basic/ref/master/
     enabled: 1
     gpgcheck: 0
     priority: 2
   lab-extras:
-    name: "{{ yum_repo_prefix }} lab-extras"
+    name: "lab-extras"
     baseurl: http://apt-mirror.front.sepia.ceph.com/lab-extras/rhel7/
     enabled: 1
     gpgcheck: 0
@@ -85,3 +85,5 @@ packages:
   - iscsi-initiator-utils
   - smartmontools
   - nfs-utils
+
+nfs_service: nfs-server

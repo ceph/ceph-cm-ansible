@@ -1,9 +1,14 @@
 ---
 - name: Including major version specific variables.
   include_vars: "rhel_{{ ansible_distribution_major_version }}.yml"
+  tags:
+    - vars
 
 - name: Including version specific variables.
-  include_vars: "rhel_{{ ansible_distribution_version }}.yml"
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "rhel_{{ ansible_distribution_version }}.yml"
+    - empty.yml
   tags:
     - vars
 
@@ -28,11 +33,6 @@
     dest: /etc/security/limits.d/remote.conf
     group: root
     owner: root
-    mode: 0644
-
-- name: Set mode on /etc/fuse.conf
-  file:
-    path: /etc/fuse.conf
     mode: 0644
 
 - name: Add the teuthology user to group kvm

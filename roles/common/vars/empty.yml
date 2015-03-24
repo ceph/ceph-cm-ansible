@@ -1,0 +1,12 @@
+---
+# This is empty on purpose.  Used as the last line
+# when using include_vars with with_first_found when
+# the var file might not exist.
+#
+# For example, there is not rhel 6.5 var file because it's not needed
+# but there is a rhel 7.0 var file that we need to include. Using this empty.yml
+# as the last line in with_first_found allows include_vars to work across different distros
+# where the var file might not be needed.
+#
+# Maybe related issue:
+# https://github.com/ansible/ansible/issues/10000

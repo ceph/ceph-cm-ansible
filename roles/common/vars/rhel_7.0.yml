@@ -1,12 +1,12 @@
 ---
 yum_repos:
   rhel-7-repo:
-    name: "{{ yum_repo_prefix }} My Red Hat Enterprise Linux $releasever - $basearch"
+    name: My Red Hat Enterprise Linux $releasever - $basearch
     baseurl: http://apt-mirror.front.sepia.ceph.com/rhel7repo/server
     enabled: 1
     gpgcheck: 0
   rhel-7-optional:
-    name: "{{ yum_repo_prefix }} My Red Hat Enterprise Linux $releasever - $basearch"
+    name: My Red Hat Enterprise Linux $releasever - $basearch
     baseurl: http://apt-mirror.front.sepia.ceph.com/rhel7repo/server-optional
     enabled: 1
     gpgcheck: 0
