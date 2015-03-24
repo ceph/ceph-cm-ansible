@@ -1,0 +1,26 @@
+---
+- name: Ensure ceph packages are not present.
+  yum:
+    name: "{{ item }}"
+    state: absent
+  with_items: ceph_packages
+  tags:
+    - remove-ceph
+
+# I added this because when using --tags "packages" the
+# next task will just be skipped because packages == []
+# which is probably an unexpected behavior if you're meaning to
+# install packages.
+- name: Fail the play if the var packages is not defined
+  fail:
+    msg: "The var packages is not defined,
+         perhaps you've forgot to include 'vars' in your
+         tag list if using --tags. Otherwise, check to see
+         if packages needs defining for your specific host."
+  when: packages|length == 0
+
+- name: Install packages
+  yum:
+    name: "{{ item }}"
+    state: present 
+  with_items: packages

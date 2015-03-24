@@ -1,0 +1,27 @@
+---
+- name: Configure common additional repos in /etc/yum.repos.d/
+  template:
+    src: ../../templates/yum_repo.j2
+    dest: /etc/yum.repos.d/{{ item.key }}.repo
+    owner: root
+    group: root
+    mode: 0644
+  register: repo_file
+  with_dict: common_yum_repos
+  when: common_yum_repos.keys() | length > 0
+
+- name: Configure version specific repos in /etc/yum.repos.d/
+  template:
+    src: ../../templates/yum_repo.j2
+    dest: /etc/yum.repos.d/{{ item.key }}.repo
+    owner: root
+    group: root
+    mode: 0644
+  register: repo_file
+  with_dict: yum_repos
+  when: yum_repos.keys() | length > 0
+
+- name: Clean yum cache
+  shell: yum clean all
+  changed_when: false
+  when: repo_file and repo_file.changed

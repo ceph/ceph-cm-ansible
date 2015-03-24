@@ -1,0 +1,28 @@
+---
+- name: Install python-pip on rpm based systems.
+  yum:
+    name: python-pip
+    state: present
+  when: ansible_pkg_mgr  == "yum"
+
+- name: Install python-pip on deb based systems.
+  apt:
+    name: python-pip
+    state: present
+  when: ansible_pkg_mgr  == "deb"
+
+- name: Create the .pip directory for the teuthology user.
+  file:
+    path: "/home/{{ teuthology_user }}/.pip"
+    owner: "{{ teuthology_user }}"
+    group: "{{ teuthology_user }}"
+    mode: 0644
+    state: directory
+
+- name: Create pip.conf and configure it to use our mirror
+  template:
+    src: pip.conf
+    dest: "/home/{{ teuthology_user }}/.pip/pip.conf"
+    owner: "{{ teuthology_user }}"
+    group: "{{ teuthology_user }}"
+    mode: 0644

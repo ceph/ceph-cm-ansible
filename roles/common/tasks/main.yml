@@ -1,4 +1,32 @@
 ---
-# Setup/install tasks.
- - include: setup-redhat.yml
-   when: ansible_os_family == 'RedHat'
+- name: Include package type specific vars.
+  include_vars: "{{ ansible_pkg_mgr }}_systems.yml"
+  tags:
+    - vars
+
+- name: Set a high max open files limit for the teuthology user.
+  template:
+    src: security_limits.conf
+    dest: "/etc/security/limits.d/{{ teuthology_user }}.conf"
+    owner: root
+    group: root
+    mode: 0755
+
+# configure ntp
+- include: ntp.yml
+  tags:
+    - ntp-client
+
+# upload custom disk monitoring scripts
+- include: disk_monitoring.yml
+  tags:
+    - monitoring-scripts
+
+# configure red hat specific things
+- include: setup-redhat.yml
+  when: ansible_os_family == 'RedHat'
+
+# configure pip to use our mirror
+- include: pip.yml
+  tags:
+    - pip

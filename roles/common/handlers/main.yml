@@ -1,0 +1,15 @@
+---
+- name: restart ntp
+  service:
+    name: "{{ ntp_service_name }}" 
+    state: restarted
+
+- name: restart sshd
+  service:
+    name: sshd
+    state: restarted
+
+- name: start nfs-server
+  service:
+    name: nfs-server
+    state: started 

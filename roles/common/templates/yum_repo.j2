@@ -1,0 +1,8 @@
+#
+# {{ ansible_managed }}
+#
+
+[{{ item.key }}]
+{% for k, v in item.value.iteritems() | sort -%}
+  {{ k }}={{ v }}
+{% endfor %}
