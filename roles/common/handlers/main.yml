@@ -11,5 +11,5 @@
 
 - name: start nfs-server
   service:
-    name: nfs-server
+    name: "{{ nfs_service }}"
     state: started 

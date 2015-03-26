@@ -4,6 +4,11 @@
     name: firewalld
     state: stopped
 
+- name: Set mode on /etc/fuse.conf
+  file:
+    path: /etc/fuse.conf
+    mode: 0644
+
 - name: Get hostname.
   command: hostname
   register: existing_hostname

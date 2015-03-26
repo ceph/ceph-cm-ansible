@@ -1,0 +1,27 @@
+---
+- name: Fix broken cloud-init
+  include: ../cloud-init.yml
+
+- name: Stop iptables
+  service:
+    name: iptables
+    state: stopped
+
+# a comment in chef mentioned making this work "on CentoOS"
+# I suspect that's a copy/paste error
+- name: Make raid/smart scripts work.
+  file:
+    state: link
+    src: /sbin/lspci
+    dest: /usr/bin/lspci
+
+- name: Create FStest ubuntu directory.
+  file:
+    state: directory
+    dest: /usr/lib/ltp/testcases/bin
+
+- name: Make fsstress same path as ubuntu.
+  file:
+    state: link
+    src: /usr/bin/fsstress
+    dest: /usr/lib/ltp/testcases/bin/fsstress

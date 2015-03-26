@@ -1,0 +1,8 @@
+---
+# Older versions of cloud-init are not writing to a file needed
+# to keep hostname across reboots on a non-centos/rhel kernel.
+- name: Include hostname in /etc/sysconfig/network
+  lineinfile:
+    dest: /etc/sysconfig/network
+    line: "HOSTNAME={{ ansible_hostname }}"
+    regexp: "^HOSTNAME=*"
