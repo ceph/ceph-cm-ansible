@@ -1,4 +1,4 @@
 ---
 - hosts: testnodes
   roles:
-    - common
+    - testnode
