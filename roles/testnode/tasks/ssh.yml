@@ -1,12 +1,11 @@
 ---
-- name: Upload rhel version specific sshd_config.
+- name: Upload distro major version specific sshd_config.
   template:
-    src: "ssh/sshd_config_rhel_{{ ansible_distribution_version }}"
+    src: "ssh/sshd_config_{{ ansible_distribution | lower }}_{{ ansible_distribution_major_version }}"
     dest: /etc/ssh/sshd_config
     owner: root 
     group: root
     mode: 0755
-  when: ansible_distribution == "RedHat"
   notify:
     - restart sshd
   tags:
