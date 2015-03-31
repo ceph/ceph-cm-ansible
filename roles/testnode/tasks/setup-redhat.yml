@@ -1,11 +1,5 @@
 ---
 
-- name: Register with subscription-manager.
-  include: redhat/entitlements.yml
-  tags:
-    - entitlements
-
-
 - name: Include rhel 7.0 specific tasks.
   include: redhat/rhel_7.0.yml
   when: ansible_distribution_version == "7.0"

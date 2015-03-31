@@ -1,4 +1,6 @@
 ---
+# Register a RHEL-based system with subscription-manager.
+
 - name: Include Red Hat encrypted variables.
   include_vars: "{{ secrets_path | mandatory }}/entitlements.yml"
   no_log: true
@@ -7,7 +9,7 @@
 
 - name: Determine if node is registered with subscription-manager.
   command: subscription-manager identity
-  register: subscription 
+  register: subscription
   ignore_errors: true
   changed_when: false
   no_log: true
