@@ -7,6 +7,7 @@
     state: link
     src: /sbin/lspci
     dest: /usr/bin/lspci
+    force: yes
 
 - name: Create FStest ubuntu directory.
   file:
