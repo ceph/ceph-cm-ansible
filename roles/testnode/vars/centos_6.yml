@@ -1,0 +1,106 @@
+---
+# vars specific to centos 6.x
+
+yum_repos:
+  epel:
+    name: Extra Packages for Enterprise Linux 6 - $basearch 
+    baseurl: http://apt-mirror.front.sepia.ceph.com/epel6/
+    enabled: 1
+    gpgcheck: 0
+  centos6-qemu-ceph:
+    name: Cent OS 6 Local Qemu Repo
+    baseurl: http://ceph.com/packages/ceph-extras/rpm/centos6/x86_64/
+    enabled: 1
+    gpgcheck: 0
+    priority: 2
+  centos6-fcgi-ceph:
+    name: Cent OS 6 Local fastcgi Repo
+    baseurl: http://gitbuilder.ceph.com/mod_fastcgi-rpm-centos6-x86_64-basic/ref/master/
+    enabled: 1
+    gpgcheck: 0
+    priority: 2
+  centos6-misc-ceph:
+    name: Cent OS 6 Local misc Repo
+    baseurl: http://apt-mirror.front.sepia.ceph.com/misc-rpms/
+    enabled: 1
+    gpgcheck: 0
+    priority: 2
+  centos6-ceph:
+    name: Cent OS 6 Local ceph Repo
+    baseurl: http://ceph.com/rpm-cuttlefish/el6/x86_64/
+    enabled: 1
+    gpgcheck: 0
+    priority: 2
+  rpmforge:
+    name: Red Hat Enterprise $releasever - RPMforge.net - dag
+    baseurl: http://apt-mirror.front.sepia.ceph.com/rpmforge/
+    enabled: 1
+    gpgcheck: 0
+    protect: 0
+  lab-extras:
+    name: lab-extras
+    baseurl: http://apt-mirror.front.sepia.ceph.com/lab-extras/centos6/
+    enabled: 1
+    gpgcheck: 0
+    priority: 2
+
+packages:
+  - yum-plugin-priorities
+  - redhat-lsb
+  - sysstat
+  - gdb
+  - python-configobj
+  - libedit
+  - openssl098e
+  - gperftools-devel
+  - boost-thread
+  - xfsprogs
+  - xfsprogs-devel
+  - gdisk
+  - parted
+  - libgcrypt
+  - cryptopp-devel
+  - cryptopp
+  - fuse
+  - fuse-libs
+  - openssl
+  - libuuid
+  - btrfs-progs
+  - attr
+  - valgrind
+  - python-nose
+  - mpich
+  - ant
+  - dbench
+  - fuse-sshfs
+  - lsof
+  - iozone
+  - libtool
+  - automake
+  - gettext
+  - libuuid-devel
+  - libacl-devel
+  - bc
+  - xfsdump
+  - blktrace
+  - numpy
+  - python-matplotlib
+  - usbredir
+  - genisoimage
+  - qemu-img-rhev-1.5.3-60_ceph.el7.5
+  - qemu-kvm-rhev-1.5.3-60_ceph.el7.5
+  - qemu-kvm-tools-rhev-1.5.3-60_ceph.el7.5
+  - httpd
+  - httpd-devel
+  - httpd-tools
+  - mod_ssl
+  - mod_fastcgi-2.4.7-1.ceph.el7
+  - libevent-devel
+  - perl-JSON-XS
+  - perl-XML-Twig
+  - java-1.6.0-openjdk-devel
+  - junit4
+  - scsi-target-utils
+  - iscsi-initiator-utils
+  - smartmontools
+  - nfs-utils
