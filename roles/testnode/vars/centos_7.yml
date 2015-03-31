@@ -26,12 +26,12 @@ packages:
   - sysstat
   - gdb
   - python-configobj
+  # for running ceph
   - libedit
   - openssl098e
   - gperftools-devel
   - boost-thread
   - xfsprogs
-  - xfsprogs-devel
   - gdisk
   - parted
   - libgcrypt
@@ -39,18 +39,23 @@ packages:
   - cryptopp
   - fuse
   - fuse-libs
+  ###
+  # for ceph-deploy
+  - python-virtualenv
+  ###
   - openssl
   - libuuid
   - btrfs-progs
+  # used by workunits
   - attr
   - valgrind
   - python-nose
-  - mpich
+  - mpich2
   - ant
-  - dbench
   - fuse-sshfs
-  - lsof
   - iozone
+  ###
+  # used by the xfstests tasks
   - libtool
   - automake
   - gettext
@@ -58,25 +63,42 @@ packages:
   - libacl-devel
   - bc
   - xfsdump
+  ###
+  # for blktrace and seekwatcher
   - blktrace
   - numpy
   - python-matplotlib
+  ###
+  # for qemu
   - usbredir
   - genisoimage
-  - qemu-img-rhev-1.5.3-60_ceph.el7.5
-  - qemu-kvm-rhev-1.5.3-60_ceph.el7.5
-  - qemu-kvm-tools-rhev-1.5.3-60_ceph.el7.5
+  - qemu-img-rhev-1.5.3-60_ceph.el7.centos.5
+  - qemu-kvm-rhev-1.5.3-60_ceph.el7.centos.5
+  - qemu-kvm-tools-rhev-1.5.3-60_ceph.el7.centos.5
+  ###
+  # for apache and rgw
   - httpd
   - httpd-devel
   - httpd-tools
   - mod_ssl
-  - mod_fastcgi-2.4.7-1.ceph.el7
+  - mod_fastcgi-2.4.7-1.ceph.el7.centos
+  ###
   - libevent-devel
+  # for json_xs to investigate JSON by hand
   - perl-JSON-XS
+  # for pretty-printing xml
   - perl-XML-Twig
+  # for java bindings, hadoop, etc.
   - java-1.6.0-openjdk-devel
   - junit4
+  ###
+  # tgt & open-iscsi
+  # installing these 2 packages makes this playbook
+  # not idempotent on rhel 6.x
+  # see: http://tracker.ceph.com/issues/11216
   - scsi-target-utils
   - iscsi-initiator-utils
+  # for disk/etc monitoring
   - smartmontools
+  # for nfs
   - nfs-utils
