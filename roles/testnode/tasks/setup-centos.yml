@@ -1,6 +1,6 @@
 ---
 - name: Fix broken cloud-init
-  include: ../cloud-init.yml
+  include: cloud-init.yml
   when: ansible_distribution_major_version == "6"
 
 - name: Stop iptables

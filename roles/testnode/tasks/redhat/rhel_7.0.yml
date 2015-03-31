@@ -1,7 +1,7 @@
 ---
 - name: Upload a dummy nfs export so that the nfs kernel server starts.
   template:
-    src: exports
+    src: ../../templates/exports
     dest: /etc/exports
     owner: root
     group: root
