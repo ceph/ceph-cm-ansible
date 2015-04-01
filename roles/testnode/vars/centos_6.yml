@@ -1,0 +1,141 @@
+---
+# vars specific to centos 6.x
+
+yum_repos:
+  epel:
+    name: Extra Packages for Enterprise Linux 6 - $basearch 
+    baseurl: http://apt-mirror.front.sepia.ceph.com/epel6/
+    enabled: 1
+    gpgcheck: 0
+  centos6-qemu-ceph:
+    name: Cent OS 6 Local Qemu Repo
+    baseurl: http://ceph.com/packages/ceph-extras/rpm/centos6/x86_64/
+    enabled: 1
+    gpgcheck: 0
+    priority: 2
+  centos6-fcgi-ceph:
+    name: Cent OS 6 Local fastcgi Repo
+    baseurl: http://gitbuilder.ceph.com/mod_fastcgi-rpm-centos6-x86_64-basic/ref/master/
+    enabled: 1
+    gpgcheck: 0
+    priority: 2
+  centos6-misc-ceph:
+    name: Cent OS 6 Local misc Repo
+    baseurl: http://apt-mirror.front.sepia.ceph.com/misc-rpms/
+    enabled: 1
+    gpgcheck: 0
+    priority: 2
+  centos6-ceph:
+    name: Cent OS 6 Local ceph Repo
+    baseurl: http://ceph.com/rpm-cuttlefish/el6/x86_64/
+    enabled: 1
+    gpgcheck: 0
+    priority: 2
+  rpmforge:
+    name: Red Hat Enterprise $releasever - RPMforge.net - dag
+    baseurl: http://apt-mirror.front.sepia.ceph.com/rpmforge/
+    enabled: 1
+    gpgcheck: 0
+    protect: 0
+  lab-extras:
+    name: lab-extras
+    baseurl: http://apt-mirror.front.sepia.ceph.com/lab-extras/centos6/
+    enabled: 1
+    gpgcheck: 0
+    priority: 2
+
+packages:
+  - yum-plugin-priorities
+  - redhat-lsb
+  - sysstat
+  - gdb
+  - python-configobj
+  # for running ceph
+  - libedit
+  - openssl098e
+  - gperftools-devel
+  - boost-thread
+  - xfsprogs
+  - gdisk
+  - parted
+  - libgcrypt
+  - cryptopp-devel
+  - cryptopp
+  - fuse
+  - fuse-libs
+  ###
+  # for ceph-deploy
+  - python-virtualenv
+  ###
+  # for setting BIOS settings
+  - smbios-utils
+  ###
+  - openssl
+  - libuuid
+  - btrfs-progs
+  # for compiling helpers
+  - libatomic_ops-devel
+  ###
+  # used by workunits
+  - git-all
+  - attr
+  - valgrind
+  - python-nose
+  - mpich2
+  - mpich2-devel
+  - ant
+  - dbench
+  - bonnie++
+  - fuse-sshfs
+  - fsstress
+  - iozone
+  ###
+  # used by the xfstests tasks
+  - libtool
+  - automake
+  - gettext
+  - uuid-devel
+  - libacl-devel
+  - bc
+  - xfsdump
+  ###
+  # for blktrace and seekwatcher
+  - blktrace
+  - numpy
+  - python-matplotlib
+  ###
+  # for qemu
+  - usbredir
+  - genisoimage
+  - qemu-img-0.12.1.2-2.415.el6.3ceph
+  - qemu-kvm-0.12.1.2-2.415.el6.3ceph
+  - qemu-kvm-tools-0.12.1.2-2.415.el6.3ceph
+  - qemu-guest-agent-0.12.1.2-2.415.el6.3ceph
+  ###
+  # for apache and rgw
+  - httpd
+  - httpd-devel
+  - httpd-tools
+  - mod_ssl
+  - mod_fastcgi-2.4.7-1.ceph.el6
+  ###
+  - libevent-devel
+  - python-devel
+  # for json_xs to investigate JSON by hand
+  - perl-JSON
+  # for pretty-printing xml
+  - perl-XML-Twig
+  # for java bindings, hadoop, etc.
+  - java-1.7.0-openjdk-devel
+  - junit4
+  ###
+  # tgt & open-iscsi
+  # installing these 2 packages makes this playbook
+  # not idempotent on rhel 6.x and centos 6.x
+  # see: http://tracker.ceph.com/issues/11216
+  - scsi-target-utils
+  - iscsi-initiator-utils
+  # for disk/etc monitoring
+  - smartmontools
+  # for nfs
+  - nfs-utils

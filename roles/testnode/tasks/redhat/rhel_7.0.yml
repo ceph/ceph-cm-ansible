@@ -1,13 +1,21 @@
 ---
+- name: Upload a dummy nfs export so that the nfs kernel server starts.
+  template:
+    src: ../../templates/exports
+    dest: /etc/exports
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - start nfs-server
+  tags:
+    - nfs
+
 - name: Stop firewalld
   service:
     name: firewalld
     state: stopped
 
-- name: Set mode on /etc/fuse.conf
-  file:
-    path: /etc/fuse.conf
-    mode: 0644
 
 - name: Get hostname.
   command: hostname

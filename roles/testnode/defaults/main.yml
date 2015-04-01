@@ -1,7 +1,6 @@
 ---
 pip_mirror_url: "http://apt-mirror.front.sepia.ceph.com/pypi/simple"
 
-# these are encrypted in vars/redhat.yml
 subscription_manager_activationkey: ""
 subscription_manager_org: ""
 

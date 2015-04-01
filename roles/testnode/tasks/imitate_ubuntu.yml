@@ -1,0 +1,22 @@
+---
+# plays that make centos and rhel act or look
+# like an ubuntu system for ease of testing
+
+- name: Make raid/smart scripts work.
+  file:
+    state: link
+    src: /sbin/lspci
+    dest: /usr/bin/lspci
+    force: yes
+
+- name: Create FStest ubuntu directory.
+  file:
+    state: directory
+    dest: /usr/lib/ltp/testcases/bin
+
+- name: Make fsstress same path as ubuntu.
+  file:
+    state: link
+    src: /usr/bin/fsstress
+    dest: /usr/lib/ltp/testcases/bin/fsstress
+    force: yes

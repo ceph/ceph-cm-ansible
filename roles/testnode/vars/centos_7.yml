@@ -1,0 +1,104 @@
+---
+# vars specific to centos 7.x
+
+yum_repos:
+  epel:
+    name: "Extra Packages for Enterprise Linux 7 - $basearch"
+    baseurl: http://apt-mirror.front.sepia.ceph.com/epel7/
+    enabled: 1
+    gpgcheck: 0
+  centos7-fcgi-ceph:
+    name: CentOS 7 Local fastcgi Repo
+    baseurl: http://gitbuilder.ceph.com/mod_fastcgi-rpm-centos7-x86_64-basic/ref/master/
+    enabled: 1
+    gpgcheck: 0
+    priority: 2
+  lab-extras:
+    name: lab-extras
+    baseurl: http://apt-mirror.front.sepia.ceph.com/lab-extras/centos7/
+    enabled: 1
+    gpgcheck: 0
+    priority: 2
+
+packages:
+  - yum-plugin-priorities
+  - redhat-lsb
+  - sysstat
+  - gdb
+  - python-configobj
+  # for running ceph
+  - libedit
+  - openssl098e
+  - gperftools-devel
+  - boost-thread
+  - xfsprogs
+  - gdisk
+  - parted
+  - libgcrypt
+  - cryptopp-devel
+  - cryptopp
+  - fuse
+  - fuse-libs
+  ###
+  # for ceph-deploy
+  - python-virtualenv
+  ###
+  - openssl
+  - libuuid
+  - btrfs-progs
+  # used by workunits
+  - attr
+  - valgrind
+  - python-nose
+  - mpich
+  - ant
+  - fuse-sshfs
+  - iozone
+  ###
+  # used by the xfstests tasks
+  - libtool
+  - automake
+  - gettext
+  - libuuid-devel
+  - libacl-devel
+  - bc
+  - xfsdump
+  ###
+  # for blktrace and seekwatcher
+  - blktrace
+  - numpy
+  - python-matplotlib
+  ###
+  # for qemu
+  - usbredir
+  - genisoimage
+  - qemu-img-rhev-1.5.3-60_ceph.el7.centos.5
+  - qemu-kvm-rhev-1.5.3-60_ceph.el7.centos.5
+  - qemu-kvm-tools-rhev-1.5.3-60_ceph.el7.centos.5
+  ###
+  # for apache and rgw
+  - httpd
+  - httpd-devel
+  - httpd-tools
+  - mod_ssl
+  - mod_fastcgi-2.4.7-1.ceph.el7.centos
+  ###
+  - libevent-devel
+  # for json_xs to investigate JSON by hand
+  - perl-JSON-XS
+  # for pretty-printing xml
+  - perl-XML-Twig
+  # for java bindings, hadoop, etc.
+  - java-1.6.0-openjdk-devel
+  - junit4
+  ###
+  # tgt & open-iscsi
+  # installing these 2 packages makes this playbook
+  # not idempotent on rhel 6.x
+  # see: http://tracker.ceph.com/issues/11216
+  - scsi-target-utils
+  - iscsi-initiator-utils
+  # for disk/etc monitoring
+  - smartmontools
+  # for nfs
+  - nfs-utils
