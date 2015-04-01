@@ -50,7 +50,7 @@ packages:
   - attr
   - valgrind
   - python-nose
-  - mpich2
+  - mpich
   - ant
   - fuse-sshfs
   - iozone

@@ -19,3 +19,4 @@
     state: link
     src: /usr/bin/fsstress
     dest: /usr/lib/ltp/testcases/bin/fsstress
+    force: yes
