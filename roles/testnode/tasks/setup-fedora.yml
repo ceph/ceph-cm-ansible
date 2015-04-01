@@ -1,0 +1,15 @@
+---
+- include: imitate_ubuntu.yml
+
+- name: Set grub config.
+  template:
+    src: grub
+    dest: /etc/default/grub
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Disable firewalld
+  service:
+    name: firewalld
+    state: stopped

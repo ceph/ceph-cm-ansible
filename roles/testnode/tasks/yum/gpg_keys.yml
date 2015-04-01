@@ -1,0 +1,18 @@
+---
+# this is needed for the rpm_key module so it can
+# figure out if the key you're adding is already
+# installed or not.
+- name: Install GPG
+  yum:
+    name: gpg
+    state: present
+
+- name: Install GPG keys
+  rpm_key:
+    state: present
+    key: "{{ item }}"
+    validate_certs: no
+  with_items:
+    - 'https://ceph.com/git/?p=ceph.git;a=blob_plain;f=keys/release.asc'
+    - 'https://ceph.com/git/?p=ceph.git;a=blob_plain;f=keys/autobuild.asc' 
+  register: gpg_keys

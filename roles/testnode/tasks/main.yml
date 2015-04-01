@@ -34,6 +34,10 @@
 - include: setup-redhat.yml
   when: ansible_distribution == 'RedHat'
 
+# configure fedora specific things
+- include: setup-fedora.yml
+  when: ansible_distribution == "Fedora"
+
 # configure pip to use our mirror
 - include: pip.yml
   tags:
