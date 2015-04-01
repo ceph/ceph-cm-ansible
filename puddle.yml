@@ -1,0 +1,5 @@
+---
+- hosts: puddle
+  roles:
+    - common
+    - puddle

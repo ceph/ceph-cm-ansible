@@ -1,0 +1,54 @@
+#!/bin/bash
+
+#
+# {{ ansible_managed }}
+#
+
+# Distill's output is very large. This script wraps "run-distill" and does a
+# bit of tidying up afterwards. It removes a lot of the files that we don't
+# use, and it even deletes older composes.
+
+# The general idea is to make sure we don't run out of disk space on our VM.
+
+cd /etc/distill/ceph
+run-distill el7-test
+
+set -e
+
+# Keep this many old composes around.
+keep=20
+
+# $compose_config is this is the directory in htdocs that we want to clean up. 
+compose_config=1.3-candidate-trees
+
+# Eventually we will want to refactor the rest of this script into a function
+# and loop over more compose_configs here.
+
+target=/var/www/{{ ansible_hostname }}/htdocs/distill/$compose_config
+compose_id=$(cat $target/latest-Ceph-1-RHEL-7/COMPOSE_ID)
+
+# Cleanup temporary files that we don't need and take up space
+pushd $target/latest-Ceph-1-RHEL-7
+  # Temporary work directory; not usuable by QE.
+  rm -r work
+  # These repos are not relevant. Just save the "Installer" repo.
+  rm -r compose/{Calamari,MON,OSD}
+  pushd compose/Installer
+    # Remove more things that we don't need
+    rm -r x86_64/{debug,jigdo,os}/
+    rm -r source/tree/
+    # This ISO is only the "Installer" ISO, not the unified one. Remove it.
+    rm x86_64/iso/$compose_id-Installer-x86_64-dvd1.iso*
+    rm source/iso/$compose_id-Installer-source-dvd1.iso*
+    # These checksums are for the "Installer" ISO (see above).
+    rm {source,x86_64}/iso/MD5SUM
+    rm {source,x86_64}/iso/SHA1SUM
+    rm {source,x86_64}/iso/SHA256SUM
+    # We are now left with two single "unified" ISOs in /x86_64 and in /source.
+  popd # compose/Installer
+popd # $target
+
+# Remove composes older than $keep number.
+for old in $(ls -d $target/Ceph* | tail -n +${keep}); do
+  rm -r $old
+done

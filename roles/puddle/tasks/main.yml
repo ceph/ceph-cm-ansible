@@ -1,0 +1,22 @@
+---
+- fail:
+    msg: "Puddle is only relevant on RHEL"
+  when: ansible_distribution != 'RedHat'
+
+# install puddle
+- include: install.yml
+
+# configure NFS
+- include: nfs.yml
+
+# configure puddle
+- include: configure.yml
+
+# install and configure web server
+- include: nginx.yml
+  tags:
+    - nginx
+
+# install and configure distill
+- include: distill/install.yml
+- include: distill/configure.yml

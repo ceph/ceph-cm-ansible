@@ -1,0 +1,48 @@
+---
+- name: add ceph distill config dir
+  file:
+    path: /etc/distill/ceph
+    owner: root
+    group: root
+    mode: 0755
+    state: directory
+
+- name: add distill config files
+  template:
+    src: "../../templates/distill/{{ item }}"
+    dest: "/etc/distill/ceph/{{ item }}"
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - ceph-1.3-rhel-7.conf
+    - comps-ceph-1.3-rhel-7.xml
+    - run-distill.conf
+    - variants-ceph-1.3-rhel-7.xml
+
+# distill requires this symlink in order to run.
+- name: symlink /mnt/brew
+  file:
+    src: /mnt/redhat/brewroot
+    dest: /mnt/brew
+    owner: root
+    group: root
+    state: link
+
+- name: create destinations (targets) for distill trees (composes)
+  file:
+    path: /var/www/{{ ansible_hostname }}/htdocs/distill/{{ item }}-trees
+    owner: "{{ puddle_user }}"
+    mode: 0755
+    state: directory
+  with_items:
+    - 1.3-candidate
+    # 1.3-pending
+
+- name: add ceph wrapper script for run-distill
+  template:
+    src: '../../templates/distill/ceph-distill'
+    dest: '/usr/local/bin/ceph-distill'
+    owner: root
+    group: root
+    mode: 0755

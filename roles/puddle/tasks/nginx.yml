@@ -1,0 +1,20 @@
+---
+- name: install nginx web server
+  yum: name=nginx state=present
+
+- name: create nginx docroot
+  file:
+    path: "/var/www/{{ ansible_hostname }}/htdocs"
+    owner: "{{ puddle_user }}"
+    mode: 0755
+    state: directory
+
+- name: configure nginx
+  template:
+    src: nginx.conf
+    dest: /etc/nginx/nginx.conf
+  notify:
+   - restart nginx
+
+- name: start the nginx service
+  service: name=nginx state=started enabled=yes
