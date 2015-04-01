@@ -1,23 +1,6 @@
 ---
 # loading vars
-- name: Include package type specific vars.
-  include_vars: "{{ ansible_pkg_mgr }}_systems.yml"
-  tags:
-    - vars
-
-- name: Including major version specific variables.
-  include_vars: "{{ item }}"
-  with_first_found:
-    - "{{ ansible_distribution | lower }}_{{ ansible_distribution_major_version }}.yml"
-    - empty.yml
-  tags:
-    - vars
-
-- name: Including version specific variables.
-  include_vars: "{{ item }}"
-  with_first_found:
-    - "{{ ansible_distribution | lower }}_{{ ansible_distribution_version }}.yml"
-    - empty.yml
+- include: vars.yml
   tags:
     - vars
 
