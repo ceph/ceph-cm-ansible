@@ -1,0 +1,104 @@
+---
+yum_repos:
+  fedora-fcgi-ceph:
+    name: Fedora Local fastcgi Repo
+    baseurl: http://gitbuilder.ceph.com/mod_fastcgi-rpm-fedora20-x86_64-basic/ref/master/
+    enabled: 1
+    gpgcheck: 0
+    priority: 0
+  ceph-extras:
+    name: Fedora ceph extras
+    baseurl: http://ceph.com/packages/ceph-extras/rpm/fedora20/x86_64/
+
+packages_to_upgrade:
+  - leveldb
+
+packages_to_remove:
+  - ceph-libs
+
+packages:
+  - yum-plugin-priorities
+  - redhat-lsb
+  - sysstat
+  - gdb
+  - python-configobj
+  # for running ceph
+  - libedit
+  - openssl-devel
+  - google-perftools-devel
+  - boost-thread
+  - xfsprogs
+  - gdisk
+  - parted
+  - libgcrypt
+  - cryptopp-devel
+  - cryptopp
+  ###
+  # for ceph-deploy
+  - python-virtualenv
+  ###
+  # for setting BIOS settings
+  - smbios-utils
+  ###
+  - openssl
+  - libuuid
+  - fcgi-devel
+  - btrfs-progs
+  # for compiling helpers
+  - libatomic_ops-devel
+  ###
+  # used by workunits
+  - git-all
+  - attr
+  - valgrind
+  - python-nose
+  - mpich2
+  - mpich2-devel
+  - ant
+  - dbench
+  - bonnie++
+  ###
+  # used by the xfstests tasks
+  - libtool
+  - automake
+  - gettext
+  - uuid-devel
+  - libacl-devel
+  - bc
+  - xfsdump
+  ###
+  # for blktrace and seekwatcher
+  - blktrace
+  - numpy
+  - python-matplotlib
+  ###
+  # for qemu
+  - genisoimage
+  ###
+  # for apache and rgw
+  - httpd
+  - httpd-devel
+  - httpd-tools
+  - mod_ssl
+  - mod_fastcgi-2.4.7-1.ceph.fc20
+  ###
+  - libevent-devel
+  - python-devel
+  # for json_xs to investigate JSON by hand
+  - perl-JSON
+  # for pretty-printing xml
+  - perl-XML-Twig
+  # for java bindings, hadoop, etc.
+  - java-1.7.0-openjdk-devel
+  - junit4
+  ###
+  # tgt & open-iscsi
+  # installing these 2 packages makes this playbook
+  # not idempotent on rhel 6.x and centos 6.x
+  # see: http://tracker.ceph.com/issues/11216
+  - scsi-target-utils
+  - iscsi-initiator-utils
+  # for disk/etc monitoring
+  - smartmontools
+  # for nfs
+  - nfs-utils
