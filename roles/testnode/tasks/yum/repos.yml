@@ -21,7 +21,13 @@
   with_dict: yum_repos
   when: yum_repos.keys() | length > 0
 
+- include: gpg_keys.yml
+  when: ansible_distribution == "Fedora"
+  tags:
+    - gpg-keys
+
 - name: Clean yum cache
   shell: yum clean all
   changed_when: false
-  when: repo_file and repo_file.changed
+  when: (repo_file and repo_file.changed) or
+        (gpg_keys and gpg_keys.changed)

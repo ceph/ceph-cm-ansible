@@ -24,3 +24,17 @@
     name: "{{ item }}"
     state: present 
   with_items: packages
+
+- name: Remove packages
+  yum:
+    name: "{{ item }}"
+    state: absent
+  with_items: packages_to_remove
+  when: packages_to_remove|length > 0
+
+- name: Upgrade packages
+  yum:
+    name: "{{ item }}"
+    state: latest
+  with_items: packages_to_upgrade
+  when: packages_to_upgrade|length > 0
