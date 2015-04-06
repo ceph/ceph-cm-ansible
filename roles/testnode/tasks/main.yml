@@ -26,6 +26,10 @@
 - include: yum_systems.yml
   when: ansible_pkg_mgr == "yum"
 
+# configure things specific to apt systems
+- include: apt_systems.yml
+  when: ansible_pkg_mgr == "apt"
+
 # configure centos specific things
 - include: setup-centos.yml
   when: ansible_distribution == "CentOS"
@@ -37,6 +41,10 @@
 # configure fedora specific things
 - include: setup-fedora.yml
   when: ansible_distribution == "Fedora"
+
+# configure ubuntu specific things
+- include: setup-ubuntu.yml
+  when: ansible_distribution == "Ubuntu"
 
 # configure pip to use our mirror
 - include: pip.yml

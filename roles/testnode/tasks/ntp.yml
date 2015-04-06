@@ -7,11 +7,11 @@
   tags:
     - packages
 
-- name: Install ntp package on deb based systems.
+- name: Install ntp package on apt based systems.
   apt:
     name: ntp
     state: present
-  when: ansible_pkg_mgr  == "deb"
+  when: ansible_pkg_mgr  == "apt"
   tags:
     - packages
 

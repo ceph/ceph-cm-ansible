@@ -1,0 +1,5 @@
+---
+- name: Remove /etc/ceph
+  file:
+    path: /etc/ceph
+    state: absent
