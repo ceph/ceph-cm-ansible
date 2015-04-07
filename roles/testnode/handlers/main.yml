@@ -13,3 +13,8 @@
   service:
     name: "{{ nfs_service }}"
     state: started 
+
+- name: restart cron
+  service:
+    name: cron
+    state: restarted

@@ -3,3 +3,15 @@
   file:
     path: /etc/ceph
     state: absent
+
+- name: Upload weekly kernel-clean crontab.
+  template:
+    src: cron/kernel-clean
+    dest: /etc/cron.weekly/kernel-clean
+    owner: root
+    group: root
+    mode: 0755
+  notify:
+    - restart cron
+  tags:
+    - new

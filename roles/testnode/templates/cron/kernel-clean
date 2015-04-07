@@ -1,0 +1,26 @@
+#!/bin/bash
+# {{ ansible_managed }}
+
+#Environment variable for
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+#Don't run any post remove scripts. Doing it for each kernel
+#Takes too long. We dont normally remove kernels other than
+#via this script which will manually do update-grub at the end.
+
+rm -f /etc/kernel/postrm.d/* 2> /dev/null
+
+current=`uname -r`
+kernellist=""
+for kernel in `dpkg -l | grep linux-image | grep -i -e '^ii '  | grep ceph | grep -v "$current" | awk '{print $2}'`
+do
+    kernellist="$kernel $kernellist"
+done
+
+apt-get -y remove $kernellist
+
+#Manually update grub since we disabled dpkg from doing it.
+update-grub
+
+#Clean apt-cache
+apt-get clean
