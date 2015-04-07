@@ -20,3 +20,19 @@
            --org={{ subscription_manager_org }}
   no_log: true
   when: subscription.rc != 0
+  register: entitled
+
+- name: disable all rhsm repos
+  command: subscription-manager repos --disable '*'
+  when: entitled|changed
+
+- name: enable necessary rhsm repos
+  command: subscription-manager repos --enable {{ item }}
+  with_items: rhsm_repos
+  when: entitled|changed and rhsm_repos|length > 0
+
+- name: Remove old apt-mirror repository definition.
+  file:
+    path: /etc/yum.repos.d/cd.repo
+    state: absent
+  when: entitled|success
