@@ -13,5 +13,8 @@
     mode: 0755
   notify:
     - restart cron
+
+# Install and configure cpan and Amazon::S3
+- include: cpan.yml
   tags:
-    - new
+    - cpan

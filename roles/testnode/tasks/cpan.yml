@@ -1,0 +1,50 @@
+---
+- name: Add CPAN config directory for the teuthology user.
+  file:
+    path: "/home/{{ teuthology_user }}/.cpan/CPAN/"
+    owner: "{{ teuthology_user }}"
+    group: "{{ teuthology_user }}"
+    mode: 0755
+    recurse: yes
+    state: directory
+
+- name: Add CPAN config directory for the root user.
+  file:
+    path: /root/.cpan/CPAN/
+    owner: root
+    group: root
+    mode: 0755
+    recurse: yes
+    state: directory
+
+- name: Upload CPAN config for the teuthology user.
+  template:
+    src: cpan_config.pm
+    dest: "/home/{{ teuthology_user }}/.cpan/CPAN/MyConfig.pm"
+    owner: "{{ teuthology_user }}"
+    group: "{{ teuthology_user }}"
+    mode: 0755
+
+- name: Upload CPAN config for root.
+  template:
+    src: cpan_config.pm
+    dest: /root/.cpan/CPAN/MyConfig.pm
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Ensure perl-doc is installed on apt systems.
+  apt:
+    name: perl-doc
+    state: present
+  when: ansible_pkg_mgr == "apt"
+
+- name: "Check to see if Amazon::S3 is installed."
+  command: "perldoc -l Amazon::S3"
+  register: cpan_check
+  ignore_errors: true
+  changed_when: false
+
+- name: "Install Amazon::S3."
+  command: "cpan  Amazon::S3"
+  when: cpan_check.rc != 0
