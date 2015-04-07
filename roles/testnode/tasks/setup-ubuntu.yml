@@ -18,3 +18,11 @@
 - include: cpan.yml
   tags:
     - cpan
+
+- name: Upload /etc/grub.d/02_force_timeout.
+  template:
+    src: grub.d/02_force_timeout
+    dest: /etc/grub.d/02_force_timeout
+    owner: root
+    group: root
+    mode: 0755
