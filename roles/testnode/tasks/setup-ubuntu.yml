@@ -44,3 +44,19 @@
   command:
     mount -o remount,user_xattr /
   when: add_user_xattr|changed
+
+- name: Upload /etc/fuse.conf.
+  template:
+    src: fuse.conf
+    dest: /etc/fuse.conf
+    owner: root
+    group: fuse
+    mode: 0644
+
+- name: Add teuthology user to group fuse.
+  user:
+    name: "{{ teuthology_user }}"
+    # group sets the primary group, while groups just adds
+    # the user to the specified group or groups.
+    groups: fuse
+    append: yes
