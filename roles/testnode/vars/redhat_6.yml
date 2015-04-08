@@ -7,16 +7,6 @@ common_yum_repos:
     baseurl: http://apt-mirror.front.sepia.ceph.com/epel6/
     enabled: 1
     gpgcheck: 0
-  rhel6:
-    name: "My Red Hat Enterprise Linux Server $releasever - $basearch"
-    baseurl: http://apt-mirror.front.sepia.ceph.com/rhel6repo-server/
-    enabled: 1
-    gpgcheck: 0
-  rhel6-server-optional:
-    name: "My Red Hat Enterprise Linux Optional $releasever - $basearch"
-    baseurl: http://apt-mirror.front.sepia.ceph.com/rhel6repo-server-optional
-    enabled: 1
-    gpgcheck: 0
   centos6-qemu-ceph:
     name: "Cent OS 6 Local Qemu Repo"
     baseurl: http://ceph.com/packages/ceph-extras/rpm/rhel6/x86_64/
