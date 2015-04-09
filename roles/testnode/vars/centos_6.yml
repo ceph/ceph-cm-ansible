@@ -4,7 +4,7 @@
 yum_repos:
   epel:
     name: Extra Packages for Enterprise Linux 6 - $basearch 
-    baseurl: http://apt-mirror.front.sepia.ceph.com/epel6/
+    baseurl: "http://{{ mirror_host }}/epel6/"
     enabled: 1
     gpgcheck: 0
   centos6-qemu-ceph:
@@ -21,7 +21,7 @@ yum_repos:
     priority: 2
   centos6-misc-ceph:
     name: Cent OS 6 Local misc Repo
-    baseurl: http://apt-mirror.front.sepia.ceph.com/misc-rpms/
+    baseurl: "http://{{ mirror_host }}/misc-rpms/"
     enabled: 1
     gpgcheck: 0
     priority: 2
@@ -33,13 +33,13 @@ yum_repos:
     priority: 2
   rpmforge:
     name: Red Hat Enterprise $releasever - RPMforge.net - dag
-    baseurl: http://apt-mirror.front.sepia.ceph.com/rpmforge/
+    baseurl: "http://{{ mirror_host }}/rpmforge/"
     enabled: 1
     gpgcheck: 0
     protect: 0
   lab-extras:
     name: lab-extras
-    baseurl: http://apt-mirror.front.sepia.ceph.com/lab-extras/centos6/
+    baseurl: "http://{{ mirror_host }}/lab-extras/centos6/"
     enabled: 1
     gpgcheck: 0
     priority: 2
