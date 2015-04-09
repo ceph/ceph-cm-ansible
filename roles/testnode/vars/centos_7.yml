@@ -4,7 +4,7 @@
 yum_repos:
   epel:
     name: "Extra Packages for Enterprise Linux 7 - $basearch"
-    baseurl: http://apt-mirror.front.sepia.ceph.com/epel7/
+    baseurl: "http://{{ mirror_host }}/epel7/"
     enabled: 1
     gpgcheck: 0
   centos7-fcgi-ceph:
@@ -15,7 +15,7 @@ yum_repos:
     priority: 2
   lab-extras:
     name: lab-extras
-    baseurl: http://apt-mirror.front.sepia.ceph.com/lab-extras/centos7/
+    baseurl: "http://{{ mirror_host }}/lab-extras/centos7/"
     enabled: 1
     gpgcheck: 0
     priority: 2
