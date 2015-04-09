@@ -1,0 +1,25 @@
+## {{ ansible_managed }}
+#set $user = 'ubuntu'
+#set $home = '/home/' + $user
+#set $auth_keys = $home + '/.ssh/authorized_keys'
+groupadd sudo
+useradd -G sudo ubuntu
+passwd -d $user
+
+cat >> /etc/sudoers.d/cephlab_sudo << EOF
+%sudo ALL=(ALL) NOPASSWD: ALL
+# For ansible pipelining
+Defaults !requiretty
+Defaults visiblepw
+EOF
+
+install -d -m0755 --owner=$user --group=$user /home/$user/.ssh 
+
+cat >> $auth_keys << EOF
+ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA1WFDbZSC387Oh/8/PoN0ItIrwbKAlAIIDhH0E1okyG6Nj3CjqctUQ8nBYg3yr6ztUTs1q5RWOsCeG7ZePxrxdDZz3YEJsZZhqdtwYbLkcKFME2eQNj/BaCp58FB5T3p0Yy6S4YAwGUZv+UGroUseE8RRavNVrBq3+3ciPYXiopm1jRrAWNXW5wbzry8NOxl/x1Q0PzDgy/9+Su433pkcaEY9X633+1iYcFx6NyKwVvh5GFDFUMM5wFtiJRVAhnhT9UloIwk2TP9p874Y6JjgfXgHmvlatvUEeKdVdkorHd0H0Ln5xlwq+1eJsl7GXNXW/HeSbZ9srfZlNMzfHk5y5w== root@magna001.ceph.lab.eng.rdu.redhat.com
+EOF
+
+chown $user.$user $auth_keys 
+chmod 644 $auth_keys
+chown -Rf $user:$user /home/$user
+curl "http://$http_server:$http_port/cblr/svc/op/nopxe/system/$system_name" -o /dev/null 
