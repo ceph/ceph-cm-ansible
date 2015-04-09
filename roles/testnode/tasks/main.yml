@@ -12,11 +12,6 @@
     group: root
     mode: 0755
 
-# configure ntp
-- include: ntp.yml
-  tags:
-    - ntp-client
-
 # upload custom disk monitoring scripts
 - include: disk_monitoring.yml
   tags:
@@ -45,6 +40,11 @@
 # configure ubuntu specific things
 - include: setup-ubuntu.yml
   when: ansible_distribution == "Ubuntu"
+
+# configure ntp
+- include: ntp.yml
+  tags:
+    - ntp-client
 
 # configure pip to use our mirror
 - include: pip.yml
