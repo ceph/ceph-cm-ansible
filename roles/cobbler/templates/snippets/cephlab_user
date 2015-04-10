@@ -16,7 +16,9 @@ EOF
 install -d -m0755 --owner=$user --group=$user /home/$user/.ssh 
 
 cat >> $auth_keys << EOF
-ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA1WFDbZSC387Oh/8/PoN0ItIrwbKAlAIIDhH0E1okyG6Nj3CjqctUQ8nBYg3yr6ztUTs1q5RWOsCeG7ZePxrxdDZz3YEJsZZhqdtwYbLkcKFME2eQNj/BaCp58FB5T3p0Yy6S4YAwGUZv+UGroUseE8RRavNVrBq3+3ciPYXiopm1jRrAWNXW5wbzry8NOxl/x1Q0PzDgy/9+Su433pkcaEY9X633+1iYcFx6NyKwVvh5GFDFUMM5wFtiJRVAhnhT9UloIwk2TP9p874Y6JjgfXgHmvlatvUEeKdVdkorHd0H0Ln5xlwq+1eJsl7GXNXW/HeSbZ9srfZlNMzfHk5y5w== root@magna001.ceph.lab.eng.rdu.redhat.com
+{% for key in ssh_keys %}
+{{ key }}
+{% endfor %}
 EOF
 
 chown $user.$user $auth_keys 
