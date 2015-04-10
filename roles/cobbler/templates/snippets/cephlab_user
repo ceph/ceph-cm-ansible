@@ -1,0 +1,27 @@
+## {{ ansible_managed }}
+#set $user = 'ubuntu'
+#set $home = '/home/' + $user
+#set $auth_keys = $home + '/.ssh/authorized_keys'
+groupadd sudo
+useradd -G sudo ubuntu
+passwd -d $user
+
+cat >> /etc/sudoers.d/cephlab_sudo << EOF
+%sudo ALL=(ALL) NOPASSWD: ALL
+# For ansible pipelining
+Defaults !requiretty
+Defaults visiblepw
+EOF
+
+install -d -m0755 --owner=$user --group=$user /home/$user/.ssh 
+
+cat >> $auth_keys << EOF
+{% for key in ssh_keys %}
+{{ key }}
+{% endfor %}
+EOF
+
+chown $user.$user $auth_keys 
+chmod 644 $auth_keys
+chown -Rf $user:$user /home/$user
+curl "http://$http_server:$http_port/cblr/svc/op/nopxe/system/$system_name" -o /dev/null 

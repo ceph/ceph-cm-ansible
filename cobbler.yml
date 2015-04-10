@@ -1,0 +1,4 @@
+---
+- hosts: cobbler 
+  roles:
+    - cobbler 

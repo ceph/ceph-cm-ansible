@@ -1,0 +1,2 @@
+## {{ ansible_managed }}
+grep -q apt-mirror /etc/hosts || echo 64.90.32.37 apt-mirror.front.sepia.ceph.com | sudo tee -a /etc/hosts

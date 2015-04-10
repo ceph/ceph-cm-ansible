@@ -1,0 +1,3 @@
+## {{ ansible_managed }}
+hostname $system_name
+echo $system_name > /etc/hostname

@@ -1,0 +1,114 @@
+## {{ ansible_managed }}
+### Apt setup
+# You can choose to install non-free and contrib software.
+#d-i apt-setup/non-free boolean true
+#d-i apt-setup/contrib boolean true
+
+# Keyboard selection.
+# Disable automatic (interactive) keymap detection.
+d-i console-setup/ask_detect boolean false
+
+# If you select ftp, the mirror/country string does not need to be set.
+#d-i mirror/protocol string ftp
+d-i mirror/country string manual
+d-i mirror/http/hostname string {{ mirror_host }}
+d-i mirror/http/directory string /archive.ubuntu.com/ubuntu 
+d-i mirror/suite string trusty
+
+#Removes the prompt about missing modules:
+# Continue without installing a kernel?
+#d-i base-installer/kernel/skip-install boolean true
+# Continue the install without loading kernel modules?
+#d-i anna/no_kernel_modules boolean true
+
+# Stop Ubuntu from installing random kernel choice
+#d-i base-installer/kernel/image select none
+
+# Controls whether to use NTP to set the clock during the install
+d-i clock-setup/ntp boolean true
+# NTP server to use. The default is almost always fine here.
+d-i clock-setup/ntp-server string pool.ntp.org
+
+
+# This makes partman automatically partition without confirmation.
+#d-i partman/confirm_write_new_label boolean true
+#d-i partman/choose_partition select finish
+#d-i partman/confirm boolean true
+#d-i partman/choose_partition select finish
+d-i partman-basicfilesystems/no_swap boolean false
+d-i partman-basicfilesystems/no_swap seen true
+d-i partman-auto/disk string /dev/sda
+d-i partman-auto/method string regular
+#d-i partman-auto/purge_lvm_from_device boolean true
+d-i partman-auto/confirm_nooverwrite  boolean true
+d-i partman-auto/choose_partition select finish
+
+
+d-i partman/choose_partition select finish
+d-i partman/confirm boolean true
+d-i partman/confirm_nooverwrite boolean true
+d-i partman-partitioning/confirm_write_new_label boolean true
+d-i partman/default_filesystem string ext4
+d-i partman-auto/expert_recipe string                         \
+           root ::                                            \
+              500 10000 1000000000 ext4                       \
+                      $primary{ } $bootable{ }                \
+                      method{ format } format{ }              \
+                      use_filesystem{ } filesystem{ ext4 }    \
+                      mountpoint{ / }                         \
+              .                                               
+#\
+#              64 512 1% linux-swap                            \
+#                      method{ swap } format{ }                \
+#              .
+d-i partman/confirm_write_new_label boolean true
+d-i partman/choose_partition \
+       select Finish partitioning and write changes to disk
+d-i partman/confirm boolean true
+
+d-i grub-pc/install_devices multiselect /dev/sda
+
+#User account.
+d-i passwd/root-login boolean false 
+d-i passwd/make-user boolean true
+d-i passwd/user-fullname string ubuntu
+d-i passwd/username string ubuntu
+d-i passwd/user-password-crypted password $default_password_crypted
+d-i passwd/user-uid string 
+d-i user-setup/allow-password-weak boolean false
+d-i user-setup/encrypt-home boolean false
+
+# Individual additional packages to install
+d-i pkgsel/include string u-boot-tools pastebinit initramfs-tools wget linux-firmware linux-firmware-nonfree ntpdate bash devmem2 fbset sudo openssh-server udev-discover
+
+# d-i pkgsel/include string u-boot-tools pastebinit initramfs-tools wget linux-firmware linux-firmware-nonfree ntpdate bash devmem2 fbset sudo ipcalc openssh-server nagios-nrpe-server smartmontools  udev-discover xfsprogs
+
+# Whether to upgrade packages after debootstrap.
+# Allowed values: none, safe-upgrade, full-upgrade
+d-i pkgsel/upgrade select safe-upgrade
+
+# Policy for applying updates. May be "none" (no automatic updates),
+# "unattended-upgrades" (install security updates automatically), or
+# "landscape" (manage system with Landscape).
+d-i pkgsel/update-policy select none
+
+# During installations from serial console, the regular virtual consoles
+# (VT1-VT6) are normally disabled in /etc/inittab. Uncomment the next
+# line to prevent this.
+d-i finish-install/keep-consoles boolean true
+
+# Avoid that last message about the install being complete.
+d-i finish-install/reboot_in_progress note
+
+# This command is run just before the install finishes, but when there is
+# still a usable /target directory. You can chroot to /target and use it
+# directly, or use the apt-install and in-target commands to easily install
+# packages and run commands in the target system.
+
+# cephlab_preseed_late lives in /var/lib/cobbler/scripts
+# It is passed to the cobbler xmlrpc generate_scripts function where it's rendered.
+# This means that snippets or other templating features can be used.
+d-i preseed/late_command string \
+in-target wget http://$http_server/cblr/svc/op/script/system/$system_name/?script=cephlab_preseed_late -O /tmp/postinst.sh; \
+in-target /bin/chmod 755 /tmp/postinst.sh; \
+in-target /tmp/postinst.sh;

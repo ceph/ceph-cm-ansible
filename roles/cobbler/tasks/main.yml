@@ -1,0 +1,4 @@
+---
+- include: upload_templates.yml
+  tags:
+    - templates

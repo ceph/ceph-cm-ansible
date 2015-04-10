@@ -1,0 +1,33 @@
+---
+- name: Upload kickstarts and preseeds.
+  template:
+    src: "kickstarts/{{ item }}"
+    dest: "/var/lib/cobbler/kickstarts/{{ item }}"
+    owner: root
+    group: root
+    mode: 0644 
+  with_items: kickstarts
+  tags:
+    - kickstarts
+
+- name: Upload snippets
+  template:
+    src: "snippets/{{ item }}"
+    dest: "/var/lib/cobbler/snippets/{{ item }}"
+    owner: root
+    group: root
+    mode: 0644
+  with_items: snippets
+  tags:
+    - snippets
+
+- name: Upload scripts.
+  template:
+    src: "scripts/{{ item }}"
+    dest: "/var/lib/cobbler/scripts/{{ item }}"
+    owner: root
+    group: root
+    mode: 0644
+  with_items: scripts
+  tags:
+    - scripts
