@@ -56,9 +56,3 @@
 - include: pip.yml
   tags:
     - pip
-
-# add SSH pubkeys to authorized_keys
-- include: ssh_pubkeys.yml
-  tags:
-  - ssh
-  - pubkeys
