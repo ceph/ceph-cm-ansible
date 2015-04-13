@@ -90,3 +90,7 @@
   notify:
     - start ttyS2
   when: ansible_hostname | search("^mira*")
+
+- include: nagios.yml
+  tags:
+    - nagios

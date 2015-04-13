@@ -28,3 +28,8 @@
   service:
     name: ttyS2
     state: started
+
+- name: restart nagios-nrpe-server
+  service:
+    name: nagios-nrpe-server
+    state: restarted
