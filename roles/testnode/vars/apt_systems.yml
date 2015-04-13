@@ -1,6 +1,7 @@
 ---
 ntp_service_name: ntp
 ssh_service_name: ssh
+nfs_service: nfs-kernel-server
 
 ceph_packages:
   - ceph

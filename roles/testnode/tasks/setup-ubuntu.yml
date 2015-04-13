@@ -112,3 +112,7 @@
     # isn't found the file is left unchanged
     backrefs: yes
     state: present
+
+- include: nfs.yml
+  tags:
+    - nfs

@@ -1,0 +1,10 @@
+---
+- name: Upload a dummy nfs export so that the nfs kernel server starts.
+  template:
+    src: exports
+    dest: /etc/exports
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - start nfs-server
