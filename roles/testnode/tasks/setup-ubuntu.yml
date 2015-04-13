@@ -60,3 +60,11 @@
     # the user to the specified group or groups.
     groups: fuse,kvm,disk
     append: yes
+
+- name: Enable kernel logging to console.
+  script: scripts/kernel_logging.sh creates=/kernel-logging-setup
+  register: kernel_logging
+
+- name: Update grub
+  command: update-grub
+  when: kernel_logging|changed
