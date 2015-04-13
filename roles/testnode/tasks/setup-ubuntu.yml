@@ -102,3 +102,13 @@
     owner: root
     group: root
     mode: 0644
+
+- name: Enabling auto-fsck fix to prevent boot hangup.
+  lineinfile:
+    dest: /etc/default/rcS
+    line: "FSCKFIX=yes"
+    regexp: "FSCKFIX=no"
+    # backrefs makes it so that if the regexp
+    # isn't found the file is left unchanged
+    backrefs: yes
+    state: present
