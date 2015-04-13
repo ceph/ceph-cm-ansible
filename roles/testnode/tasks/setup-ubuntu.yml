@@ -94,3 +94,11 @@
 - include: nagios.yml
   tags:
     - nagios
+
+- name: Enable kernel modules to load at boot time.
+  template:
+    src: modules
+    dest: /etc/modules
+    owner: root
+    group: root
+    mode: 0644
