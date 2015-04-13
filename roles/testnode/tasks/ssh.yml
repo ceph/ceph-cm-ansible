@@ -7,9 +7,7 @@
     group: root
     mode: 0755
   notify:
-    - restart sshd
-  tags:
-    - ssh
+    - restart ssh
 
 - name: Upload ssh_config.
   template:
@@ -18,5 +16,3 @@
     owner: root
     group: root
     mode: 0755
-  tags:
-    - ssh

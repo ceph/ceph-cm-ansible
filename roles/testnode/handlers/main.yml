@@ -4,9 +4,9 @@
     name: "{{ ntp_service_name }}" 
     state: restarted
 
-- name: restart sshd
+- name: restart ssh
   service:
-    name: sshd
+    name: "{{ ssh_service_name }}"
     state: restarted
 
 - name: start nfs-server

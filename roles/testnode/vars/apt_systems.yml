@@ -1,5 +1,6 @@
 ---
 ntp_service_name: ntp
+ssh_service_name: ssh
 
 ceph_packages:
   - ceph
