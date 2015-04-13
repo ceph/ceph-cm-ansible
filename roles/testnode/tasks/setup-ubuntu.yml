@@ -53,10 +53,10 @@
     group: fuse
     mode: 0644
 
-- name: Add teuthology user to group fuse.
+- name: Add teuthology user to groups fuse, kvm and disk.
   user:
     name: "{{ teuthology_user }}"
     # group sets the primary group, while groups just adds
     # the user to the specified group or groups.
-    groups: fuse
+    groups: fuse,kvm,disk
     append: yes
