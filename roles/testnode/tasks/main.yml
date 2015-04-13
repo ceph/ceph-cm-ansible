@@ -3,6 +3,7 @@
 - include: vars.yml
   tags:
     - vars
+    - always
 
 - name: Set a high max open files limit for the teuthology user.
   template:
