@@ -46,11 +46,6 @@
     owner: root
     mode: 0644
 
-- name: Configure ssh
-  include: ssh.yml
-  tags:
-    - ssh
-
 - name: Setup local repo files.
   include: yum/repos.yml
   tags:

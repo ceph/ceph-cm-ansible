@@ -17,6 +17,11 @@
   tags:
     - monitoring-scripts
 
+# configure ssh
+- include: ssh.yml
+  tags:
+    - ssh
+
 # configure things specific to yum systems
 - include: yum_systems.yml
   when: ansible_pkg_mgr == "yum"
