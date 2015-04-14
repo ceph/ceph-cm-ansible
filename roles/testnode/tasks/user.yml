@@ -1,0 +1,14 @@
+---
+- name: Ensure the sudo group exists.
+  group:
+    name: sudo
+    state: present
+
+- name: Create the teuthology user.
+  user:
+    name: "{{ teuthology_user }}"
+    # apparently some ceph tests fail without this uid
+    # https://github.com/ceph/ceph-qa-chef/commit/5678cc3893fd1cc291254e4d1abe6705e6a9bbb0
+    uid: 1000
+    group: sudo
+    state: present
