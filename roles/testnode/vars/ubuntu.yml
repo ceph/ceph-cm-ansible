@@ -2,3 +2,110 @@
 common_apt_repos:
   # mod_fastcgi for radosgw
   - "deb http://gitbuilder.ceph.com/libapache-mod-fastcgi-deb-{{ansible_distribution_release}}-x86_64-basic/ref/master/ {{ansible_distribution_release}} main"
+
+common_packages:
+  # for apache
+  - libfcgi0ldbl
+  ###
+  # for s3 tests
+  - python-virtualenv
+  - python-dev
+  - libevent-dev
+  ###
+  # for cpan
+  - perl
+  - libwww-perl
+  ###
+  - lsb-release
+  - build-essential
+  - sysstat
+  - gdb
+  - python-configobj
+  - python-gevent
+  # for running ceph
+  - libedit2
+  - libssl0.9.8
+  - cryptsetup-bin
+  - xfsprogs
+  - gdisk
+  - parted
+  ###
+  # for setting BIOS settings
+  - smbios-utils
+  ###
+  - libcrypto++9
+  - libuuid1
+  - libfcgi
+  - btrfs-tools
+  # for compiling helpers and such
+  - libatomic-ops-dev
+  ###
+  # used by workunits
+  - git-core
+  - attr
+  - dbench
+  - bonnie++
+  - iozone3
+  - valgrind
+  - python-nose
+  - mpich2
+  - libmpich2-dev
+  - ant
+  ###
+  # used by the xfstests tasks
+  - libtool
+  - automake
+  - gettext
+  - uuid-dev
+  - libacl1-dev
+  - bc
+  - xfsdump
+  - dmapi
+  - xfslibs-dev
+  - libattr1-dev
+  ###
+  - sysprof
+  - vim
+  - pdsh
+  - collectl
+  # for blktrace and seekwatcher
+  - blktrace
+  - python-numpy
+  - python-matplotlib
+  - mencoder
+  ###
+  # qemu
+  - genisoimage
+  ###
+  # for json_xs to investigate JSON by hand
+  - libjson-xs-perl
+  # for pretty-printing xml
+  - xml-twig-tools
+  # for java bindings, hadoop, etc.
+  - default-jdk
+  - junit4
+  ###
+  # tgt
+  - tgt
+  - open-iscsi
+  ###
+  # for disk/etc monitoring
+  - smartmontools
+  - nagios-nrpe-server
+  ###
+  # for samba testing
+  - cifs-utils
+  # for Static IP
+  - ipcalc
+  # nfs
+  - nfs-common
+  - nfs-kernel-server
+
+packages_to_upgrade:
+  - apt
+  - apache2
+  - libapache2-mod-fastcgi
+
+packages_to_remove:
+   # openmpi-common conflicts with mpitch stuff
+  - openmpi-common
