@@ -116,3 +116,7 @@
 - include: nfs.yml
   tags:
     - nfs
+
+# is not run on virtual machines
+- include: static_ip.yml
+  when: "'vps' not in group_names"
