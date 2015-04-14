@@ -1,0 +1,4 @@
+# {{ ansible_managed }}
+nameserver 172.20.132.1
+nameserver 172.20.132.2
+search front.sepia.ceph.com sepia.ceph.com

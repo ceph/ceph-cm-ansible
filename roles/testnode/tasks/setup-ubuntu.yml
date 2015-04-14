@@ -120,3 +120,16 @@
 # is not run on virtual machines
 - include: static_ip.yml
   when: "'vps' not in group_names"
+
+- name: Upload a lab specific base resolv.conf.
+  template:
+    src: "{{ item }}"
+    dest: /etc/resolvconf/resolv.conf.d/base
+    owner: root
+    group: root
+    mode: 0755
+  with_first_found:
+    - "resolvconf/base_{{ lab_name }}"
+    - resolvconf/base
+  notify:
+    - restart resolvdns
