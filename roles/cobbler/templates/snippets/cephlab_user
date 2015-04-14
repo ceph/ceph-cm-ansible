@@ -1,9 +1,9 @@
 ## {{ ansible_managed }}
-#set $user = 'ubuntu'
+#set $user = '{{ ansible_user }}'
 #set $home = '/home/' + $user
 #set $auth_keys = $home + '/.ssh/authorized_keys'
 groupadd sudo
-useradd -G sudo ubuntu
+useradd -G sudo $user
 passwd -d $user
 
 cat >> /etc/sudoers.d/cephlab_sudo << EOF
