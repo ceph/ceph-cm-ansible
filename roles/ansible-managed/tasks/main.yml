@@ -1,0 +1,25 @@
+---
+- name: Create the sudo group.
+  group:
+    name: sudo
+    state: present
+
+- name: Create the ansible user.
+  user:
+    name: "{{ ansible_user }}"
+    group: sudo
+
+- name: Create the cephlab_sudo sudoers.d file.
+  template:
+    src: cephlab_sudo
+    dest: /etc/sudoers.d/cephlab_sudo
+    owner: root
+    group: root
+    mode: 0440
+    validate: visudo -cf %s
+
+- name: Add authorized keys for the ansible user.
+  authorized_key: 
+    user: "{{ ansible_user }}"
+    key: "{{ item }}"
+  with_items: ssh_keys

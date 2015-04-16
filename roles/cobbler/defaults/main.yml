@@ -1,7 +1,4 @@
 ---
-# cobbler sets up the user that ansible will use
-ansible_user: cm
-
 kickstarts:
   - cephlab_trusty.preseed
   - cephlab_rhel.ks
