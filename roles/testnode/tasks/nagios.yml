@@ -1,0 +1,27 @@
+---
+- name: Upload nagios sudoers.d for raid utilities.
+  template:
+    src: nagios/90-nagios
+    dest: /etc/sudoers.d/90-nagios
+    owner: root
+    group: root
+    mode: 0440
+    validate: visudo -cf %s
+
+- name: Upload nagios nrpe config.
+  template:
+    src: nagios/nrpe.cfg 
+    dest: /etc/nagios/nrpe.cfg
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - restart nagios-nrpe-server
+
+- name: Configure nagios nrpe settings.
+  template:
+    src: nagios/nagios-nrpe-server
+    dest: /etc/default/nagios-nrpe-server
+    owner: root
+    group: root
+    mode: 0644

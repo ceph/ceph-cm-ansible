@@ -1,13 +1,5 @@
 ---
-- name: Upload a dummy nfs export so that the nfs kernel server starts.
-  template:
-    src: ../../templates/exports
-    dest: /etc/exports
-    owner: root
-    group: root
-    mode: 0644
-  notify:
-    - start nfs-server
+- include: ../nfs.yml
   tags:
     - nfs
 
@@ -32,46 +24,7 @@
      name: "{{ new_hostname.stdout }}"
   when: existing_hostname.stdout.find("{{ lab_domain | mandatory }}") != -1
 
-- name: Add CPAN config directory for the teuthology user.
-  file:
-    path: "/home/{{ teuthology_user }}/.cpan/CPAN/"
-    owner: "{{ teuthology_user }}"
-    group: "{{ teuthology_user }}"
-    mode: 0755
-    recurse: yes
-    state: directory
-
-- name: Add CPAN config directory for the root user.
-  file:
-    path: /root/.cpan/CPAN/
-    owner: root
-    group: root
-    mode: 0755
-    recurse: yes
-    state: directory
-
-- name: Upload CPAN config for the teuthology user.
-  template:
-    src: ../../templates/cpan_config.pm
-    dest: "/home/{{ teuthology_user }}/.cpan/CPAN/MyConfig.pm"
-    owner: "{{ teuthology_user }}"
-    group: "{{ teuthology_user }}"
-    mode: 0755
-
-- name: Upload CPAN config for root.
-  template:
-    src: ../../templates/cpan_config.pm
-    dest: /root/.cpan/CPAN/MyConfig.pm
-    owner: root
-    group: root
-    mode: 0755
-
-- name: "Check to see if Amazon::S3 is installed."
-  command: "perldoc -l Amazon::S3"
-  register: cpan_check
-  ignore_errors: true
-  changed_when: false
-
-- name: "Install Amazon::S3."
-  command: "cpan  Amazon::S3"
-  when: cpan_check.rc != 0
+# Install and configure cpan and Amazon::S3
+- include: ../cpan.yml
+  tags:
+    - cpan

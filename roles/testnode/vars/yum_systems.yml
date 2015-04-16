@@ -1,5 +1,6 @@
 ---
 ntp_service_name: ntpd
+ssh_service_name: sshd
 
 # ceph packages that we ensure do not exist
 ceph_packages:

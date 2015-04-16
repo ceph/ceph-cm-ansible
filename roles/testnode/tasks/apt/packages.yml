@@ -1,0 +1,23 @@
+---
+- name: Ensure packages are not present.
+  apt:
+    name: "{{ item }}"
+    state: absent
+  with_items: ceph_packages|list + packages_to_remove|list
+  when: ceph_packages|length > 0 or
+        packages_to_remove|length > 0
+
+- name: Upgrade packages
+  apt:
+    name: "{{ item }}"
+    state: latest
+  with_items: packages_to_upgrade
+  when: packages_to_upgrade|length > 0
+
+- name: Install packages
+  apt:
+    name: "{{ item }}"
+    state: present 
+  with_items: packages|list + common_packages|list
+  when: packages|length > 0 or
+        common_packages|length > 0

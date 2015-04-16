@@ -1,0 +1,4 @@
+{# {{ ansible_managed }} #}
+Package: *
+Pin: origin gitbuilder.ceph.redhat.com
+Pin-Priority: 998

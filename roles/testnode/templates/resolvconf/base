@@ -1,0 +1,4 @@
+# {{ ansible_managed }}
+nameserver 10.214.128.4
+nameserver 10.214.128.5
+search front.sepia.ceph.com sepia.ceph.com

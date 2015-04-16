@@ -1,2 +1,18 @@
 ---
 ntp_service_name: ntp
+ssh_service_name: ssh
+nfs_service: nfs-kernel-server
+
+ceph_packages:
+  - ceph
+  - ceph-common
+  - libcephfs1
+  - radosgw
+  - python-ceph
+  - librbd1
+  - librados2
+
+packages: []
+
+apt_repos: []
+common_apt_repos: []

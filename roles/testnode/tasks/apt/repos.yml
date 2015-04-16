@@ -1,0 +1,51 @@
+---
+- name: Set apt preferences
+  template:
+    dest: "/etc/apt/preferences.d/{{ item }}"
+    src: "../../templates/apt/{{ item }}"
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - ceph.pref
+    - ceph-redhat.pref
+  register: apt_prefs
+
+- name: Add sources list
+  template:
+    dest: /etc/apt/sources.list
+    src: "../../templates/apt/sources.list.{{ ansible_distribution_release | lower }}"
+    owner: root
+    group: root
+    mode: 0644
+  register: sources
+
+- name: Install apt keys
+  apt_key:
+    url: "{{ item }}"
+    state: present
+  with_items:
+    - "http://ceph.com/git/?p=ceph.git;a=blob_plain;f=keys/autobuild.asc;hb=HEAD"
+    - "http://ceph.com/git/?p=ceph.git;a=blob_plain;f=keys/release.asc"
+
+# required for apt_repository
+- name: Install python-apt
+  apt:
+    name: python-apt
+    state: present
+
+- name: Add local apt repos.
+  apt_repository:
+    repo: "{{ item }}"
+    state: present
+    update_cache: no 
+    mode: 0644
+  with_items: apt_repos|list + common_apt_repos|list
+  register: local_apt_repos
+
+- name: Update apt cache.
+  apt:
+    update_cache: yes
+  when: sources|changed or
+        local_apt_repos|changed or
+        apt_prefs|changed

@@ -1,0 +1,135 @@
+---
+- name: Remove /etc/ceph
+  file:
+    path: /etc/ceph
+    state: absent
+
+- name: Upload weekly kernel-clean crontab.
+  template:
+    src: cron/kernel-clean
+    dest: /etc/cron.weekly/kernel-clean
+    owner: root
+    group: root
+    mode: 0755
+  notify:
+    - restart cron
+
+# Install and configure cpan and Amazon::S3
+- include: cpan.yml
+  tags:
+    - cpan
+
+- name: Upload /etc/grub.d/02_force_timeout.
+  template:
+    src: grub.d/02_force_timeout
+    dest: /etc/grub.d/02_force_timeout
+    owner: root
+    group: root
+    mode: 0755
+
+# This was ported directly from chef.  I was unable to figure out a better way
+# to do this, but it seems to just be adding the user_xattr option to the root filesystem mount.
+# I believe perl was used here initially because the mount resources provided by chef and ansible
+# require both the name (i.e. /) and the source (UUID="<some_uuid>") to ensure it's editing the correct line
+# in /etc/fstab.  This won't work for us because the root file system source (UUID or label) is different depending
+# on the image used to create this node (downburst and cobbler use different images).
+- name: Use perl to add user_xattr to the root mount options in fstab.
+  command:
+    perl -pe 'if (m{^([^#]\S*\s+/\s+\S+\s+)(\S+)(\s+.*)$}) { $_="$1$2,user_xattr$3\n" unless $2=~m{(^|,)user_xattr(,|$)}; }' -i.bak /etc/fstab
+  args:
+    creates: /etc/fstab.bak
+  register: add_user_xattr
+
+- name: Enable xattr for this boot.
+  command:
+    mount -o remount,user_xattr /
+  when: add_user_xattr|changed
+
+- name: Upload /etc/fuse.conf.
+  template:
+    src: fuse.conf
+    dest: /etc/fuse.conf
+    owner: root
+    group: fuse
+    mode: 0644
+
+- name: Add teuthology user to groups fuse, kvm and disk.
+  user:
+    name: "{{ teuthology_user }}"
+    # group sets the primary group, while groups just adds
+    # the user to the specified group or groups.
+    groups: fuse,kvm,disk
+    append: yes
+
+- name: Enable kernel logging to console.
+  script: scripts/kernel_logging.sh creates=/kernel-logging-setup
+  register: kernel_logging
+
+- name: Update grub
+  command: update-grub
+  when: kernel_logging|changed
+
+- name: Upload ttyS1.conf.
+  template:
+    src: ttyS1.conf
+    dest: /etc/init/ttyS1.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - start ttyS1
+
+# this only runs on mira nodes
+- name: Upload ttyS2.conf.
+  template:
+    src: ttyS2.conf
+    dest: /etc/init/ttyS2.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - start ttyS2
+  when: ansible_hostname | search("^mira*")
+
+- include: nagios.yml
+  tags:
+    - nagios
+
+- name: Enable kernel modules to load at boot time.
+  template:
+    src: modules
+    dest: /etc/modules
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Enabling auto-fsck fix to prevent boot hangup.
+  lineinfile:
+    dest: /etc/default/rcS
+    line: "FSCKFIX=yes"
+    regexp: "FSCKFIX=no"
+    # backrefs makes it so that if the regexp
+    # isn't found the file is left unchanged
+    backrefs: yes
+    state: present
+
+- include: nfs.yml
+  tags:
+    - nfs
+
+# is not run on virtual machines
+- include: static_ip.yml
+  when: "'vps' not in group_names"
+
+- name: Upload a lab specific base resolv.conf.
+  template:
+    src: "{{ item }}"
+    dest: /etc/resolvconf/resolv.conf.d/base
+    owner: root
+    group: root
+    mode: 0755
+  with_first_found:
+    - "resolvconf/base_{{ lab_name }}"
+    - resolvconf/base
+  notify:
+    - restart resolvdns

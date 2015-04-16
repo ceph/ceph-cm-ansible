@@ -1,0 +1,10 @@
+---
+- name: Setup local repo files.
+  include: apt/repos.yml
+  tags:
+    - repos
+
+- name: Perform package related tasks.
+  include: apt/packages.yml
+  tags:
+    - packages

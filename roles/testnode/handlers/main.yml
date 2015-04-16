@@ -4,12 +4,37 @@
     name: "{{ ntp_service_name }}" 
     state: restarted
 
-- name: restart sshd
+- name: restart ssh
   service:
-    name: sshd
+    name: "{{ ssh_service_name }}"
     state: restarted
 
 - name: start nfs-server
   service:
     name: "{{ nfs_service }}"
     state: started 
+
+- name: restart cron
+  service:
+    name: cron
+    state: restarted
+
+- name: start ttyS1
+  service:
+    name: ttyS1
+    state: started
+
+- name: start ttyS2
+  service:
+    name: ttyS2
+    state: started
+
+- name: restart nagios-nrpe-server
+  service:
+    name: nagios-nrpe-server
+    state: restarted
+
+- name: restart resolvdns
+  service:
+    name: resolvconf
+    state: restarted

@@ -5,11 +5,11 @@
     state: present
   when: ansible_pkg_mgr  == "yum"
 
-- name: Install python-pip on deb based systems.
+- name: Install python-pip on apt based systems.
   apt:
     name: python-pip
     state: present
-  when: ansible_pkg_mgr  == "deb"
+  when: ansible_pkg_mgr  == "apt"
 
 - name: Create the .pip directory for the teuthology user.
   file:

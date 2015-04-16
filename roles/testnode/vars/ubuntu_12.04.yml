@@ -1,0 +1,11 @@
+---
+apt_repos:
+  # tgt/libleveldb:
+  - "deb http://ceph.com/packages/ceph-extras/debian/ precise main"
+
+packages:
+  - libgoogle-perftools0
+  - libboost-thread1.46.1
+  - ltp-kernel-test
+  - libmpich2-3
+  - kvm
