@@ -9,6 +9,15 @@
     name: "{{ ansible_user }}"
     group: sudo
 
+- name: Ensure includedir is present in sudoers.
+  lineinfile:
+    dest: /etc/sudoers
+    line: "#includedir /etc/sudoers.d"
+    regexp: "#includedir /etc/sudoers.d"
+    backrefs: yes
+    state: present
+    validate: visudo -cf %s
+
 - name: Create the cephlab_sudo sudoers.d file.
   template:
     src: cephlab_sudo
