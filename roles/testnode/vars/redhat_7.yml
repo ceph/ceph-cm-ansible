@@ -80,5 +80,7 @@ packages:
   - iscsi-initiator-utils
   - smartmontools
   - nfs-utils
+  # for xfstests
+  - ncurses-devel
 
 nfs_service: nfs-server

@@ -12,3 +12,9 @@
     uid: 1000
     group: sudo
     state: present
+
+- name: Add a user for xfstests to test user quotas.
+  user:
+    name: "{{ xfstests_user }}"
+    uid: 10101
+    state: present

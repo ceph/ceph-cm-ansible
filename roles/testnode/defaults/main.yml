@@ -20,3 +20,4 @@ packages_to_upgrade: []
 
 # the user teuthology will use
 teuthology_user: "ubuntu"
+xfstests_user: "fsgqa"
