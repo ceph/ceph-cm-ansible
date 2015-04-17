@@ -63,6 +63,10 @@ common_packages:
   - dmapi
   - xfslibs-dev
   - libattr1-dev
+  - quota
+  - libcap2-bin
+  - libncurses5-dev
+  - lvm2
   ###
   - sysprof
   - vim
