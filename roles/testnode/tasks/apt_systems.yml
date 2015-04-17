@@ -49,3 +49,8 @@
 
 - include: static_ip.yml
   when: "'vps' not in group_names"
+
+- name: Stop apache2
+  service:
+    name: apache2
+    state: stopped
