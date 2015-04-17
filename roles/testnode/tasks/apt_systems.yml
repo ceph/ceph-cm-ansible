@@ -8,3 +8,44 @@
   include: apt/packages.yml
   tags:
     - packages
+
+# This was ported directly from chef.  I was unable to figure out a better way
+# to do this, but it seems to just be adding the user_xattr option to the root filesystem mount.
+# I believe perl was used here initially because the mount resources provided by chef and ansible
+# require both the name (i.e. /) and the source (UUID="<some_uuid>") to ensure it's editing the correct line
+# in /etc/fstab.  This won't work for us because the root file system source (UUID or label) is different depending
+# on the image used to create this node (downburst and cobbler use different images).
+- name: Use perl to add user_xattr to the root mount options in fstab.
+  command:
+    perl -pe 'if (m{^([^#]\S*\s+/\s+\S+\s+)(\S+)(\s+.*)$}) { $_="$1$2,user_xattr$3\n" unless $2=~m{(^|,)user_xattr(,|$)}; }' -i.bak /etc/fstab
+  args:
+    creates: /etc/fstab.bak
+  register: add_user_xattr
+
+- name: Enable xattr for this boot.
+  command:
+    mount -o remount,user_xattr /
+  when: add_user_xattr|changed
+
+- name: Upload /etc/fuse.conf.
+  template:
+    src: fuse.conf
+    dest: /etc/fuse.conf
+    owner: root
+    group: fuse
+    mode: 0644
+
+- name: Add teuthology user to groups fuse, kvm and disk.
+  user:
+    name: "{{ teuthology_user }}"
+    # group sets the primary group, while groups just adds
+    # the user to the specified group or groups.
+    groups: fuse,kvm,disk
+    append: yes
+
+- include: nagios.yml
+  tags:
+    - nagios
+
+- include: static_ip.yml
+  when: "'vps' not in group_names"

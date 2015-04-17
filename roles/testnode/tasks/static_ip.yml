@@ -6,7 +6,3 @@
     regexp: "^127.0.1.1"
     backrefs: yes
     state: present
-
-# this script was ported directly from chef.
-- name: Set up static IP and 10gig interface.
-  script: scripts/static-ip.sh creates=/static-ip-setup
