@@ -1,0 +1,32 @@
+---
+- name: Work around broken wget on wheezy.
+  template:
+    src: wgetrc
+    dest: /etc/wgetrc
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Stop collectl
+  service:
+    name: collectl
+    state: stopped
+
+- name: Add PATH to the teuthology_user .bashrc.
+  lineinfile:
+    dest: "/home/{{ teuthology_user }}/.bashrc"
+    line: "export PATH=$PATH:/usr/sbin"
+    insertbefore: BOF
+    state: present
+
+- name: Check to see if we need to edit /etc/profile.
+  command:
+    grep '/usr/games:/usr/sbin' /etc/profile
+  register: update_profile
+  changed_when: false
+  ignore_errors: true
+
+- name: Update /etc/profile if needed.
+  command:
+    sed -i 's/\/usr\/games"/\/usr\/games:\/usr\/sbin"/g' /etc/profile
+  when: update_profile.rc != 0

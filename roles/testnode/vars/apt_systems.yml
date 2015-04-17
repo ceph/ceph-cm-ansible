@@ -13,6 +13,7 @@ ceph_packages:
   - librados2
 
 packages: []
+common_packages: []
 
 apt_repos: []
 common_apt_repos: []

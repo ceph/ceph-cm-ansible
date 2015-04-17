@@ -51,6 +51,10 @@
 - include: setup-ubuntu.yml
   when: ansible_distribution == "Ubuntu"
 
+# configure debian specific things
+- include: setup-debian.yml
+  when: ansible_distribution == "Debian"
+
 # configure ntp
 - include: ntp.yml
   tags:
