@@ -13,6 +13,6 @@
     key: "{{ item }}"
     validate_certs: no
   with_items:
-    - 'https://ceph.com/git/?p=ceph.git;a=blob_plain;f=keys/release.asc'
-    - 'https://ceph.com/git/?p=ceph.git;a=blob_plain;f=keys/autobuild.asc' 
+    - 'https://{{ git_mirror_host }}/?p=ceph.git;a=blob_plain;f=keys/release.asc'
+    - 'https://{{ git_mirror_host }}/?p=ceph.git;a=blob_plain;f=keys/autobuild.asc'
   register: gpg_keys
