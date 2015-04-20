@@ -1,2 +1,4 @@
 # Repos to enable in Red Hat Subscription Manager
 rhsm_repos: []
+
+kerberos_realm: EXAMPLE.COM

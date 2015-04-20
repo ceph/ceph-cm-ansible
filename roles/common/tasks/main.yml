@@ -13,3 +13,8 @@
   when: ansible_distribution == 'RedHat'
   tags:
     - entitlements
+
+# configure Kerberos
+- include: kerberos.yml
+  tags:
+    - kerberos
