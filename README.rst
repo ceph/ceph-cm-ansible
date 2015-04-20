@@ -63,6 +63,21 @@ You can now run ``ansible-playbook``::
 
 This will print a lot of debugging output to your console.
 
+Adding a new host to ansible
+============================
+
+Ansible runs using the "cm" shell account.
+
+Let's say you've created a new VM host using downburst. At this point you
+should have a new VM with the "ubuntu" UID present. The problem is that Ansible
+uses the "cm" user. In order to get that UID set up:
+
+1. Add your host to the inventory. Look in your lab's ``secrets`` repository,
+   in the ``ansible/inventory/`` directory, and add your new node.
+
+2. Run the ``cephlab.yml`` playbook, limited to your new host "mynewhost"::
+
+    ansible-playbook -vv --limit mynewhost cephlab.yml
 
 TODO
 ====
