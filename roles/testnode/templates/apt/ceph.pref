@@ -1,4 +1,4 @@
 {# {{ ansible_managed }} #}
 Package: *
-Pin: origin gitbuilder.ceph.com
+Pin: origin {{ gitbuilder_host }}
 Pin-Priority: 999
