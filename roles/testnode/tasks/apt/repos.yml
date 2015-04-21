@@ -1,14 +1,11 @@
 ---
 - name: Set apt preferences
   template:
-    dest: "/etc/apt/preferences.d/{{ item }}"
-    src: "../../templates/apt/{{ item }}"
+    dest: "/etc/apt/preferences.d/ceph.pref"
+    src: "../../templates/apt/ceph.pref"
     owner: root
     group: root
     mode: 0644
-  with_items:
-    - ceph.pref
-    - ceph-redhat.pref
   register: apt_prefs
 
 - name: Add sources list
