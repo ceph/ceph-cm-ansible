@@ -8,13 +8,17 @@
   user:
     name: "{{ ansible_user }}"
     group: sudo
+    update_password: on_create
+  register: user_created
+
+- name: Delete the ansible users password.
+  command: "passwd -d {{ ansible_user }}"
+  when: user_created is defined and user_created|changed
 
 - name: Ensure includedir is present in sudoers.
   lineinfile:
     dest: /etc/sudoers
     line: "#includedir /etc/sudoers.d"
-    regexp: "#includedir /etc/sudoers.d"
-    backrefs: yes
     state: present
     validate: visudo -cf %s
 
