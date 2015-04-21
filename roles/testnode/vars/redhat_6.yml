@@ -2,11 +2,6 @@
 # vars specific to rhel 6.x
 
 common_yum_repos:
-  epel:
-    name: "Extra Packages for Enterprise Linux 6 - $basearch"
-    baseurl: "http://{{ mirror_host }}/epel6/"
-    enabled: 1
-    gpgcheck: 0
   centos6-qemu-ceph:
     name: "Cent OS 6 Local Qemu Repo"
     baseurl: http://ceph.com/packages/ceph-extras/rpm/rhel6/x86_64/
