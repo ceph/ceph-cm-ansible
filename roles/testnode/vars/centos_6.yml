@@ -2,11 +2,6 @@
 # vars specific to centos 6.x
 
 yum_repos:
-  epel:
-    name: Extra Packages for Enterprise Linux 6 - $basearch 
-    baseurl: "http://{{ mirror_host }}/epel6/"
-    enabled: 1
-    gpgcheck: 0
   centos6-qemu-ceph:
     name: Cent OS 6 Local Qemu Repo
     baseurl: http://ceph.com/packages/ceph-extras/rpm/centos6/x86_64/

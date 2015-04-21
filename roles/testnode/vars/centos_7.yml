@@ -2,11 +2,6 @@
 # vars specific to centos 7.x
 
 yum_repos:
-  epel:
-    name: "Extra Packages for Enterprise Linux 7 - $basearch"
-    baseurl: "http://{{ mirror_host }}/epel7/"
-    enabled: 1
-    gpgcheck: 0
   centos7-fcgi-ceph:
     name: CentOS 7 Local fastcgi Repo
     baseurl: http://gitbuilder.ceph.com/mod_fastcgi-rpm-centos7-x86_64-basic/ref/master/

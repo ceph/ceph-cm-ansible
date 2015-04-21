@@ -17,7 +17,7 @@
     owner: root
     group: root
     mode: 0644
-  register: repo_file
+  register: version_repo_file
   with_dict: yum_repos
   when: yum_repos.keys() | length > 0
 
@@ -28,6 +28,6 @@
 
 - name: Clean yum cache
   shell: yum clean all
-  changed_when: false
-  when: (repo_file is defined and repo_file.changed) or
-        (gpg_keys is defined and gpg_keys.changed)
+  when: (repo_file is defined and repo_file|changed) or
+        (gpg_keys is defined and gpg_keys|changed) or
+        (version_repo_file is defined and version_repo_file|changed)

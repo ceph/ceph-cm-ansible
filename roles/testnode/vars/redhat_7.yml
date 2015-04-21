@@ -2,11 +2,6 @@
 # vars specific to any rhel 7.x version
 
 common_yum_repos:
-  epel:
-    name: "Extra Packages for Enterprise Linux 7 - $basearch"
-    baseurl: "http://{{ mirror_host }}/epel7/"
-    enabled: 1
-    gpgcheck: 0
   rhel-7-fcgi-ceph:
     name: "RHEL 7 Local fastcgi Repo"
     baseurl: http://gitbuilder.ceph.com/mod_fastcgi-rpm-rhel7-x86_64-basic/ref/master/

@@ -18,3 +18,12 @@
 - include: kerberos.yml
   tags:
     - kerberos
+
+# create and manage epel.repo
+- include: epel.yml
+  when:
+    ansible_distribution == "CentOS" or
+    ansible_distribution == 'RedHat'
+  tags:
+    - epel
+    - repos

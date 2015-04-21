@@ -1,0 +1,13 @@
+---
+- name: Create /etc/yum.repos.d/epel.repo.
+  template:
+    src: epel.repo
+    dest: /etc/yum.repos.d/epel.repo
+    owner: root
+    group: root
+    mode: 0644
+  register: epel_repo
+
+- name: Clean yum cache
+  shell: yum clean all
+  when: epel_repo is defined and epel_repo|changed
