@@ -21,6 +21,8 @@
     line: "#includedir /etc/sudoers.d"
     state: present
     validate: visudo -cf %s
+  tags:
+    - sudoers
 
 - name: Create the cephlab_sudo sudoers.d file.
   template:
@@ -30,6 +32,8 @@
     group: root
     mode: 0440
     validate: visudo -cf %s
+  tags:
+    - sudoers
 
 - name: Add authorized keys for the ansible user.
   authorized_key: 
