@@ -1,8 +1,0 @@
-#
-# {{ ansible_managed }}
-#
-[epel]
-name="Extra Packages for Enterprise Linux"
-baseurl="{{ epel_mirror_baseurl }}/{{ ansible_distribution_major_version }}/$basearch"
-enabled=1
-gpgcheck=0
