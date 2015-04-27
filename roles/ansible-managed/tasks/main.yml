@@ -40,3 +40,12 @@
     user: "{{ ansible_user }}"
     key: "{{ item }}"
   with_items: ssh_keys
+
+- name: Add apt-mirror.front.sepia.ceph.com to /etc/hosts
+  lineinfile:
+    dest: /etc/hosts
+    line: "64.90.32.37 apt-mirror.front.sepia.ceph.com"
+    state: present
+  when: apt_mirror_front_access
+  tags:
+    - apt-mirror
