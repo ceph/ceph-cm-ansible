@@ -3,6 +3,8 @@
   group:
     name: sudo
     state: present
+  tags:
+   - user
 
 - name: Create the ansible user.
   user:
@@ -11,10 +13,14 @@
     uid: {{ ansible_user_uid_ }}
     update_password: on_create
   register: user_created
+  tags:
+   - user
 
 - name: Delete the ansible users password.
   command: "passwd -d {{ ansible_user }}"
   when: user_created is defined and user_created|changed
+  tags:
+   - user
 
 - name: Ensure includedir is present in sudoers.
   lineinfile:
@@ -24,6 +30,7 @@
     validate: visudo -cf %s
   tags:
     - sudoers
+    - user
 
 - name: Create the cephlab_sudo sudoers.d file.
   template:
@@ -35,6 +42,7 @@
     validate: visudo -cf %s
   tags:
     - sudoers
+    - user
 
 - name: Add authorized keys for the ansible user.
   authorized_key: 
