@@ -3,7 +3,7 @@
 #set $home = '/home/' + $user
 #set $auth_keys = $home + '/.ssh/authorized_keys'
 groupadd sudo
-useradd -G sudo $user
+useradd -u 1100 -G sudo $user
 passwd -d $user
 
 cat >> /etc/sudoers.d/cephlab_sudo << EOF
