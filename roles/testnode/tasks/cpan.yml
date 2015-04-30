@@ -47,4 +47,5 @@
 
 - name: "Install Amazon::S3."
   command: "cpan  Amazon::S3"
-  when: cpan_check.rc != 0
+  when: cpan_check is defined and
+        cpan_check.rc != 0

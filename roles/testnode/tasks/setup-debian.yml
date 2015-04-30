@@ -29,4 +29,5 @@
 - name: Update /etc/profile if needed.
   command:
     sed -i 's/\/usr\/games"/\/usr\/games:\/usr\/sbin"/g' /etc/profile
-  when: update_profile.rc != 0
+  when: update_profile is defined and
+        update_profile.rc != 0
