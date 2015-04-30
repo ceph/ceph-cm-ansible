@@ -19,7 +19,8 @@
            --activationkey={{ subscription_manager_activationkey }}
            --org={{ subscription_manager_org }}
   no_log: true
-  when: subscription.rc != 0
+  when: subscription is defined and
+        subscription.rc != 0
   register: entitled
 
 - name: disable all rhsm repos
