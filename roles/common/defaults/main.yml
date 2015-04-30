@@ -1,4 +1,8 @@
 ---
+# Red Hat Subscription Manager credentials
+subscription_manager_activationkey: ""
+subscription_manager_org: ""
+
 # Repos to enable in Red Hat Subscription Manager
 rhsm_repos: []
 
