@@ -1,3 +1,24 @@
 ---
 # The name of the unprivileged user that will run puddle
 puddle_user: puddle
+
+puddle:
+  eng_rhel_7_candidate_repo_url: ''
+  eng_rhel_7_repo_url: ''
+  mnt_redhat_nfs_src: ''
+  brewroot_url: ''
+  topurl: ''
+  rhel_7_z_repo_url: ''
+  rhel_7_common_repo_url: ''
+  rhel_6_z_repo_url: ''
+  rhel_6_common_repo_url: ''
+  kerberos_keytab: ''
+  kerberos_principal: ''
+  emails: ''
+  announcer: ''
+
+distill:
+  brewhub_url: ''
+  rhel_7_lookaside_repo_x86_64_url: ''
+  rhel_7_lookaside_repo_src_url: ''
+  email: ''

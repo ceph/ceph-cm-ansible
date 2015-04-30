@@ -5,12 +5,16 @@
 
 # install puddle
 - include: install.yml
+  tags:
+    - install-puddle
 
 # configure NFS
 - include: nfs.yml
 
 # configure puddle
 - include: configure.yml
+  tags:
+    - configure-puddle
 
 # install and configure web server
 - include: nginx.yml
@@ -19,4 +23,9 @@
 
 # install and configure distill
 - include: distill/install.yml
+  tags:
+    - install-distill
+
 - include: distill/configure.yml
+  tags:
+    - configure-distill
