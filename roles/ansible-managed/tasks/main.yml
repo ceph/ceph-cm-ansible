@@ -41,3 +41,5 @@
     user: "{{ ansible_user }}"
     key: "{{ item }}"
   with_items: ssh_keys
+  tags:
+    - pubkeys
