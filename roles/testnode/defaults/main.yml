@@ -1,9 +1,6 @@
 ---
 pip_mirror_url: "http://{{ mirror_host }}/pypi/simple"
 
-subscription_manager_activationkey: ""
-subscription_manager_org: ""
-
 # repos common to a major version
 common_yum_repos: {}
 
