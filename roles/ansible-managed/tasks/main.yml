@@ -3,6 +3,8 @@
   group:
     name: sudo
     state: present
+  tags:
+    - user
 
 - name: Create the ansible user.
   user:
@@ -10,10 +12,14 @@
     group: sudo
     update_password: on_create
   register: user_created
+  tags:
+    - user
 
 - name: Delete the ansible users password.
   command: "passwd -d {{ ansible_user }}"
   when: user_created is defined and user_created|changed
+  tags:
+    - user
 
 - name: Ensure includedir is present in sudoers.
   lineinfile:
@@ -40,3 +46,5 @@
     user: "{{ ansible_user }}"
     key: "{{ item }}"
   with_items: ssh_keys
+  tags:
+    - pubkeys
