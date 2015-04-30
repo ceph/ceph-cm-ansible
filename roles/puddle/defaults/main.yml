@@ -1,0 +1,3 @@
+---
+# The name of the unprivileged user that will run puddle
+puddle_user: puddle
