@@ -1,0 +1,6 @@
+---
+# A playbook used to setup a node for downstream
+# RHCeph testing.
+- hosts: testnodes
+  roles:
+    - downstream-setup

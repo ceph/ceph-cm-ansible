@@ -1,0 +1,4 @@
+---
+- include: yum_repos.yml
+  tags:
+    - yum-repos
