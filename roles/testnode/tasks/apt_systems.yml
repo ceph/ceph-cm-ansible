@@ -25,7 +25,8 @@
 - name: Enable xattr for this boot.
   command:
     mount -o remount,user_xattr /
-  when: add_user_xattr|changed
+  when: add_user_xattr is defined and
+        add_user_xattr|changed
 
 - name: Upload /etc/fuse.conf.
   template:
