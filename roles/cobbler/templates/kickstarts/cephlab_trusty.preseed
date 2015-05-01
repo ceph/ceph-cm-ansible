@@ -74,7 +74,7 @@ d-i passwd/make-user boolean true
 d-i passwd/user-fullname string {{ ansible_user }}
 d-i passwd/username string {{ ansible_user }}
 d-i passwd/user-password-crypted password $default_password_crypted
-d-i passwd/user-uid string 
+d-i passwd/user-uid string {{ ansible_user_uid_ }}
 d-i user-setup/allow-password-weak boolean false
 d-i user-setup/encrypt-home boolean false
 
