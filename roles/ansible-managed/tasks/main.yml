@@ -8,7 +8,7 @@
   user:
     name: "{{ ansible_user }}"
     group: sudo
-    uid: 1100
+    uid: {{ ansible_user_uid_ }}
     update_password: on_create
   register: user_created
 
