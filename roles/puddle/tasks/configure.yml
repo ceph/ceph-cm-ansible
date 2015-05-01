@@ -16,7 +16,9 @@
     mode: 0644
   with_items:
     - ceph-1.2-rhel-6
+    - ceph-1.2-rhel-6-async
     - ceph-1.2-rhel-7
+    - ceph-1.2-rhel-7-async
     - rh-common-rhel-6
     - rh-common-rhel-7
     - ceph-1.3-rhel-7
