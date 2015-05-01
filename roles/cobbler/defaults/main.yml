@@ -13,3 +13,6 @@ scripts:
   - cephlab_preseed_late
 
 ssh_keys: []
+
+ansible_user: ''
+ansible_user_uid_: ''
