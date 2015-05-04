@@ -31,3 +31,14 @@
   with_items: scripts
   tags:
     - scripts
+
+- name: Upload triggers.
+  template:
+    src: "triggers/{{ item }}"
+    dest: "/var/lib/cobbler/triggers/{{ item }}"
+    owner: root
+    group: root
+    mode: 0744
+  with_items: triggers
+  tags:
+    - triggers

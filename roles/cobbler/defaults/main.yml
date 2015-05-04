@@ -12,6 +12,9 @@ snippets:
 scripts:
   - cephlab_preseed_late
 
+triggers:
+  - install/post/cephlab_ansible.sh
+
 ssh_keys: []
 
 ansible_user: ''
