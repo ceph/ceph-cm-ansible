@@ -24,4 +24,7 @@ EOF
 chown $user.$user $auth_keys 
 chmod 644 $auth_keys
 chown -Rf $user:$user /home/$user
+
+{% block extra_users %}{% endblock %}
+
 curl "http://$http_server:$http_port/cblr/svc/op/nopxe/system/$system_name" -o /dev/null 

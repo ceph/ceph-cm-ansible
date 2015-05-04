@@ -109,6 +109,6 @@ d-i finish-install/reboot_in_progress note
 # It is passed to the cobbler xmlrpc generate_scripts function where it's rendered.
 # This means that snippets or other templating features can be used.
 d-i preseed/late_command string \
-in-target wget http://$http_server/cblr/svc/op/script/system/$system_name/?script=cephlab_preseed_late -O /tmp/postinst.sh; \
+in-target wget http://$http_server/cblr/svc/op/script/system/$system_name/?script={% block late_command_script_name %}cephlab_preseed_late{% endblock%} -O /tmp/postinst.sh; \
 in-target /bin/chmod 755 /tmp/postinst.sh; \
 in-target /tmp/postinst.sh;

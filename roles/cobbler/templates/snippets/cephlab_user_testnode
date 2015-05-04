@@ -1,0 +1,20 @@
+{% extends "cephlab_user" %}
+
+{% block extra_users %}
+
+#set $t_user = '{{ teuthology_user }}'
+#set $t_home = '/home/' + $t_user
+#set $t_auth_keys = $t_home + '/.ssh/authorized_keys'
+
+useradd -G sudo $t_user 
+passwd -d $t_user 
+
+cat >> $t_auth_keys << EOF
+{{ teuthology_user_keys }}
+EOF
+
+chown $t_user.$t_user $t_auth_keys 
+chmod 644 $t_auth_keys
+chown -Rf $t_user:$t_user /home/$t_user
+
+{% endblock %}

@@ -1,0 +1,4 @@
+{% extends 'cephlab_trusty.preseed' %}
+{% block late_command_script_name %}
+cephlab_preseed_late_testnode
+{% endblock %}

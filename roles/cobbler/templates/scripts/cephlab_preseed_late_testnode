@@ -1,0 +1,4 @@
+{% extends 'cephlab_preseed_late' %}
+{% block user_setup %}
+$SNIPPET('cephlab_user_testnode')
+{% endblock %}

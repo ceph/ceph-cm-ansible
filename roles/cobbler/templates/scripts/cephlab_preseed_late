@@ -7,7 +7,9 @@ $SNIPPET('post_run_deb')
 $SNIPPET('download_config_files')
 # custom
 $SNIPPET('cephlab_hostname')
+{% block user_setup %}
 $SNIPPET('cephlab_user')
+{% endblock %}
 $SNIPPET('cephlab_apt-mirror_hack')
 # end custom
 $SNIPPET('kickstart_done')

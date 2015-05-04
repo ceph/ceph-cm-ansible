@@ -75,7 +75,9 @@ $SNIPPET('cobbler_register')
 $SNIPPET('post_anamon')
 # Start final steps
 $SNIPPET('cephlab_hostname')
+{% block user_setup %}
 $SNIPPET('cephlab_user')
+{% endblock %}
 $SNIPPET('cephlab_apt-mirror_hack')
 $SNIPPET('kickstart_done')
 # End final steps
