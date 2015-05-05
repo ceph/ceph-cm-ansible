@@ -7,7 +7,7 @@
 # System authorization information
 auth  --useshadow  --enablemd5
 # System bootloader configuration
-bootloader --location=mbr
+bootloader --location=mbr --boot-drive=sda
 # Partition clearing information
 clearpart --all --initlabel
 # Use text mode install
@@ -41,8 +41,8 @@ timezone  America/New_York
 install
 # Clear the Master Boot Record
 zerombr
-# Allow anaconda to partition the system as needed
-autopart
+# Use a small root partition on one disk
+part / --fstype="ext4" --ondisk=sda --size=20000
 
 %pre
 $SNIPPET('log_ks_pre')
