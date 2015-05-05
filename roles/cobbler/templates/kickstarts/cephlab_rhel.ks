@@ -77,6 +77,7 @@ $SNIPPET('post_anamon')
 $SNIPPET('cephlab_hostname')
 $SNIPPET('cephlab_user')
 $SNIPPET('cephlab_apt-mirror_hack')
+$SNIPPET('cephlab_rc_local')
 $SNIPPET('kickstart_done')
 # End final steps
 %end

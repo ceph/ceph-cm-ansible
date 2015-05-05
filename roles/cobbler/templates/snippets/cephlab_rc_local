@@ -1,0 +1,24 @@
+## {{ ansible_managed }}
+#set lockfile = '/.cephlab_rc_local'
+#set script = '/etc/rc.local'
+
+cat > $script << EOF
+#!/bin/bash
+# First, redirect stderr and stdout to a logfile
+exec 2> /tmp/rc.local.log
+exec 1>&2
+set -ex
+
+# Only run once.
+if [ -e $lockfile ]; then
+    exit 0
+fi
+
+# Wait just a bit for the network to come up
+sleep 15
+# Run the post-install trigger a second time
+wget -O /dev/null "http://$http_server:$http_port/cblr/svc/op/trig/mode/post/system/$system_name"
+touch $lockfile
+EOF
+
+chmod +x $script
