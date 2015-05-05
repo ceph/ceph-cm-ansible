@@ -48,3 +48,11 @@
     mode: 0644
   notify:
    - restart faucet
+
+- name: add ceph wrapper script for puddle
+  template:
+    src: 'ceph-puddle'
+    dest: '/usr/local/bin/ceph-puddle'
+    owner: root
+    group: root
+    mode: 0755
