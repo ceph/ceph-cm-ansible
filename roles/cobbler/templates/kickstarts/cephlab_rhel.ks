@@ -6,10 +6,14 @@
 #platform=x86, AMD64, or Intel EM64T
 # System authorization information
 auth  --useshadow  --enablemd5
-# System bootloader configuration
-bootloader --location=mbr --boot-drive=sda
 # Partition clearing information
 clearpart --all --initlabel
+# Use a small root partition on one disk
+part / --fstype="ext4" --ondisk=sda --size=20000
+# Clear the Master Boot Record
+zerombr
+# System bootloader configuration
+bootloader --location=mbr --boot-drive=sda
 # Use text mode install
 text
 # Firewall configuration
@@ -39,10 +43,6 @@ skipx
 timezone  America/New_York
 # Install OS instead of upgrade
 install
-# Clear the Master Boot Record
-zerombr
-# Use a small root partition on one disk
-part / --fstype="ext4" --ondisk=sda --size=20000
 
 %pre
 $SNIPPET('log_ks_pre')
