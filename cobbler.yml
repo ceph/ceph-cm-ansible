@@ -1,5 +1,5 @@
 ---
 - hosts: cobbler 
   roles:
-    - users
+    - common
     - cobbler 

@@ -2,5 +2,4 @@
 - hosts: testnodes
   roles:
     - common
-    - users
     - testnode
