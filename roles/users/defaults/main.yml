@@ -8,4 +8,7 @@
 #     - name: user2
 #       key: <url to an ssh key>
 
+# not given sudo access
 managed_users: []
+# are given sudo access
+managed_admin_users: []
