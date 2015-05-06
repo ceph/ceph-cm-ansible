@@ -36,7 +36,7 @@ reboot
 #Root password
 rootpw --iscrypted $default_password_crypted
 # SELinux configuration
-selinux --disabled
+selinux --permissive
 # Do not configure the X Window System
 skipx
 # System timezone
