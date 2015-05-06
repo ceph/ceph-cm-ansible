@@ -21,6 +21,7 @@ packages:
   - redhat-lsb
   - sysstat
   - gdb
+  - git-all
   - python-configobj
   # for running ceph
   - libedit
@@ -48,7 +49,6 @@ packages:
   - libatomic_ops-devel
   ###
   # used by workunits
-  - git-all
   - attr
   - valgrind
   - python-nose
