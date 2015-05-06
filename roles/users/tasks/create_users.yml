@@ -1,0 +1,15 @@
+---
+- name: Create all users.
+  user:
+    name: "{{ item.name }}"
+    group: sudo
+    state: present
+  with_items: managed_users
+
+- name: Update authorized_keys for each user.
+  authorized_key:
+    user: "{{ item.name }}"
+    key: "{{ item.key }}"
+  with_items: managed_users
+  tags:
+    - pubkeys

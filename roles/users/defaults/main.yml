@@ -1,0 +1,11 @@
+---
+# this should be a list of users in the
+# following format:
+# 
+#   managed_users:
+#     - name: username
+#       key: <ssh key as a string>
+#     - name: user2
+#       key: <url to an ssh key>
+
+managed_users: []

@@ -1,0 +1,4 @@
+---
+- include: create_users.yml
+  tags:
+    - users

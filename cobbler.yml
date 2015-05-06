@@ -1,4 +1,5 @@
 ---
 - hosts: cobbler 
   roles:
+    - common
     - cobbler 
