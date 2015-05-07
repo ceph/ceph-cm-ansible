@@ -20,6 +20,7 @@ packages:
   - redhat-lsb
   - sysstat
   - gdb
+  - git-all
   - python-configobj
   # for running ceph
   - libedit
