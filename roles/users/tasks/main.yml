@@ -1,4 +1,25 @@
 ---
-- include: create_users.yml
+- name: Create all admin users with sudo access.
+  user:
+    name: "{{ item.name }}"
+    group: sudo
+    state: present
+  with_items: managed_admin_users
   tags:
     - users
+
+- name: Create all users without sudo access.
+  user:
+    name: "{{ item.name }}"
+    state: present
+  with_items: managed_users
+  tags:
+    - users
+
+- name: Update authorized_keys for each user.
+  authorized_key:
+    user: "{{ item.name }}"
+    key: "{{ item.key }}"
+  with_items: managed_users|list + managed_admin_users|list
+  tags:
+    - pubkeys
