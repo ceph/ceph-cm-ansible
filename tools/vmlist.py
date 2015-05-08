@@ -65,6 +65,11 @@ NOVACLIENT_VERSION = '2'
 
 class Cfg(object):
 
+    '''
+    Read INI-style config file; allow uppercase versions of
+    keys present in environment to override keys in the file
+    '''
+
     def __init__(self, file):
         self.cfgparser = ConfigParser.SafeConfigParser(
             defaults={
@@ -76,6 +81,9 @@ class Cfg(object):
         self.cfgparser.read(file)
 
     def get(self, key):
+        env_val = os.environ.get(key.upper())
+        if env_val:
+            return env_val
         return self.cfgparser.get('default', key)
 
 
