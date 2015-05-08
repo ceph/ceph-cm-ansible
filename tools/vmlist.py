@@ -15,7 +15,7 @@ CONFFILE = "~/.vmlist.conf"
 
 # mira004.front.sepia.ceph.com is dead
 
-VMMACHINES = textwrap.dedent('''\
+VM_HOSTS = textwrap.dedent('''\
     vercoi01.front.sepia.ceph.com
     vercoi02.front.sepia.ceph.com
     vercoi03.front.sepia.ceph.com
@@ -67,8 +67,8 @@ class Cfg(object):
 
     def __init__(self, file):
         self.cfgparser = ConfigParser.SafeConfigParser(
-            {
-                'vmmachines': VMMACHINES,
+            defaults={
+                'vm_hosts': VM_HOSTS,
                 'cachefile': CACHEFILE,
                 'novaclient_version': NOVACLIENT_VERSION,
             }
@@ -141,13 +141,13 @@ def list_nova(outputfile):
 
 
 usage = """
-Usage: vmlist [-r] [-m MACHINE]
+Usage: vmlist [-r] [-h VM_HOST]
 
 List all KVM, LXC, and OpenStack vms known
 
 Options:
     -r, --refresh           refresh cached list (cache in {cachefile})
-    -m, --machine MACHINE   get list from only this host, and do not cache
+    -h, --host MACHINE   get list from only this host, and do not cache
 """.format(cachefile=cfg.get('cachefile'))
 
 
@@ -156,11 +156,11 @@ def main():
     args = docopt.docopt(usage)
     cachefile = os.path.expanduser(cfg.get('cachefile'))
 
-    if args['--refresh'] or args['--machine']:
+    if args['--refresh'] or args['--host']:
 
         procs = []
         outfiles = []
-        hosts = args['--machine'] or cfg.get('vmmachines').split('\n')
+        hosts = [args['--host']] or cfg.get('vm_hosts').split('\n')
         for host in hosts:
             outfile = tempfile.NamedTemporaryFile()
             proc = multiprocessing.Process(
@@ -170,7 +170,7 @@ def main():
             outfiles.append(outfile)
             proc.start()
 
-        if not args['--machine']:
+        if not args['--host']:
             # one more for nova output
             outfile = tempfile.NamedTemporaryFile()
             proc = multiprocessing.Process(target=list_nova, args=(outfile,))
@@ -186,7 +186,7 @@ def main():
             lines.extend(fil.readlines())
         lines = sorted(lines)
 
-        if args['--machine']:
+        if args['--host']:
             sys.stdout.writelines(lines)
             return 0
 
