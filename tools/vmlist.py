@@ -118,6 +118,8 @@ def list_vms(host, outputfile):
 
 
 def list_nova(outputfile):
+    if outputfile is None:
+        outputfile = sys.stdout
     cloud_user = cfg.get('cloud_user')
     cloud_password = cfg.get('cloud_password')
     cloud_project = cfg.get('cloud_project')
@@ -134,7 +136,8 @@ def list_nova(outputfile):
         ]
         outputfile.writelines(output)
         outputfile.flush()
-        outputfile.seek(0)
+        if outputfile != sys.stdout:
+            outputfile.seek(0)
 
 
 usage = """
