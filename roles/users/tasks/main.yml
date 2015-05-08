@@ -6,7 +6,7 @@
     state: present
   with_items: managed_admin_users
   tags:
-    - users
+    - user
 
 - name: Create all users without sudo access.
   user:
@@ -14,7 +14,7 @@
     state: present
   with_items: managed_users
   tags:
-    - users
+    - user
 
 - name: Update authorized_keys for each user.
   authorized_key:
