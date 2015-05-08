@@ -90,7 +90,7 @@ class Cfg(object):
 cfg = Cfg(os.path.expanduser(CONFFILE))
 
 
-def list_vms(host, outputfile):
+def list_vms(host, outputfile=None):
     """
     Connect to host and collect lxc-ls and virsh list --all output
     """
@@ -125,7 +125,7 @@ def list_vms(host, outputfile):
         outputfile.seek(0)
 
 
-def list_nova(outputfile):
+def list_nova(outputfile=None):
     if outputfile is None:
         outputfile = sys.stdout
     cloud_user = cfg.get('cloud_user')
@@ -164,12 +164,15 @@ def main():
     args = docopt.docopt(usage)
     cachefile = os.path.expanduser(cfg.get('cachefile'))
 
-    if args['--refresh'] or args['--host']:
+    if args['--host']:
+        list_vms(args['--host'])
+        return 0
+
+    if args['--refresh']:
 
         procs = []
         outfiles = []
-        hosts = [args['--host']] or cfg.get('vm_hosts').split('\n')
-        for host in hosts:
+        for host in cfg.get('vm_hosts').split('\n'):
             outfile = tempfile.NamedTemporaryFile()
             proc = multiprocessing.Process(
                 target=list_vms, args=(host, outfile)
@@ -178,13 +181,12 @@ def main():
             outfiles.append(outfile)
             proc.start()
 
-        if not args['--host']:
-            # one more for nova output
-            outfile = tempfile.NamedTemporaryFile()
-            proc = multiprocessing.Process(target=list_nova, args=(outfile,))
-            procs.append(proc)
-            outfiles.append(outfile)
-            proc.start()
+        # one more for nova output
+        outfile = tempfile.NamedTemporaryFile()
+        proc = multiprocessing.Process(target=list_nova, args=(outfile,))
+        procs.append(proc)
+        outfiles.append(outfile)
+        proc.start()
 
         for proc in procs:
             proc.join()
@@ -193,10 +195,6 @@ def main():
         for fil in outfiles:
             lines.extend(fil.readlines())
         lines = sorted(lines)
-
-        if args['--host']:
-            sys.stdout.writelines(lines)
-            return 0
 
         with open(os.path.expanduser(cachefile), 'w') as cache:
             cache.write(''.join(lines))
