@@ -7,4 +7,5 @@
     group: root
     mode: 0644
   notify:
+    - start rpcbind
     - start nfs-server
