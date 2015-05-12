@@ -9,6 +9,7 @@ snippets:
   - cephlab_apt-mirror_hack
   - cephlab_packages_rhel
   - cephlab_rc_local
+  - cephlab_rhel_disks
 
 scripts:
   - cephlab_preseed_late
