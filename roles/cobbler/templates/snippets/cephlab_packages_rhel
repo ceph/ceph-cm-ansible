@@ -1,3 +1,8 @@
 ## {{ ansible_managed }}
+#set os_version = $getVar('os_version','')
+#if $os_version == 'rhel6'
+# Ansible seems to need the SELinux python bindings on RHEL6
+libselinux-python
+#end if
 perl
 wget
