@@ -9,10 +9,17 @@
     name: "{{ ssh_service_name }}"
     state: restarted
 
+- name: start rpcbind
+  service:
+    name: rpcbind
+    state: started
+    enabled: yes
+
 - name: start nfs-server
   service:
     name: "{{ nfs_service }}"
     state: started 
+    enabled: yes
 
 - name: restart cron
   service:
