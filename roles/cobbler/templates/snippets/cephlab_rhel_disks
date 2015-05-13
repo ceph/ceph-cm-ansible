@@ -1,0 +1,15 @@
+## {{ ansible_managed }}
+#set os_version = $getVar('os_version','')
+# Partition clearing information
+clearpart --all --initlabel
+# Use a small root partition on one disk
+part / --fstype="ext4" --ondisk=sda --size=20000
+# Clear the Master Boot Record
+zerombr
+# System bootloader configuration
+#if $os_version == 'rhel7'
+    #set bootloader_args = "--location=mbr --boot-drive=sda"
+#else
+    #set bootloader_args = "--location=mbr --driveorder=sda"
+#end if
+bootloader $bootloader_args
