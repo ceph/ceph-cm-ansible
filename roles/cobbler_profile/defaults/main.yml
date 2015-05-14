@@ -1,0 +1,17 @@
+---
+distros:
+  # Distros with empty iso values will be skipped. These dicts will be 
+  # updated with same-named items in an 'extra_distros' var, which can be 
+  # set in the secrets repo.
+  "RHEL-6.6-Server-x86_64":
+      iso: ""
+  "RHEL-7.0-Server-x86_64":
+      iso: ""
+  "RHEL-7.1-Server-x86_64":
+      iso: ""
+  "CentOS-7-x86_64":
+      iso: http://ftp.linux.ncsu.edu/pub/CentOS/7/isos/x86_64/CentOS-7-x86_64-DVD-1503-01.iso
+      kickstart: cephlab_rhel.ks
+  "CentOS-6.6-x86_64":
+      iso: http://ftp.linux.ncsu.edu/pub/CentOS/6.6/isos/x86_64/CentOS-6.6-x86_64-bin-DVD1.iso
+      kickstart: cephlab_rhel.ks

@@ -1,0 +1,13 @@
+---
+- name: Update distro signatures
+  command: cobbler signature update
+
+- name: Create ISO directory
+  file:
+      path: "{{ iso_dir }}"
+      state: directory
+
+- name: Create ISO mountpoint
+  file:
+      path: "{{ iso_mount }}"
+      state: directory

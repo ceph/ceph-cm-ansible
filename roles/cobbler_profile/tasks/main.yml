@@ -1,0 +1,4 @@
+---
+- include: import_distro.yml
+  tags:
+    - distros

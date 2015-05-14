@@ -1,4 +1,9 @@
 ---
+# Where to download ISOs
+iso_dir: /var/lib/cobbler/isos
+# Mount point to use for ISOs during import
+iso_mount: /mnt/iso
+
 kickstarts:
   - cephlab_trusty.preseed
   - cephlab_rhel.ks

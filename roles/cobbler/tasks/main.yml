@@ -2,3 +2,7 @@
 - include: upload_templates.yml
   tags:
     - templates
+
+- include: distro_prep.yml
+  tags:
+    - distros
