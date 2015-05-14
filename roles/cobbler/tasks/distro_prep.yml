@@ -1,0 +1,3 @@
+---
+- name: Update distro signatures
+  command: cobbler signature update
