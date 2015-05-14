@@ -1,0 +1,25 @@
+---
+- name: Create ISO directory
+  file:
+      path: "{{ iso_dir }}"
+      state: directory
+
+- name: Create ISO mountpoint
+  file:
+      path: "{{ iso_mount }}"
+      state: directory
+
+- name: Set ISO name
+  set_fact:
+      iso_name: "{{ distro.iso.split('/')[-1] }}"
+
+- name: Set ISO path
+  set_fact:
+      iso_path: "{{ iso_dir }}/{{ iso_name }}"
+
+- name: Download ISO
+  get_url:
+      url={{ distro.iso }}
+      dest={{ iso_path }}
+  when: profile is defined and profile.stdout == ''
+  register: download

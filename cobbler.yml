@@ -3,3 +3,8 @@
   roles:
     - common
     - cobbler 
+    - { role: cobbler_profile, distro_name: RHEL-6.6-Server-x86_64 }
+    - { role: cobbler_profile, distro_name: RHEL-7.0-Server-x86_64 }
+    - { role: cobbler_profile, distro_name: RHEL-7.1-Server-x86_64 }
+    - { role: cobbler_profile, distro_name: CentOS-7-x86_64 }
+    - { role: cobbler_profile, distro_name: CentOS-6.6-x86_64 }
