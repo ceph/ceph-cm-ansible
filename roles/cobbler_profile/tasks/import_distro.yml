@@ -33,7 +33,8 @@
 
 - name: Mount ISO
   command: mount -o loop {{ iso_path }} {{ iso_mount }}
-  when: download|changed
+  when: download|changed or (iso_stat.stat.exists and
+        profile is defined and profile.stdout == '')
   register: mount
 
 - name: Set arch

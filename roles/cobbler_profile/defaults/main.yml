@@ -1,9 +1,4 @@
 ---
-# Where to download ISOs
-iso_dir: /var/lib/cobbler/isos
-# Mount point to use for ISOs during import
-iso_mount: /mnt/iso
-
 distros:
   # Distros with empty iso values will be skipped. These dicts will be 
   # updated with same-named items in an 'extra_distros' var, which can be 
