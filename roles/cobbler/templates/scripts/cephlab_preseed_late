@@ -2,6 +2,9 @@
 # Start preseed_late_default
 # This script runs in the chroot /target by default
 $SNIPPET('post_install_network_config_deb')
+# set kernel options as defined by the system, profile or distro
+# in the Kernel Options (Post Install) field which populates the var kernel_options_post
+$SNIPPET('cephlab_post_install_kernel_options')
 $SNIPPET('late_apt_repo_config')
 $SNIPPET('post_run_deb')
 $SNIPPET('download_config_files')
