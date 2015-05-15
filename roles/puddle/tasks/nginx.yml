@@ -1,6 +1,8 @@
 ---
 - name: install nginx web server
-  yum: name=nginx state=present
+  yum:
+    name: nginx
+    state: present
 
 - name: create nginx docroot
   file:
@@ -17,4 +19,7 @@
    - restart nginx
 
 - name: start the nginx service
-  service: name=nginx state=started enabled=yes
+  service:
+    name: nginx
+    state: started
+    enabled: yes
