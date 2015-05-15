@@ -12,10 +12,13 @@ epel_repos:
   epel:
     name: "Extra Packages for Enterprise Linux"
     baseurl: "{{ epel_mirror_baseurl }}/{{ ansible_distribution_major_version }}/$basearch"
-    enabled: 1
+    # ternary requires ansible >= 1.9
+    enabled: "{{ enable_epel | ternary(1, 0) }}"
     gpgcheck: 0
   epel-testing:
     name: "Extra Packages for Enterprise Linux - Testing"
     baseurl: "{{ epel_mirror_baseurl }}/testing/{{ ansible_distribution_major_version }}/$basearch"
     enabled: 0
     gpgcheck: 0
+
+enable_epel: true
