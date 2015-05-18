@@ -9,3 +9,7 @@
 #       name: "epel"
 #
 yum_repos: []
+
+# a list of repo names as strings to delete from /etc/yum.repos.d
+# the name should not include the .repo extension
+remove_yum_repos: []

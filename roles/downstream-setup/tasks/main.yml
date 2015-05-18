@@ -1,4 +1,10 @@
 ---
 - include: yum_repos.yml
+  when: yum_repos|length > 0
   tags:
     - yum-repos
+
+- include: remove_yum_repos.yml
+  when: remove_yum_repos|length > 0
+  tags:
+    - delete-yum-repos
