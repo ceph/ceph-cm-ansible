@@ -7,6 +7,7 @@ iso_mount: /mnt/iso
 kickstarts:
   - cephlab_trusty.preseed
   - cephlab_rhel.ks
+  - cephlab_ubuntu.preseed
   
 snippets:
   - cephlab_user
@@ -15,6 +16,7 @@ snippets:
   - cephlab_packages_rhel
   - cephlab_rc_local
   - cephlab_rhel_disks
+  - cephlab_post_install_kernel_options
 
 scripts:
   - cephlab_preseed_late
