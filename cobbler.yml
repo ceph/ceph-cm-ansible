@@ -8,3 +8,6 @@
     - { role: cobbler_profile, distro_name: RHEL-7.1-Server-x86_64 }
     - { role: cobbler_profile, distro_name: CentOS-7-x86_64 }
     - { role: cobbler_profile, distro_name: CentOS-6.6-x86_64 }
+    - { role: cobbler_profile, distro_name: Ubuntu-12.04-server-x86_64 }
+    - { role: cobbler_profile, distro_name: Ubuntu-14.04-server-x86_64 }
+    - { role: cobbler_profile, distro_name: Ubuntu-15.04-server-x86_64 }

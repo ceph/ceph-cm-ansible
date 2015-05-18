@@ -15,3 +15,12 @@ distros:
   "CentOS-6.6-x86_64":
       iso: http://ftp.linux.ncsu.edu/pub/CentOS/6.6/isos/x86_64/CentOS-6.6-x86_64-bin-DVD1.iso
       kickstart: cephlab_rhel.ks
+  "Ubuntu-12.04-server-x86_64":
+      iso: "http://releases.ubuntu.com/12.04/ubuntu-12.04.5-server-amd64.iso"
+      kickstart: cephlab_ubuntu.preseed
+  "Ubuntu-14.04-server-x86_64":
+      iso: "http://releases.ubuntu.com/14.04/ubuntu-14.04.2-server-amd64.iso"
+      kickstart: cephlab_ubuntu.preseed
+  "Ubuntu-15.04-server-x86_64":
+      iso: "http://releases.ubuntu.com/15.04/ubuntu-15.04-server-amd64.iso"
+      kickstart: cephlab_ubuntu.preseed
