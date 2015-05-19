@@ -10,8 +10,8 @@
 
 # The general idea is to make sure we don't run out of disk space on our VM.
 
-cd /etc/distill/ceph
-run-distill el7-test
+cd /etc/distill/rcm-metadata/distill_ng/ceph
+run-distill test
 
 set -e
 

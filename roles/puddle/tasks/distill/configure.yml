@@ -1,24 +1,19 @@
 ---
 - name: add ceph distill config dir
   file:
-    path: /etc/distill/ceph
+    path: /etc/distill/
     owner: root
     group: root
     mode: 0755
     state: directory
 
-- name: add distill config files
-  template:
-    src: "../../templates/distill/{{ item }}"
-    dest: "/etc/distill/ceph/{{ item }}"
-    owner: root
-    group: root
-    mode: 0644
-  with_items:
-    - ceph-1.3-rhel-7.conf
-    - comps-ceph-1.3-rhel-7.xml
-    - run-distill.conf
-    - variants-ceph-1.3-rhel-7.xml
+# This repository contains distill's configuration files.
+- name: clone rcm-metadata.git
+  git:
+    dest: /etc/distill/rcm-metadata
+    repo: "{{ distill.rcm_metadata_repo }}"
+    update: no
+    version: ceph
 
 # distill requires this symlink in order to run.
 - name: symlink /mnt/brew
