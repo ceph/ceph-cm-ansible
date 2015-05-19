@@ -18,5 +18,7 @@ export ANSIBLE_SSH_PIPELINING=1
 # Tell ansible to create users and populate authorized_keys
 ansible-playbook testnodes.yml -v --limit $name* --tags user,pubkeys 2>&1 > /var/log/ansible/$name.log
 # Now run the rest of the playbook. If it fails, at least we have access.
-ansible-playbook testnodes.yml -v --limit $name* --skip-tags user,pubkeys 2>&1 >> /var/log/ansible/$name.log
+# Background it so that the request doesn't block for this part and end up 
+# causing the client to retry, thus spawning this trigger multiple times
+ansible-playbook testnodes.yml -v --limit $name* --skip-tags user,pubkeys 2>&1 >> /var/log/ansible/$name.log &
 popd
