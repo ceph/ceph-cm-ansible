@@ -71,21 +71,14 @@
     state: unmounted
   when: mount is defined and mount|changed
 
-- name: Set kickstart path
+# If either the profile already existed or we successfully imported the
+# distro, we might want to update other options in the profile. i.e. kickstarts
+- name: Set profile_found
   set_fact:
-    kickstart_path: /var/lib/cobbler/kickstarts/{{ distro.kickstart }}
-  # If either the profile already existed or we successfully imported the
-  # distro, let's see if we need to change the kickstart.
-  when: distro.kickstart is defined and distro.kickstart != '' and
+    profile_found:
         ((profile is defined and profile.stdout == distro_name) or
          (import is defined and import.rc == 0))
 
-- name: Check to see if the kickstart needs updating
-  shell: cobbler profile dumpvars --name={{ distro_name }} | grep '^kickstart :' | awk '{ print $3 }'
-  when: kickstart_path is defined
-  changed_when: false
-  register: kickstart
-
-- name: "Set the profile's kickstart"
-  command: cobbler profile edit --name={{ distro_name }} --kickstart={{ kickstart_path }}
-  when: kickstart is defined and kickstart.stdout != kickstart_path
+- include: update_kickstart.yml
+  when: distro.kickstart is defined and distro.kickstart != '' and
+        profile_found
