@@ -19,7 +19,7 @@ set -e
 keep=20
 
 # $compose_config is this is the directory in htdocs that we want to clean up. 
-compose_config=1.3-candidate-trees
+compose_config=1.3-compose-trees
 
 # Eventually we will want to refactor the rest of this script into a function
 # and loop over more compose_configs here.
