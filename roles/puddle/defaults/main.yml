@@ -26,7 +26,4 @@ puddle:
   announcer: ''
 
 distill:
-  brewhub_url: ''
-  rhel_7_lookaside_repo_x86_64_url: ''
-  rhel_7_lookaside_repo_src_url: ''
-  email: ''
+  rcm_metadata_repo: ''

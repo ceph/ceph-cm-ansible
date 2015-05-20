@@ -10,8 +10,8 @@
 
 # The general idea is to make sure we don't run out of disk space on our VM.
 
-cd /etc/distill/ceph
-run-distill el7-test
+cd /etc/distill/rcm-metadata/distill_ng/ceph
+run-distill test
 
 set -e
 
@@ -19,7 +19,7 @@ set -e
 keep=20
 
 # $compose_config is this is the directory in htdocs that we want to clean up. 
-compose_config=1.3-candidate-trees
+compose_config=1.3-compose-trees
 
 # Eventually we will want to refactor the rest of this script into a function
 # and loop over more compose_configs here.
@@ -35,15 +35,8 @@ pushd $target/latest-Ceph-1-RHEL-7
   rm -r compose/{Calamari,MON,OSD}
   pushd compose/Installer
     # Remove more things that we don't need
-    rm -r x86_64/{debug,jigdo,os}/
+    rm -r x86_64/{debug,os}/
     rm -r source/tree/
-    # This ISO is only the "Installer" ISO, not the unified one. Remove it.
-    rm x86_64/iso/$compose_id-Installer-x86_64-dvd1.iso*
-    rm source/iso/$compose_id-Installer-source-dvd1.iso*
-    # These checksums are for the "Installer" ISO (see above).
-    rm {source,x86_64}/iso/MD5SUM
-    rm {source,x86_64}/iso/SHA1SUM
-    rm {source,x86_64}/iso/SHA256SUM
     # We are now left with two single "unified" ISOs in /x86_64 and in /source.
   popd # compose/Installer
 popd # $target
