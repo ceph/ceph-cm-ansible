@@ -80,5 +80,16 @@
          (import is defined and import.rc == 0))
 
 - include: update_kickstart.yml
-  when: distro.kickstart is defined and distro.kickstart != '' and
+  when: distro.kickstart is defined and
+        distro.kickstart != '' and
+        profile_found
+
+- include: update_kernel_options.yml
+  when: distro.kernel_options is defined and
+        distro.kernel_options != '' and
+        profile_found
+
+- include: update_kernel_options_post.yml
+  when: distro.kernel_options_post is defined and
+        distro.kernel_options_post != '' and
         profile_found
