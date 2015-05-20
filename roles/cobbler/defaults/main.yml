@@ -5,7 +5,6 @@ iso_dir: /var/lib/cobbler/isos
 iso_mount: /mnt/iso
 
 kickstarts:
-  - cephlab_trusty.preseed
   - cephlab_rhel.ks
   - cephlab_ubuntu.preseed
   
