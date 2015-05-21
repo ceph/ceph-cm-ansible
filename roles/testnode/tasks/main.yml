@@ -64,3 +64,10 @@
 - include: pip.yml
   tags:
     - pip
+
+# Touch a file to indicate we are done. This is something chef did;
+# teuthology.task.internal.vm_setup() expects it.
+- name: Touch /ceph-qa-ready
+  file:
+      path: /ceph-qa-ready
+      state: touch
