@@ -31,8 +31,24 @@
 - include: download_iso.yml
   when: distro.iso != ''
 
+# we do this so that if the playbook fails
+# after mounting and we need to run it again
+# then we'll remount and complete the rest
+# of the tasks like it's the first run
+- name: Clear the mount point.
+  mount:
+    name: "{{ iso_mount }}"
+    src: "{{ iso_path }}"
+    fstype: "iso9660"
+    state: unmounted
+
 - name: Mount ISO
-  command: mount -o loop {{ iso_path }} {{ iso_mount }}
+  mount:
+    name: "{{ iso_mount }}"
+    src: "{{ iso_path }}"
+    opts: "loop"
+    fstype: "iso9660"
+    state: mounted
   when: download|changed or (iso_stat.stat.exists and
         profile is defined and profile.stdout == '')
   register: mount
@@ -40,32 +56,40 @@
 - name: Set arch
   set_fact:
       arch: "{{ distro.arch|default('x86_64') }}"
-  when: mount is defined and mount.rc == 0
+  when: mount is defined and mount|changed
 
 - name: Import the distro (also creates the profile)
   command: cobbler import --path={{ iso_mount }} --name={{ distro_name }} --arch={{ arch }}
   register: import
-  when: mount is defined and mount.rc == 0
+  when: mount is defined and mount|changed
 
 - name: Unmount ISO
-  command: umount {{ iso_mount }}
-  when: mount is defined and mount.rc == 0
+  mount:
+    name: "{{ iso_mount }}"
+    src: "{{ iso_path }}"
+    fstype: "iso9660"
+    state: unmounted
+  when: mount is defined and mount|changed
 
-- name: Set kickstart path
+# If either the profile already existed or we successfully imported the
+# distro, we might want to update other options in the profile. i.e. kickstarts
+- name: Set profile_found
   set_fact:
-    kickstart_path: /var/lib/cobbler/kickstarts/{{ distro.kickstart }}
-  # If either the profile already existed or we successfully imported the
-  # distro, let's see if we need to change the kickstart.
-  when: distro.kickstart is defined and distro.kickstart != '' and
+    profile_found:
         ((profile is defined and profile.stdout == distro_name) or
          (import is defined and import.rc == 0))
 
-- name: Check to see if the kickstart needs updating
-  shell: cobbler profile dumpvars --name={{ distro_name }} | grep '^kickstart :' | awk '{ print $3 }'
-  when: kickstart_path is defined
-  changed_when: false
-  register: kickstart
+- include: update_kickstart.yml
+  when: distro.kickstart is defined and
+        distro.kickstart != '' and
+        profile_found
 
-- name: "Set the profile's kickstart"
-  command: cobbler profile edit --name={{ distro_name }} --kickstart={{ kickstart_path }}
-  when: kickstart is defined and kickstart.stdout != kickstart_path
+- include: update_kernel_options.yml
+  when: distro.kernel_options is defined and
+        distro.kernel_options != '' and
+        profile_found
+
+- include: update_kernel_options_post.yml
+  when: distro.kernel_options_post is defined and
+        distro.kernel_options_post != '' and
+        profile_found

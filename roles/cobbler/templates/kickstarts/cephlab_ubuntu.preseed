@@ -1,8 +1,15 @@
 ## {{ ansible_managed }}
+
+# Fetch the os_version from the distro using this profile.
+#set os_version = $getVar('os_version','')
+
 ### Apt setup
 # You can choose to install non-free and contrib software.
 #d-i apt-setup/non-free boolean true
 #d-i apt-setup/contrib boolean true
+
+# Preseeding only locale sets language, country and locale.
+d-i debian-installer/locale string en_US
 
 # Keyboard selection.
 # Disable automatic (interactive) keymap detection.
@@ -11,9 +18,9 @@ d-i console-setup/ask_detect boolean false
 # If you select ftp, the mirror/country string does not need to be set.
 #d-i mirror/protocol string ftp
 d-i mirror/country string manual
-d-i mirror/http/hostname string {{ mirror_host }}
-d-i mirror/http/directory string /archive.ubuntu.com/ubuntu 
-d-i mirror/suite string trusty
+d-i mirror/http/hostname string archive.ubuntu.com
+d-i mirror/http/directory string /ubuntu
+d-i mirror/suite string $os_version
 
 #Removes the prompt about missing modules:
 # Continue without installing a kernel?
@@ -79,9 +86,11 @@ d-i user-setup/allow-password-weak boolean false
 d-i user-setup/encrypt-home boolean false
 
 # Individual additional packages to install
+#if $os_version == 'precise'
+d-i pkgsel/include string wget ntpdate bash sudo openssh-server
+#else
 d-i pkgsel/include string u-boot-tools pastebinit initramfs-tools wget linux-firmware linux-firmware-nonfree ntpdate bash devmem2 fbset sudo openssh-server udev-discover
-
-# d-i pkgsel/include string u-boot-tools pastebinit initramfs-tools wget linux-firmware linux-firmware-nonfree ntpdate bash devmem2 fbset sudo ipcalc openssh-server nagios-nrpe-server smartmontools  udev-discover xfsprogs
+#end if
 
 # Whether to upgrade packages after debootstrap.
 # Allowed values: none, safe-upgrade, full-upgrade

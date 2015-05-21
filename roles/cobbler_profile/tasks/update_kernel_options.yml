@@ -1,0 +1,15 @@
+---
+# This returns additional kernel_options not explicitly set in the profile by us.
+# These values come from the distro import, I believe. Here's some example output from the vivid profile:
+# ksdevice=bootif lang=  biosdevname=0 text netcfg/choose_interface=auto console=tty0 console=ttyS1,115200
+# The 'ksdevice=bootif lang=' was not added by the profile and persists even when resetting the kernel_options
+# in the next task. This means that setting kernel_options will never be idempotent.
+- name: Check to see if kernel_options needs updating
+  shell: "cobbler profile dumpvars --name={{ distro_name }} | grep '^kernel_options :' | cut -d : -f 2" 
+  changed_when: false
+  register: kernel_options
+
+# This task is not idempotent because of the reason mentioned above.
+- name: "Set the profile's kernel_options"
+  command: cobbler profile edit --name={{ distro_name }} --kopts='{{ distro.kernel_options }}'
+  when: kernel_options.stdout.strip() != distro.kernel_options
