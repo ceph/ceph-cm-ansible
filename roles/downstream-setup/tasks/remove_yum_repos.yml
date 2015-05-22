@@ -1,0 +1,6 @@
+---
+- name: Delete yum repos from /etc/yum.repos.d
+  file:
+    path: "/etc/yum.repos.d/{{ item }}.repo"
+    state: absent
+  with_items: remove_yum_repos

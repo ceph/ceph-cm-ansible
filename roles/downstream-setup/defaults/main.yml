@@ -1,0 +1,15 @@
+---
+# yum_repos is a list of hashes that
+# define the url to download the yum repo
+# from and the name to save it as in etc/yum.repos.d
+#
+# For example:
+#   yum_repos:
+#     - url: "http://path/to/epel.repo"
+#       name: "epel"
+#
+yum_repos: []
+
+# a list of repo names as strings to delete from /etc/yum.repos.d
+# the name should not include the .repo extension
+remove_yum_repos: []

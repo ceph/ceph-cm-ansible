@@ -1,0 +1,7 @@
+---
+- name: Download yum repos to /etc/yum.repos.d
+  get_url:
+    url: "{{ item.url }}"
+    dest: "/etc/yum.repos.d/{{ item.name }}.repo"
+    force: yes
+  with_items: yum_repos
