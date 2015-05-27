@@ -1,0 +1,10 @@
+---
+- name: Checkout ceph-cm-ansible
+  git: repo=https://github.com/ceph/ceph-cm-ansible.git
+       dest=/root/ceph-cm-ansible
+       accept_hostkey=true
+
+- name: Checkout secrets repo
+  git: repo={{ secrets_repo.url }}
+       dest=/root/{{ secrets_repo.name }}
+       accept_hostkey=true

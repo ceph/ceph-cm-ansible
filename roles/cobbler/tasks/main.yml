@@ -1,4 +1,8 @@
 ---
+- include: fetch_cm_repos.yml
+  tags:
+   - cm_repos
+
 - include: upload_templates.yml
   tags:
     - templates
