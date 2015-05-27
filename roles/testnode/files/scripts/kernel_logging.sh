@@ -13,9 +13,9 @@ if grep -q '^GRUB_CMDLINE_LINUX=.*".*console=tty0 console=ttyS[012],115200' $f; 
 else
 if [ $typicacheck -gt 0 ]
 then
-if grep -q '^GRUB_CMDLINE_LINUX=.*".*console=tty0 console=ttyS[012],115200' $f; then sed 's/console=ttyS[012]/console=ttyS0/' <$f >$f.chef; fi
+if grep -q '^GRUB_CMDLINE_LINUX=.*".*console=ttyS[012],115200' $f; then sed 's/console=ttyS[012]/console=ttyS0/' <$f >$f.chef; fi
 else
-if grep -q '^GRUB_CMDLINE_LINUX=.*".*console=tty0 console=ttyS[01],115200' $f; then sed 's/console=ttyS[01]/console=ttyS1/' <$f >$f.chef; fi
+if grep -q '^GRUB_CMDLINE_LINUX=.*".*console=ttyS[01],115200' $f; then sed 's/console=ttyS[01]/console=ttyS1/' <$f >$f.chef; fi
 fi
 fi
 
@@ -26,9 +26,10 @@ if ! grep -q '^GRUB_CMDLINE_LINUX=.*".* console=tty0 console=ttyS[012],115200.*'
 else
 if [ $typicacheck -gt 0 ]
 then
-if ! grep -q '^GRUB_CMDLINE_LINUX=.*".* console=tty0 console=ttyS[012],115200.*' $f; then sed 's/^GRUB_CMDLINE_LINUX="\(.*\)"$/GRUB_CMDLINE_LINUX="\1 console=tty0 console=ttyS0,115200"/' <$f >$f.chef; fi
+if ! grep -q '^GRUB_CMDLINE_LINUX=.*".*console=ttyS[012],115200.*' $f; then sed 's/^GRUB_CMDLINE_LINUX="\(.*\)"$/GRUB_CMDLINE_LINUX="\1 console=ttyS0,115200"/' <$f >$f.chef; fi
 else
-if ! grep -q '^GRUB_CMDLINE_LINUX=.*".* console=tty0 console=ttyS[01],115200.*' $f; then sed 's/^GRUB_CMDLINE_LINUX="\(.*\)"$/GRUB_CMDLINE_LINUX="\1 console=tty0 console=ttyS1,115200"/' <$f >$f.chef; fi
+if ! grep -q '^GRUB_CMDLINE_LINUX=.*".* console=ttyS[01],115200.*' $f; then sed 's/^GRUB_CMDLINE_LINUX="\(.*\)"$/GRUB_CMDLINE_LINUX="\1 console=ttyS1,115200"/' <$f >$f.chef; fi
++      if grep -q '^GRUB_CMDLINE_LINUX=.*".*console=ttyS[01],115200' $f; then sed 's/console=ttyS[01]/console=ttyS1/' <$f >$f.chef; fi
 fi
 fi
 
@@ -65,7 +66,7 @@ fi
 sed -i 's/^GRUB_HIDDEN_TIMEOUT.*//g' $f
 
 #No PCI reallocation (breaks 10 gig on burnupi)
-sed -i 's;" console=tty0;"pci=realloc=off console=tty0;g' $f
+sed -i 's;" console=ttyS;"pci=realloc=off console=ttyS;g' $f
 
 #set verbose kernel output via dmesg:
 if ! grep -q dmesg /etc/rc.local; then sed -i 's/^exit 0/dmesg -n 7\nexit 0/g' /etc/rc.local; fi
