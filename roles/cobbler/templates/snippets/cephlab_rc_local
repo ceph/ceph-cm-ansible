@@ -15,7 +15,7 @@ if [ -e $lockfile ]; then
 fi
 
 # Wait just a bit for the network to come up
-sleep 15
+sleep 30
 # Run the post-install trigger a second time
 wget -t1 -O /dev/null "http://$http_server:$http_port/cblr/svc/op/trig/mode/post/system/$system_name" || true
 touch $lockfile
