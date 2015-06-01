@@ -16,6 +16,7 @@ snippets:
   - cephlab_rc_local
   - cephlab_rhel_disks
   - cephlab_post_install_kernel_options
+  - cephlab_ubuntu_network
 
 scripts:
   - cephlab_preseed_late
@@ -27,3 +28,10 @@ ssh_keys: []
 
 ansible_user: ''
 ansible_user_uid_: ''
+
+# A list of lines to add to resolv.conf and resolv.conf.d/base
+# An example:
+#   resolvconf:
+#      - "nameserver x.x.x.x"
+#      - "search an.example.com"
+resolvconf: []
