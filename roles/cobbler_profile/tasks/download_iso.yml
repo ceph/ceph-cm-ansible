@@ -1,12 +1,4 @@
 ---
-- name: Set ISO name
-  set_fact:
-      iso_name: "{{ distro.iso.split('/')[-1] }}"
-
-- name: Set ISO path
-  set_fact:
-      iso_path: "{{ iso_dir }}/{{ iso_name }}"
-
 - name: Check to see if the ISO exists
   stat: path={{ iso_path }} get_checksum=no get_md5=no
   register: iso_stat

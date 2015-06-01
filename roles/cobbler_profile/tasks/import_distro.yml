@@ -28,6 +28,14 @@
   ignore_errors: true
   changed_when: false
 
+- name: Set ISO name
+  set_fact:
+      iso_name: "{{ distro.iso.split('/')[-1] }}"
+
+- name: Set ISO path
+  set_fact:
+      iso_path: "{{ iso_dir }}/{{ iso_name }}"
+
 - include: download_iso.yml
   when: distro.iso != ''
 
