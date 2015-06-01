@@ -29,7 +29,7 @@ then
 if ! grep -q '^GRUB_CMDLINE_LINUX=.*".*console=ttyS[012],115200.*' $f; then sed 's/^GRUB_CMDLINE_LINUX="\(.*\)"$/GRUB_CMDLINE_LINUX="\1 console=ttyS0,115200"/' <$f >$f.chef; fi
 else
 if ! grep -q '^GRUB_CMDLINE_LINUX=.*".* console=ttyS[01],115200.*' $f; then sed 's/^GRUB_CMDLINE_LINUX="\(.*\)"$/GRUB_CMDLINE_LINUX="\1 console=ttyS1,115200"/' <$f >$f.chef; fi
-+      if grep -q '^GRUB_CMDLINE_LINUX=.*".*console=ttyS[01],115200' $f; then sed 's/console=ttyS[01]/console=ttyS1/' <$f >$f.chef; fi
+if grep -q '^GRUB_CMDLINE_LINUX=.*".*console=ttyS[01],115200' $f; then sed 's/console=ttyS[01]/console=ttyS1/' <$f >$f.chef; fi
 fi
 fi
 
