@@ -17,6 +17,7 @@
     uid: 1000
     group: sudo
     groups: "{{ teuthology_user }}"
+    shell: /bin/bash
     state: present
 
 - name: Add a user for xfstests to test user quotas.
