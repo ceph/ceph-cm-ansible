@@ -1,4 +1,8 @@
 ---
+- name: Set the hostname
+  include: redhat/set_hostname.yml
+  tags:
+    - hostname
 
 - name: Include rhel 7.x specific tasks.
   include: redhat/rhel_7.yml
