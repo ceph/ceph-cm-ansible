@@ -2,8 +2,8 @@
 #set os_version = $getVar('os_version','')
 # Partition clearing information
 clearpart --all --initlabel
-# Use all of /dev/sda for the root partition
-part / --fstype="ext4" --ondisk=sda --grow
+# Use all of /dev/sda for the root partition (20G minimum)
+part / --fstype="ext4" --ondisk=sda --size=20000 --grow
 # Clear the Master Boot Record
 zerombr
 # System bootloader configuration
