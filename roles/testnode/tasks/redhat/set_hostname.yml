@@ -1,0 +1,23 @@
+---
+- name: Get hostname.
+  command: hostname
+  register: existing_hostname
+  changed_when: false
+
+- name: Correct hostname if it is 'localhost'
+  set_fact:
+    new_hostname: "{{ inventory_hostname.split('.')[0] }}"
+  when: existing_hostname is defined and
+        existing_hostname.stdout.find("localhost") != -1
+
+- name: Remove lab domain from hostname.
+  set_fact:
+    new_hostname: "{{ existing_hostname.stdout.split('.')[0] }}"
+  when: existing_hostname is defined and
+        existing_hostname.stdout.find("{{ lab_domain | mandatory }}") != -1
+
+- name: Set hostname.
+  hostname:
+     name: "{{ new_hostname }}"
+  when: existing_hostname is defined and
+        existing_hostname.stdout != new_hostname
