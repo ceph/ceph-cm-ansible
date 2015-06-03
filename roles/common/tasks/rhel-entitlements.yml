@@ -14,26 +14,53 @@
   changed_when: false
   no_log: true
 
+- name: Set rhsm_registered
+  set_fact:
+    rhsm_registered: "{{ subscription.rc == 0 }}"
+
 - name: Register with subscription-manager.
   command: subscription-manager register
            --activationkey={{ subscription_manager_activationkey }}
            --org={{ subscription_manager_org }}
   no_log: true
-  when: subscription is defined and
-        subscription.rc != 0
+  when: rhsm_registered == "False"
   register: entitled
   until: entitled|success
   retries: 5
   delay: 10
 
-- name: disable all rhsm repos
-  command: subscription-manager repos --disable '*'
+- name: Get list of enabled repos
+  shell: sudo subscription-manager repos --list | grep -B4 'Enabled:.*1' | grep 'Repo ID:' | sed -e 's/Repo ID:\s*\(.*\)/\1/' | sort
+  register: repo_list_cmd
+  # This only needs to happen if we are not newly-subscribed
+  when: rhsm_registered == "True"
+  changed_when: false
+
+- name: Store list of enabled repos
+  set_fact:
+    repo_list: "{{ repo_list_cmd.stdout.split('\n') }}"
+  when: repo_list_cmd is defined
+
+- name: Set replace_repos if rhsm_repos changed
+  set_fact:
+    replace_repos: "{{ repo_list.sort() != rhsm_repos.sort() }}"
+  when: repo_list is defined
+
+- name: Set replace_repos if newly-subscribed
+  set_fact:
+    replace_repos: True
   when: entitled|changed
 
-- name: enable necessary rhsm repos
+- name: Disable all rhsm repos
+  command: subscription-manager repos --disable '*'
+  when: replace_repos == "True"
+  # This produces an absurd amount of useless output
+  no_log: True
+
+- name: Enable necessary rhsm repos
   command: subscription-manager repos --enable {{ item }}
   with_items: rhsm_repos
-  when: entitled|changed and rhsm_repos|length > 0
+  when: replace_repos == "True" and rhsm_repos|length > 0
 
 - name: Remove old apt-mirror repository definition.
   file:
