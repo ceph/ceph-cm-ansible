@@ -3,3 +3,5 @@ rhsm_repos:
   - rhel-6-server-rpms
   - rhel-6-server-optional-rpms
   - rhel-6-server-extras-rpms
+  # for xfsprogs
+  - rhel-scalefs-for-rhel-6-server-rpms
