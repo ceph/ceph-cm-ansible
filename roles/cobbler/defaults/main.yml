@@ -4,6 +4,13 @@ iso_dir: /var/lib/cobbler/isos
 # Mount point to use for ISOs during import
 iso_mount: /mnt/iso
 
+etc_files:
+ - users.digest
+
+settings:
+  - name: yum_post_install_mirror
+    value: 0
+
 kickstarts:
   - cephlab_rhel.ks
   - cephlab_ubuntu.preseed
