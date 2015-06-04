@@ -1,4 +1,15 @@
 ---
+- name: Include cobbler keys.
+  include_vars: "{{ secrets_path | mandatory }}/cobbler_keys.yml"
+  no_log: true
+  tags:
+    - vars
+
+- name: Write cobbler keys
+  copy: content="{{ item.data }}" dest="{{ item.path }}" mode=600
+  with_items: cobbler_keys["{{ ansible_hostname}}"]
+  no_log: true
+
 - name: Include package type specific vars.
   include_vars: "{{ ansible_pkg_mgr }}_systems.yml"
 
@@ -18,7 +29,6 @@
 
 # TODO populate systems
 
-# FIXME put keypair in ~root to get the secrets repo
 - include: fetch_cm_repos.yml
   tags:
    - cm_repos
