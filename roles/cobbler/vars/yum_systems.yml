@@ -1,0 +1,5 @@
+---
+# cobbler-web pulls in cobbler
+cobbler_package: cobbler-web
+cobbler_service: cobblerd
+httpd_service: httpd

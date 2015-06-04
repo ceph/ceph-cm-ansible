@@ -1,0 +1,4 @@
+---
+cobbler_package: cobbler
+cobbler_service: cobbler
+httpd_service: apache2
