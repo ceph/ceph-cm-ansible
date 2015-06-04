@@ -1,0 +1,6 @@
+---
+- name: Install cobbler
+  yum:
+    name: "{{ cobbler_package }}"
+    state: latest
+  register: install_cobbler

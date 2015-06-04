@@ -1,4 +1,24 @@
 ---
+- name: Include package type specific vars.
+  include_vars: "{{ ansible_pkg_mgr }}_systems.yml"
+
+- include: yum_systems.yml
+  when: ansible_pkg_mgr == "yum"
+
+- include: apt_systems.yml
+  when: ansible_pkg_mgr == "apt"
+
+- name: Start cobbler
+  service:
+    name: "{{ cobbler_service }}"
+    state: started
+
+- name: Update settings
+  include: settings.yml
+
+# TODO populate systems
+
+# FIXME put keypair in ~root to get the secrets repo
 - include: fetch_cm_repos.yml
   tags:
    - cm_repos
@@ -10,3 +30,14 @@
 - include: distro_prep.yml
   tags:
     - distros
+
+- name: Restart cobbler
+  service:
+    name: "{{ cobbler_service }}"
+    state: restarted
+  changed_when: false
+
+- name: Start httpd
+  service:
+    name: "{{ httpd_service }}"
+    state: started

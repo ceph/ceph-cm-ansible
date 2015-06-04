@@ -1,0 +1,6 @@
+---
+- name: Install cobbler
+  apt:
+    name: "{{ cobbler_package }}"
+    state: latest
+  register: install_cobbler
