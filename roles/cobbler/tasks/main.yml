@@ -23,6 +23,13 @@
   service:
     name: "{{ cobbler_service }}"
     state: started
+    enabled: yes
+
+- name: Start httpd
+  service:
+    name: "{{ httpd_service }}"
+    state: started
+    enabled: yes
 
 - name: Update settings
   include: settings.yml
@@ -46,11 +53,6 @@
     name: "{{ cobbler_service }}"
     state: restarted
   changed_when: false
-
-- name: Start httpd
-  service:
-    name: "{{ httpd_service }}"
-    state: started
 
 - include: populate_systems.yml
   tags:
