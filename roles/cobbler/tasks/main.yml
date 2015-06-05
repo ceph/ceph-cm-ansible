@@ -51,3 +51,7 @@
   service:
     name: "{{ httpd_service }}"
     state: started
+
+- include: populate_systems.yml
+  tags:
+    - systems

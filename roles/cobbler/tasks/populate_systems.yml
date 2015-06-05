@@ -1,0 +1,27 @@
+---
+- name: Get list of cobbler systems
+  command: cobbler system list
+  register: cmd_cobbler_systems
+  no_log: true
+
+- name: Set cobbler_systems_current
+  set_fact:
+    cobbler_systems_current: "[{% for host in cmd_cobbler_systems.stdout.strip().split() %}'{{ host }}.{{ lab_domain }}, {% endfor %}]"
+
+- name: set cobbler_systems_add
+  set_fact:
+    cobbler_systems_add:
+      "{{ groups.cobbler_managed | difference(cobbler_systems_current) }}"
+
+- name: Add missing systems to cobbler
+  command: cobbler system add --name={{ item.split('.')[0] }} --profile={{ default_profile }} --mac={{ hostvars[item].mac }} --ip-address={{ hostvars[item].ip }} --interface={{ hostvars[item].interface }} --kopts="{{ hostvars[item].kernel_options }}" --netboot-enabled false
+  with_items: cobbler_systems_add
+
+- name: set cobbler_systems_update
+  set_fact:
+    cobbler_systems_update:
+      "{{ groups.cobbler_managed | intersect(cobbler_systems_current) }}"
+
+- name: Update existing systems in cobbler
+  command: cobbler system edit --name={{ item.split('.')[0] }} --mac={{ hostvars[item].mac }} --ip-address={{ hostvars[item].ip }} --interface={{ hostvars[item].interface }} --kopts="{{ hostvars[item].kernel_options }}"
+  with_items: cobbler_systems_update
