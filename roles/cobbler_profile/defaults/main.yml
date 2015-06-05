@@ -11,22 +11,27 @@ distros:
       iso: ""
   "CentOS-7-x86_64":
       iso: http://ftp.linux.ncsu.edu/pub/CentOS/7/isos/x86_64/CentOS-7-x86_64-DVD-1503-01.iso
+      sha256: 85bcf62462fb678adc0cec159bf8b39ab5515404bc3828c432f743a1b0b30157
       kickstart: cephlab_rhel.ks
   "CentOS-6.6-x86_64":
       iso: http://ftp.linux.ncsu.edu/pub/CentOS/6.6/isos/x86_64/CentOS-6.6-x86_64-bin-DVD1.iso
+      sha256: a63241b0f767afa1f9f7e59e6f0f00d6b8d19ed85936a7934222c03a92e61bf3
       kickstart: cephlab_rhel.ks
   "Ubuntu-12.04-server-x86_64":
       iso: "http://releases.ubuntu.com/12.04/ubuntu-12.04.5-server-amd64.iso"
+      sha256: af224223de99e2a730b67d7785b657f549be0d63221188e105445f75fb8305c9
       kickstart: cephlab_ubuntu.preseed
       kernel_options: "netcfg/choose_interface=auto biosdevname=0 console=tty0 console=ttyS1,115200"
       kernel_options_post: "pci=realloc=off console=tty0 console=ttyS1,115200"
   "Ubuntu-14.04-server-x86_64":
       iso: "http://releases.ubuntu.com/14.04/ubuntu-14.04.2-server-amd64.iso"
+      sha256: 8acd2f56bfcba2f7ac74a7e4a5e565ce68c024c38525c0285573e41c86ae90c0
       kickstart: cephlab_ubuntu.preseed
       kernel_options: "netcfg/choose_interface=auto biosdevname=0 console=tty0 console=ttyS1,115200"
       kernel_options_post: "pci=realloc=off console=tty0 console=ttyS1,115200"
   "Ubuntu-15.04-server-x86_64":
       iso: "http://releases.ubuntu.com/15.04/ubuntu-15.04-server-amd64.iso"
+      sha256: 6501c8545374665823384bbb6235f865108f56d8a30bbf69dd18df73c14ccb84
       kickstart: cephlab_ubuntu.preseed
       kernel_options: "netcfg/choose_interface=auto biosdevname=0 console=tty0 console=ttyS1,115200"
       kernel_options_post: "pci=realloc=off console=tty0 console=ttyS1,115200"
