@@ -3,3 +3,9 @@
 cobbler_package: cobbler-web
 cobbler_service: cobblerd
 httpd_service: httpd
+cobbler_extra_packages:
+  - syslinux
+  - pykickstart
+  - fence-agents-all
+  - ansible
+  - nmap

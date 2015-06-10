@@ -4,3 +4,10 @@
     name: "{{ cobbler_package }}"
     state: latest
   register: install_cobbler
+
+- name: Install extra cobbler packages
+  apt:
+    name: "{{ item }}"
+    state: latest
+  with_items: cobbler_extra_packages
+  when: cobbler_extra_packages|length > 0
