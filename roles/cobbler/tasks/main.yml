@@ -25,6 +25,21 @@
     state: started
     enabled: yes
 
+- name: Enable tftpd
+  lineinfile: dest=/etc/xinetd.d/tftp regexp=disable line="        disable                 = no"
+  register: tftp_enabled
+  tags:
+    - tftp
+
+- name: Reload xinetd
+  service:
+    name: xinetd
+    state: reloaded
+    enabled: yes
+  when: tftp_enabled|changed
+  tags:
+    - tftp
+
 - name: Start httpd
   service:
     name: "{{ httpd_service }}"
