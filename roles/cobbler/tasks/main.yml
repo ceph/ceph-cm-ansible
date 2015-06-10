@@ -72,3 +72,10 @@
 - include: populate_systems.yml
   tags:
     - systems
+
+- name: Run cobbler sync
+  command: cobbler sync
+  no_log: true
+
+- name: Run cobbler check
+  command: cobbler check
