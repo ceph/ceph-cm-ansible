@@ -46,6 +46,14 @@
     state: started
     enabled: yes
 
+- name: Get cobbler port
+  shell: cobbler setting report | grep xmlrpc_port | awk '{ FS=":"; print $3 }'
+  register: cobbler_port_cmd
+
+- name: Set cobbler port var
+  set_fact:
+    cobbler_port: "{{ cobbler_port_cmd.stdout.strip() }}"
+
 - name: Update settings
   include: settings.yml
   tags:
@@ -68,6 +76,9 @@
     name: "{{ cobbler_service }}"
     state: restarted
   changed_when: false
+
+- name: Wait for cobbler to start
+  wait_for: port={{ cobbler_port }}
 
 - include: populate_systems.yml
   tags:
