@@ -9,7 +9,7 @@ ANSIBLE_CM_PATH=/root/ceph-cm-ansible
 # Bail if the ssh port isn't open, as will be the case when this is run 
 # while the installer is still running. When this is triggered by 
 # /etc/rc.local after a reboot, the port will be open and we'll continue
-nc -vz $name 22
+nmap -sT -oG - -p 22 $name | grep 22/open
 
 mkdir -p /var/log/ansible
 
