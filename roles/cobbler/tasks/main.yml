@@ -48,8 +48,8 @@
 
 - name: Update settings
   include: settings.yml
-
-# TODO populate systems
+  tags:
+    - settings
 
 - include: fetch_cm_repos.yml
   tags:
