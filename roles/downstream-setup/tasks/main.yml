@@ -1,8 +1,16 @@
 ---
 - include: yum_repos.yml
-  when: yum_repos|length > 0
+  when: yum_repos|length > 0 and
+        not teardown
   tags:
     - yum-repos
+
+- name: Set remove_yum_repos on teardown
+  set_fact:
+    remove_yum_repos: "[{% for repo in yum_repos %}'{{ repo.name}}',{% endfor %}]"
+  when: yum_repos|length > 0 and
+        teardown and
+        remove_yum_repos|length == 0
 
 - include: remove_yum_repos.yml
   when: remove_yum_repos|length > 0
