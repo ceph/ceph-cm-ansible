@@ -1,6 +1,17 @@
 ---
+# Starting with ubuntu 15.04 we no longer maintain our own package mirrors.
+# For anything ubuntu < 15.04 or debian <=7 we still do.
 - name: Setup local repo files.
   include: apt/repos.yml
+  when: ansible_distribution_major_version < 15
+  tags:
+    - repos
+
+- name: Update apt cache.
+  apt:
+    update_cache: yes
+  when: ansible_distribution_major_version >= 15 and
+        ansible_distribution == "Ubuntu"
   tags:
     - repos
 
