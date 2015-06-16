@@ -1,4 +1,9 @@
 ---
+# When teardown is true the tasks being used might
+# perform teardown steps if applicable.
+teardown: false
+
+
 # yum_repos is a list of hashes that
 # define the url to download the yum repo
 # from and the name to save it as in etc/yum.repos.d
@@ -8,6 +13,8 @@
 #     - url: "http://path/to/epel.repo"
 #       name: "epel"
 #
+# When using the yum_repos var and if teardown is true it will
+# delete the repos instead of creating them.
 yum_repos: []
 
 # a list of repo names as strings to delete from /etc/yum.repos.d
