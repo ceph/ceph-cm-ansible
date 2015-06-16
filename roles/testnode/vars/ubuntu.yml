@@ -76,7 +76,6 @@ common_packages:
   - blktrace
   - python-numpy
   - python-matplotlib
-  - mencoder
   ###
   # qemu
   - genisoimage
