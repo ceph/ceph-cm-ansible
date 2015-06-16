@@ -1,0 +1,12 @@
+---
+apt_repos: []
+
+packages:
+  - libgoogle-perftools4
+# FIXME: not available on vivid, figure out what's available and use it
+# - libboost-thread1.54.0
+  - mpich
+  - qemu-system-x86
+# FIXME: not available on vivid, figure out what's available and use it
+#  - blkin
+  - lttng-tools
