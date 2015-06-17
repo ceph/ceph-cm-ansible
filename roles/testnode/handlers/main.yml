@@ -15,11 +15,10 @@
     state: started
     enabled: yes
 
-- name: start nfs-server
+- name: restart nfs-server
   service:
     name: "{{ nfs_service }}"
-    state: started 
-    enabled: yes
+    state: restarted
 
 - name: restart cron
   service:
