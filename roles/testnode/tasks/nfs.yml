@@ -9,3 +9,10 @@
   notify:
     - start rpcbind
     - restart nfs-server
+
+- name: Enable nfs-server on rhel 7.x.
+  service:
+    name: "{{ nfs_service }}"
+    enabled: true
+  when: ansible_distribution == "RedHat" and
+        ansible_distribution_major_version == "7"
