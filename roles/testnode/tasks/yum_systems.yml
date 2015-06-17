@@ -55,3 +55,8 @@
   include: yum/packages.yml
   tags:
     - packages
+
+- name: Enable SELinux
+  selinux: state=permissive policy=targeted
+  tags:
+    - selinux
