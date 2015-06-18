@@ -1,7 +1,7 @@
 ---
-# When teardown is true the tasks being used might
-# perform teardown steps if applicable.
-teardown: false
+# When cleanup is true the tasks being used might
+# perform cleanup steps if applicable.
+cleanup: false
 
 
 # yum_repos is a list of hashes that
@@ -13,7 +13,7 @@ teardown: false
 #     - url: "http://path/to/epel.repo"
 #       name: "epel"
 #
-# When using the yum_repos var and if teardown is true it will
+# When using the yum_repos var and if cleanup is true it will
 # delete the repos instead of creating them.
 yum_repos: []
 
