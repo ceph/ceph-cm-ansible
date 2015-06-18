@@ -15,6 +15,7 @@ mkdir -p /var/log/ansible
 
 pushd $ANSIBLE_CM_PATH
 export ANSIBLE_SSH_PIPELINING=1
+export ANSIBLE_HOST_KEY_CHECKING=False
 # Tell ansible to create users and populate authorized_keys
 ansible-playbook testnodes.yml -v --limit $name* --tags user,pubkeys 2>&1 > /var/log/ansible/$name.log
 # Now run the rest of the playbook. If it fails, at least we have access.
