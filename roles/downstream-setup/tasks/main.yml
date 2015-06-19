@@ -16,3 +16,21 @@
   when: remove_yum_repos|length > 0
   tags:
     - delete-yum-repos
+
+- include: disable_yum_repos.yml
+  when: disable_yum_repos|length > 0 and
+        not cleanup
+  tags:
+    - disable-yum-repos
+
+- name: Set enable_yum_repos on cleanup
+  set_fact:
+    enable_yum_repos: "{{ disable_yum_repos }}"
+  when: disable_yum_repos|length > 0 and
+        cleanup and
+        enable_yum_repos|length == 0
+
+- include: enable_yum_repos.yml
+  when: enable_yum_repos|length > 0
+  tags:
+    - enable-yum-repos

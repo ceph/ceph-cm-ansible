@@ -20,3 +20,17 @@ yum_repos: []
 # a list of repo names as strings to delete from /etc/yum.repos.d
 # the name should not include the .repo extension
 remove_yum_repos: []
+
+# a list of repo names as strings to disable in /etc/yum.repos.d
+# the name should not include the .repo extension
+# When using the disable_yum_repos var and if cleanup is true it will
+# delete the repos instead of creating them.
+# NOTE: this does not work on repo files with multiple entries in them,
+# it will only disable the first entry in the repo file.
+disable_yum_repos: []
+
+# a list of repo names as strings to enable in /etc/yum.repos.d
+# the name should not include the .repo extension
+# NOTE: this does not work on repo files with multiple entries in them,
+# it will only enable the first entry in the repo file.
+enable_yum_repos: []
