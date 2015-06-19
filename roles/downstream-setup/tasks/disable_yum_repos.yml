@@ -1,0 +1,9 @@
+---
+- name: Disable yum repos.
+  lineinfile:
+    dest: "/etc/yum.repos.d/{{ item }}.repo"
+    line: "enabled=0"
+    regexp: "enabled=1"
+    backrefs: yes
+    state: present
+  with_items: disable_yum_repos
