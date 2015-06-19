@@ -4,11 +4,16 @@
   lineinfile: dest=/etc/cobbler/settings regexp=^allow_dynamic_settings line="allow_dynamic_settings{{':'}} 1"
   register: dynamic_settings
 
+- name: Set server value
+  # Escape the colon below so the line will parse
+  lineinfile: dest=/etc/cobbler/settings regexp="^server{{':'}}" line="server{{'\:'}} {% for setting in settings %}{% if setting.name == 'server' %}{{ setting.value }}{% endif %}{% endfor %}"
+  register: server_value
+
 - name: Restart cobbler
   service:
     name: "{{ cobbler_service }}"
     state: restarted
-  when: dynamic_settings|changed
+  when: dynamic_settings|changed or server_value|changed
 
 - name: Update settings
   command: cobbler setting edit --name={{ item.name }} --value={{ item.value}}
