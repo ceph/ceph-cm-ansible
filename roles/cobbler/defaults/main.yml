@@ -16,6 +16,8 @@ settings:
     value: "{{ ip }}"
   - name: next_server
     value: "{{ ip }}"
+  - name: pxe_just_once
+    value: 1
 
 kickstarts:
   - cephlab_rhel.ks
