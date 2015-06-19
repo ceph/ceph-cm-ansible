@@ -12,6 +12,8 @@
 
 - name: Include package type specific vars.
   include_vars: "{{ ansible_pkg_mgr }}_systems.yml"
+  tags:
+    - always
 
 - include: yum_systems.yml
   when: ansible_pkg_mgr == "yum"
