@@ -13,6 +13,8 @@ Defaults !requiretty
 Defaults visiblepw
 EOF
 
+chmod 0440 /etc/sudoers.d/cephlab_sudo
+
 install -d -m0755 --owner=$user --group=$user /home/$user/.ssh 
 
 cat >> $auth_keys << EOF
