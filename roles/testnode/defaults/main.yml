@@ -18,3 +18,7 @@ packages_to_upgrade: []
 # the user teuthology will use
 teuthology_user: "ubuntu"
 xfstests_user: "fsgqa"
+
+# some distros need to start rpcbind before
+# trying to use nfs while others don't.
+start_rpcbind: true

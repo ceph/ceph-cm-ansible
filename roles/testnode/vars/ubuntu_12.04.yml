@@ -9,3 +9,7 @@ packages:
   - ltp-kernel-test
   - libmpich2-3
   - kvm
+
+# on precise rpcbind does not provide a way to
+# be managed with upstart
+start_rpcbind: false
