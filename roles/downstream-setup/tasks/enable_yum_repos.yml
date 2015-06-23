@@ -7,3 +7,4 @@
     backrefs: yes
     state: present
   with_items: enable_yum_repos
+  ignore_errors: true
