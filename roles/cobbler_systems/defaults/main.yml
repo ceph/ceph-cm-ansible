@@ -1,0 +1,5 @@
+---
+interface: eth0
+kernel_options: ''
+default_profile: "Ubuntu-14.04-server-x86_64"
+

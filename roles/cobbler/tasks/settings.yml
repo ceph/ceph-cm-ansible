@@ -9,10 +9,7 @@
   lineinfile: dest=/etc/cobbler/settings regexp="^server{{':'}}" line="server{{'\:'}} {% for setting in settings %}{% if setting.name == 'server' %}{{ setting.value }}{% endif %}{% endfor %}"
   register: server_value
 
-- name: Restart cobbler
-  service:
-    name: "{{ cobbler_service }}"
-    state: restarted
+- include: restart.yml
   when: dynamic_settings|changed or server_value|changed
 
 - name: Update settings

@@ -1,0 +1,9 @@
+---
+- name: Restart cobbler
+  service:
+    name: "{{ cobbler_service }}"
+    state: restarted
+  changed_when: false
+
+- name: Wait for cobbler to start
+  wait_for: port={{ cobbler_port }}

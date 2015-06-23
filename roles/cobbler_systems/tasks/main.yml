@@ -1,0 +1,8 @@
+---
+- include: populate_systems.yml
+  tags:
+    - systems
+
+- name: Run cobbler sync
+  command: cobbler sync
+  no_log: true
