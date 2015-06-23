@@ -6,3 +6,5 @@
 - name: Run cobbler sync
   command: cobbler sync
   no_log: true
+  tags:
+    - systems
