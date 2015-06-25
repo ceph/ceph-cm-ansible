@@ -6,10 +6,16 @@
     - vars
 
 - name: Create /root/.ssh
-  file: path=/root/.ssh mode=700 state=directory
+  file:
+    path: /root/.ssh
+    mode: '700'
+    state: directory
 
 - name: Write cobbler keys
-  copy: content="{{ item.data }}" dest="{{ item.path }}" mode=600
+  copy:
+    content: "{{ item.data }}"
+    dest: "{{ item.path }}"
+    mode: '600'
   with_items: cobbler_keys["{{ ansible_hostname}}"]
   no_log: true
 
@@ -31,7 +37,10 @@
     enabled: yes
 
 - name: Enable tftpd
-  lineinfile: dest=/etc/xinetd.d/tftp regexp=disable line="        disable                 = no"
+  lineinfile:
+    dest: /etc/xinetd.d/tftp
+    regexp: disable
+    line: "        disable                 = no"
   register: tftp_enabled
   tags:
     - tftp
