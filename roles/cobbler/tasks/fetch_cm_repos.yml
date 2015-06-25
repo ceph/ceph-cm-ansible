@@ -1,16 +1,26 @@
 ---
 - name: Checkout ceph-cm-ansible
-  git: repo=https://github.com/ceph/ceph-cm-ansible.git
-       dest=/root/ceph-cm-ansible
-       accept_hostkey=true
+  git:
+    repo: https://github.com/ceph/ceph-cm-ansible.git
+    dest: /root/ceph-cm-ansible
+    accept_hostkey: true
 
 - name: Checkout secrets repo
-  git: repo={{ secrets_repo.url }}
-       dest=/root/{{ secrets_repo.name }}
-       accept_hostkey=true
+  git:
+    repo: "{{ secrets_repo.url }}"
+    dest: /root/{{ secrets_repo.name }}
+    accept_hostkey: true
 
 - name: Symlink /etc/ansible/hosts
-  file: src=/root/{{ secrets_repo.name }}/ansible/inventory/ dest=/etc/ansible/hosts state=link force=yes
+  file:
+    src: /root/{{ secrets_repo.name }}/ansible/inventory/
+    dest: /etc/ansible/hosts
+    state: link
+    force: yes
 
 - name: Symlink /etc/ansible/secrets
-  file: src=/root/{{ secrets_repo.name }}/ansible/secrets/ dest=/etc/ansible/secrets state=link force=yes
+  file:
+    src: /root/{{ secrets_repo.name }}/ansible/secrets/
+    dest: /etc/ansible/secrets
+    state: link
+    force: yes
