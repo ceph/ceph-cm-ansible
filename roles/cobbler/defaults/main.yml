@@ -24,7 +24,7 @@ scripts:
 triggers:
   - install/post/cephlab_ansible.sh
 
-ssh_keys: []
+ansible_user_ssh_keys: []
 
 ansible_user: ''
 ansible_user_uid_: ''
