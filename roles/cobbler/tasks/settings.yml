@@ -1,12 +1,18 @@
 ---
 - name: Enable dynamic settings modification
-  # Escape the colon below so the line will parse
-  lineinfile: dest=/etc/cobbler/settings regexp=^allow_dynamic_settings line="allow_dynamic_settings{{':'}} 1"
+  lineinfile:
+    dest: /etc/cobbler/settings
+    regexp: ^allow_dynamic_settings
+    # Escape the colon below so the line will parse
+    line: "allow_dynamic_settings{{':'}} 1"
   register: dynamic_settings
 
 - name: Set server value
-  # Escape the colon below so the line will parse
-  lineinfile: dest=/etc/cobbler/settings regexp="^server{{':'}}" line="server{{'\:'}} {% for setting in settings %}{% if setting.name == 'server' %}{{ setting.value }}{% endif %}{% endfor %}"
+  lineinfile:
+    dest: /etc/cobbler/settings
+    # Escape the colons below so the lines will parse
+    regexp: "^server{{':'}}"
+    line: "server{{':'}} {% for setting in settings %}{% if setting.name == 'server' %}{{ setting.value }}{% endif %}{% endfor %}"
   register: server_value
 
 - include: restart.yml
