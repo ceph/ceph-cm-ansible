@@ -89,7 +89,7 @@ d-i user-setup/encrypt-home boolean false
 #if $os_version == 'precise'
 d-i pkgsel/include string wget ntpdate bash sudo openssh-server
 #else
-d-i pkgsel/include string u-boot-tools pastebinit initramfs-tools wget linux-firmware linux-firmware-nonfree ntpdate bash devmem2 fbset sudo openssh-server udev-discover
+d-i pkgsel/include string u-boot-tools pastebinit initramfs-tools wget linux-firmware linux-firmware-nonfree ntpdate bash devmem2 fbset sudo openssh-server udev-discover gawk
 #end if
 
 # Whether to upgrade packages after debootstrap.

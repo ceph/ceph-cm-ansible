@@ -1,0 +1,23 @@
+---
+- name: Enable dynamic settings modification
+  lineinfile:
+    dest: /etc/cobbler/settings
+    regexp: ^allow_dynamic_settings
+    # Escape the colon below so the line will parse
+    line: "allow_dynamic_settings{{':'}} 1"
+  register: dynamic_settings
+
+- name: Set server value
+  lineinfile:
+    dest: /etc/cobbler/settings
+    # Escape the colons below so the lines will parse
+    regexp: "^server{{':'}}"
+    line: "server{{':'}} {% for setting in settings %}{% if setting.name == 'server' %}{{ setting.value }}{% endif %}{% endfor %}"
+  register: server_value
+
+- include: restart.yml
+  when: dynamic_settings|changed or server_value|changed
+
+- name: Update settings
+  command: cobbler setting edit --name={{ item.name }} --value={{ item.value}}
+  with_items: settings

@@ -1,4 +1,15 @@
 ---
+- name: Upload items in /etc
+  template:
+    src: "etc/{{ item }}"
+    dest: "/etc/cobbler/{{ item }}"
+    owner: root
+    group: root
+    mode: 0644
+  with_items: etc_files
+  tags:
+    - etc
+
 - name: Upload kickstarts and preseeds.
   template:
     src: "kickstarts/{{ item }}"

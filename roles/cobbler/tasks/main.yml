@@ -1,4 +1,78 @@
 ---
+- name: Include cobbler keys.
+  include_vars: "{{ secrets_path | mandatory }}/cobbler_keys.yml"
+  no_log: true
+  tags:
+    - vars
+
+- name: Create /root/.ssh
+  file:
+    path: /root/.ssh
+    mode: '700'
+    state: directory
+
+- name: Write cobbler keys
+  copy:
+    content: "{{ item.data }}"
+    dest: "{{ item.path }}"
+    mode: '600'
+  with_items: cobbler_keys["{{ ansible_hostname}}"]
+  no_log: true
+
+- name: Include package type specific vars.
+  include_vars: "{{ ansible_pkg_mgr }}_systems.yml"
+  tags:
+    - always
+
+- include: yum_systems.yml
+  when: ansible_pkg_mgr == "yum"
+
+- include: apt_systems.yml
+  when: ansible_pkg_mgr == "apt"
+
+- name: Start cobbler
+  service:
+    name: "{{ cobbler_service }}"
+    state: started
+    enabled: yes
+
+- name: Enable tftpd
+  lineinfile:
+    dest: /etc/xinetd.d/tftp
+    regexp: disable
+    line: "        disable                 = no"
+  register: tftp_enabled
+  tags:
+    - tftp
+
+- name: Reload xinetd
+  service:
+    name: xinetd
+    state: reloaded
+    enabled: yes
+  when: tftp_enabled|changed
+  tags:
+    - tftp
+
+- name: Start httpd
+  service:
+    name: "{{ httpd_service }}"
+    state: started
+    enabled: yes
+
+- name: Get cobbler port
+  shell: cobbler setting report | grep xmlrpc_port | awk '{ FS=":"; print $3 }'
+  register: cobbler_port_cmd
+
+- name: Set cobbler port var
+  set_fact:
+    cobbler_port: "{{ cobbler_port_cmd.stdout.strip() }}"
+
+- name: Update settings
+  include: settings.yml
+  tags:
+    - settings
+
 - include: fetch_cm_repos.yml
   tags:
    - cm_repos
@@ -10,3 +84,8 @@
 - include: distro_prep.yml
   tags:
     - distros
+
+- include: restart.yml
+
+- name: Run cobbler check
+  command: cobbler check

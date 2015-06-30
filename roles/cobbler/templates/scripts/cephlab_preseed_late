@@ -14,4 +14,6 @@ $SNIPPET('cephlab_apt-mirror_hack')
 $SNIPPET('cephlab_rc_local')
 # end custom
 $SNIPPET('kickstart_done')
+# Exit with status 0
+true
 # End preseed_late_default

@@ -1,0 +1,2 @@
+## {{ ansible_managed }}
+cobbler:Cobbler:a4fa62c1597fca6d8cf27b1325b0ae6a

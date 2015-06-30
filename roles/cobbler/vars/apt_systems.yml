@@ -1,0 +1,10 @@
+---
+cobbler_package: cobbler
+cobbler_service: cobbler
+httpd_service: apache2
+cobbler_extra_packages:
+  - syslinux
+  - python-pykickstart
+  - fence-agents
+  - ansible
+  - nmap
