@@ -1,7 +1,48 @@
 Overview
 ========
 
-This project is meant to store the configuration for the ceph testing labs.
+This project is meant to store ansible roles for managing the nodes
+in the ceph testing labs.
+
+Inventory
+=========
+
+As this repo only contains roles, it does not define the ansible inventory or
+any associated group_vars or host_vars.  However, it does depend on these things
+existing in a separate repository or otherwise accesible by these roles
+when they are used. Any vars a role needs should be added to its
+``defaults/main.yml`` file to document what must be defined per node or
+group in your inventory.
+
+This separation is important because we have multiple labs we manage with these
+same roles and each lab has different configuration needs. We call these our
+``secrets`` or ``*-secrets`` repos throughout the rest of the documention and
+in the roles.
+
+Besides the inventory, ``secrets`` repos also may contain certain secret
+or encrypted files that we can not include in ceph-cm-ansible for various reasons.
+
+The directory structure for one of our ``secrets`` repos is::
+
+    ├── ansible
+        ├── inventory
+        │   ├── group_vars
+        │   │   ├── all.yml
+        │   │   ├── cobbler.yml
+        │   │   ├── testnodes.yml
+        │   │   ├── teuthology.yml
+        │   │   └── typica.yml
+        │   └── sepia
+        └── secrets
+            └── entitlements.yml
+
+Refer to Step 2 below for instructions on how to setup a ``secrets`` repo for use by
+ceph-cm-ansible. If set up this way, -i is not necessary for ansible-playbook to find
+the repo. However, you can choose your own setup and point to the ``secrets`` repo with -i
+if you prefer.
+
+**NOTE:** Some playbooks require specific groups to be defined in your inventory. Please refer to
+``hosts`` in the playbook you want to use to ensure you've got the proper groups defined.
 
 Setting up a local dev environment
 ==================================
