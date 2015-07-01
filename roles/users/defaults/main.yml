@@ -12,3 +12,9 @@
 managed_users: []
 # are given sudo access
 managed_admin_users: []
+
+# A list of usernames to filter managed_users and
+# managed_admin_users by.  For example, if given ['user1']
+# both managed_users and managed_admin_users would be filtered
+# to only contain the information for 'user1'.
+users: []

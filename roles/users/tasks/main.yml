@@ -1,4 +1,24 @@
 ---
+- name: Filter the managed_users list
+  set_fact:
+    managed_users:
+        "[{% for user in managed_users %}
+            {% if user.name in users %}{{ user }},{%endif%}
+        {%endfor%}]"
+  when: users|length > 0
+  tags:
+    - always
+
+- name: Filter the managed_admin_users list
+  set_fact:
+    managed_admin_users:
+        "[{% for user in managed_admin_users %}
+            {% if user.name in users %}{{ user }},{%endif%}
+        {%endfor%}]"
+  when: users|length > 0
+  tags:
+    - always
+
 - name: Create all admin users with sudo access.
   user:
     name: "{{ item.name }}"

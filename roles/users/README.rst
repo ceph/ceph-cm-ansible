@@ -35,6 +35,10 @@ sure to define either ``managed_users`` or ``managed_admin_users`` in your inven
 
     $ ansible-playbook users.yml --limit="$NODE"
 
+You can also filter the list of users being managed by passing the 'users' variable::
+
+    $ ansible-playbook users.yml --limit="$NODE" --extra-vars='{"users"=["user1"]}'
+
 Variables
 +++++++++
 
@@ -64,6 +68,10 @@ For example, in inventory/group_vars/webservers.yml you might have a list of use
     managed_admin_users:
       - name: admin
         key: <ssh_key_string>
+
+A list of usernames to filter ``managed_users`` and ``managed_admin_users`` by::
+
+    users: []
 
 Tags
 ++++
