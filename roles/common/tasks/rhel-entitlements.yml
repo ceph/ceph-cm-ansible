@@ -1,11 +1,21 @@
 ---
 # Register a RHEL-based system with subscription-manager.
 
+- name: Set entitlements_path
+  set_fact:
+    entitlements_path: "{{ secrets_path | mandatory }}/entitlements.yml"
+
+- name: Check for existence of entitlements_path
+  stat:
+    path: "{{ entitlements_path }}"
+  register: entitlements
+
 - name: Include Red Hat encrypted variables.
-  include_vars: "{{ secrets_path | mandatory }}/entitlements.yml"
+  include_vars: "{{ entitlements_path }}"
   no_log: true
   tags:
     - vars
+  when: entitlements.stat.exists
 
 - name: Determine if node is registered with subscription-manager.
   command: subscription-manager identity
@@ -23,7 +33,7 @@
            --activationkey={{ subscription_manager_activationkey }}
            --org={{ subscription_manager_org }}
   no_log: true
-  when: rhsm_registered == "False"
+  when: rhsm_registered == "False" and entitlements.stat.exists
   register: entitled
   until: entitled|success
   retries: 5
@@ -39,7 +49,7 @@
 - name: Store list of enabled repos
   set_fact:
     repo_list: "{{ repo_list_cmd.stdout.split('\n') }}"
-  when: repo_list_cmd is defined
+  when: repo_list_cmd is defined and not repo_list_cmd|skipped
 
 - name: Set replace_repos if rhsm_repos changed
   set_fact:
@@ -49,7 +59,12 @@
 - name: Set replace_repos if newly-subscribed
   set_fact:
     replace_repos: True
-  when: entitled|changed
+  when: entitled|changed and entitled|success
+
+- name: Set replace_repos if entitlement is skipped
+  set_fact:
+    replace_repos: False
+  when: entitled|skipped
 
 - name: Disable all rhsm repos
   command: subscription-manager repos --disable '*'
