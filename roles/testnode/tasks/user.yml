@@ -19,6 +19,9 @@
     groups: "{{ teuthology_user }}"
     shell: /bin/bash
     state: present
+  # If we're currently running as teuthology_user, we won't be able to modify
+  # the account
+  when: "{{ teuthology_user != ansible_ssh_user }}"
 
 - name: Add a user for xfstests to test user quotas.
   user:
