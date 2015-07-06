@@ -1,4 +1,9 @@
 ---
+- name: Work around https://bugzilla.redhat.com/show_bug.cgi?id=1234967
+  command: rpm -e ceph-debuginfo
+  tags:
+    - remove-ceph
+
 - name: Ensure ceph packages are not present.
   yum:
     name: "{{ item }}"
