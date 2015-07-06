@@ -1,6 +1,15 @@
 ---
+- name: Check if ceph-debuginfo is installed
+  command: rpm -q ceph-debuginfo
+  ignore_errors: yes
+  changed_when: false
+  register: bz1234967
+  tags:
+    - remove-ceph
+
 - name: Work around https://bugzilla.redhat.com/show_bug.cgi?id=1234967
   command: rpm -e ceph-debuginfo
+  when: bz1234967 is defined and bz1234967.rc == 0
   tags:
     - remove-ceph
 
