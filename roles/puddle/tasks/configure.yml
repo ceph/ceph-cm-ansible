@@ -22,6 +22,7 @@
     - rh-common-rhel-6
     - rh-common-rhel-7
     - ceph-1.3-rhel-7
+    - ceph-1.3-rhel-7-async
 
 - name: add rcm-kerberos config file
   template:
