@@ -13,6 +13,7 @@
     shell: /bin/bash
     uid: "{{ ansible_user_uid_ }}"
     update_password: on_create
+  when: ansible_user is defined and ansible_user_uid_ is defined
   register: user_created
   tags:
    - user
