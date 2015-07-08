@@ -88,19 +88,6 @@
   script: scripts/static-ip.sh creates=/static-ip-setup
   when: "'vps' not in group_names"
 
-- name: Upload a lab specific base resolv.conf.
-  template:
-    src: "{{ item }}"
-    dest: /etc/resolvconf/resolv.conf.d/base
-    owner: root
-    group: root
-    mode: 0755
-  with_first_found:
-    - "resolvconf/base_{{ lab_name }}"
-    - resolvconf/base
-  notify:
-    - restart resolvdns
-
 - name: Edit lvm.conf to support LVM on RBD.
   lineinfile:
     dest: /etc/lvm/lvm.conf

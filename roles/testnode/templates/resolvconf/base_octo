@@ -1,3 +1,0 @@
-# {{ ansible_managed }}
-nameserver 10.10.160.1
-search ceph.redhat.com sepia.ceph.com
