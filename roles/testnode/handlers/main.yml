@@ -40,8 +40,3 @@
   service:
     name: nagios-nrpe-server
     state: restarted
-
-- name: restart resolvdns
-  service:
-    name: resolvconf
-    state: restarted
