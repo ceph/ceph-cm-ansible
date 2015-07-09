@@ -4,7 +4,7 @@ iso_dir: /var/lib/cobbler/isos
 # Mount point to use for ISOs during import
 iso_mount: /mnt/iso
 
-etc_files:
+etc_cobbler_files:
  - users.digest
 
 settings:

@@ -1,12 +1,22 @@
 ---
-- name: Upload items in /etc
+- name: Upload index.html template
+  template:
+    src: "httpd/index.html"
+    dest: "/var/www/html/"
+    owner: root
+    group: root
+    mode: 0644
+  tags:
+    - httpd
+
+- name: Upload items in /etc/cobbler
   template:
     src: "etc/{{ item }}"
     dest: "/etc/cobbler/{{ item }}"
     owner: root
     group: root
     mode: 0644
-  with_items: etc_files
+  with_items: etc_cobbler_files
   tags:
     - etc
 
