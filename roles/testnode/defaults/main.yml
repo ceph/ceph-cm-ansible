@@ -22,3 +22,8 @@ xfstests_user: "fsgqa"
 # some distros need to start rpcbind before
 # trying to use nfs while others don't.
 start_rpcbind: true
+
+# set to true if /etc/fstab must be modified to persist things like
+# mount options, which is useful for long lived bare metal machines,
+# less useful for virtual machines that are re-imaged before each job
+modify_fstab: true
