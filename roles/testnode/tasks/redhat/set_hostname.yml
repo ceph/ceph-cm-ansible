@@ -14,7 +14,7 @@
   set_fact:
     new_hostname: "{{ existing_hostname.stdout.split('.')[0] }}"
   when: existing_hostname is defined and
-        existing_hostname.stdout.find("{{ lab_domain | mandatory }}") != -1
+        existing_hostname.stdout.find("{{ lab_domain }}") != -1
 
 - name: Set hostname.
   hostname:

@@ -1,6 +1,7 @@
 ---
 - name: Set the hostname
   include: redhat/set_hostname.yml
+  when: lab_domain != ""
   tags:
     - hostname
 
