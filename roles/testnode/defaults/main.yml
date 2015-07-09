@@ -1,5 +1,6 @@
 ---
 mirror_host: apt-mirror.front.sepia.ceph.com
+git_mirror_host: git.ceph.com
 pip_mirror_url: "http://{{ mirror_host }}/pypi/simple"
 
 # repos common to a major version
