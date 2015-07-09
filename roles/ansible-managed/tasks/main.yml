@@ -51,5 +51,7 @@
     user: "{{ ansible_user }}"
     key: "{{ item }}"
   with_items: ansible_user_ssh_keys
+  when: ansible_user_ssh_keys is defined and
+        ansible_user is defined
   tags:
     - pubkeys
