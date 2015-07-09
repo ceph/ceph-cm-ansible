@@ -1,5 +1,5 @@
 ---
-- hosts: cobbler 
+- hosts: "{{ targets | default('cobbler') }}"
   roles:
     - common
     - cobbler 

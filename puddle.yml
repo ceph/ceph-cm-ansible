@@ -1,5 +1,5 @@
 ---
-- hosts: puddle
+- hosts: "{{ targets | default('puddle') }}"
   roles:
     - common
     - puddle

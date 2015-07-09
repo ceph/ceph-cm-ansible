@@ -1,5 +1,5 @@
 ---
-- hosts: testnodes
+- hosts: "{{ targets | default('testnodes') }}"
   roles:
     - common
     - testnode
