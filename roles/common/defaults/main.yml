@@ -8,6 +8,7 @@ rhsm_repos: []
 
 kerberos_realm: EXAMPLE.COM
 
+epel_mirror_baseurl: "http://dl.fedoraproject.org/pub/epel"
 epel_repos:
   epel:
     name: "Extra Packages for Enterprise Linux"
