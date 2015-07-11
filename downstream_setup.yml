@@ -1,6 +1,6 @@
 ---
 # A playbook used to setup a node for downstream
 # RHCeph testing.
-- hosts: testnodes
+- hosts: "{{ targets | default('testnodes') }}"
   roles:
     - downstream-setup
