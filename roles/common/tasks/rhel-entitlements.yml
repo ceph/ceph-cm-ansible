@@ -5,17 +5,18 @@
   set_fact:
     entitlements_path: "{{ secrets_path | mandatory }}/entitlements.yml"
 
-- name: Check for existence of entitlements_path
-  stat:
-    path: "{{ entitlements_path }}"
-  register: entitlements
-
 - name: Include Red Hat encrypted variables.
-  include_vars: "{{ entitlements_path }}"
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ entitlements_path }}"
+    - empty.yml
   no_log: true
   tags:
     - vars
-  when: entitlements.stat.exists
+
+- name: Set have_entitlements
+  set_fact:
+    have_entitlements: "{{ subscription_manager_org != '' and subscription_manager_activationkey != ''}}"
 
 - name: Determine if node is registered with subscription-manager.
   command: subscription-manager identity
@@ -33,7 +34,7 @@
            --activationkey={{ subscription_manager_activationkey }}
            --org={{ subscription_manager_org }}
   no_log: true
-  when: rhsm_registered == "False" and entitlements.stat.exists
+  when: rhsm_registered == "False" and have_entitlements == "True"
   register: entitled
   until: entitled|success
   retries: 5
