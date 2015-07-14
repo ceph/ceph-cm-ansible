@@ -5,17 +5,18 @@
   set_fact:
     entitlements_path: "{{ secrets_path | mandatory }}/entitlements.yml"
 
-- name: Check for existence of entitlements_path
-  stat:
-    path: "{{ entitlements_path }}"
-  register: entitlements
-
 - name: Include Red Hat encrypted variables.
-  include_vars: "{{ entitlements_path }}"
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ entitlements_path }}"
+    - empty.yml
   no_log: true
   tags:
     - vars
-  when: entitlements.stat.exists
+
+- name: Set have_entitlements
+  set_fact:
+    have_entitlements: "{{ subscription_manager_org != '' and subscription_manager_activationkey != ''}}"
 
 - name: Determine if node is registered with subscription-manager.
   command: subscription-manager identity
@@ -33,7 +34,7 @@
            --activationkey={{ subscription_manager_activationkey }}
            --org={{ subscription_manager_org }}
   no_log: true
-  when: rhsm_registered == "False" and entitlements.stat.exists
+  when: rhsm_registered == "False" and have_entitlements == "True"
   register: entitled
   until: entitled|success
   retries: 5
@@ -59,7 +60,7 @@
 - name: Set replace_repos if newly-subscribed
   set_fact:
     replace_repos: True
-  when: entitled|changed and entitled|success
+  when: entitled|changed and entitled.rc == 0
 
 - name: Set replace_repos if entitlement is skipped
   set_fact:
@@ -68,14 +69,14 @@
 
 - name: Disable all rhsm repos
   command: subscription-manager repos --disable '*'
-  when: replace_repos == "True"
+  when: replace_repos == True
   # This produces an absurd amount of useless output
   no_log: True
 
 - name: Enable necessary rhsm repos
   command: subscription-manager repos --enable {{ item }}
   with_items: rhsm_repos
-  when: replace_repos == "True" and rhsm_repos|length > 0
+  when: replace_repos == True and rhsm_repos|length > 0
 
 - name: Remove old apt-mirror repository definition.
   file:
