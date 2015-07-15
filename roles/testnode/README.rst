@@ -23,7 +23,7 @@ Usage
 +++++
 
 The testnode role is primarily used by the ``testnodes.yml`` playbook.  This playbook is run by cobbler during
-bare-metal imaging to prepare a node for testing and it also used by Teuthology during test runs to ensure the config
+bare-metal imaging to prepare a node for testing and it also used by teuthology during test runs to ensure the config
 is correct before testing.
 
 **NOTE:** ``testnodes.yml`` is limited to run against hosts in the ``testnodes`` group by the ``hosts`` key in the playbook.
@@ -31,8 +31,8 @@ is correct before testing.
 Variables
 +++++++++
 
-Available variables are listed below, along with default values (see ``roles/testnode/defaults/main.yml``). This role also
-allows for variables to be defined per package type (apt, yum), distro, distro major version and distro version.
+Available variables are listed below, along with default values (see ``roles/testnode/defaults/main.yml``). The ``testnode`` role
+also allows for variables to be defined per package type (apt, yum), distro, distro major version and distro version.
 These overrides are included by ``tasks/vars.yml`` and the specific var files live in ``vars/``.
 
 The host to use as a package mirror::
@@ -51,8 +51,8 @@ The mirror to download and install ``pip`` from::
 
     pip_mirror_url: "http://{{ mirror_host }}/pypi/simple"
 
-A hash defining yum repos that would be common across a major version. Each key in the hash will be
-the name of a yum repo created in /etc/yum.repos.d. The key/value pairs as the value for that repo
+A hash defining yum repos that would be common across a major version. Each key in the hash represents
+the filename of a yum repo created in /etc/yum.repos.d. The key/value pairs as the value for that repo
 will be used as the properties for the repo file::
 
     common_yum_repos: {}
@@ -66,8 +66,8 @@ will be used as the properties for the repo file::
         gpgcheck: 0
         priority: 2
 
-A hash defining version specific yum_repos. Each key in the hash will be
-the name of a yum repo created in /etc/yum.repos.d. The key/value pairs as the value for that repo
+A hash defining version-specific yum repos. Each key in the hash represents
+the filename of a yum repo created in /etc/yum.repos.d. The key/value pairs as the value for that repo
 will be used as the properties for the repo file::
 
     yum_repos: {}
@@ -98,7 +98,7 @@ A list of packages to upgrade. These lists are defined in the vars files in ``va
     packages_to_upgrade: []
 
 The user that teuthology will use to connect to testnodes. This user will be created by this role and assigned to the appropriate groups.
-Eventhough this variable exists, teuthology is not quite ready to support a configurable user::
+Even though this variable exists, teuthology is not quite ready to support a configurable user::
 
     teuthology_user: "ubuntu"
 
@@ -110,7 +110,7 @@ This will control whether or not rpcbind is started before nfs.  Some distros re
 
     start_rpcbind: true
 
-Set to true if /etc/fstab must be modified to persist things like mount options, which is useful for long lived
+Set to true if /etc/fstab must be modified to persist things like mount options, which is useful for long-lived
 bare-metal machines, less useful for virtual machines that are re-imaged before each job::
 
     modify_fstab: true
@@ -190,10 +190,10 @@ Dependencies
 This role depends on the following roles:
 
 secrets
-    Provides a var, ``secrets_path``, containing the path to where our secrets are located.
+    Provides a var, ``secrets_path``, containing the path of the secrets repository, a tree of ansible variable files.
     
 sudo
-    Sets ``ansible_sudo: true`` for this role.
+    Sets ``ansible_sudo: true`` for this role which causes all the plays in this role to execute with sudo.
 
 To Do
 +++++
