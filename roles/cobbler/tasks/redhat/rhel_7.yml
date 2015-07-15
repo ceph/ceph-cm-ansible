@@ -1,4 +1,12 @@
 ---
+- name: Check if firewalld is enabled
+  command: systemctl status firewalld
+  register: firewalld
+  ignore_errors: true
+  no_log: true
+  tags:
+    - firewall
+
 - name: Enable http and https using firewalld
   firewalld:
     service: "{{ item }}"
@@ -8,5 +16,6 @@
   with_items:
     - http
     - https
+  when: "'running' in firewalld.stdout"
   tags:
     - firewall
