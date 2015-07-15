@@ -81,6 +81,20 @@ will be used as the properties for the repo file::
         gpgcheck: 0
         priority: 0
 
+A list defining apt repos that would be common across a major version or distro. Each item in the list represents
+an apt repo to be added to sources.list::
+
+    common_apt_repos: []
+
+    # An Example:
+    common_apt_repos:
+      # mod_fastcgi for radosgw
+      - "deb http://gitbuilder.ceph.com/libapache-mod-fastcgi-deb-{{ansible_distribution_release}}-x86_64-basic/ref/master/ {{ansible_distribution_release}} main"
+
+A list defining version-specific apt repos. Each item in the list represents an apt repo to be added to sources.list::
+
+    apt_repos: []
+
 A list of packages to install that is specific to a distro version.  These lists are defined in the var files in ``vars/``::
 
     packages: []
