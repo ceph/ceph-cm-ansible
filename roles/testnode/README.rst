@@ -103,6 +103,11 @@ A list of packages to install that are common to a distro or distro version. The
 
     common_packages: []
 
+**NOTE:** A good example of how ``packages`` and ``common_packages`` work together is with Ubuntu. The var file ``roles/testnode/vars/ubuntu.yml`` define
+a number of packages in ``common_packages`` that need to be installed across all versions of ubuntu.  While the version specific files
+(for example, ``roles/testnode/vars/ubuntu_14.yml``) define packages in ``packages`` that either have varying names across version or are only needed
+for that specific version. This is the same idea behind the vars that control apt and yum repos as well.
+
 A list of packages to remove. These lists are defined in the var files in ``vars/``::
 
     packages_to_remove: []
