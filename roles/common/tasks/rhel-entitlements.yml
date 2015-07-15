@@ -3,7 +3,7 @@
 
 - name: Set entitlements_path
   set_fact:
-    entitlements_path: "{{ secrets_path | mandatory }}/entitlements.yml"
+    entitlements_path: "{{ secrets_path }}/entitlements.yml"
 
 - name: Include Red Hat encrypted variables.
   include_vars: "{{ item }}"
