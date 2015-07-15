@@ -15,6 +15,10 @@ yum_repos: {}
 # specific var files.
 packages: []
 
+# a list of packages to install that would be
+# the same across multiple versions of a distro
+common_packages: []
+
 packages_to_remove: []
 packages_to_upgrade: []
 
