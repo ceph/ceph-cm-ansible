@@ -1,0 +1,11 @@
+---
+- name: Enable http and https using firewalld
+  firewalld:
+    service: "{{ item }}"
+    state: enabled
+    permanent: yes
+  with_items:
+    - http
+    - https
+  tags:
+    - firewall
