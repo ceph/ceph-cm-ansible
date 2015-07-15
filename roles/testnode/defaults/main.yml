@@ -16,13 +16,12 @@ common_apt_repos: []
 # version-specific apt repos, defined in the the version-specific var files
 apt_repos: []
 
-# list of packages to install
-# packages are defined in the pkg manager
-# specific var files.
+# packages to install
 packages: []
 
-# a list of packages to install that would be
-# the same across multiple versions of a distro
+# packages common to a major version, distro or package type. This means that they
+# have the same name and are intended to be installed for all other versions in that major
+# version, distro or package type
 common_packages: []
 
 packages_to_remove: []
