@@ -3,6 +3,7 @@ cobbler_package: cobbler
 cobbler_service: cobbler
 httpd_service: apache2
 cobbler_extra_packages:
+  - git
   - syslinux
   - python-pykickstart
   - fence-agents
