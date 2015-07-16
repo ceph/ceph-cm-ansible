@@ -89,13 +89,6 @@ packages:
   # for java bindings, hadoop, etc.
   - java-1.6.0-openjdk-devel
   - junit4
-  ###
-  # tgt & open-iscsi
-  # installing these 2 packages makes this playbook
-  # not idempotent on rhel 6.x
-  # see: http://tracker.ceph.com/issues/11216
-  - scsi-target-utils
-  - iscsi-initiator-utils
   # for disk/etc monitoring
   - smartmontools
   # for nfs
