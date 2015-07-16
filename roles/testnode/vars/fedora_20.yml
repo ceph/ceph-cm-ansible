@@ -17,6 +17,8 @@ packages_to_remove:
   - ceph-libs
 
 packages:
+  - '@core'
+  - '@base'
   - yum-plugin-priorities
   - redhat-lsb
   - sysstat
