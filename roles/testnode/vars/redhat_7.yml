@@ -74,8 +74,6 @@ packages:
   - perl-XML-Twig
   - java-1.6.0-openjdk-devel
   - junit4
-  - scsi-target-utils
-  - iscsi-initiator-utils
   - smartmontools
   - nfs-utils
   # for xfstests
