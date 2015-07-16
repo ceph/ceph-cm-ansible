@@ -23,7 +23,7 @@ Usage
 +++++
 
 The testnode role is primarily used by the ``testnodes.yml`` playbook.  This playbook is run by cobbler during
-bare-metal imaging to prepare a node for testing and it also used by teuthology during test runs to ensure the config
+bare-metal imaging to prepare a node for testing and is also used by teuthology during test runs to ensure the config
 is correct before testing.
 
 **NOTE:** ``testnodes.yml`` is limited to run against hosts in the ``testnodes`` group by the ``hosts`` key in the playbook.
@@ -103,9 +103,9 @@ A list of packages to install that are common to a distro or distro version. The
 
     common_packages: []
 
-**NOTE:** A good example of how ``packages`` and ``common_packages`` work together is with Ubuntu. The var file ``roles/testnode/vars/ubuntu.yml`` define
-a number of packages in ``common_packages`` that need to be installed across all versions of ubuntu.  While the version specific files
-(for example, ``roles/testnode/vars/ubuntu_14.yml``) define packages in ``packages`` that either have varying names across version or are only needed
+**NOTE:** A good example of how ``packages`` and ``common_packages`` work together is with Ubuntu. The var file ``roles/testnode/vars/ubuntu.yml`` defines
+a number of packages in ``common_packages`` that need to be installed across all versions of ubuntu, while the version-specific files
+(for example, ``roles/testnode/vars/ubuntu_14.yml``) define packages in ``packages`` that either have varying names across versions or are only needed
 for that specific version. This is the same idea behind the vars that control apt and yum repos as well.
 
 A list of packages to remove. These lists are defined in the var files in ``vars/``::

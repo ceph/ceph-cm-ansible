@@ -16,7 +16,8 @@ common_apt_repos: []
 # version-specific apt repos, defined in the the version-specific var files
 apt_repos: []
 
-# packages to install
+# packages to install, see common_packages below as well. The set of packages to install
+# is packages + common_packages
 packages: []
 
 # packages common to a major version, distro or package type. This means that they
