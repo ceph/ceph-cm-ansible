@@ -34,6 +34,8 @@ common_yum_repos:
     priority: 2
 
 packages:
+  - '@core'
+  - '@base'
   - yum-plugin-priorities
   - redhat-lsb
   - sysstat

@@ -45,6 +45,8 @@ $SNIPPET('pre_anamon')
 %end
 
 %packages
+@core
+@base
 $SNIPPET('cephlab_packages_rhel')
 $SNIPPET('func_install_if_enabled')
 %end
