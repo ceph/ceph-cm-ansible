@@ -1,4 +1,10 @@
 ---
+# this is needed for the yum-complete-transation command next
+- name: Ensure yum_utils is present.
+  yum:
+    name: yum-utils
+    state: present
+
 - name: Removing saved yum transactions
   command: yum-complete-transaction --cleanup-only
   register: transaction_cleanup
