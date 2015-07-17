@@ -52,6 +52,8 @@ packages:
   - ant
   - fuse-sshfs
   - iozone
+  - dbench
+  - bonnie++
   ###
   # used by the xfstests tasks
   - libtool
