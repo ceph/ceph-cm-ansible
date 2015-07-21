@@ -1,4 +1,13 @@
 ---
+- name: Write users.digest
+  copy:
+    content: "{% for line in users_digest_lines %}{{ line + '\n' }}{% endfor %}"
+    dest: /etc/cobbler/users.digest
+    owner: root
+    group: root
+    mode: 0600
+  register: users_digest
+
 - name: Enable dynamic settings modification
   lineinfile:
     dest: /etc/cobbler/settings
@@ -16,7 +25,7 @@
   register: server_value
 
 - include: restart.yml
-  when: dynamic_settings|changed or server_value|changed
+  when: users_digest|changed or dynamic_settings|changed or server_value|changed
 
 - name: Update settings
   command: cobbler setting edit --name={{ item.name }} --value={{ item.value}}

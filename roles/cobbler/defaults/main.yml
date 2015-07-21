@@ -4,8 +4,8 @@ iso_dir: /var/lib/cobbler/isos
 # Mount point to use for ISOs during import
 iso_mount: /mnt/iso
 
-etc_cobbler_files:
- - users.digest
+users_digest_lines:
+ - "cobbler:Cobbler:a4fa62c1597fca6d8cf27b1325b0ae6a"
 
 settings:
   - name: yum_post_install_mirror
