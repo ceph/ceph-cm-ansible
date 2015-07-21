@@ -43,5 +43,10 @@
     user: "{{ item.name }}"
     key: "{{ item.key }}"
   with_items: managed_users|list + managed_admin_users|list
+  # Register and retry to work around transient githubusercontent.com issues
+  register: ssh_key_update
+  until: ssh_key_update.state == 'present'
+  retries: 3
+  delay: 5
   tags:
     - pubkeys
