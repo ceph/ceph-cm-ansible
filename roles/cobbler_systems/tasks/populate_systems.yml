@@ -14,7 +14,7 @@
       "{{ groups.cobbler_managed | difference(cobbler_systems_current) }}"
 
 - name: Add missing systems to cobbler
-  command: cobbler system add --name={{ item.split('.')[0] }} --profile={{ default_profile }} --mac={{ hostvars[item].mac }} --ip-address={{ hostvars[item].ip }} --interface={{ hostvars[item].interface|default(interface) }} --kopts="{{ hostvars[item].kernel_options|default(kernel_options) }}" --netboot-enabled false
+  command: cobbler system add --name={{ item.split('.')[0] }} --profile={{ default_profile }} --mac={{ hostvars[item].mac }} --ip-address={{ hostvars[item].ip }} --interface={{ hostvars[item].interface|default(interface) }} --kopts="{{ hostvars[item].kernel_options|default(kernel_options) }}" --power-type={{ hostvars[item].power_type|default(power_type) }} --power-address={{ item.split('.')[0] }}.{{ ipmi_domain }} --power-user={{ hostvars[item].power_user|default(power_user) }} --power-pass={{ hostvars[item].power_pass|default(power_pass) }} --netboot-enabled false
   with_items: cobbler_systems_add
 
 - name: set cobbler_systems_update
@@ -23,5 +23,5 @@
       "{{ groups.cobbler_managed | intersect(cobbler_systems_current) }}"
 
 - name: Update existing systems in cobbler
-  command: cobbler system edit --name={{ item.split('.')[0] }} --mac={{ hostvars[item].mac }} --ip-address={{ hostvars[item].ip }} --interface={{ hostvars[item].interface|default(interface) }} --kopts="{{ hostvars[item].kernel_options|default(kernel_options) }}"
+  command: cobbler system edit --name={{ item.split('.')[0] }} --mac={{ hostvars[item].mac }} --ip-address={{ hostvars[item].ip }} --interface={{ hostvars[item].interface|default(interface) }} --kopts="{{ hostvars[item].kernel_options|default(kernel_options) }}" --power-type={{ hostvars[item].power_type|default(power_type) }} --power-address={{ item.split('.')[0] }}.{{ ipmi_domain }} --power-user={{ hostvars[item].power_user|default(power_user) }} --power-pass={{ hostvars[item].power_pass|default(power_pass) }}
   with_items: cobbler_systems_update
