@@ -5,7 +5,8 @@ iso_dir: /var/lib/cobbler/isos
 iso_mount: /mnt/iso
 
 users_digest_lines:
- - "cobbler:Cobbler:a4fa62c1597fca6d8cf27b1325b0ae6a"
+ # default password is 'cobbler' - change it in a secrets repo!
+ - "cobbler:Cobbler:a2d6bae81669d707b72c0bd9806e01f3"
 
 settings:
   - name: yum_post_install_mirror
