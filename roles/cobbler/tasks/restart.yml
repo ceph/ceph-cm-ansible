@@ -1,4 +1,12 @@
 ---
+- name: Get cobbler port
+  shell: cobbler setting report | grep xmlrpc_port | awk '{ FS=":"; print $3 }'
+  register: cobbler_port_cmd
+
+- name: Set cobbler port var
+  set_fact:
+    cobbler_port: "{{ cobbler_port_cmd.stdout.strip() }}"
+
 - name: Restart cobbler
   service:
     name: "{{ cobbler_service }}"
