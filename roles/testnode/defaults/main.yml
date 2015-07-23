@@ -4,16 +4,26 @@ git_mirror_host: git.ceph.com
 gitbuilder_host: gitbuilder.ceph.com
 pip_mirror_url: "http://{{ mirror_host }}/pypi/simple"
 
-# repos common to a major version
+# yum repos common to a major version or distro
 common_yum_repos: {}
 
-# version specific repos, defined in the version specific vars file
+# version-specific yum repos, defined in the version specific var file
 yum_repos: {}
 
-# list of packages to install
-# packages are defined in the pkg manager
-# specific var files.
+# apt repos common to a major version or distro
+common_apt_repos: []
+
+# version-specific apt repos, defined in the the version-specific var files
+apt_repos: []
+
+# packages to install, see common_packages below as well. The set of packages to install
+# is packages + common_packages
 packages: []
+
+# packages common to a major version, distro or package type. This means that they
+# have the same name and are intended to be installed for all other versions in that major
+# version, distro or package type
+common_packages: []
 
 packages_to_remove: []
 packages_to_upgrade: []
