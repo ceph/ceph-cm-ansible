@@ -1,26 +1,26 @@
 Overview
 ========
 
-This project is meant to store ansible roles for managing the nodes
-in the ceph testing labs.
+This project is meant to store ansible roles for managing the nodes in the ceph
+testing labs.
 
 Inventory
 =========
 
 As this repo only contains roles, it does not define the ansible inventory or
-any associated group_vars or host_vars.  However, it does depend on these things
-existing in a separate repository or otherwise accesible by these roles
+any associated group_vars or host_vars.  However, it does depend on these
+things existing in a separate repository or otherwise accesible by these roles
 when they are used. Any vars a role needs should be added to its
-``defaults/main.yml`` file to document what must be defined per node or
-group in your inventory.
+``defaults/main.yml`` file to document what must be defined per node or group
+in your inventory.
 
 This separation is important because we have multiple labs we manage with these
 same roles and each lab has different configuration needs. We call these our
 ``secrets`` or ``*-secrets`` repos throughout the rest of the documention and
 in the roles.
 
-Besides the inventory, ``secrets`` repos also may contain certain secret
-or encrypted files that we can not include in ceph-cm-ansible for various reasons.
+Besides the inventory, ``secrets`` repos also may contain certain secret or
+encrypted files that we can not include in ceph-cm-ansible for various reasons.
 
 The directory structure for one of our ``secrets`` repos is::
 
@@ -36,32 +36,36 @@ The directory structure for one of our ``secrets`` repos is::
         └── secrets
             └── entitlements.yml
 
-Refer to Step 2 below for instructions on how to setup a ``secrets`` repo for use by
-ceph-cm-ansible. If set up this way, -i is not necessary for ansible-playbook to find
-the repo. However, you can choose your own setup and point to the ``secrets`` repo with -i
-if you prefer.
+Refer to Step 2 below for instructions on how to setup a ``secrets`` repo for
+use by ceph-cm-ansible. If set up this way, -i is not necessary for
+ansible-playbook to find the repo. However, you can choose your own setup and
+point to the ``secrets`` repo with -i if you prefer.
 
-**NOTE:** Some playbooks require specific groups to be defined in your inventory. Please refer to
-``hosts`` in the playbook you want to use to ensure you've got the proper groups defined.
+**NOTE:** Some playbooks require specific groups to be defined in your
+inventory. Please refer to ``hosts`` in the playbook you want to use to ensure
+you've got the proper groups defined.
 
 Where should I put variables?
 -----------------------------
 
-All variables should be defined in ``defaults/main.yml`` for the role they're primarily used in.
-If the variable you're adding can be used in multiple roles define it in ``defaults/main.yml``
-for both roles. If the variable can contain a reasonable default value that should work for all
-possible labs then define that value in ``defaults/main.yml`` as well.  If not, you should still
-default the variable to something, but make the tasks that use the variable either fail
+All variables should be defined in ``defaults/main.yml`` for the role they're
+primarily used in.  If the variable you're adding can be used in multiple roles
+define it in ``defaults/main.yml`` for both roles. If the variable can contain
+a reasonable default value that should work for all possible labs then define
+that value in ``defaults/main.yml`` as well.  If not, you should still default
+the variable to something, but make the tasks that use the variable either fail
 gracefully without that var or prompt the user to define it if it's mandatory.
 
-If the variable is something that might need to be defined with a value specific to the lab in use, then
-it'll need to be added to your ``secrets`` repo as well. Variables in ``group_vars/all.yml`` will
-apply to all nodes unless a group_var file exists that is more specific for that node.  For example,
-if you define the var ``foo: bar`` in ``all.yml`` and the node you're running ansible against exists
-in the ``testnodes`` group and there is a ``group_vars/testnodes.yml`` file defined with
-``foo: baz`` included in it then the role using the variable will use the value defined in
-``testnodes.yml``. The playbook you're using knows which group_var file to use because of
-the ``hosts`` value defined for it.
+If the variable is something that might need to be defined with a value
+specific to the lab in use, then it'll need to be added to your ``secrets``
+repo as well. Variables in ``group_vars/all.yml`` will apply to all nodes
+unless a group_var file exists that is more specific for that node.  For
+example, if you define the var ``foo: bar`` in ``all.yml`` and the node you're
+running ansible against exists in the ``testnodes`` group and there is a
+``group_vars/testnodes.yml`` file defined with ``foo: baz`` included in it then
+the role using the variable will use the value defined in ``testnodes.yml``.
+The playbook you're using knows which group_var file to use because of the
+``hosts`` value defined for it.
 
 
 Setting up a local dev environment
