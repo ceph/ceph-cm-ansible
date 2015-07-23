@@ -40,6 +40,11 @@ scripts:
 triggers:
   - install/post/cephlab_ansible.sh
 
+utils:
+  - console.sh
+  - reboot.sh
+  - reimage.sh
+
 ansible_user_ssh_keys: []
 
 ansible_user: ''
@@ -51,3 +56,9 @@ ansible_user_uid_: ''
 #      - "nameserver x.x.x.x"
 #      - "search an.example.com"
 resolvconf: []
+
+power_type: ipmilan
+# power_user and power_pass defaults will need to be overridden in a secrets
+# repo to be useful
+power_user: poweruser
+power_pass: powerpass

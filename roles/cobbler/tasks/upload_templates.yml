@@ -52,3 +52,24 @@
   with_items: triggers
   tags:
     - triggers
+
+- name: Create /root/bin
+  file:
+    path: /root/bin
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  tags:
+    - utils
+
+- name: Upload utilities for convenience.
+  template:
+    src: "utils/{{ item }}"
+    dest: "/root/bin/{{ item }}"
+    owner: root
+    group: root
+    mode: 0755
+  with_items: utils
+  tags:
+    - utils

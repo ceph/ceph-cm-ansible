@@ -1,4 +1,8 @@
 ---
+- include: ipmi_secrets.yml
+  tags:
+    - always
+
 - name: Include cobbler keys.
   include_vars: "{{ secrets_path | mandatory }}/cobbler_keys.yml"
   no_log: true
