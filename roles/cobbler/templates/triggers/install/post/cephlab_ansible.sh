@@ -5,6 +5,7 @@ name=$2
 export USER=root
 export HOME=/root
 ANSIBLE_CM_PATH=/root/ceph-cm-ansible
+SECRETS_REPO_NAME={{ secrets_repo.name }}
 
 # Bail if the ssh port isn't open, as will be the case when this is run 
 # while the installer is still running. When this is triggered by 
@@ -13,7 +14,15 @@ nmap -sT -oG - -p 22 $name | grep 22/open
 
 mkdir -p /var/log/ansible
 
+if [ $SECRETS_REPO_NAME != 'UNDEFINED' ]
+then
+    ANSIBLE_SECRETS_PATH=/root/$SECRETS_REPO_NAME
+    pushd $ANSIBLE_SECRETS_PATH
+    git pull
+    popd
+fi
 pushd $ANSIBLE_CM_PATH
+git pull
 export ANSIBLE_SSH_PIPELINING=1
 export ANSIBLE_HOST_KEY_CHECKING=False
 # Tell ansible to create users and populate authorized_keys
