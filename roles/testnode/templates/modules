@@ -8,3 +8,4 @@ loop
 lp
 rtc
 scsi_transport_iscsi
+cls_cgroup
