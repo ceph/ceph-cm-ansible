@@ -1,4 +1,8 @@
 ---
+
+- name: Log the OS name, version and release
+  debug: msg="Host {{ inventory_hostname }} is running {{ ansible_distribution }} {{ ansible_distribution_version }} ({{ ansible_distribution_release }})"
+
 # loading major version specific vars
 - name: Including major version specific variables.
   include_vars: "{{ item }}"
