@@ -103,6 +103,9 @@ common_packages:
   # nfs
   - nfs-common
   - nfs-kernel-server
+  # cgroups
+  - cgroup-lite
+  - cgroup-bin
 
 packages_to_upgrade:
   - apt
