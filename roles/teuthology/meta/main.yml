@@ -1,0 +1,4 @@
+---
+dependencies:
+  - role: sudo
+  - role: users

@@ -4,6 +4,9 @@
 # cobbler / downburst / cloud-init.
 - include: ansible_managed.yml
 
+# if this node is in the teuthology group, configure it
+- include: teuthology.yml
+
 # if this node is in the testnode group, configure it
 - include: testnodes.yml
 
