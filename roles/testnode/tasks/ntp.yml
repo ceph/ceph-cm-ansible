@@ -24,3 +24,9 @@
     mode: 0644
   notify:
     - restart ntp
+
+- name: Make sure ntpd is running.
+  service:
+    name: "{{ntp_service_name}}"
+    enabled: yes
+    state: started
