@@ -1,0 +1,8 @@
+---
+- hosts: all
+  tasks:
+    - debug: msg="I'll always fail"
+      failed_when: true 
+    - name: Echo a thing
+      command: echo 'hello'
+      failed_when: true

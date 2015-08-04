@@ -16,9 +16,6 @@ def log_failure(host, result):
     failure = {"{0}".format(host): dict()}
     failure[host] = result
 
-    print "*******\n"
-    print yaml.safe_dump(failure)
-
     fail_log = os.environ.get('ANSIBLE_FAILURE_LOG')
     if fail_log:
         existing_failures = dict()
