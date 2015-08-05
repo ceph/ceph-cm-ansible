@@ -3,12 +3,14 @@ import os
 import logging
 
 log = logging.getLogger(__name__)
+fail_log = os.environ.get('ANSIBLE_FAILURE_LOG')
+if fail_log:
+    handler = logging.FileHandler(filename=fail_log)
+    log.addHandler(handler)
 
 
 def log_failure(host, result):
     """
-    Print any failures to stdout nicely formatted as yaml.
-
     If the environment variable ANSIBLE_FAILURE_LOG is present
     a log of all failures in the playbook will be persisted to
     the file path given in ANSIBLE_FAILURE_LOG.
@@ -16,18 +18,8 @@ def log_failure(host, result):
     failure = {"{0}".format(host): dict()}
     failure[host] = result
 
-    fail_log = os.environ.get('ANSIBLE_FAILURE_LOG')
     if fail_log:
-        existing_failures = dict()
-        if os.path.exists(fail_log):
-            with open(fail_log, 'r') as outfile:
-                existing_failures = yaml.safe_load(outfile.read())
-
-            if existing_failures:
-                failure.update(existing_failures)
-
-        with open(fail_log, 'w') as outfile:
-            outfile.write(yaml.safe_dump(failure))
+        log.error(yaml.safe_dump(failure))
 
 
 class CallbackModule(object):
