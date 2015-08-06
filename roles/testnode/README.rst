@@ -103,6 +103,11 @@ A list of packages to install that are common to a distro or distro version. The
 
     common_packages: []
 
+A list of packages that must be installed from epel. These packages are installed with the epel repo explicitly enabled for any
+yum-based distro that provides the list in their var file in ``/vars``::
+
+    epel_packages: []
+
 **NOTE:** A good example of how ``packages`` and ``common_packages`` work together is with Ubuntu. The var file ``roles/testnode/vars/ubuntu.yml`` defines
 a number of packages in ``common_packages`` that need to be installed across all versions of ubuntu, while the version-specific files
 (for example, ``roles/testnode/vars/ubuntu_14.yml``) define packages in ``packages`` that either have varying names across versions or are only needed
