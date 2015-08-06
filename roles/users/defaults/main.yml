@@ -18,3 +18,6 @@ managed_admin_users: []
 # both managed_users and managed_admin_users would be filtered
 # to only contain the information for 'user1'.
 users: []
+
+# A list of users whose access is to be revoked. These accounts will be deleted.
+revoked_users: []

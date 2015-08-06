@@ -23,6 +23,10 @@ When adding a user, these steps are performed for each user:
 - Adds the user's public key to ~/.ssh/authorized_keys (tags: pubkeys)
 
 
+This role also supports revoking user access by removing all users in the
+``revoked_users`` variable.
+
+
 Usage
 +++++
 
@@ -73,13 +77,20 @@ A list of usernames to filter ``managed_users`` and ``managed_admin_users`` by::
 
     users: []
 
+A list of usernames whose access is to be revoked::
+
+    revoked_users: []
+
 Tags
 ++++
 
 Available tags are listed below:
 
 users
-    Perform only user creation tasks, ssh keys will not be updated.
+    Perform only user creation/removal tasks; ssh keys will not be updated.
+
+revoke
+    Perform only user removal tasks.
 
 pubkeys
     Perform only authorized keys tasks, users will not be created but all
@@ -91,8 +102,6 @@ TODO
 - Allow management of the UID for each user
 
 - Allow management of the shell for each user
- 
-- Add the ability to remove or revoke user access
 
 - Ensure that the sudo group exists with the correct permissions. We currently depend on it
   being created already by other playbooks (ansible_managed.yml) or created by cobbler
