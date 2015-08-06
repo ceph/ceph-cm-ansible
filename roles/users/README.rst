@@ -41,7 +41,7 @@ sure to define either ``managed_users`` or ``managed_admin_users`` in your inven
 
 You can also filter the list of users being managed by passing the 'users' variable::
 
-    $ ansible-playbook users.yml --limit="$NODE" --extra-vars='{"users"=["user1"]}'
+    $ ansible-playbook users.yml --limit="$NODE" --extra-vars='{"users": ["user1"]}'
 
 Variables
 +++++++++
