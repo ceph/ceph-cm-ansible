@@ -39,6 +39,14 @@
   with_items: packages
   when: packages|length > 0
 
+- name: Install epel packages
+  yum:
+    name: "{{ item }}"
+    state: present
+    enablerepo: epel
+  with_items: epel_packages
+  when: epel_packages|length > 0
+
 - name: Remove packages
   yum:
     name: "{{ item }}"

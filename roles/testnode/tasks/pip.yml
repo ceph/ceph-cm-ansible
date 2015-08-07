@@ -3,6 +3,7 @@
   yum:
     name: python-pip
     state: present
+    enablerepo: epel
   when: ansible_pkg_mgr  == "yum"
 
 - name: Install python-pip on apt based systems.

@@ -20,6 +20,9 @@ apt_repos: []
 # is packages + common_packages
 packages: []
 
+# a list of packages that have to be installed from epel
+epel_packages: []
+
 # packages common to a major version, distro or package type. This means that they
 # have the same name and are intended to be installed for all other versions in that major
 # version, distro or package type
