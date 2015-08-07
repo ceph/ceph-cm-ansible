@@ -36,6 +36,7 @@
   yum:
     name: "{{ item }}"
     state: present 
+    enablerepo: epel
   with_items: packages
   when: packages|length > 0
 
