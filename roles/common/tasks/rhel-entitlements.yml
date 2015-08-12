@@ -69,14 +69,14 @@
 
 - name: Disable all rhsm repos
   command: subscription-manager repos --disable '*'
-  when: replace_repos == True
+  when: replace_repos == "True"
   # This produces an absurd amount of useless output
   no_log: True
 
 - name: Enable necessary rhsm repos
   command: subscription-manager repos --enable {{ item }}
   with_items: rhsm_repos
-  when: replace_repos == True and rhsm_repos|length > 0
+  when: replace_repos == "True" and rhsm_repos|length > 0
 
 - name: Remove old apt-mirror repository definition.
   file:
