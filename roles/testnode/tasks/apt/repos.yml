@@ -22,8 +22,8 @@
     url: "{{ item }}"
     state: present
   with_items:
-    - "http://{{ git_mirror_host }}/?p=ceph.git;a=blob_plain;f=keys/autobuild.asc;hb=HEAD"
-    - "http://{{ git_mirror_host }}/?p=ceph.git;a=blob_plain;f=keys/release.asc"
+    - "http://{{ git_mirror_host }}/autobuild.asc"
+    - "http://{{ git_mirror_host }}/release.asc"
 
 # required for apt_repository
 - name: Install python-apt
