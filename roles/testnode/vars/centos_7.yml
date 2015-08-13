@@ -63,6 +63,7 @@ packages:
   - libacl-devel
   - bc
   - xfsdump
+  - xfsprogs-devel
   ###
   # for blktrace and seekwatcher
   - blktrace
