@@ -27,14 +27,11 @@ packages:
   # for running ceph
   - libedit
   - openssl098e
-  - gperftools-devel
   - boost-thread
   - xfsprogs
   - gdisk
   - parted
   - libgcrypt
-  - cryptopp-devel
-  - cryptopp
   - fuse
   - fuse-libs
   ###
@@ -50,10 +47,7 @@ packages:
   - python-nose
   - mpich
   - ant
-  - fuse-sshfs
   - iozone
-  - dbench
-  - bonnie++
   ###
   # used by the xfstests tasks
   - libtool
@@ -85,8 +79,6 @@ packages:
   - mod_fastcgi-2.4.7-1.ceph.el7.centos
   ###
   - libevent-devel
-  # for json_xs to investigate JSON by hand
-  - perl-JSON-XS
   # for pretty-printing xml
   - perl-XML-Twig
   # for java bindings, hadoop, etc.
@@ -96,3 +88,16 @@ packages:
   - smartmontools
   # for nfs
   - nfs-utils
+
+epel_packages:
+  # for running ceph
+  - gperftools-devel
+  - cryptopp-devel
+  - cryptopp
+  # used by workunits
+  - dbench
+  # used by workunits
+  - fuse-sshfs
+  - bonnie++
+  # for json_xs to investigate JSON by hand
+  - perl-JSON-XS

@@ -51,22 +51,15 @@ packages:
   # for running ceph
   - libedit
   - openssl098e
-  - gperftools-devel
   - boost-thread
   - xfsprogs
   - gdisk
   - parted
   - libgcrypt
-  - cryptopp-devel
-  - cryptopp
   - fuse
   - fuse-libs
   ###
-  # for ceph-deploy
-  - python-virtualenv
   ###
-  # for setting BIOS settings
-  - smbios-utils
   ###
   - openssl
   - libuuid
@@ -81,9 +74,6 @@ packages:
   - mpich2
   - mpich2-devel
   - ant
-  - dbench
-  - bonnie++
-  - fuse-sshfs
   - fsstress
   - iozone
   ###
@@ -118,8 +108,6 @@ packages:
   ###
   - libevent-devel
   - python-devel
-  # for json_xs to investigate JSON by hand
-  - perl-JSON
   # for pretty-printing xml
   - perl-XML-Twig
   # for java bindings, hadoop, etc.
@@ -129,3 +117,20 @@ packages:
   - smartmontools
   # for nfs
   - nfs-utils
+
+epel_packages:
+  # for running ceph
+  - gperftools-devel
+  - cryptopp-devel
+  - cryptopp
+  # used by workunits
+  - dbench
+  # used by workunits
+  - fuse-sshfs
+  - bonnie++
+  # for json_xs to investigate JSON by hand
+  - perl-JSON
+  # for ceph-deploy
+  - python-virtualenv
+  # for setting BIOS settings
+  - smbios-utils
