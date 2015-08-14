@@ -29,7 +29,7 @@ epel_packages: []
 common_packages: []
 
 # packages used by ceph we want to ensure are removed
-ceph_packages: []
+ceph_packages_to_remove: []
 packages_to_remove: []
 packages_to_upgrade: []
 

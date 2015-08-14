@@ -3,7 +3,7 @@ ntp_service_name: ntpd
 ssh_service_name: sshd
 
 # ceph packages that we ensure do not exist
-ceph_packages:
+ceph_packages_to_remove:
   - ceph
   - ceph-common
   - ceph-debuginfo
