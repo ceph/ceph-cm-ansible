@@ -22,6 +22,13 @@
   # If we're currently running as teuthology_user, we won't be able to modify
   # the account
   when: teuthology_user != ansible_ssh_user
+  register: teuthology_user_existence
+
+# If the teuthology_user was just created, delete its password
+- name: Delete the teuthology users password.
+  command: "passwd -d {{ teuthology_user }}"
+  when: teuthology_user_existence is defined and
+        teuthology_user_existence|changed
 
 - name: Add a user for xfstests to test user quotas.
   user:
