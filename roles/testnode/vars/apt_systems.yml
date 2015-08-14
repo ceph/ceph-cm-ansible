@@ -9,6 +9,7 @@ ceph_packages:
   - libcephfs1
   - radosgw
   - python-ceph
+  - python-rados
   - librbd1
   - librados2
 
