@@ -28,6 +28,8 @@ epel_packages: []
 # version, distro or package type
 common_packages: []
 
+# packages used by ceph we want to ensure are removed
+ceph_packages: []
 packages_to_remove: []
 packages_to_upgrade: []
 

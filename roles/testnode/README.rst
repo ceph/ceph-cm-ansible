@@ -113,6 +113,11 @@ a number of packages in ``common_packages`` that need to be installed across all
 (for example, ``roles/testnode/vars/ubuntu_14.yml``) define packages in ``packages`` that either have varying names across versions or are only needed
 for that specific version. This is the same idea behind the vars that control apt and yum repos as well.
 
+A list of ceph packages to remove. It's safe to add packages to this list that aren't currently installed or don't exist. Both ``apt-get`` and ``yum``
+handle this case correctly. This list is defined in ``vars/apt_systems.yml`` and ``vars/yum_systems.yml``::
+
+    ceph_packages: []
+
 A list of packages to remove. These lists are defined in the var files in ``vars/``::
 
     packages_to_remove: []
