@@ -3,8 +3,8 @@
   apt:
     name: "{{ item }}"
     state: absent
-  with_items: ceph_packages|list + packages_to_remove|list
-  when: ceph_packages|length > 0 or
+  with_items: ceph_packages_to_remove|list + packages_to_remove|list
+  when: ceph_packages_to_remove|length > 0 or
         packages_to_remove|length > 0
 
 - name: Upgrade packages

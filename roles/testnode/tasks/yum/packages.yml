@@ -28,7 +28,7 @@
   yum:
     name: "{{ item }}"
     state: absent
-  with_items: ceph_packages
+  with_items: ceph_packages_to_remove
   tags:
     - remove-ceph
 
