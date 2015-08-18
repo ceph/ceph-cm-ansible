@@ -10,6 +10,7 @@ puddle:
   topurl: ''
   rhel_7_server_repo_url: ''
   rhel_7_common_server_repo_url: ''
+  rhel_7_scl_repo_url: ''
   rhel_7_ceph_calamari_1_2_repo_url: ''
   rhel_7_ceph_installer_1_2_repo_url: ''
   rhel_7_ceph_mon_1_2_repo_url: ''
