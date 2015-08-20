@@ -43,6 +43,7 @@ packages:
   - '@core'
   - '@base'
   - yum-plugin-priorities
+  - yum-plugin-fastestmirror
   - redhat-lsb
   - sysstat
   - gdb
