@@ -4,4 +4,4 @@
     url: "{{ item.url }}"
     dest: "/etc/yum.repos.d/{{ item.name }}.repo"
     force: yes
-  with_items: yum_repos
+  with_items: repos
