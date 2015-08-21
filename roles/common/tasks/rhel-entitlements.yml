@@ -52,6 +52,11 @@
     repo_list: "{{ repo_list_cmd.stdout.split('\n') }}"
   when: repo_list_cmd is defined and not repo_list_cmd|skipped
 
+- name: Set replace_repos if entitlements are missing
+  set_fact:
+    replace_repos: False
+  when: have_entitlements == "False"
+
 - name: Set replace_repos if rhsm_repos differs from repo_list
   set_fact:
     replace_repos: "{{ repo_list|sort != rhsm_repos|sort }}"
