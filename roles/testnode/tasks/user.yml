@@ -4,6 +4,11 @@
     name: sudo
     state: present
 
+- name: Ensure the libvirt group exists.
+  group:
+    name: libvirt
+    state: present
+
 - name: Ensure the teuthology_user group exists.
   group:
     name: "{{ teuthology_user }}"
@@ -16,7 +21,7 @@
     # https://github.com/ceph/ceph-qa-chef/commit/5678cc3893fd1cc291254e4d1abe6705e6a9bbb0
     uid: 1000
     group: sudo
-    groups: "{{ teuthology_user }}"
+    groups: "{{ teuthology_user }},libvirt"
     shell: /bin/bash
     state: present
   # If we're currently running as teuthology_user, we won't be able to modify
