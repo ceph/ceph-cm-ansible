@@ -1,4 +1,17 @@
 ---
+# Check for and remove custom repos.
+# http://tracker.ceph.com/issues/12794
+- name: Check for custom repos
+  shell: "ls -1 /etc/apt/sources.list.d/"
+  register: custom_repos
+  changed_when: false
+
+- name: Remove custom repos
+  file: path=/etc/apt/sources.list.d/{{ item }} state=absent
+  with_items: custom_repos.stdout_lines
+  # Ignore changes here because we will be removing repos that we end up re-adding later
+  changed_when: false
+
 - name: Set apt preferences
   template:
     dest: "/etc/apt/preferences.d/ceph.pref"
@@ -39,6 +52,8 @@
     mode: 0644
   with_items: apt_repos|list + common_apt_repos|list
   register: local_apt_repos
+  # Ignore changes here because we might have just removed these repos seconds ago
+  changed_when: false
 
 - name: Update apt cache.
   apt:
