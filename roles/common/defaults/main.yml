@@ -28,3 +28,4 @@ epel_repos:
     gpgcheck: 0
 
 enable_epel: true
+yum_timeout: 300
