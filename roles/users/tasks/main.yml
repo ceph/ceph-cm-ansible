@@ -46,7 +46,8 @@
   # Register and retry to work around transient githubusercontent.com issues
   register: ssh_key_update
   until: ssh_key_update|success
-  retries: 3
+  # try for 2 minutes to retrieve the key before failing
+  retries: 24
   delay: 5
   tags:
     - pubkeys
