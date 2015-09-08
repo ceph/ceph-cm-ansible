@@ -42,6 +42,11 @@
   when: add_user_xattr is defined and
         add_user_xattr|changed
 
+- name: Ensure fuse group exists.
+  group:
+    name: fuse
+    state: present
+
 - name: Upload /etc/fuse.conf.
   template:
     src: fuse.conf
