@@ -213,10 +213,20 @@ $result = 2 if $crit;
 my $out = "No real disks found on machine";
 $out = "All $drives drives happy as clams" if $drives;
 
-if (@out)
-{
-    $out = join(';     ', @out);  
-}
+if ($ARGV[0] =~ /-m/) {
+	if (@out) {
+		foreach my $line (@out) {
+			print $line, "\n";
+		}
+	} else {
+		print "$out\n";
+	}
+} else {
+	if (@out)
+	{
+		$out = join(';     ', @out);
+	}
 
-print "$out\n";
+	print "$out\n";
+}
 exit $result;
