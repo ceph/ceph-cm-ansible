@@ -1,0 +1,4 @@
+# {{ ansible_managed }}
+deb http://http.debian.net/debian jessie main contrib non-free
+deb http://security.debian.org/ jessie/updates main contrib non-free
+deb http://http.debian.net/debian jessie-updates main contrib non-free

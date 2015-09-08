@@ -10,10 +10,12 @@
 - name: Update apt cache.
   apt:
     update_cache: yes
-  when: ansible_distribution_major_version|int >= 15 and
-        ansible_distribution == "Ubuntu"
+  # try for 2 minutes before failing
+  retries: 24
+  delay: 5
   tags:
     - repos
+    - packages
 
 - name: Perform package related tasks.
   include: apt/packages.yml
@@ -39,6 +41,11 @@
     mount -o remount,user_xattr /
   when: add_user_xattr is defined and
         add_user_xattr|changed
+
+- name: Ensure fuse group exists.
+  group:
+    name: fuse
+    state: present
 
 - name: Upload /etc/fuse.conf.
   template:

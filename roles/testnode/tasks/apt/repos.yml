@@ -37,6 +37,9 @@
   with_items:
     - "http://{{ git_mirror_host }}/autobuild.asc"
     - "http://{{ git_mirror_host }}/release.asc"
+  # try for 2 minutes before failing
+  retries: 24
+  delay: 5
 
 # required for apt_repository
 - name: Install python-apt
@@ -52,16 +55,3 @@
     mode: 0644
   with_items: apt_repos|list + common_apt_repos|list
   register: local_apt_repos
-
-- name: Update apt cache.
-  apt:
-    update_cache: yes
-  when: sources|changed or
-        local_apt_repos|changed or
-        apt_prefs|changed
-  # Register and retry to work around transient http issues
-  register: apt_cache_update
-  until: apt_cache_update|success
-  # try for 2 minutes before failing
-  retries: 24
-  delay: 5
