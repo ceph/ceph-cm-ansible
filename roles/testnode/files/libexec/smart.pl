@@ -95,7 +95,7 @@ sub smartctl
 	                foreach ( $sector[9] )
 	                {
 	                        my $count = $_;
-				my $l = chr(ord('a') + $drive);
+				my $l = chr(ord('a') + $drive - 1);
 	                        $message = "Drive $drive (sd$l) has $count $type sectors";
 
 	                        if ( ( $type =~ /reallocated/i && $count > $realloc ) && ( $type =~ /pending/i && $count > $pend ) && ( $type =~ /pending/i && $count > $uncorrect  ) )
