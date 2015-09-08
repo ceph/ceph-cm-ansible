@@ -90,7 +90,8 @@ sub smartctl
 	                foreach ( $sector[9] )
 	                {
 	                        my $count = $_;
-	                        $message = "Drive $drive has $count $type sectors";
+				my $l = chr(ord('a') + $drive);
+	                        $message = "Drive $drive (sd$l) has $count $type sectors";
 
 	                        if ( ( $type =~ /reallocated/i && $count > $realloc ) && ( $type =~ /pending/i && $count > $pend ) && ( $type =~ /pending/i && $count > $uncorrect  ) )
 	                        {
@@ -177,9 +178,16 @@ if ( $pci =~ /areca/i)
 		push(@out,$message);
 	}
 
-	my $vsf= `sudo /usr/sbin/cli64 vsf info  | grep -v Capacity | grep -v ======== | grep -v ErrMsg | wc -l`;
-	chomp $vsf;
-	my $scsidev = "/dev/sg$vsf";
+        open (SG, '/proc/scsi/sg/devices');
+	my $sgindex = 0;
+	while (<SG>) {
+		my ($host, $chan, $id, $lun, $type, $opens, $depth, $busy, $online) = split();
+		if ($type == 3) {
+			last;
+		}
+		$sgindex++;
+	}
+	my $scsidev = "/dev/sg$sgindex";
 	open(CLI,"sudo /usr/sbin/cli64 disk info | grep -vi Modelname | grep -v ====== | grep -vi GuiErr | grep -vi Free | grep -vi Failed | grep -vi 'N.A.' |");
 	while (<CLI>)
 	{
@@ -205,10 +213,20 @@ $result = 2 if $crit;
 my $out = "No real disks found on machine";
 $out = "All $drives drives happy as clams" if $drives;
 
-if (@out)
-{
-    $out = join(';     ', @out);  
-}
+if ($ARGV[0] =~ /-m/) {
+	if (@out) {
+		foreach my $line (@out) {
+			print $line, "\n";
+		}
+	} else {
+		print "$out\n";
+	}
+} else {
+	if (@out)
+	{
+		$out = join(';     ', @out);
+	}
 
-print "$out\n";
+	print "$out\n";
+}
 exit $result;
