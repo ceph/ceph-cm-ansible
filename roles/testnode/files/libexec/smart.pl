@@ -16,6 +16,7 @@ my $type;
 my $mdadm;
 my $fullcommand;
 my $message;
+my $multiline;
 
 my $hostname = `uname -n`;
 chomp $hostname;
@@ -27,6 +28,10 @@ my $smartctl = "/usr/sbin/smartctl";
 our $realloc = '50';
 our $pend = '1';
 our $uncorrect = '1';
+
+if ($ARGV[0] =~ /-m/) {
+    $multiline = 1;
+}
 
 if ( $hostname =~ /mira/i )
 {
@@ -188,7 +193,12 @@ if ( $pci =~ /areca/i)
 		$sgindex++;
 	}
 	my $scsidev = "/dev/sg$sgindex";
-	open(CLI,"sudo /usr/sbin/cli64 disk info | grep -vi Modelname | grep -v ====== | grep -vi GuiErr | grep -vi Free | grep -vi Failed | grep -vi 'N.A.' |");
+    if ($multiline) {
+        # don't filter out Failed/N.A drives
+        open(CLI,"sudo /usr/sbin/cli64 disk info | grep -vi Modelname | grep -v ====== | grep -vi GuiErr |");
+    } else {
+        open(CLI,"sudo /usr/sbin/cli64 disk info | grep -vi Modelname | grep -v ====== | grep -vi GuiErr | grep -vi Free | grep -vi Failed | grep -vi 'N.A.' |");
+    }
 	while (<CLI>)
 	{
 		$drives++;
@@ -198,7 +208,12 @@ if ( $pci =~ /areca/i)
 			foreach ($info[1])
 			{
 				my $drive = $_;
-				smartctl("$smartctl","areca",$drive,$scsidev);
+				my $status = $info[$#info];
+                if ($multiline && ($status =~ /Failed/ || $status =~ /N\.A\./)) {
+                    push(@out, "Drive $drive $status");
+                } else {
+                    smartctl("$smartctl","areca",$drive,$scsidev);
+                }
 			}
 		}
 	}
