@@ -7,6 +7,17 @@
     state: present
   when: ansible_distribution == 'RedHat'
 
+- name: Update apt cache.
+  apt:
+    update_cache: yes
+  # Register and retry to work around transient http issues
+  register: apt_cache_update
+  until: apt_cache_update|success
+  # try for 2 minutes before failing
+  retries: 24
+  delay: 5
+  when: ansible_distribution == 'Debian'
+
 - name: Install Kerberos Packages (Debian)
   apt:
     name: krb5-user
