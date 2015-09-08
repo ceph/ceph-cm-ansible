@@ -178,9 +178,16 @@ if ( $pci =~ /areca/i)
 		push(@out,$message);
 	}
 
-	my $vsf= `sudo /usr/sbin/cli64 vsf info  | grep -v Capacity | grep -v ======== | grep -v ErrMsg | wc -l`;
-	chomp $vsf;
-	my $scsidev = "/dev/sg$vsf";
+        open (SG, '/proc/scsi/sg/devices');
+	my $sgindex = 0;
+	while (<SG>) {
+		my ($host, $chan, $id, $lun, $type, $opens, $depth, $busy, $online) = split();
+		if ($type == 3) {
+			last;
+		}
+		$sgindex++;
+	}
+	my $scsidev = "/dev/sg$sgindex";
 	open(CLI,"sudo /usr/sbin/cli64 disk info | grep -vi Modelname | grep -v ====== | grep -vi GuiErr | grep -vi Free | grep -vi Failed | grep -vi 'N.A.' |");
 	while (<CLI>)
 	{
