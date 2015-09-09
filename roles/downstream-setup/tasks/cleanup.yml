@@ -8,10 +8,13 @@
   tags:
     - yum-repos
 
+- set_fact:
+    repos_to_remove: "{% for repo in yum_repos%}{{ repo.name }}{% if not loop.last %},{% endif %}{% endfor %}"
+
 - include: remove_yum_repos.yml
   when: yum_repos|length > 0
   vars:
-    repos: "{{ yum_repos }}"
+    repos: "{{ repos_to_remove.split(',') }}"
   tags:
     - delete-yum-repos
 
