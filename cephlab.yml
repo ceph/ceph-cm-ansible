@@ -12,3 +12,6 @@
 
 # if this node is in the cobbler group, configure it
 - include: cobbler.yml
+
+# if this node is in the pulpito group, configure it
+- include: pulpito.yml
