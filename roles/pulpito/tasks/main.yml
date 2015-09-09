@@ -1,0 +1,100 @@
+---
+- name: Include package type specific vars.
+  include_vars: "{{ ansible_pkg_mgr }}_systems.yml"
+  tags:
+    - always
+
+- include: yum_systems.yml
+  when: ansible_pkg_mgr == "yum"
+
+- include: apt_systems.yml
+  when: ansible_pkg_mgr == "apt"
+
+- name: Create the user
+  user:
+    name: pulpito
+    state: present
+    shell: /bin/bash
+
+- name: Set repo location
+  set_fact:
+    pulpito_repo_path: "/home/pulpito/pulpito"
+
+- name: Checkout the repo
+  git:
+    repo: "{{ pulpito_repo }}"
+    dest: "{{ pulpito_repo_path }}"
+  sudo_user: pulpito
+
+- name: Look for the virtualenv
+  stat: 
+    path: "{{ pulpito_repo_path }}/virtualenv"
+    get_checksum: no
+    get_md5: no
+  register: virtualenv
+
+- name: Create the virtualenv
+  shell: virtualenv ./virtualenv chdir={{ pulpito_repo_path }}
+  sudo_user: pulpito
+  when: virtualenv.stat.exists == false
+
+- name: Install requirements via pip
+  pip:
+    chdir: "{{ pulpito_repo_path }}"
+    requirements: "./requirements.txt"
+    virtualenv: "{{ pulpito_repo_path }}/virtualenv"
+  no_log: true
+  sudo_user: pulpito
+
+- name: Check for pulpito config
+  stat:
+    path: "{{ pulpito_repo_path }}/prod.py"
+    get_checksum: no
+    get_md5: no
+  register: pulpito_config
+
+- name: Copy pulpito config
+  shell: cp ./config.py.in prod.py chdir={{ pulpito_repo_path }}
+  when: pulpito_config.stat.exists == false
+  sudo_user: pulpito
+
+- name: Set paddles_address
+  lineinfile:
+    dest: "{{ pulpito_repo_path }}/prod.py"
+    regexp: "^paddles_address = "
+    line: "paddles_address = '{{ paddles_address|mandatory }}'"
+  when: pulpito_config.stat.exists == false
+
+- name: Enable supervisord
+  service:
+    name: "{{ supervisor_service }}"
+    enabled: yes
+    state: started
+
+- name: Set supervisord config path
+  set_fact:
+    supervisor_conf_path: "{{ supervisor_conf_d }}/pulpito.{{ supervisor_conf_suffix }}"
+
+- name: Look for supervisord config
+  stat:
+    path: "{{ supervisor_conf_path }}"
+    get_checksum: no
+    get_md5: no
+  register: supervisor_conf
+
+- name: Copy supervisord config
+  shell: cp ./supervisord_pulpito.conf {{ supervisor_conf_path }} chdir={{ pulpito_repo_path }}
+  when: supervisor_conf.stat.exists == false
+  register: supervisor_conf
+
+- name: Read supervisord config
+  command: supervisorctl update
+  when: supervisor_conf|changed
+
+- name: Check if pulpito is running
+  command: supervisorctl status pulpito
+  register: pulpito_status
+
+- name: Wait for pulpito to start
+  wait_for:
+    port: 8081

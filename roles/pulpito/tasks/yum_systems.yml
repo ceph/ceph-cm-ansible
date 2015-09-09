@@ -1,0 +1,9 @@
+---
+- name: Install packages via yum
+  yum:
+    name: "{{ item }}"
+    state: latest
+  no_log: true
+  with_items: "{{ pulpito_extra_packages }}"
+  tags:
+    - packages
