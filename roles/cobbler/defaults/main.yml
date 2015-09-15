@@ -10,6 +10,8 @@ secrets_repo:
 iso_dir: /var/lib/cobbler/isos
 # Mount point to use for ISOs during import
 iso_mount: /mnt/iso
+# Where to put kernel/initrd files for image-based ISOs
+other_image_dir: /var/lib/cobbler/other_boot_images
 
 users_digest_lines:
  # default password is 'cobbler' - change it in a secrets repo!
