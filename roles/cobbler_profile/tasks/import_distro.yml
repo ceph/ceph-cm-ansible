@@ -18,19 +18,34 @@
   set_fact:
       distro: "{{ distros[distro_name] }}"
 
+- name: Fail if an iso is provided in combination with either a kernel or initrd
+  fail: msg="Cannot specify both 'iso' and 'kernel' or 'initrd'. distro '{{ distro_name }}'"
+  when: distro.iso != '' and (distro.kernel is defined or distro.initrd is defined)
+
+- name: Set profile_type to iso
+  set_fact:
+    profile_type: 'iso'
+  when: distro.iso is defined and distro.iso != ''
+
+- name: Set profile_type to image
+  set_fact:
+    profile_type: 'image'
+  when: (distro.kernel is defined and distro.kernel != '') and (distro.initrd is defined and distro.initrd != '')
+
 - name: Determine if distro profile exists
   command: cobbler profile find --name {{ distro_name }}
-  # Skip if the iso field is empty; this allows us to mention distros with 
+  # Skip if the profile_type is empty; this allows us to mention distros with 
   # ISOs that are internal, but leave the URL out.
-  when: distro.iso != '' or distro.kernel != ''
+  when: profile_type|default('') != ''
   register: profile
   ignore_errors: true
   changed_when: false
 
 - include: import_distro_iso.yml
-  when: distro.iso != ''
+  when: profile_type|default('') == 'iso'
 
-# make sure to define profile_found?
+- include: import_distro_image.yml
+  when: profile_type|default('') == 'image'
 
 # If either the profile already existed or we successfully imported the
 # distro, we might want to update other options in the profile. i.e. kickstarts
