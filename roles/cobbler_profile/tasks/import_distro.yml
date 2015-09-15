@@ -22,61 +22,15 @@
   command: cobbler profile find --name {{ distro_name }}
   # Skip if the iso field is empty; this allows us to mention distros with 
   # ISOs that are internal, but leave the URL out.
-  when: distro.iso != ''
+  when: distro.iso != '' or distro.kernel != ''
   register: profile
   ignore_errors: true
   changed_when: false
 
-- name: Set ISO name
-  set_fact:
-      iso_name: "{{ distro.iso.split('/')[-1] }}"
-
-- name: Set ISO path
-  set_fact:
-      iso_path: "{{ iso_dir }}/{{ iso_name }}"
-
-- include: download_iso.yml
+- include: import_distro_iso.yml
   when: distro.iso != ''
 
-# we do this so that if the playbook fails
-# after mounting and we need to run it again
-# then we'll remount and complete the rest
-# of the tasks like it's the first run
-- name: Clear the mount point.
-  mount:
-    name: "{{ iso_mount }}"
-    src: "{{ iso_path }}"
-    fstype: "iso9660"
-    state: unmounted
-
-- name: Mount ISO
-  mount:
-    name: "{{ iso_mount }}"
-    src: "{{ iso_path }}"
-    opts: "loop"
-    fstype: "iso9660"
-    state: mounted
-  when: download|changed or (iso_stat.stat.exists and
-        profile is defined and profile.stdout == '')
-  register: mount
-
-- name: Set arch
-  set_fact:
-      arch: "{{ distro.arch|default('x86_64') }}"
-  when: mount is defined and mount|changed
-
-- name: Import the distro (also creates the profile)
-  command: cobbler import --path={{ iso_mount }} --name={{ distro_name }} --arch={{ arch }}
-  register: import
-  when: mount is defined and mount|changed
-
-- name: Unmount ISO
-  mount:
-    name: "{{ iso_mount }}"
-    src: "{{ iso_path }}"
-    fstype: "iso9660"
-    state: unmounted
-  when: mount is defined and mount|changed
+# make sure to define profile_found?
 
 # If either the profile already existed or we successfully imported the
 # distro, we might want to update other options in the profile. i.e. kickstarts
