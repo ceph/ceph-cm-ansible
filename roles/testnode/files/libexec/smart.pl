@@ -9,6 +9,7 @@ my $crit;
 my $out;
 
 my @out;
+my @failedout;
 my $drives;
 my $pci;
 my $type;
@@ -74,6 +75,7 @@ sub smartctl
 			$message = "Drive $drive is S.M.A.R.T. failing for $fail[1]";
 			$crit = 1;
 			push(@out,$message);
+			push(@failedout,$drive);
 		}
 	        if (( $_ =~ /_sector/i ) || ( $_ =~ /d_uncorrect/i ))
 	        {
@@ -100,6 +102,7 @@ sub smartctl
 	                        {
 					$crit = 1;
 					push(@out,$message);
+					push(@failedout,$drive);
 	                        }
 	                        else
 	                        {
@@ -107,16 +110,19 @@ sub smartctl
 					{
 	        				$crit = 1;
 	        				push(@out,$message);
+						push(@failedout,$drive);
 					}
 					if ( $type =~ /pending/i && $count > $pend )
 					{
 	        				$crit = 1;
 	        				push(@out,$message);
+						push(@failedout,$drive);
 					}
 					if ( $type =~ /uncorrect/i && $count > $uncorrect )
 					{
 						$crit = 1;
 						push(@out,$message);
+						push(@failedout,$drive);
 					}
 	                	}
 			}
@@ -192,6 +198,7 @@ if ( $pci =~ /areca/i)
 				my $status = $info[$#info];
                 if ($multiline && ($status =~ /Failed/ || $status =~ /N\.A\./)) {
                     push(@out, "Drive $drive $status");
+		    push(@failedout,$drive);
                 } else {
                     smartctl("$smartctl","areca",$drive,$scsidev);
                 }
@@ -225,8 +232,21 @@ $result = 2 if $crit;
 my $out = "No real disks found on machine";
 $out = "All $drives drives happy as clams" if $drives;
 
+
+# count unique num failed drives
+my %counts = ();
+for (@failedout) {
+	$counts{$_}++;
+}
+
+my $uniquedrives = 0;
+foreach my $keys (keys %counts) {
+	$uniquedrives++;
+}
+
 if ($ARGV[0] =~ /-m/) {
 	if (@out) {
+		print "$uniquedrives of $drives drives failing/missing |\n";
 		foreach my $line (@out) {
 			print $line, "\n";
 		}
