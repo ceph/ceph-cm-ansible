@@ -8,8 +8,8 @@ my $warn;
 my $crit;
 my $out;
 
-my @out;
-my @failedout;
+my @out; # array of output messages
+my @failedout; # array of failed drive numbers
 my $drives;
 my $pci;
 my $type;
@@ -28,6 +28,7 @@ our $realloc = '50';
 our $pend = '1';
 our $uncorrect = '1';
 
+# output in human readable and nagios multiline format
 if ($ARGV[0] =~ /-m/) {
     $multiline = 1;
 }
@@ -244,6 +245,7 @@ foreach my $keys (keys %counts) {
 	$uniquedrives++;
 }
 
+# print multiline/nagios output if -m flag used
 if ($ARGV[0] =~ /-m/) {
 	if (@out) {
 		print "$uniquedrives of $drives drives failing/missing |\n";
@@ -256,6 +258,8 @@ if ($ARGV[0] =~ /-m/) {
 } else {
 	if (@out)
 	{
+		# this outputs all messages to one line presumably
+		# because nagios < v3.0 couldn't handle multiline output
 		$out = join(';     ', @out);
 	}
 
