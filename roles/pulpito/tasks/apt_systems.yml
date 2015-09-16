@@ -1,0 +1,11 @@
+---
+- name: Install packages via apt
+  apt:
+    name: "{{ item }}"
+    state: latest
+    update_cache: yes
+    cache_valid_time: 600
+  no_log: true
+  with_items: "{{ pulpito_extra_packages }}"
+  tags:
+    - packages

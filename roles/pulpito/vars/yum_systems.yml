@@ -1,0 +1,10 @@
+---
+pulpito_extra_packages:
+  - git-all
+  - supervisor
+  - python-pip
+  - python-virtualenv
+
+supervisor_service: supervisord
+supervisor_conf_d: /etc/supervisord.d
+supervisor_conf_suffix: ini
