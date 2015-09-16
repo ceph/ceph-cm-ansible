@@ -1,0 +1,5 @@
+---
+- hosts: pulpito 
+  roles:
+    - common
+    - pulpito 
