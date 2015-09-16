@@ -12,7 +12,7 @@
   # but it does so in-place without returning any dict. The first few
   # blobs do the updating; the last actually returns the result.
   set_fact:
-    distros: "{{ distros.update(extra_distros) }}{{ distros }}"
+    distros: "{% for distro in distros.keys() + extra_distros.keys() %}{{ distros[distro].update(extra_distros[distro]|default({})) }}{% endfor %}{{ distros }}"
 
 - name: Find distro settings
   set_fact:
