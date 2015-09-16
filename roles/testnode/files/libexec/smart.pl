@@ -11,7 +11,6 @@ my $out;
 my @out;
 my $drives;
 my $pci;
-my $scsi;
 my $type;
 my $mdadm;
 my $fullcommand;
@@ -21,7 +20,6 @@ my $multiline;
 my $hostname = `uname -n`;
 chomp $hostname;
 my $pci = `lspci | /bin/grep -i raid | /bin/grep -v PATA | /usr/bin/head -1`;
-my $scsi = `lspci | /bin/grep -i scsi | /bin/grep -v PATA | /usr/bin/head -1`;
 
 my $smartctl = "/usr/sbin/smartctl";
 
@@ -126,23 +124,6 @@ sub smartctl
 	}
 }
 
-#1068 IT controller OR Intel SAS.
-if ( $scsi =~ /SAS1068E/i || $scsi =~ /Patsburg/i )
-{
-	open(BLOCK,"cat /proc/partitions | grep -w sd[a-z] |");
-	while (<BLOCK>)
-	{
-		my @output = split;
-		my $blockdevice = $output[3];
-		foreach ( $blockdevice )
-		{
-			$drives++;
-			smartctl("$smartctl","none",$blockdevice,"none");
-		}
-	}
-}
-
-
 # software raid!
 if (-e "/proc/mdstat") 
 {
@@ -215,6 +196,22 @@ if ( $pci =~ /areca/i)
                     smartctl("$smartctl","areca",$drive,$scsidev);
                 }
 			}
+		}
+	}
+}
+
+# assume JBOD/direct access if not areca or hw raid
+if ( $mdadm == 0 && $pci !~ /areca/i )
+{
+	open(BLOCK,"cat /proc/partitions | grep -w sd[a-z] |");
+	while (<BLOCK>)
+	{
+		my @output = split;
+		my $blockdevice = $output[3];
+		foreach ( $blockdevice )
+		{
+			$drives++;
+			smartctl("$smartctl","none",$blockdevice,"none");
 		}
 	}
 }
