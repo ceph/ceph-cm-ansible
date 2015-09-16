@@ -5,6 +5,8 @@ distros:
   # set in the secrets repo.
   "RHEL-6.6-Server-x86_64":
       iso: ""
+  "RHEL-6.7-Server-x86_64":
+      iso: ""
   "RHEL-7.0-Server-x86_64":
       iso: ""
   "RHEL-7.1-Server-x86_64":
@@ -13,9 +15,9 @@ distros:
       iso: http://ftp.linux.ncsu.edu/pub/CentOS/7/isos/x86_64/CentOS-7-x86_64-DVD-1503-01.iso
       sha256: 85bcf62462fb678adc0cec159bf8b39ab5515404bc3828c432f743a1b0b30157
       kickstart: cephlab_rhel.ks
-  "CentOS-6.6-x86_64":
-      iso: http://ftp.linux.ncsu.edu/pub/CentOS/6.6/isos/x86_64/CentOS-6.6-x86_64-bin-DVD1.iso
-      sha256: a63241b0f767afa1f9f7e59e6f0f00d6b8d19ed85936a7934222c03a92e61bf3
+  "CentOS-6.7-x86_64":
+      iso: http://ftp.linux.ncsu.edu/pub/CentOS/6.7/isos/x86_64/CentOS-6.7-x86_64-bin-DVD1.iso
+      sha256: c0c1a05d3d74fb093c6232003da4b22b0680f59d3b2fa2cb7da736bc40b3f2c5
       kickstart: cephlab_rhel.ks
   "Ubuntu-12.04-server-x86_64":
       iso: "http://releases.ubuntu.com/12.04/ubuntu-12.04.5-server-amd64.iso"
@@ -24,8 +26,8 @@ distros:
       kernel_options: "netcfg/choose_interface=auto biosdevname=0 console=tty0 console=ttyS1,115200"
       kernel_options_post: "pci=realloc=off console=tty0 console=ttyS1,115200"
   "Ubuntu-14.04-server-x86_64":
-      iso: "http://releases.ubuntu.com/14.04/ubuntu-14.04.2-server-amd64.iso"
-      sha256: 8acd2f56bfcba2f7ac74a7e4a5e565ce68c024c38525c0285573e41c86ae90c0
+      iso: "http://releases.ubuntu.com/14.04/ubuntu-14.04.3-server-amd64.iso"
+      sha256: a3b345908a826e262f4ea1afeb357fd09ec0558cf34e6c9112cead4bb55ccdfb
       kickstart: cephlab_ubuntu.preseed
       kernel_options: "netcfg/choose_interface=auto biosdevname=0 console=tty0 console=ttyS1,115200"
       kernel_options_post: "pci=realloc=off console=tty0 console=ttyS1,115200"
