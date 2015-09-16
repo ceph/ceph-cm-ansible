@@ -26,8 +26,8 @@ distros:
       kernel_options: "netcfg/choose_interface=auto biosdevname=0 console=tty0 console=ttyS1,115200"
       kernel_options_post: "pci=realloc=off console=tty0 console=ttyS1,115200"
   "Ubuntu-14.04-server-x86_64":
-      iso: "http://releases.ubuntu.com/14.04/ubuntu-14.04.2-server-amd64.iso"
-      sha256: 8acd2f56bfcba2f7ac74a7e4a5e565ce68c024c38525c0285573e41c86ae90c0
+      iso: "http://releases.ubuntu.com/14.04/ubuntu-14.04.3-server-amd64.iso"
+      sha256: a3b345908a826e262f4ea1afeb357fd09ec0558cf34e6c9112cead4bb55ccdfb
       kickstart: cephlab_ubuntu.preseed
       kernel_options: "netcfg/choose_interface=auto biosdevname=0 console=tty0 console=ttyS1,115200"
       kernel_options_post: "pci=realloc=off console=tty0 console=ttyS1,115200"
