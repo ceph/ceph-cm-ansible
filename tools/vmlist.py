@@ -77,6 +77,10 @@ class Cfg(object):
                 'vm_hosts': VM_HOSTS,
                 'cachefile': CACHEFILE,
                 'novaclient_version': NOVACLIENT_VERSION,
+                'cloud_user': None,
+                'cloud_password': None,
+                'cloud_project': None,
+                'cloud_auth_url': None,
             }
         )
         self.cfgparser.read(file)
