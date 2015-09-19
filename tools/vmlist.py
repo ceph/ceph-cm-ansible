@@ -23,6 +23,7 @@ VM_HOSTS = textwrap.dedent('''\
     vercoi06.front.sepia.ceph.com
     vercoi07.front.sepia.ceph.com
     vercoi08.front.sepia.ceph.com
+    senta01.front.sepia.ceph.com
     senta02.front.sepia.ceph.com
     senta03.front.sepia.ceph.com
     senta04.front.sepia.ceph.com
