@@ -16,7 +16,6 @@ my $type;
 my $mdadm;
 my $fullcommand;
 my $message;
-my $multiline;
 
 my $hostname = `uname -n`;
 chomp $hostname;
@@ -27,11 +26,6 @@ my $smartctl = "/usr/sbin/smartctl";
 our $realloc = '50';
 our $pend = '1';
 our $uncorrect = '1';
-
-# output in human readable and nagios multiline format
-if ($ARGV[0] =~ /-m/) {
-    $multiline = 1;
-}
 
 if ( $hostname =~ /mira/i )
 {
@@ -181,12 +175,7 @@ if ( $pci =~ /areca/i)
 		$sgindex++;
 	}
 	my $scsidev = "/dev/sg$sgindex";
-    if ($multiline) {
-        # don't filter out Failed/N.A drives
         open(CLI,"sudo /usr/sbin/cli64 disk info | grep -vi Modelname | grep -v ====== | grep -vi GuiErr |");
-    } else {
-        open(CLI,"sudo /usr/sbin/cli64 disk info | grep -vi Modelname | grep -v ====== | grep -vi GuiErr | grep -vi Free | grep -vi Failed | grep -vi 'N.A.' |");
-    }
 	while (<CLI>)
 	{
 		$drives++;
@@ -197,7 +186,7 @@ if ( $pci =~ /areca/i)
 			{
 				my $drive = $_;
 				my $status = $info[$#info];
-                if ($multiline && ($status =~ /Failed/ || $status =~ /N\.A\./)) {
+                if ( $status =~ /Failed/ || $status =~ /N\.A\./ ) {
                     push(@out, "Drive $drive $status");
 		    push(@failedout,$drive);
                 } else {
@@ -245,17 +234,8 @@ foreach my $keys (keys %counts) {
 	$uniquedrives++;
 }
 
-# print multiline/nagios output if -m flag used
-if ($ARGV[0] =~ /-m/) {
-	if (@out) {
-		print "$uniquedrives of $drives drives failing/missing |\n";
-		foreach my $line (@out) {
-			print $line, "\n";
-		}
-	} else {
-		print "$out\n";
-	}
-} else {
+# prints multiline output unless -s flag used
+if ($ARGV[0] =~ /-s/) {
 	if (@out)
 	{
 		# this outputs all messages to one line presumably
@@ -264,5 +244,14 @@ if ($ARGV[0] =~ /-m/) {
 	}
 
 	print "$out\n";
+} else {
+	if (@out) {
+		print "$uniquedrives of $drives drives failing/missing |\n";
+		foreach my $line (@out) {
+			print $line, "\n";
+		}
+	} else {
+		print "$out\n";
+	}
 }
 exit $result;
