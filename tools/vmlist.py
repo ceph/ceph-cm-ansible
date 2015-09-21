@@ -13,7 +13,6 @@ import textwrap
 CACHEFILE = "~/.vmlist.cache"
 CONFFILE = "~/.vmlist.conf"
 
-# mira004.front.sepia.ceph.com is dead
 
 VM_HOSTS = textwrap.dedent('''\
     vercoi01.front.sepia.ceph.com
@@ -24,11 +23,13 @@ VM_HOSTS = textwrap.dedent('''\
     vercoi06.front.sepia.ceph.com
     vercoi07.front.sepia.ceph.com
     vercoi08.front.sepia.ceph.com
+    senta01.front.sepia.ceph.com
     senta02.front.sepia.ceph.com
     senta03.front.sepia.ceph.com
     senta04.front.sepia.ceph.com
     mira001.front.sepia.ceph.com
     mira003.front.sepia.ceph.com
+    mira004.front.sepia.ceph.com
     mira006.front.sepia.ceph.com
     mira007.front.sepia.ceph.com
     mira008.front.sepia.ceph.com
@@ -76,6 +77,10 @@ class Cfg(object):
                 'vm_hosts': VM_HOSTS,
                 'cachefile': CACHEFILE,
                 'novaclient_version': NOVACLIENT_VERSION,
+                'cloud_user': None,
+                'cloud_password': None,
+                'cloud_project': None,
+                'cloud_auth_url': None,
             }
         )
         self.cfgparser.read(file)
