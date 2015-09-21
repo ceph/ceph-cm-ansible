@@ -1,6 +1,5 @@
 ---
 apt_repos:
-  - "deb http://ceph.com/packages/ceph-extras/debian/ wheezy main"
   - "deb http://ceph.com/debian-dumpling/ wheezy main"
   - "deb http://gitbuilder.ceph.com/libapache-mod-fastcgi-deb-wheezy-x86_64-basic/ref/master/ wheezy main"
 

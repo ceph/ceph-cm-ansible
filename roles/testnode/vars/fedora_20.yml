@@ -6,9 +6,6 @@ yum_repos:
     enabled: 1
     gpgcheck: 0
     priority: 0
-  ceph-extras:
-    name: Fedora ceph extras
-    baseurl: http://ceph.com/packages/ceph-extras/rpm/fedora20/x86_64/
 
 packages_to_upgrade:
   - leveldb
