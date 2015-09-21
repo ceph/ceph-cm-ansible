@@ -3,6 +3,7 @@
   roles:
     - common
     - cobbler 
+    - { role: cobbler_profile, distro_name: inktank-rescue, tags: ['inktank-rescue'] }
     - { role: cobbler_profile, distro_name: RHEL-6.6-Server-x86_64, tags: ['rhel6.6'] }
     - { role: cobbler_profile, distro_name: RHEL-6.7-Server-x86_64, tags: ['rhel6.7'] }
     - { role: cobbler_profile, distro_name: RHEL-7.0-Server-x86_64, tags: ['rhel7.0'] }

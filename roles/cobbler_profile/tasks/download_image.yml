@@ -1,0 +1,28 @@
+---
+- name: Check to see if the kernel exists
+  stat: path={{ kernel_path }} get_checksum=no get_md5=no
+  register: kernel_stat
+
+- name: Check to see if the initrd exists
+  stat: path={{ initrd_path }} get_checksum=no get_md5=no
+  register: initrd_stat
+
+- name: Download kernel
+  get_url:
+      url={{ distro.kernel }}
+      dest={{ kernel_path }}
+      sha256sum={{ distro.kernel_sha256 }}
+  when: profile is defined and profile.stdout == ''
+  register: download_kernel
+
+- name: Download initrd
+  get_url:
+      url={{ distro.initrd }}
+      dest={{ initrd_path }}
+      sha256sum={{ distro.initrd_sha256 }}
+  when: profile is defined and profile.stdout == ''
+  register: download_initrd
+
+- name: Set files_exist if the required files are in place
+  set_fact:
+    files_exist: "{{ ( kernel_stat.stat.exists or download_kernel|changed) and ( initrd_stat.stat.exists or download_initrd|changed ) }}"

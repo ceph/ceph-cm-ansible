@@ -11,3 +11,8 @@
   file:
       path: "{{ iso_mount }}"
       state: directory
+
+- name: Create directory for other boot images
+  file:
+      path: "{{ other_image_dir }}"
+      state: directory

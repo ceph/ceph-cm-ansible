@@ -1,0 +1,39 @@
+---
+- name: Set image scratch directory
+  set_fact:
+    image_path: "{{ other_image_dir }}/{{ distro_name }}"
+
+- name: Set kernel name
+  set_fact:
+      kernel_name: "{{ distro.kernel.split('/')[-1] }}"
+
+- name: Set kernel path
+  set_fact:
+      kernel_path: "{{ other_image_dir }}/{{ kernel_name }}"
+
+- name: Set initrd name
+  set_fact:
+      initrd_name: "{{ distro.initrd.split('/')[-1] }}"
+
+- name: Set initrd path
+  set_fact:
+      initrd_path: "{{ other_image_dir }}/{{ initrd_name }}"
+
+- include: download_image.yml
+  when: distro.kernel != ''
+
+- name: Set arch
+  set_fact:
+      arch: "{{ distro.arch|default('x86_64') }}"
+  when: download_kernel is defined and download_kernel|success
+
+- name: Add the distro to cobbler
+  command: cobbler distro add --kernel {{ kernel_path }} --initrd {{ initrd_path }} --name {{ distro_name }}
+  when: download|changed or (files_exist and
+        profile is defined and profile.stdout == '')
+  register: import
+
+- name: Add the profile to cobbler
+  command: cobbler profile add --name {{ distro_name }} --distro {{ distro_name }}
+  when: import is defined and import.stdout == ''
+  register: import

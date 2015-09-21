@@ -81,6 +81,7 @@
 - include: distro_prep.yml
   tags:
     - distros
+    - distro_prep
 
 - include: restart.yml
 

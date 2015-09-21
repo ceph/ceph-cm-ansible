@@ -18,65 +18,34 @@
   set_fact:
       distro: "{{ distros[distro_name] }}"
 
+- name: Fail if an iso is provided in combination with either a kernel or initrd
+  fail: msg="Cannot specify both 'iso' and 'kernel' or 'initrd'. distro '{{ distro_name }}'"
+  when: distro.iso != '' and (distro.kernel is defined or distro.initrd is defined)
+
+- name: Set profile_type to iso
+  set_fact:
+    profile_type: 'iso'
+  when: distro.iso is defined and distro.iso != ''
+
+- name: Set profile_type to image
+  set_fact:
+    profile_type: 'image'
+  when: (distro.kernel is defined and distro.kernel != '') and (distro.initrd is defined and distro.initrd != '')
+
 - name: Determine if distro profile exists
   command: cobbler profile find --name {{ distro_name }}
-  # Skip if the iso field is empty; this allows us to mention distros with 
+  # Skip if the profile_type is empty; this allows us to mention distros with 
   # ISOs that are internal, but leave the URL out.
-  when: distro.iso != ''
+  when: profile_type|default('') != ''
   register: profile
   ignore_errors: true
   changed_when: false
 
-- name: Set ISO name
-  set_fact:
-      iso_name: "{{ distro.iso.split('/')[-1] }}"
+- include: import_distro_iso.yml
+  when: profile_type|default('') == 'iso'
 
-- name: Set ISO path
-  set_fact:
-      iso_path: "{{ iso_dir }}/{{ iso_name }}"
-
-- include: download_iso.yml
-  when: distro.iso != ''
-
-# we do this so that if the playbook fails
-# after mounting and we need to run it again
-# then we'll remount and complete the rest
-# of the tasks like it's the first run
-- name: Clear the mount point.
-  mount:
-    name: "{{ iso_mount }}"
-    src: "{{ iso_path }}"
-    fstype: "iso9660"
-    state: unmounted
-
-- name: Mount ISO
-  mount:
-    name: "{{ iso_mount }}"
-    src: "{{ iso_path }}"
-    opts: "loop"
-    fstype: "iso9660"
-    state: mounted
-  when: download|changed or (iso_stat.stat.exists and
-        profile is defined and profile.stdout == '')
-  register: mount
-
-- name: Set arch
-  set_fact:
-      arch: "{{ distro.arch|default('x86_64') }}"
-  when: mount is defined and mount|changed
-
-- name: Import the distro (also creates the profile)
-  command: cobbler import --path={{ iso_mount }} --name={{ distro_name }} --arch={{ arch }}
-  register: import
-  when: mount is defined and mount|changed
-
-- name: Unmount ISO
-  mount:
-    name: "{{ iso_mount }}"
-    src: "{{ iso_path }}"
-    fstype: "iso9660"
-    state: unmounted
-  when: mount is defined and mount|changed
+- include: import_distro_image.yml
+  when: profile_type|default('') == 'image'
 
 # If either the profile already existed or we successfully imported the
 # distro, we might want to update other options in the profile. i.e. kickstarts
