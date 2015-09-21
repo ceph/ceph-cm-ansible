@@ -2,12 +2,6 @@
 # vars specific to rhel 6.x
 
 common_yum_repos:
-  centos6-qemu-ceph:
-    name: "Cent OS 6 Local Qemu Repo"
-    baseurl: http://ceph.com/packages/ceph-extras/rpm/rhel6/x86_64/
-    enabled: 1
-    gpgcheck: 0
-    priority: 2
   lab-extras:
     name: "lab-extras"
     baseurl: "http://{{ mirror_host }}/lab-extras/rhel6/"
