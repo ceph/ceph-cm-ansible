@@ -118,6 +118,7 @@ epel_packages:
   - gperftools-devel
   - cryptopp-devel
   - cryptopp
+  - fcgi
   # used by workunits
   - dbench
   # used by workunits

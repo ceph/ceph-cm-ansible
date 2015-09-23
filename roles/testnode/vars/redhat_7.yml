@@ -82,6 +82,7 @@ epel_packages:
   - cryptopp-devel
   - cryptopp
   - dbench
+  - fcgi
   - fuse-sshfs
   - perl-JSON-XS
 
