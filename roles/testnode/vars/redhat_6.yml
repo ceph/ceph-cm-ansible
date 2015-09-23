@@ -20,12 +20,6 @@ common_yum_repos:
     enabled: 1
     gpgcheck: 0
     priority: 2
-  centos6-ceph:
-    name: "Cent OS 6 Local ceph Repo"
-    baseurl: http://ceph.com/rpm-cuttlefish/rhel6/x86_64/
-    enabled: 1
-    gpgcheck: 0
-    priority: 2
 
 packages:
   - '@core'
