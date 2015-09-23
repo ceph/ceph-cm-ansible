@@ -106,6 +106,7 @@ epel_packages:
   - gperftools-devel
   - cryptopp-devel
   - cryptopp
+  - fcgi
   # used by workunits
   - dbench
   - fuse-sshfs
