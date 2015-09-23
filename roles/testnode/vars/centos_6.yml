@@ -14,12 +14,6 @@ yum_repos:
     enabled: 1
     gpgcheck: 0
     priority: 2
-  centos6-ceph:
-    name: Cent OS 6 Local ceph Repo
-    baseurl: http://ceph.com/rpm-cuttlefish/el6/x86_64/
-    enabled: 1
-    gpgcheck: 0
-    priority: 2
   rpmforge:
     name: Red Hat Enterprise $releasever - RPMforge.net - dag
     baseurl: "http://{{ mirror_host }}/rpmforge/"
