@@ -16,6 +16,17 @@
   register: epel_repo
   with_dict: epel_repos
 
+- name: Configure local epel mirrorlists
+  template:
+    src: '{{ item }}'
+    dest: '/etc/yum.repos.d/{{ item }}'
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - epel-mirrorlist
+    - epel-testing-mirrorlist
+
 - name: Clean yum cache
   shell: yum clean all
   when: epel_repo is defined and epel_repo|changed
