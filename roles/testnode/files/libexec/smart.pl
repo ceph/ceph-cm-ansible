@@ -8,30 +8,24 @@ my $warn;
 my $crit;
 my $out;
 
-my @out;
+my @out; # array of output messages
+my @failedout; # array of failed drive numbers
 my $drives;
 my $pci;
-my $scsi;
 my $type;
 my $mdadm;
 my $fullcommand;
 my $message;
-my $multiline;
 
 my $hostname = `uname -n`;
 chomp $hostname;
 my $pci = `lspci | /bin/grep -i raid | /bin/grep -v PATA | /usr/bin/head -1`;
-my $scsi = `lspci | /bin/grep -i scsi | /bin/grep -v PATA | /usr/bin/head -1`;
 
 my $smartctl = "/usr/sbin/smartctl";
 
 our $realloc = '50';
 our $pend = '1';
 our $uncorrect = '1';
-
-if ($ARGV[0] =~ /-m/) {
-    $multiline = 1;
-}
 
 if ( $hostname =~ /mira/i )
 {
@@ -76,6 +70,7 @@ sub smartctl
 			$message = "Drive $drive is S.M.A.R.T. failing for $fail[1]";
 			$crit = 1;
 			push(@out,$message);
+			push(@failedout,$drive);
 		}
 	        if (( $_ =~ /_sector/i ) || ( $_ =~ /d_uncorrect/i ))
 	        {
@@ -98,10 +93,11 @@ sub smartctl
 				my $l = chr(ord('a') + $drive - 1);
 	                        $message = "Drive $drive (sd$l) has $count $type sectors";
 
-	                        if ( ( $type =~ /reallocated/i && $count > $realloc ) && ( $type =~ /pending/i && $count > $pend ) && ( $type =~ /pending/i && $count > $uncorrect  ) )
+	                        if ( ( $type =~ /reallocated/i && $count > $realloc ) && ( $type =~ /pending/i && $count > $pend ) && ( $type =~ /uncorrect/i && $count > $uncorrect  ) )
 	                        {
 					$crit = 1;
 					push(@out,$message);
+					push(@failedout,$drive);
 	                        }
 	                        else
 	                        {
@@ -109,39 +105,25 @@ sub smartctl
 					{
 	        				$crit = 1;
 	        				push(@out,$message);
+						push(@failedout,$drive);
 					}
 					if ( $type =~ /pending/i && $count > $pend )
 					{
 	        				$crit = 1;
 	        				push(@out,$message);
+						push(@failedout,$drive);
 					}
 					if ( $type =~ /uncorrect/i && $count > $uncorrect )
 					{
 						$crit = 1;
 						push(@out,$message);
+						push(@failedout,$drive);
 					}
 	                	}
 			}
 		}
 	}
 }
-
-#1068 IT controller OR Intel SAS.
-if ( $scsi =~ /SAS1068E/i || $scsi =~ /Patsburg/i )
-{
-	open(BLOCK,"cat /proc/partitions | grep -w sd[a-z] |");
-	while (<BLOCK>)
-	{
-		my @output = split;
-		my $blockdevice = $output[3];
-		foreach ( $blockdevice )
-		{
-			$drives++;
-			smartctl("$smartctl","none",$blockdevice,"none");
-		}
-	}
-}
-
 
 # software raid!
 if (-e "/proc/mdstat") 
@@ -193,12 +175,7 @@ if ( $pci =~ /areca/i)
 		$sgindex++;
 	}
 	my $scsidev = "/dev/sg$sgindex";
-    if ($multiline) {
-        # don't filter out Failed/N.A drives
         open(CLI,"sudo /usr/sbin/cli64 disk info | grep -vi Modelname | grep -v ====== | grep -vi GuiErr |");
-    } else {
-        open(CLI,"sudo /usr/sbin/cli64 disk info | grep -vi Modelname | grep -v ====== | grep -vi GuiErr | grep -vi Free | grep -vi Failed | grep -vi 'N.A.' |");
-    }
 	while (<CLI>)
 	{
 		$drives++;
@@ -209,12 +186,29 @@ if ( $pci =~ /areca/i)
 			{
 				my $drive = $_;
 				my $status = $info[$#info];
-                if ($multiline && ($status =~ /Failed/ || $status =~ /N\.A\./)) {
+                if ( $status =~ /Failed/ || $status =~ /N\.A\./ ) {
                     push(@out, "Drive $drive $status");
+		    push(@failedout,$drive);
                 } else {
                     smartctl("$smartctl","areca",$drive,$scsidev);
                 }
 			}
+		}
+	}
+}
+
+# assume JBOD/direct access if not areca or hw raid
+if ( $mdadm == 0 && $pci !~ /areca/i )
+{
+	open(BLOCK,"cat /proc/partitions | grep -w sd[a-z] |");
+	while (<BLOCK>)
+	{
+		my @output = split;
+		my $blockdevice = $output[3];
+		foreach ( $blockdevice )
+		{
+			$drives++;
+			smartctl("$smartctl","none",$blockdevice,"none");
 		}
 	}
 }
@@ -228,20 +222,36 @@ $result = 2 if $crit;
 my $out = "No real disks found on machine";
 $out = "All $drives drives happy as clams" if $drives;
 
-if ($ARGV[0] =~ /-m/) {
+
+# count unique num failed drives
+my %counts = ();
+for (@failedout) {
+	$counts{$_}++;
+}
+
+my $uniquedrives = 0;
+foreach my $keys (keys %counts) {
+	$uniquedrives++;
+}
+
+# prints multiline output unless -s flag used
+if ($ARGV[0] =~ /-s/) {
+	if (@out)
+	{
+		# this outputs all messages to one line presumably
+		# because nagios < v3.0 couldn't handle multiline output
+		$out = join(';     ', @out);
+	}
+
+	print "$out\n";
+} else {
 	if (@out) {
+		print "$uniquedrives of $drives drives failing/missing |\n";
 		foreach my $line (@out) {
 			print $line, "\n";
 		}
 	} else {
 		print "$out\n";
 	}
-} else {
-	if (@out)
-	{
-		$out = join(';     ', @out);
-	}
-
-	print "$out\n";
 }
 exit $result;
