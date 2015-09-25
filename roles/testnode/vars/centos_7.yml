@@ -68,9 +68,6 @@ packages:
   # for qemu
   - usbredir
   - genisoimage
-  - qemu-img-rhev-1.5.3-60_ceph.el7.centos.5
-  - qemu-kvm-rhev-1.5.3-60_ceph.el7.centos.5
-  - qemu-kvm-tools-rhev-1.5.3-60_ceph.el7.centos.5
   ###
   # for apache and rgw
   - httpd

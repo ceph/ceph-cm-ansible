@@ -57,9 +57,6 @@ packages:
   - python-matplotlib
   - usbredir
   - genisoimage
-  - qemu-img-rhev-1.5.3-60_ceph.el7.5
-  - qemu-kvm-rhev-1.5.3-60_ceph.el7.5
-  - qemu-kvm-tools-rhev-1.5.3-60_ceph.el7.5
   - httpd
   - httpd-devel
   - httpd-tools
