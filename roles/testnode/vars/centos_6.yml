@@ -83,10 +83,6 @@ packages:
   # for qemu
   - usbredir
   - genisoimage
-  - qemu-img-0.12.1.2-2.415.el6.3ceph
-  - qemu-kvm-0.12.1.2-2.415.el6.3ceph
-  - qemu-kvm-tools-0.12.1.2-2.415.el6.3ceph
-  - qemu-guest-agent-0.12.1.2-2.415.el6.3ceph
   ###
   # for apache and rgw
   - httpd
