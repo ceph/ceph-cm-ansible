@@ -1,0 +1,10 @@
+---
+- include: apt_systems.yml
+  when: ansible_pkg_mgr == "apt"
+
+# Yum systems support is not implemented yet.
+- include: yum_systems.yml
+  when: ansible_pkg_mgr == "yum"
+
+# Set up the different users that teuthology uses
+- include: setup_users.yml

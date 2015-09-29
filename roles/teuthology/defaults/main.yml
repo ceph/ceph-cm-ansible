@@ -1,0 +1,8 @@
+---
+teuthology_users:
+  # for scheduling tests
+  - teuthology
+  # for executing tests
+  - teuthworker
+
+teuthology_repo: https://github.com/ceph/teuthology.git
