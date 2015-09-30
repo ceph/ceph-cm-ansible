@@ -1,0 +1,42 @@
+---
+- name: Create the postgresql database
+  postgresql_db:
+    name: paddles
+  sudo_user: postgres
+  register: create_db
+
+- name: Set up access to the database
+  postgresql_user:
+    db: paddles
+    name: "{{ paddles_user }}"
+    password: "{{ db_pass }}"
+  sudo_user: postgres
+  when: create_db|changed
+
+- name: Run pecan populate
+  command: ./virtualenv/bin/pecan populate prod.py
+  args:
+    chdir: "{{ paddles_repo_path }}"
+  sudo_user: "{{ paddles_user }}"
+  when: create_db|changed
+
+- name: Copy alembic config template to alembic.ini
+  command: cp ./alembic.ini.in alembic.ini
+  args:
+    creates: alembic.ini
+    chdir: "{{ paddles_repo_path }}"
+  register: alembic_ini
+  sudo_user: "{{ paddles_user }}"
+
+- name: Update alembic.ini
+  lineinfile:
+    dest: "{{ paddles_repo_path }}/alembic.ini"
+    line: "sqlalchemy.url = {{ db_url }}"
+    regexp: "^sqlalchemy.url = "
+
+- name: Set the alembic revision
+  shell: ./virtualenv/bin/alembic stamp head
+  args:
+    chdir: "{{ paddles_repo_path }}"
+  when: alembic_ini|changed
+  sudo_user: "{{ paddles_user }}"

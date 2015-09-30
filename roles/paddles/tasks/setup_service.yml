@@ -1,0 +1,20 @@
+---
+- name: Ship supervisor config
+  template:
+    src: supervisor.conf
+    dest: "{{ supervisor_conf_d }}/paddles.{{ supervisor_conf_suffix }}"
+    mode: 0755
+  register: supervisor_conf
+
+- name: Read supervisord config
+  command: supervisorctl update
+  when: supervisor_conf|changed
+
+- name: Ensure paddles is running
+  supervisorctl:
+    name: paddles
+    state: started
+
+- name: Wait for paddles to start
+  wait_for:
+    port: "{{ paddles_port }}"

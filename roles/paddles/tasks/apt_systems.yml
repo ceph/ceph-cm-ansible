@@ -1,0 +1,15 @@
+---
+- name: Include package type specific vars.
+  include_vars: "apt_systems.yml"
+  tags:
+    - always
+
+- name: Install packages via apt
+  apt:
+    name: "{{ item }}"
+    state: latest
+    update_cache: yes
+    cache_valid_time: 600
+  with_items: "{{ paddles_extra_packages }}"
+  tags:
+    - packages

@@ -1,0 +1,30 @@
+---
+- name: Checkout the repo
+  git:
+    repo: "{{ paddles_repo }}"
+    dest: "{{ paddles_repo_path }}"
+  sudo_user: "{{ paddles_user }}"
+  tags:
+    - repos
+
+- name: Install requirements via pip
+  pip:
+    chdir: "{{ paddles_repo_path }}"
+    requirements: "./requirements.txt"
+    virtualenv: "{{ paddles_repo_path }}/virtualenv"
+  sudo_user: "{{ paddles_user }}"
+
+- name: Run setup inside virtualenv
+  command: "./virtualenv/bin/python setup.py develop"
+  args:
+    chdir: "{{ paddles_repo_path }}"
+  changed_when: false
+  sudo_user: "{{ paddles_user }}"
+
+- name: Ship prod.py
+  template:
+    src: prod.py
+    dest: "{{ paddles_repo_path }}/prod.py"
+    owner: "{{ paddles_user }}"
+    group: "{{ paddles_user }}"
+    mode: 0755
