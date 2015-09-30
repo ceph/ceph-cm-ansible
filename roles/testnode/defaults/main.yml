@@ -46,9 +46,7 @@ start_rpcbind: true
 # less useful for virtual machines that are re-imaged before each job
 modify_fstab: true
 
-# used to remove lab_domain from the hostname on rhel nodes
-# FIXME: I believe this is only needed because of a quirk in how rhel
-# nodes are imaged in our labs. This might not be needed at all.
+# used to ensure proper full and short fqdn on testnodes
 lab_domain: ""
 
 ntp_servers:

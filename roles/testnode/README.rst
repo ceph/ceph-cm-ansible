@@ -152,8 +152,9 @@ A list of ntp servers to use::
       - 2.us.pool.ntp.org
       - 3.us.pool.ntp.org
 
-The lab domain to strip from hostname on rhel 7.x nodes. This is only done if ``lab_domain``
-is defined::
+The lab domain to use when populating systems in cobbler.  (See ``roles/cobbler_systems/tasks/populate_systems.yml``)
+This variable is also used to strip the domain from RHEL and CentOS testnode hostnames
+The latter is only done if ``lab_domain`` is defined::
 
     lab_domain: ''
 
@@ -169,7 +170,7 @@ gpg-keys
     Install gpg keys on Fedora.    
 
 hostname
-    Strip ``lab_domain`` from the hostname on Rhel 7.
+    Check and set proper fqdn. See, ``roles/testnode/tasks/set_hostname.yml``.
 
 kernel_logging
     Runs a script that enabled kernel logging to the console on ubuntu.        
