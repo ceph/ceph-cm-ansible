@@ -17,6 +17,12 @@
     group: root
     mode: 0755
 
+- name: Set the hostname
+  include: set_hostname.yml
+  when: lab_domain != ""
+  tags:
+    - hostname
+
 # upload custom disk monitoring scripts
 - include: disk_monitoring.yml
   tags:
