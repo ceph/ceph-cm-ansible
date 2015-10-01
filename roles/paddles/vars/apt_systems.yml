@@ -1,0 +1,16 @@
+---
+paddles_extra_packages:
+  # The following is a requirement of ansible's postgresql module
+  - python-psycopg2
+  # The following packages are requirements for running paddles
+  - git-all
+  - python-dev
+  - python-pip
+  - python-virtualenv
+  - postgresql
+  - postgresql-contrib
+  - postgresql-server-dev-all
+  - supervisor
+
+supervisor_conf_d: /etc/supervisor/conf.d
+supervisor_conf_suffix: conf

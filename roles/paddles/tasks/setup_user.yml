@@ -1,0 +1,8 @@
+---
+- name: Create user
+  user:
+    name: "{{ paddles_user }}"
+    state: present
+    shell: /bin/bash
+  tags:
+    - user

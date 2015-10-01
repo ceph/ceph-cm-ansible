@@ -1,0 +1,37 @@
+---
+- name: Include cobbler keys.
+  include_vars: "{{ secrets_path | mandatory }}/paddles.yml"
+  no_log: true
+
+- name: Set repo location
+  set_fact:
+    paddles_repo_path: "/home/{{ paddles_user }}/paddles"
+
+- name: Set paddles_address
+  set_fact:
+    paddles_address: http://{{ ansible_hostname }}/
+  when: not paddles_address.startswith('http')
+
+- name: Set db_url
+  set_fact:
+    db_url: "postgresql+psycopg2://{{ paddles_user }}:{{ db_pass }}@localhost/paddles"
+  no_log: true
+
+- include: apt_systems.yml
+  when: ansible_pkg_mgr == "apt"
+
+# Yum systems support is not implemented yet.
+- include: yum_systems.yml
+  when: ansible_pkg_mgr == "yum"
+
+# Set up the paddles user
+- include: setup_user.yml
+
+# Set up the actual paddles project
+- include: setup_paddles.yml
+
+# Set up the DB which paddles uses
+- include: setup_db.yml
+
+# Configure the system to run paddles as a daemon
+- include: setup_service.yml

@@ -1,0 +1,4 @@
+---
+- name: Fail on yum systems as support is not implemented
+  fail:
+    msg: "yum systems are not supported at this time"

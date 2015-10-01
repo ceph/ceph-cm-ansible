@@ -63,7 +63,7 @@
     dest: "{{ pulpito_repo_path }}/prod.py"
     regexp: "^paddles_address = "
     line: "paddles_address = '{{ paddles_address|mandatory }}'"
-  when: pulpito_config.stat.exists == false
+  register: pulpito_config
 
 - name: Enable supervisord
   service:
@@ -94,6 +94,13 @@
 - name: Check if pulpito is running
   command: supervisorctl status pulpito
   register: pulpito_status
+  changed_when: false
+
+- name: Restart pulpito if necessary
+  supervisorctl:
+    name: pulpito
+    state: restarted
+  when: pulpito_status.stdout|match('.*RUNNING.*') and pulpito_config|changed
 
 - name: Wait for pulpito to start
   wait_for:
