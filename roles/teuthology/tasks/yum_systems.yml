@@ -1,0 +1,3 @@
+---
+- fail:
+    msg: "yum systems are not supported at this time"

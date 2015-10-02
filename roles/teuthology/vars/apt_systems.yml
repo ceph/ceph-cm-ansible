@@ -1,0 +1,15 @@
+---
+teuthology_extra_packages:
+  # The following packages are requirements for bootstrapping teuthology
+  - git-all
+  - python-dev
+  - python-pip
+  - python-virtualenv
+  - libevent-dev
+  - python-libvirt
+  - beanstalkd
+  # The following packages are requirements for running teuthology
+  - libmysqlclient-dev
+  - libffi-dev
+  - libssl-dev
+  - libyaml-dev
