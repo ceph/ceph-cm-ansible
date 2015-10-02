@@ -8,3 +8,12 @@
 
 # Set up the different users that teuthology uses
 - include: setup_users.yml
+
+- name: Ship /etc/teuthology.yaml
+  template:
+    src: teuthology.yaml
+    dest: /etc/teuthology.yaml
+    mode: 0755
+
+# Serve logs over HTTP
+- include: setup_log_access.yml

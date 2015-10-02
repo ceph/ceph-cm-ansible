@@ -25,6 +25,8 @@
   with_items: "{{ teuthology_users }}"
   register: bootstrap
   changed_when: bootstrap.stdout_lines[-1]|length > 60
+  tags:
+    - repos
   
 - name: Add teuthology scripts to PATH
   lineinfile:
