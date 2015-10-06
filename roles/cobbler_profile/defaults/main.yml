@@ -5,6 +5,8 @@ distros:
   # set in the secrets repo.
   "inktank-rescue":
       iso: ""
+  "dban-2.3.0":
+      iso: ""
   "RHEL-6.6-Server-x86_64":
       iso: ""
   "RHEL-6.7-Server-x86_64":
