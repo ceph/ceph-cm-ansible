@@ -13,3 +13,7 @@ teuthology_extra_packages:
   - libffi-dev
   - libssl-dev
   - libyaml-dev
+  # The following are requirements for serving teuthology logs
+  - nginx
+
+apache_service: apache2
