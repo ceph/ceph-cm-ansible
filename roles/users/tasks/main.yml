@@ -22,7 +22,6 @@
 - name: Create all admin users with sudo access.
   user:
     name: "{{ item.name }}"
-    group: "{{ item.name }}"
     groups: sudo
     shell: /bin/bash
     state: present
