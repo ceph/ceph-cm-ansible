@@ -6,6 +6,7 @@ results_email: {{ teuthology_results_email|default('null') }}
 results_sending_email: {{ teuthology_results_sending_email|default('null') }}
 lab_domain: {{ lab_domain }}
 default_machine_type: {{ teuthology_default_machine_type|default('null') }}
+{{ teuthology_yaml_extra }}
 # Not yet configurable via ansible
 archive_server: http://{{ inventory_hostname }}/
 archive_base: /home/teuthworker/archive
