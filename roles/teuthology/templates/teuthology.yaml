@@ -10,7 +10,6 @@ default_machine_type: {{ teuthology_default_machine_type|default('null') }}
 archive_server: http://{{ inventory_hostname }}/
 archive_base: /home/teuthworker/archive
 ceph_git_base_url: git://git.ceph.com/
-gitbuilder_host: gitbuilder.ceph.redhat.com
 max_job_time: 129600
 queue_host: localhost
 queue_port: 11300
