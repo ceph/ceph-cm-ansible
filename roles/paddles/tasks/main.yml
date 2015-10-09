@@ -1,7 +1,9 @@
 ---
-- name: Include cobbler keys.
+- name: Include secrets
   include_vars: "{{ secrets_path | mandatory }}/paddles.yml"
   no_log: true
+  tags:
+    - always
 
 - name: Set repo location
   set_fact:
