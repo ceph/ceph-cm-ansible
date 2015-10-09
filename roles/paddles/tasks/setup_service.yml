@@ -15,6 +15,14 @@
     name: paddles
     state: started
 
+- name: Restart paddles if prod.py changed
+  supervisorctl:
+    name: paddles
+    state: restarted
+  when: prod_conf is defined and prod_conf|changed
+  tags:
+    - config
+
 - name: Wait for paddles to start
   wait_for:
     port: "{{ paddles_port }}"

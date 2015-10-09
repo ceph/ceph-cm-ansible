@@ -14,6 +14,10 @@
     src: teuthology.yaml
     dest: /etc/teuthology.yaml
     mode: 0755
+  tags:
+    - config
 
 # Serve logs over HTTP
 - include: setup_log_access.yml
+  tags:
+    - logs
