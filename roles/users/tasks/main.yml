@@ -22,7 +22,8 @@
 - name: Create all admin users with sudo access.
   user:
     name: "{{ item.name }}"
-    group: sudo
+    group: "{{ item.name }}"
+    groups: sudo
     shell: /bin/bash
     state: present
   with_items: managed_admin_users
