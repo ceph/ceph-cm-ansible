@@ -28,3 +28,6 @@
     owner: "{{ paddles_user }}"
     group: "{{ paddles_user }}"
     mode: 0755
+  register: prod_conf
+  tags:
+    - config
