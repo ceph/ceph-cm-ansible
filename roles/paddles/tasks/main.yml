@@ -6,16 +6,22 @@
 - name: Set repo location
   set_fact:
     paddles_repo_path: "/home/{{ paddles_user }}/paddles"
+  tags:
+    - always
 
 - name: Set paddles_address
   set_fact:
     paddles_address: http://{{ ansible_hostname }}/
   when: not paddles_address.startswith('http')
+  tags:
+    - always
 
 - name: Set db_url
   set_fact:
     db_url: "postgresql+psycopg2://{{ paddles_user }}:{{ db_pass }}@localhost/paddles"
   no_log: true
+  tags:
+    - always
 
 - include: apt_systems.yml
   when: ansible_pkg_mgr == "apt"
