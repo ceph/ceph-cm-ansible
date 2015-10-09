@@ -9,7 +9,6 @@
 - name: Create the ansible user.
   user:
     name: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
     groups: sudo
     shell: /bin/bash
     uid: "{{ ansible_user_uid_ }}"
