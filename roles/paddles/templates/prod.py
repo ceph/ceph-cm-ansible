@@ -25,6 +25,7 @@ app = {
     'modules': ['paddles'],
     'template_path': '%(confdir)s/paddles/templates',
     'default_renderer': 'json',
+    'guess_content_type_from_ext': False,
     'debug': False,
     'hooks': [
         IsolatedTransactionHook(
