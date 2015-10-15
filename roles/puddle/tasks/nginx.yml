@@ -21,6 +21,16 @@
   notify:
    - restart nginx
 
+# Note: this file must be installed on the host independent of ansible.
+- name: set permissions on htaccess
+  file:
+    path: '/etc/nginx/htpasswd'
+    owner: root
+    group: nginx
+    mode: 0640
+  notify:
+   - restart nginx
+
 - name: start the nginx service
   service:
     name: nginx
