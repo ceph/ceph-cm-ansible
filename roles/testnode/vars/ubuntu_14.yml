@@ -10,5 +10,5 @@ packages:
   - libboost-thread1.54.0
   - mpich
   - qemu-system-x86
-  - blkin
+#  - blkin
   - lttng-tools
