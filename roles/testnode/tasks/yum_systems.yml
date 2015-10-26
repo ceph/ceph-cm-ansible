@@ -22,10 +22,11 @@
     name: kvm
     state: present
 
-- name: Add the teuthology user to group kvm
+- name: Add the teuthology user to groups kvm,disk
   user:
     name: "{{ teuthology_user }}"
-    group: kvm
+    groups: kvm,disk
+    append: yes
 
 - name: Configure /etc/sudoers.
   template:
