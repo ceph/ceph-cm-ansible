@@ -6,11 +6,11 @@ results_email: {{ teuthology_results_email|default('null') }}
 results_sending_email: {{ teuthology_results_sending_email|default('null') }}
 lab_domain: {{ lab_domain }}
 default_machine_type: {{ teuthology_default_machine_type|default('null') }}
+max_job_time: {{ teuthology_max_job_time|default(129600) }}
 {{ teuthology_yaml_extra }}
 # Not yet configurable via ansible
 archive_server: http://{{ inventory_hostname }}/
 archive_base: /home/teuthworker/archive
 ceph_git_base_url: git://git.ceph.com/
-max_job_time: 129600
 queue_host: localhost
 queue_port: 11300
