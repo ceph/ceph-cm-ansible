@@ -80,6 +80,9 @@ class Cfg(object):
     def __init__(self, cfgfile):
         self.cfgparser = ConfigParser.SafeConfigParser()
         self.cfgparser.read(cfgfile)
+        self.cloud_providers = list()
+        self.cloud_providers = [s for s in self.cfgparser.sections()
+                                if s.startswith('cloud')]
 
         # set up global defaults
         if not self.cfgparser.has_section('global'):
@@ -136,27 +139,36 @@ def list_vms(host, outputfile=None):
         outputfile.seek(0)
 
 
-def list_nova(outputfile=None):
+def list_nova(provider, outputfile=None):
     if outputfile is None:
         outputfile = sys.stdout
-    cloud_user = cfg.get('cloud_user')
-    cloud_password = cfg.get('cloud_password')
-    cloud_project = cfg.get('cloud_project')
-    cloud_auth_url = cfg.get('cloud_auth_url')
-    if (cloud_user and cloud_password and cloud_project and cloud_auth_url):
+
+    cloud_regions = [None]
+    regions = cfg.get(provider, 'cloud_region_names')
+    if regions:
+        cloud_regions = [r.strip() for r in regions.split(',')]
+
+    for region in cloud_regions:
         nova = novaclient.client.Client(
-            int(cfg.get('novaclient_version')),
-            cloud_user, cloud_password, cloud_project, cloud_auth_url,
+            int(cfg.get('global', 'novaclient_version')),
+            cfg.get(provider, 'cloud_user'),
+            cfg.get(provider, 'cloud_password'),
+            project_id=cfg.get(provider, 'cloud_project_id'),
+            auth_url=cfg.get(provider, 'cloud_auth_url'),
+            region_name=region,
+            tenant_id=cfg.get(provider, 'cloud_tenant_id'),
         )
         output = [
-            'nova {} ({})\n'.format(
-                getattr(s, s.NAME_ATTR).strip(), cloud_auth_url
+            '{} {} {}\n'.format(
+                provider,
+                getattr(s, s.NAME_ATTR).strip(),
+                '(%s)' % region if region else '',
             ) for s in nova.servers.list()
         ]
         outputfile.writelines(output)
         outputfile.flush()
-        if outputfile != sys.stdout:
-            outputfile.seek(0)
+    if outputfile != sys.stdout:
+        outputfile.seek(0)
 
 
 usage = """
@@ -192,12 +204,16 @@ def main():
             outfiles.append(outfile)
             proc.start()
 
-        # one more for nova output
-        outfile = tempfile.NamedTemporaryFile()
-        proc = multiprocessing.Process(target=list_nova, args=(outfile,))
-        procs.append(proc)
-        outfiles.append(outfile)
-        proc.start()
+        # all the nova providers
+        for provider in cfg.cloud_providers:
+            outfile = tempfile.NamedTemporaryFile()
+            proc = multiprocessing.Process(
+                target=list_nova,
+                args=(provider, outfile,),
+            )
+            procs.append(proc)
+            outfiles.append(outfile)
+            proc.start()
 
         for proc in procs:
             proc.join()
