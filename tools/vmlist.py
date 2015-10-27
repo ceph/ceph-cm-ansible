@@ -64,6 +64,12 @@ VM_HOSTS = textwrap.dedent('''\
 NOVACLIENT_VERSION = '2'
 
 
+global_defaults = {
+    'vm_hosts': VM_HOSTS,
+    'cachefile': CACHEFILE,
+    'novaclient_version': NOVACLIENT_VERSION,
+}
+
 class Cfg(object):
 
     '''
@@ -71,25 +77,25 @@ class Cfg(object):
     keys present in environment to override keys in the file
     '''
 
-    def __init__(self, file):
-        self.cfgparser = ConfigParser.SafeConfigParser(
-            defaults={
-                'vm_hosts': VM_HOSTS,
-                'cachefile': CACHEFILE,
-                'novaclient_version': NOVACLIENT_VERSION,
-                'cloud_user': None,
-                'cloud_password': None,
-                'cloud_project': None,
-                'cloud_auth_url': None,
-            }
-        )
-        self.cfgparser.read(file)
+    def __init__(self, cfgfile):
+        self.cfgparser = ConfigParser.SafeConfigParser()
+        self.cfgparser.read(cfgfile)
 
-    def get(self, key):
+        # set up global defaults
+        if not self.cfgparser.has_section('global'):
+            self.cfgparser.add_section('global')
+        for k, v in global_defaults.iteritems():
+            if not self.cfgparser.has_option('global', k):
+                self.cfgparser.set('global', k, v)
+
+    def get(self, section, key):
         env_val = os.environ.get(key.upper())
         if env_val:
             return env_val
-        return self.cfgparser.get('default', key)
+        if self.cfgparser.has_option(section, key):
+            return self.cfgparser.get(section, key)
+        else:
+            return None
 
 
 cfg = Cfg(os.path.expanduser(CONFFILE))
@@ -161,13 +167,13 @@ List all KVM, LXC, and OpenStack vms known
 Options:
     -r, --refresh           refresh cached list (cache in {cachefile})
     -h, --host MACHINE   get list from only this host, and do not cache
-""".format(cachefile=cfg.get('cachefile'))
+""".format(cachefile=cfg.get('global', 'cachefile'))
 
 
 def main():
 
     args = docopt.docopt(usage)
-    cachefile = os.path.expanduser(cfg.get('cachefile'))
+    cachefile = os.path.expanduser(cfg.get('global', 'cachefile'))
 
     if args['--host']:
         list_vms(args['--host'])
@@ -177,7 +183,7 @@ def main():
 
         procs = []
         outfiles = []
-        for host in cfg.get('vm_hosts').split('\n'):
+        for host in cfg.get('global', 'vm_hosts').split('\n'):
             outfile = tempfile.NamedTemporaryFile()
             proc = multiprocessing.Process(
                 target=list_vms, args=(host, outfile)
