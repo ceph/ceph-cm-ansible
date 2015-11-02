@@ -14,10 +14,13 @@ CACHEFILE = "~/.vmlist.cache"
 CONFFILE = "~/.vmlist.conf"
 
 
+# mira074.front.sepia.ceph.com
+# mira015.front.sepia.ceph.com
+# vercoi03.front.sepia.ceph.com
+
 VM_HOSTS = textwrap.dedent('''\
     vercoi01.front.sepia.ceph.com
     vercoi02.front.sepia.ceph.com
-    vercoi03.front.sepia.ceph.com
     vercoi04.front.sepia.ceph.com
     vercoi05.front.sepia.ceph.com
     vercoi06.front.sepia.ceph.com
@@ -38,7 +41,6 @@ VM_HOSTS = textwrap.dedent('''\
     mira011.front.sepia.ceph.com
     mira013.front.sepia.ceph.com
     mira014.front.sepia.ceph.com
-    mira015.front.sepia.ceph.com
     mira017.front.sepia.ceph.com
     mira018.front.sepia.ceph.com
     mira020.front.sepia.ceph.com
@@ -47,7 +49,6 @@ VM_HOSTS = textwrap.dedent('''\
     mira036.front.sepia.ceph.com
     mira043.front.sepia.ceph.com
     mira044.front.sepia.ceph.com
-    mira074.front.sepia.ceph.com
     mira079.front.sepia.ceph.com
     mira081.front.sepia.ceph.com
     mira091.front.sepia.ceph.com
