@@ -14,10 +14,13 @@ CACHEFILE = "~/.vmlist.cache"
 CONFFILE = "~/.vmlist.conf"
 
 
+# mira074.front.sepia.ceph.com
+# mira015.front.sepia.ceph.com
+# vercoi03.front.sepia.ceph.com
+
 VM_HOSTS = textwrap.dedent('''\
     vercoi01.front.sepia.ceph.com
     vercoi02.front.sepia.ceph.com
-    vercoi03.front.sepia.ceph.com
     vercoi04.front.sepia.ceph.com
     vercoi05.front.sepia.ceph.com
     vercoi06.front.sepia.ceph.com
@@ -38,7 +41,6 @@ VM_HOSTS = textwrap.dedent('''\
     mira011.front.sepia.ceph.com
     mira013.front.sepia.ceph.com
     mira014.front.sepia.ceph.com
-    mira015.front.sepia.ceph.com
     mira017.front.sepia.ceph.com
     mira018.front.sepia.ceph.com
     mira020.front.sepia.ceph.com
@@ -47,7 +49,6 @@ VM_HOSTS = textwrap.dedent('''\
     mira036.front.sepia.ceph.com
     mira043.front.sepia.ceph.com
     mira044.front.sepia.ceph.com
-    mira074.front.sepia.ceph.com
     mira079.front.sepia.ceph.com
     mira081.front.sepia.ceph.com
     mira091.front.sepia.ceph.com
@@ -64,6 +65,12 @@ VM_HOSTS = textwrap.dedent('''\
 NOVACLIENT_VERSION = '2'
 
 
+global_defaults = {
+    'vm_hosts': VM_HOSTS,
+    'cachefile': CACHEFILE,
+    'novaclient_version': NOVACLIENT_VERSION,
+}
+
 class Cfg(object):
 
     '''
@@ -71,25 +78,28 @@ class Cfg(object):
     keys present in environment to override keys in the file
     '''
 
-    def __init__(self, file):
-        self.cfgparser = ConfigParser.SafeConfigParser(
-            defaults={
-                'vm_hosts': VM_HOSTS,
-                'cachefile': CACHEFILE,
-                'novaclient_version': NOVACLIENT_VERSION,
-                'cloud_user': None,
-                'cloud_password': None,
-                'cloud_project': None,
-                'cloud_auth_url': None,
-            }
-        )
-        self.cfgparser.read(file)
+    def __init__(self, cfgfile):
+        self.cfgparser = ConfigParser.SafeConfigParser()
+        self.cfgparser.read(cfgfile)
+        self.cloud_providers = list()
+        self.cloud_providers = [s for s in self.cfgparser.sections()
+                                if s.startswith('cloud')]
 
-    def get(self, key):
+        # set up global defaults
+        if not self.cfgparser.has_section('global'):
+            self.cfgparser.add_section('global')
+        for k, v in global_defaults.iteritems():
+            if not self.cfgparser.has_option('global', k):
+                self.cfgparser.set('global', k, v)
+
+    def get(self, section, key):
         env_val = os.environ.get(key.upper())
         if env_val:
             return env_val
-        return self.cfgparser.get('default', key)
+        if self.cfgparser.has_option(section, key):
+            return self.cfgparser.get(section, key)
+        else:
+            return None
 
 
 cfg = Cfg(os.path.expanduser(CONFFILE))
@@ -130,27 +140,36 @@ def list_vms(host, outputfile=None):
         outputfile.seek(0)
 
 
-def list_nova(outputfile=None):
+def list_nova(provider, outputfile=None):
     if outputfile is None:
         outputfile = sys.stdout
-    cloud_user = cfg.get('cloud_user')
-    cloud_password = cfg.get('cloud_password')
-    cloud_project = cfg.get('cloud_project')
-    cloud_auth_url = cfg.get('cloud_auth_url')
-    if (cloud_user and cloud_password and cloud_project and cloud_auth_url):
+
+    cloud_regions = [None]
+    regions = cfg.get(provider, 'cloud_region_names')
+    if regions:
+        cloud_regions = [r.strip() for r in regions.split(',')]
+
+    for region in cloud_regions:
         nova = novaclient.client.Client(
-            int(cfg.get('novaclient_version')),
-            cloud_user, cloud_password, cloud_project, cloud_auth_url,
+            int(cfg.get('global', 'novaclient_version')),
+            cfg.get(provider, 'cloud_user'),
+            cfg.get(provider, 'cloud_password'),
+            project_id=cfg.get(provider, 'cloud_project_id'),
+            auth_url=cfg.get(provider, 'cloud_auth_url'),
+            region_name=region,
+            tenant_id=cfg.get(provider, 'cloud_tenant_id'),
         )
         output = [
-            'nova {} ({})\n'.format(
-                getattr(s, s.NAME_ATTR).strip(), cloud_auth_url
+            '{} {} {}\n'.format(
+                provider,
+                getattr(s, s.NAME_ATTR).strip(),
+                '(%s)' % region if region else '',
             ) for s in nova.servers.list()
         ]
         outputfile.writelines(output)
         outputfile.flush()
-        if outputfile != sys.stdout:
-            outputfile.seek(0)
+    if outputfile != sys.stdout:
+        outputfile.seek(0)
 
 
 usage = """
@@ -161,13 +180,13 @@ List all KVM, LXC, and OpenStack vms known
 Options:
     -r, --refresh           refresh cached list (cache in {cachefile})
     -h, --host MACHINE   get list from only this host, and do not cache
-""".format(cachefile=cfg.get('cachefile'))
+""".format(cachefile=cfg.get('global', 'cachefile'))
 
 
 def main():
 
     args = docopt.docopt(usage)
-    cachefile = os.path.expanduser(cfg.get('cachefile'))
+    cachefile = os.path.expanduser(cfg.get('global', 'cachefile'))
 
     if args['--host']:
         list_vms(args['--host'])
@@ -177,7 +196,7 @@ def main():
 
         procs = []
         outfiles = []
-        for host in cfg.get('vm_hosts').split('\n'):
+        for host in cfg.get('global', 'vm_hosts').split('\n'):
             outfile = tempfile.NamedTemporaryFile()
             proc = multiprocessing.Process(
                 target=list_vms, args=(host, outfile)
@@ -186,12 +205,16 @@ def main():
             outfiles.append(outfile)
             proc.start()
 
-        # one more for nova output
-        outfile = tempfile.NamedTemporaryFile()
-        proc = multiprocessing.Process(target=list_nova, args=(outfile,))
-        procs.append(proc)
-        outfiles.append(outfile)
-        proc.start()
+        # all the nova providers
+        for provider in cfg.cloud_providers:
+            outfile = tempfile.NamedTemporaryFile()
+            proc = multiprocessing.Process(
+                target=list_nova,
+                args=(provider, outfile,),
+            )
+            procs.append(proc)
+            outfiles.append(outfile)
+            proc.start()
 
         for proc in procs:
             proc.join()
