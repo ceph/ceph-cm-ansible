@@ -69,6 +69,7 @@ packages:
   - python-matplotlib
   ###
   # for qemu
+  - qemu-kvm
   - usbredir
   - genisoimage
   ###

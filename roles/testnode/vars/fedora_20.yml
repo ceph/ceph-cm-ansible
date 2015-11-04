@@ -72,6 +72,7 @@ packages:
   - python-matplotlib
   ###
   # for qemu
+  - qemu-system-x86
   - genisoimage
   ###
   # for apache and rgw
