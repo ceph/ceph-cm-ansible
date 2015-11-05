@@ -29,3 +29,8 @@
 - include: distill/configure.yml
   tags:
     - configure-distill
+
+# install and configure rsyncd
+- include: rsync.yml
+  tags:
+    - rsync
