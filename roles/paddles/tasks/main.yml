@@ -43,3 +43,6 @@
 
 # Configure the system to run paddles as a daemon
 - include: setup_service.yml
+
+# Configure nginx as a reverse proxy
+- include: nginx.yml

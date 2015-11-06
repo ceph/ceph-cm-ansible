@@ -1,0 +1,29 @@
+---
+- name: Disable default nginx config
+  file:
+    name: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Ship nginx config
+  template:
+    src: nginx.conf
+    dest: /etc/nginx/sites-available/paddles
+
+- name: Enable nginx config
+  file:
+    src: /etc/nginx/sites-available/paddles
+    dest: /etc/nginx/sites-enabled/paddles
+    state: link
+
+- name: Disable apache httpd
+  service:
+    name: "{{ apache_service }}"
+    enabled: no
+    state: stopped
+
+- name: Enable nginx
+  service:
+    name: nginx
+    enabled: yes
+    state: reloaded
+  changed_when: false

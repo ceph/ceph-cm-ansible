@@ -4,8 +4,8 @@ from paddles import models
 from paddles.hooks.cors import CorsHook
 
 server = {
-    'port': '{{ paddles_port }}',
-    'host': '{{ listen_ip }}'
+    'port': '8080',
+    'host': '127.0.0.1'
 }
 
 address = '{{ paddles_address }}'
