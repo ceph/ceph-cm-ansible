@@ -16,3 +16,20 @@ ceph_packages_to_remove:
   - python-rados
   - librbd1
   - librados2
+
+ceph_dependency_packages_to_remove:
+  - boost-random
+  - boost-program-options
+  - leveldb
+  - xmlstarlet
+  - python-jinja2
+  - python-ceph
+  - python-flask
+  - python-requests
+  - boost-random
+  - python-urllib3
+  - python-babel
+  - hdparm
+  - python-markupsafe
+  - python-werkzeug
+  - python-itsdangerous

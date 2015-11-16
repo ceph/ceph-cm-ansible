@@ -32,6 +32,15 @@
   tags:
     - remove-ceph
 
+- name: Ensure ceph dependency packages are not present.
+  yum:
+    name: "{{ item }}"
+    state: absent
+  with_items: ceph_dependency_packages_to_remove
+  tags:
+    - remove-ceph-dependency
+
+
 - name: Install packages
   yum:
     name: "{{ item }}"
