@@ -8,12 +8,6 @@ common_yum_repos:
     enabled: 1
     gpgcheck: 0
     priority: 2
-  centos6-fcgi-ceph:
-    name: "Cent OS 6 Local fastcgi Repo"
-    baseurl: http://gitbuilder.ceph.com/mod_fastcgi-rpm-rhel6-x86_64-basic/ref/master/
-    enabled: 1
-    gpgcheck: 0
-    priority: 2
   centos6-misc-ceph:
     name: "Cent OS 6 Local misc Repo"
     baseurl: "http://{{ mirror_host }}/misc-rpms/"
@@ -78,7 +72,6 @@ packages:
   - httpd-devel
   - httpd-tools
   - mod_ssl
-  - mod_fastcgi-2.4.7-1.ceph.el6
   ###
   - libevent-devel
   # for pretty-printing xml
