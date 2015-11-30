@@ -9,6 +9,7 @@
     - { role: cobbler_profile, distro_name: RHEL-6.7-Server-x86_64, tags: ['rhel6.7'] }
     - { role: cobbler_profile, distro_name: RHEL-7.0-Server-x86_64, tags: ['rhel7.0'] }
     - { role: cobbler_profile, distro_name: RHEL-7.1-Server-x86_64, tags: ['rhel7.1'] }
+    - { role: cobbler_profile, distro_name: RHEL-7.2-Server-x86_64, tags: ['rhel7.2'] }
     - { role: cobbler_profile, distro_name: CentOS-7-x86_64, tags: ['centos7.0'] }
     - { role: cobbler_profile, distro_name: CentOS-6.7-x86_64, tags: ['centos6.7'] }
     - { role: cobbler_profile, distro_name: Ubuntu-12.04-server-x86_64, tags: ['ubuntu-precise'] }
