@@ -1,0 +1,17 @@
+---
+- name: Install or remove apt packages
+  apt:
+    update_cache: true
+    name: "{{ item }}"
+    state: "{{ state }}"
+  with_items: apt_packages
+  when: apt_packages|length > 0 and
+        ansible_pkg_mgr == "apt"
+
+- name: Install or remove yum packages
+  yum:
+    name: "{{ item }}"
+    state: "{{ state }}"
+  with_items: yum_packages
+  when: yum_packages|length > 0 and
+        ansible_pkg_mgr == "yum"

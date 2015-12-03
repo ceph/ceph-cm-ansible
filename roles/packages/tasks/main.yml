@@ -1,0 +1,14 @@
+---
+# These are tasks which perform actions corresponding to the names of
+# the variables they use.  For example, `disable_yum_repos` would actually
+# disable all repos defined in that list.
+- include: setup.yml
+  when: not cleanup
+
+# These are tasks which reverse the actions corresponding to the names of
+# the variables they use. For example, `disable_yum_repos` would actually
+# enable all repos defined in that list. The primary use for this is through
+# teuthology, so that you can tell a teuthology run to disable a set of repos
+# for the test run but then re-enable them during the teuthology cleanup process.
+- include: cleanup.yml
+  when: cleanup
