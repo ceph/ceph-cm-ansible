@@ -83,11 +83,6 @@
   tags:
     - nfs
 
-# this script was ported directly from chef.
-- name: Set up static IP and 10gig interface.
-  script: scripts/static-ip.sh creates=/static-ip-setup
-  when: "'vps' not in group_names"
-
 - name: Edit lvm.conf to support LVM on RBD.
   lineinfile:
     dest: /etc/lvm/lvm.conf
