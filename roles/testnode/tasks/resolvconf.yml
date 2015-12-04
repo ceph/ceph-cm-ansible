@@ -21,12 +21,15 @@
   replace:
     dest: /etc/network/interfaces
     # This regexp matches a stanza like:
+    #
     # iface eth0 inet static
     #     address 10.8.128.17
     #     netmask 255.255.248.0
     #     gateway 10.8.135.254
     #     broadcast 10.8.135.255
-    regexp: '^iface {{ interface }} inet static(\n\ +.*)+'
+    #
+    # It also handles cases where the entire stanza has whitespace in front of it.
+    regexp: '^ *iface {{ interface }} inet static(\n\ +[^\s]+.*)+'
     replace: "iface {{ interface }} inet dhcp\n"
   when: etc_network_interfaces.stat.exists
   register: dhcp_enabled
