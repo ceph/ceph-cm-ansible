@@ -1,0 +1,40 @@
+---
+- name: Purge resolvconf
+  apt:
+    name: resolvconf
+    state: absent
+    purge: yes
+  when: ansible_pkg_mgr == "apt"
+
+- name: Set interface
+  set_fact:
+    interface: "{{ hostvars[inventory_hostname].interface|default('eth0') }}"
+
+- name: Check for presence of /etc/network/interfaces
+  stat:
+    path: /etc/network/interfaces
+    get_checksum: no
+    get_md5: no
+  register: etc_network_interfaces
+
+- name: Rewrite /etc/network/interfaces to use dhcp
+  replace:
+    dest: /etc/network/interfaces
+    # This regexp matches a stanza like:
+    # iface eth0 inet static
+    #     address 10.8.128.17
+    #     netmask 255.255.248.0
+    #     gateway 10.8.135.254
+    #     broadcast 10.8.135.255
+    regexp: '^iface {{ interface }} inet static(\n\ +.*)+'
+    replace: "iface {{ interface }} inet dhcp\n"
+  when: etc_network_interfaces.stat.exists
+  register: dhcp_enabled
+
+- name: Set bounce_interface if we just enabled dhcp
+  set_fact:
+    bounce_interface: "{{ dhcp_enabled|changed }}"
+
+- name: ifdown and ifup
+  shell: "ifdown {{ interface }} && ifup {{ interface }}"
+  when: bounce_interface == "True"

@@ -1,7 +1,6 @@
 ## {{ ansible_managed }}
 # Start preseed_late_default
 # This script runs in the chroot /target by default
-$SNIPPET('cephlab_ubuntu_network')
 # set kernel options as defined by the system, profile or distro
 # in the Kernel Options (Post Install) field which populates the var kernel_options_post
 $SNIPPET('cephlab_post_install_kernel_options')

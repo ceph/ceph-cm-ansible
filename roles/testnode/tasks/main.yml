@@ -71,6 +71,11 @@
   tags:
     - pip
 
+# include resolv.conf setup
+- include: resolvconf.yml
+  tags:
+    - resolvconf
+
 # Touch a file to indicate we are done. This is something chef did;
 # teuthology.task.internal.vm_setup() expects it.
 - name: Touch /ceph-qa-ready
