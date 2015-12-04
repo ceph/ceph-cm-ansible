@@ -1,0 +1,8 @@
+---
+# When cleanup is true the tasks being used might
+# perform cleanup steps if applicable.
+cleanup: false
+
+apt_packages: []
+
+yum_packages: []

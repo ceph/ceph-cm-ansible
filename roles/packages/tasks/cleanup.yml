@@ -1,0 +1,6 @@
+---
+- debug: msg="Performing cleanup related tasks..."
+
+- include: packages.yml
+  vars:
+    state: "absent"
