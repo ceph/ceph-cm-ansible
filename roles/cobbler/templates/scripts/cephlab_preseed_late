@@ -9,7 +9,6 @@ $SNIPPET('download_config_files')
 # custom
 $SNIPPET('cephlab_hostname')
 $SNIPPET('cephlab_user')
-$SNIPPET('cephlab_apt-mirror_hack')
 $SNIPPET('cephlab_rc_local')
 # end custom
 $SNIPPET('kickstart_done')
