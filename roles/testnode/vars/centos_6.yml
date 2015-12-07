@@ -5,7 +5,7 @@ yum_repos:
   centos6-fcgi-ceph:
     name: Cent OS 6 Local fastcgi Repo
     baseurl: http://gitbuilder.ceph.com/mod_fastcgi-rpm-centos6-x86_64-basic/ref/master/
-    enabled: 1
+    enabled: 0
     gpgcheck: 0
     priority: 2
   centos6-misc-ceph:
@@ -90,7 +90,7 @@ packages:
   - httpd-devel
   - httpd-tools
   - mod_ssl
-  - mod_fastcgi-2.4.7-1.ceph.el6
+  #- mod_fastcgi-2.4.7-1.ceph.el6
   ###
   - libevent-devel
   - python-devel
