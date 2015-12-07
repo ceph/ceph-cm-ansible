@@ -3,7 +3,7 @@ yum_repos:
   fedora-fcgi-ceph:
     name: Fedora Local fastcgi Repo
     baseurl: http://gitbuilder.ceph.com/mod_fastcgi-rpm-fedora20-x86_64-basic/ref/master/
-    enabled: 1
+    enabled: 0
     gpgcheck: 0
     priority: 0
 
@@ -80,7 +80,7 @@ packages:
   - httpd-devel
   - httpd-tools
   - mod_ssl
-  - mod_fastcgi-2.4.7-1.ceph.fc20
+  #- mod_fastcgi-2.4.7-1.ceph.fc20
   ###
   - libevent-devel
   - python-devel

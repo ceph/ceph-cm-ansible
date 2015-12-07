@@ -100,5 +100,5 @@ packages_to_upgrade:
   - apt
   - libcurl3-gnutls
   - apache2
-  - libapache2-mod-fastcgi
+  #- libapache2-mod-fastcgi
   - libfcgi0ldbl
