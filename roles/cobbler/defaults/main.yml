@@ -36,7 +36,6 @@ kickstarts:
 snippets:
   - cephlab_user
   - cephlab_hostname
-  - cephlab_apt-mirror_hack
   - cephlab_packages_rhel
   - cephlab_rc_local
   - cephlab_rhel_disks

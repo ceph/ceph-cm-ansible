@@ -37,7 +37,7 @@ These overrides are included by ``tasks/vars.yml`` and the specific var files li
 
 The host to use as a package mirror::
 
-    mirror_host: apt-mirror.front.sepia.ceph.com
+    mirror_host: apt-mirror.sepia.ceph.com
 
 The host to use as a github mirror::
 
