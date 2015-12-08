@@ -11,7 +11,7 @@ yum_repos:
   lab-extras:
     name: lab-extras
     baseurl: "http://{{ mirror_host }}/lab-extras/centos7/"
-    enabled: 1
+    enabled: 0
     gpgcheck: 0
     priority: 2
 
@@ -48,7 +48,7 @@ packages:
   - python-nose
   - mpich
   - ant
-  - iozone
+  #- iozone
   ###
   # used by the xfstests tasks
   - libtool
