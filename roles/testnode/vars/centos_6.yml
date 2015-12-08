@@ -23,7 +23,7 @@ yum_repos:
   lab-extras:
     name: lab-extras
     baseurl: "http://{{ mirror_host }}/lab-extras/centos6/"
-    enabled: 1
+    enabled: 0
     gpgcheck: 0
     priority: 2
 
@@ -64,7 +64,7 @@ packages:
   - mpich2-devel
   - ant
   - fsstress
-  - iozone
+  #- iozone
   ###
   # used by the xfstests tasks
   - libtool
