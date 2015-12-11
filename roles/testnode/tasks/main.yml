@@ -28,6 +28,12 @@
   tags:
     - monitoring-scripts
 
+# partition drives, if any are requested
+- include: drive_partitioning.yml
+  when: drive_to_partition is defined
+  tags:
+    - partition
+
 # configure ssh
 - include: ssh.yml
   tags:
