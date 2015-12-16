@@ -16,16 +16,8 @@ CONFFILE = "~/.vmlist.conf"
 
 # mira074.front.sepia.ceph.com
 # mira015.front.sepia.ceph.com
-# vercoi03.front.sepia.ceph.com
 
 VM_HOSTS = textwrap.dedent('''\
-    vercoi01.front.sepia.ceph.com
-    vercoi02.front.sepia.ceph.com
-    vercoi04.front.sepia.ceph.com
-    vercoi05.front.sepia.ceph.com
-    vercoi06.front.sepia.ceph.com
-    vercoi07.front.sepia.ceph.com
-    vercoi08.front.sepia.ceph.com
     senta01.front.sepia.ceph.com
     senta02.front.sepia.ceph.com
     senta03.front.sepia.ceph.com
