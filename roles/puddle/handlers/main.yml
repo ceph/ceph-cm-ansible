@@ -9,3 +9,8 @@
   service:
     name: faucet
     state: restarted
+
+- name: restart rsyncd
+  service:
+    name: rsyncd
+    state: restarted
