@@ -5,7 +5,7 @@ common_yum_repos:
   lab-extras:
     name: "lab-extras"
     baseurl: "http://{{ mirror_host }}/lab-extras/rhel6/"
-    enabled: 0
+    enabled: 1
     gpgcheck: 0
     priority: 2
   centos6-misc-ceph:
@@ -46,7 +46,7 @@ packages:
   - mpich2
   - ant
   - fsstress
-  #- iozone
+  - iozone
   ###
   # used by the xfstests tasks
   - libtool

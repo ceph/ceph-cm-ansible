@@ -5,7 +5,7 @@ common_yum_repos:
   lab-extras:
     name: "lab-extras"
     baseurl: "http://{{ mirror_host }}/lab-extras/rhel7/"
-    enabled: 0
+    enabled: 1
     gpgcheck: 0
     priority: 2
 
@@ -38,7 +38,7 @@ packages:
   - mpich
   - ant
   - lsof
-  #- iozone
+  - iozone
   - libtool
   - automake
   - gettext
