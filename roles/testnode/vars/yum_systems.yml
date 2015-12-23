@@ -1,6 +1,8 @@
 ---
 ntp_service_name: ntpd
 ssh_service_name: sshd
+nrpe_service_name: nrpe
+nagios_plugins_directory: /usr/lib64/nagios/plugins
 
 # ceph packages that we ensure do not exist
 ceph_packages_to_remove:
