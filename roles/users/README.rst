@@ -1,14 +1,14 @@
 Users
 =====
 
-This role is used to manage user accounts on a node.  It is capable of adding users
-with and without sudo access, but does not currently have the ability to remove users.
-In either your group_vars or host_vars files you must define two variables for this role
-to use: ``managed_users`` and ``managed_admin_users``. The ``managed_users`` variable
-will create users without sudo access while users in the ``managed_admin_users`` list
-will be granted sudo access. Sudo access is granted by adding the ``managed_admin_users`` to
-the group ``sudo`` which should be created beforehand. It is not required to add both of these vars
-to your inventory, only use what makes sense for the node being managed.
+This role is used to manage user accounts on a node. In either your group_vars
+or host_vars files you must define two variables for this role to use:
+``managed_users`` and ``managed_admin_users``. The ``managed_users`` variable
+will create users without sudo access while users in the
+``managed_admin_users`` list will be granted sudo access. Sudo access is
+granted by adding the ``managed_admin_users`` to the group ``sudo`` which
+should be created beforehand. It is not required to add both of these vars to
+your inventory, only use what makes sense for the node being managed.
 
 When adding a user, these steps are performed for each user:
 
