@@ -19,6 +19,33 @@
   tags:
     - always
 
+- name: Merge extra_admin_users into managed_admin_users
+  set_fact:
+    # The following adds items from extra_admin_users to managed_admin_users, while
+    # fetching keys from the latter if they are not present in the former. It's as pretty
+    # as it can get without whitespace breaking the parser.
+    managed_admin_users:
+      "{% for new_admin in extra_admin_users -%}
+         {% for lab_user in managed_users -%}
+           {% if new_admin.name == lab_user.name %}{{ new_admin.update(lab_user) }}{% endif %}
+         {%- endfor %}
+      {%- endfor %}{{ managed_admin_users|list + extra_admin_users|list }}"
+  when: extra_admin_users is defined and extra_admin_users|length > 0
+  tags:
+    - always
+
+- name: Remove managed_admin_users from managed_users
+  set_fact:
+    # The following rebuilds the managed_users list while omitting users already present
+    # in managed_admin_users
+    managed_users:
+      "[{% for lab_user in managed_users -%}
+      {% if not managed_admin_users|selectattr('name', 'equalto', lab_user.name)|list|length %}{{ lab_user}},{% endif %}
+      {%- endfor %}]"
+  when: extra_admin_users is defined and extra_admin_users|length > 0
+  tags:
+    - always
+
 - name: Create all admin users with sudo access.
   user:
     name: "{{ item.name }}"
