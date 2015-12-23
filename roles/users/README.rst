@@ -10,6 +10,13 @@ granted by adding the ``managed_admin_users`` to the group ``sudo`` which
 should be created beforehand. It is not required to add both of these vars to
 your inventory, only use what makes sense for the node being managed.
 
+Additionally, if you have defined ``managed_users`` and ``managed_admin_users``
+for a set of hosts and want to grant sudo access to users on a subset of those
+hosts, you may define ``extra_admin_users`` for that group. The format of that
+variable is similar to the other two, except the ``key`` field is optional for
+each user which is already present in ``managed_users``. This is to allow
+flexibility without as much repetition.
+
 When adding a user, these steps are performed for each user:
 
 - Ensures that the user exists (tags: users)
