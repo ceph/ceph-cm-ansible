@@ -15,8 +15,6 @@
     owner: root
     group: root
     mode: 0644
-  notify:
-    - restart nagios-nrpe-server
 
 - name: Configure nagios nrpe settings.
   template:
@@ -25,3 +23,5 @@
     owner: root
     group: root
     mode: 0644
+  notify:
+    - restart nagios-nrpe-server
