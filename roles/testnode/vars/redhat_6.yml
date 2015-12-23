@@ -101,5 +101,8 @@ epel_packages:
   - python-virtualenv
   # for setting BIOS settings
   - smbios-utils
+  # for nagios monitoring
+  - nrpe
+  - nagios-plugins-all
 
 nfs_service: nfs

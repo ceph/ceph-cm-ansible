@@ -101,3 +101,6 @@ epel_packages:
   - bonnie++
   # for json_xs to investigate JSON by hand
   - perl-JSON-XS
+  # for nagios monitoring
+  - nrpe
+  - nagios-plugins-all
