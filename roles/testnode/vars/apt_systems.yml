@@ -2,6 +2,8 @@
 ntp_service_name: ntp
 ssh_service_name: ssh
 nfs_service: nfs-kernel-server
+nrpe_service_name: nagios-nrpe-server
+nagios_plugins_directory: /usr/lib/nagios/plugins
 
 ceph_packages_to_remove:
   - ceph

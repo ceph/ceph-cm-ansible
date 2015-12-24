@@ -63,10 +63,6 @@
     groups: fuse,kvm,disk
     append: yes
 
-- include: nagios.yml
-  tags:
-    - nagios
-
 - include: static_ip.yml
   when: "'vps' not in group_names"
 

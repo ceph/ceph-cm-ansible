@@ -76,5 +76,8 @@ epel_packages:
   - fcgi
   - fuse-sshfs
   - perl-JSON-XS
+  # for nagios monitoring
+  - nrpe
+  - nagios-plugins-all
 
 nfs_service: nfs-server

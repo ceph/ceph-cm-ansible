@@ -15,13 +15,13 @@
     owner: root
     group: root
     mode: 0644
-  notify:
-    - restart nagios-nrpe-server
 
 - name: Configure nagios nrpe settings.
   template:
     src: nagios/nagios-nrpe-server
-    dest: /etc/default/nagios-nrpe-server
+    dest: "/etc/default/{{ nrpe_service_name }}"
     owner: root
     group: root
     mode: 0644
+  notify:
+    - restart nagios-nrpe-server

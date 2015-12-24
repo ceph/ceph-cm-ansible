@@ -23,11 +23,6 @@
   tags:
     - hostname
 
-# upload custom disk monitoring scripts
-- include: disk_monitoring.yml
-  tags:
-    - monitoring-scripts
-
 # partition drives, if any are requested
 - include: drive_partitioning.yml
   when: drive_to_partition is defined
@@ -66,6 +61,16 @@
 # configure debian specific things
 - include: setup-debian.yml
   when: ansible_distribution == "Debian"
+
+# upload custom disk monitoring scripts
+- include: disk_monitoring.yml
+  tags:
+    - monitoring-scripts
+
+# configure nagios
+- include: nagios.yml
+  tags:
+    - nagios
 
 # configure ntp
 - include: ntp.yml
