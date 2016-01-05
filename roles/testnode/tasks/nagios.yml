@@ -8,18 +8,18 @@
     mode: 0440
     validate: visudo -cf %s
 
-- name: Upload nagios nrpe config.
-  template:
-    src: nagios/nrpe.cfg 
-    dest: /etc/nagios/nrpe.cfg
-    owner: root
-    group: root
-    mode: 0644
-
 - name: Configure nagios nrpe settings.
   template:
     src: nagios/nagios-nrpe-server
     dest: "/etc/default/{{ nrpe_service_name }}"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Upload nagios nrpe config.
+  template:
+    src: nagios/nrpe.cfg 
+    dest: /etc/nagios/nrpe.cfg
     owner: root
     group: root
     mode: 0644
