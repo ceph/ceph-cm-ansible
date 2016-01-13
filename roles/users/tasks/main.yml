@@ -1,24 +1,4 @@
 ---
-- name: Filter the managed_users list
-  set_fact:
-    managed_users:
-        "[{% for user in managed_users %}
-            {% if user.name in users %}{{ user }},{%endif%}
-        {%endfor%}]"
-  when: users|length > 0
-  tags:
-    - always
-
-- name: Filter the managed_admin_users list
-  set_fact:
-    managed_admin_users:
-        "[{% for user in managed_admin_users %}
-            {% if user.name in users %}{{ user }},{%endif%}
-        {%endfor%}]"
-  when: users|length > 0
-  tags:
-    - always
-
 - name: Merge extra_admin_users into managed_admin_users
   set_fact:
     # The following adds items from extra_admin_users to managed_admin_users, while
@@ -43,6 +23,26 @@
       {% if not managed_admin_users|selectattr('name', 'equalto', lab_user.name)|list|length %}{{ lab_user}},{% endif %}
       {%- endfor %}]"
   when: extra_admin_users is defined and extra_admin_users|length > 0
+  tags:
+    - always
+
+- name: Filter the managed_users list
+  set_fact:
+    managed_users:
+        "[{% for user in managed_users %}
+            {% if user.name in users %}{{ user }},{%endif%}
+        {%endfor%}]"
+  when: users|length > 0
+  tags:
+    - always
+
+- name: Filter the managed_admin_users list
+  set_fact:
+    managed_admin_users:
+        "[{% for user in managed_admin_users %}
+            {% if user.name in users %}{{ user }},{%endif%}
+        {%endfor%}]"
+  when: users|length > 0
   tags:
     - always
 
