@@ -17,9 +17,17 @@ distros:
       iso: ""
   "RHEL-7.2-Server-x86_64":
       iso: ""
-  "CentOS-7-x86_64":
-      iso: http://ftp.linux.ncsu.edu/pub/CentOS/7/isos/x86_64/CentOS-7-x86_64-DVD-1503-01.iso
+  "CentOS-7.0-x86_64":
+      iso: http://archive.kernel.org/centos-vault/7.0.1406/isos/x86_64/CentOS-7.0-1406-x86_64-DVD.iso
+      sha256: ee505335bcd4943ffc7e6e6e55e5aaa8da09710b6ceecda82a5619342f1d24d9
+      kickstart: cephlab_rhel.ks
+  "CentOS-7.1-x86_64":
+      iso: http://archive.kernel.org/centos-vault/7.1.1503/isos/x86_64/CentOS-7-x86_64-DVD-1503-01.iso
       sha256: 85bcf62462fb678adc0cec159bf8b39ab5515404bc3828c432f743a1b0b30157
+      kickstart: cephlab_rhel.ks
+  "CentOS-7.2-x86_64":
+      iso: http://ftp.linux.ncsu.edu/pub/CentOS/7.2.1511/isos/x86_64/CentOS-7-x86_64-DVD-1511.iso
+      sha256: 907e5755f824c5848b9c8efbb484f3cd945e93faa024bad6ba875226f9683b16
       kickstart: cephlab_rhel.ks
   "CentOS-6.7-x86_64":
       iso: http://ftp.linux.ncsu.edu/pub/CentOS/6.7/isos/x86_64/CentOS-6.7-x86_64-bin-DVD1.iso
