@@ -5,6 +5,7 @@ distros:
   # set in the secrets repo.
   "inktank-rescue":
       iso: ""
+      kernel_options: "nokeymap"
   "dban-2.3.0-autonuke":
       iso: ""
   "RHEL-6.6-Server-x86_64":
