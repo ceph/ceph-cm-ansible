@@ -25,7 +25,6 @@ compose_config=1.3-compose-trees
 # and loop over more compose_configs here.
 
 target=/var/www/{{ ansible_hostname }}/htdocs/distill/$compose_config
-compose_id=$(cat $target/latest-Ceph-1-RHEL-7/COMPOSE_ID)
 
 # Cleanup temporary files that we don't need and take up space
 pushd $target/latest-Ceph-1-RHEL-7
