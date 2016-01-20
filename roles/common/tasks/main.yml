@@ -18,6 +18,10 @@
 - include: yum_systems.yml
   when: ansible_pkg_mgr == "yum"
 
+# configure things specific to apt systems
+- include: apt_systems.yml
+  when: ansible_pkg_mgr == "apt"
+
 # configure Kerberos
 - include: kerberos.yml
   tags:

@@ -1,0 +1,26 @@
+---
+- name: Get the current timezone
+  shell: cat /etc/timezone
+  register: current_tz
+  changed_when: false
+  tags:
+    - timezone
+
+- name: Set the timezone in /etc/timezone
+  copy:
+    content: "{{ timezone }}"
+    dest: /etc/timezone
+    owner: root
+    group: root
+    mode: 0644
+  # Default is used below to avoid breaking check mode
+  when: current_tz.stdout|default("") != timezone
+  register: etc_timezone
+  tags:
+    - timezone
+
+- name: Inform the OS of the new timezone
+  command: dpkg-reconfigure --frontend noninteractive tzdata
+  when: etc_timezone|changed
+  tags:
+    - timezone
