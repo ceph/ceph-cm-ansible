@@ -1,0 +1,15 @@
+---
+# configure Red Hat entitlements with subscription-manager
+- include: rhel-entitlements.yml
+  when: ansible_distribution == 'RedHat'
+  tags:
+    - entitlements
+
+# create and manage epel.repo
+- include: epel.yml
+  when:
+    ansible_distribution == "CentOS" or
+    ansible_distribution == 'RedHat'
+  tags:
+    - epel
+    - repos
