@@ -1,4 +1,22 @@
 ---
+- name: Get the current timezone
+  shell: cut -d'"' -f2 /etc/sysconfig/clock
+  register: current_tz
+  changed_when: false
+  tags:
+    - timezone
+
+- name: Set the timezone
+  file:
+    src: /usr/share/zoneinfo/{{ timezone }}
+    dest: /etc/localtime
+    state: link
+    force: yes
+  # Default is used below to avoid breaking check mode
+  when: current_tz.stdout|default("") != timezone
+  tags:
+    - timezone
+
 # configure Red Hat entitlements with subscription-manager
 - include: rhel-entitlements.yml
   when: ansible_distribution == 'RedHat'
