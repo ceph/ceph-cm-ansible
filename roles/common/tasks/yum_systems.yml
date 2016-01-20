@@ -1,19 +1,35 @@
 ---
-- name: Get the current timezone
+- name: Get the current timezone (RHEL/CentOS 6)
   shell: cut -d'"' -f2 /etc/sysconfig/clock
+  when: ansible_distribution_major_version == "6"
   register: current_tz
   changed_when: false
   tags:
     - timezone
 
-- name: Set the timezone
+- name: Get the current timezone (RHEL/CentOS 7)
+  shell: 'timedatectl | grep Timezone | sed -e "s/.*: \(.*\) (.*/\1/"'
+  when: ansible_distribution_major_version == "7"
+  register: current_tz
+  changed_when: false
+  tags:
+    - timezone
+
+- name: Set the timezone (RHEL/CentOS 6)
   file:
     src: /usr/share/zoneinfo/{{ timezone }}
     dest: /etc/localtime
     state: link
     force: yes
   # Default is used below to avoid breaking check mode
-  when: current_tz.stdout|default("") != timezone
+  when: ansible_distribution_major_version == "6" and current_tz.stdout|default("") != timezone
+  tags:
+    - timezone
+
+- name: Set the timezone (RHEL/CentOS 7)
+  command: timedatectl set-timezone {{ timezone }}
+  # Default is used below to avoid breaking check mode
+  when: ansible_distribution_major_version == "7" and current_tz.stdout|default("") != timezone
   tags:
     - timezone
 
