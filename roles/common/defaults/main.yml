@@ -1,4 +1,6 @@
 ---
+timezone: "Etc/UTC"
+
 # Red Hat Subscription Manager credentials
 subscription_manager_activationkey: ""
 subscription_manager_org: ""
