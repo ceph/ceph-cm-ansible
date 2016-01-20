@@ -8,7 +8,7 @@
     - timezone
 
 - name: Get the current timezone (RHEL/CentOS 7)
-  shell: 'timedatectl | grep Timezone | sed -e "s/.*: \(.*\) (.*/\1/"'
+  shell: 'timedatectl | grep -E "Time ?zone" | sed -e "s/.*: \(.*\) (.*/\1/"'
   when: ansible_distribution_major_version == "7"
   register: current_tz
   changed_when: false
