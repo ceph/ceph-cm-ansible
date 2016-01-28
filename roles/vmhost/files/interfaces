@@ -1,0 +1,12 @@
+auto lo
+iface lo inet loopback
+
+iface eth0 inet manual
+
+auto br-front
+iface br-front inet dhcp
+  bridge_ports eth0
+  bridge_fd 9
+  bridge_hello 2
+  bridge_maxage 12
+  bridge_stp off

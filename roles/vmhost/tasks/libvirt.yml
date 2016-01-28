@@ -1,0 +1,131 @@
+---
+# default pool
+- name: Query libvirt pool 'default'
+  command: virsh pool-uuid default
+  register: pool_uuid
+  failed_when: false
+
+- name: Define libvirt pool 'default'
+  command: virsh pool-define-as --name default dir --target /var/lib/libvirt/images
+  when: pool_uuid is defined and pool_uuid | failed
+
+- name: Query 'default' pool state
+  command: virsh -q pool-info default
+  ignore_errors: yes
+  register: default_pool_info
+
+- name: Start pool 'default'
+  command: virsh pool-start default
+  when: 'default_pool_info is defined and default_pool_info.stdout|search("State:  *inactive")'
+
+- name: Autostart pool 'default'
+  command: virsh pool-autostart default
+  when: 'default_pool_info is defined and default_pool_info.stdout | search("Autostart:  *no")'
+
+# Per-vpm storage pools
+
+- name: Test for /srv/libvirtpool
+  stat:
+    path: /srv/libvirtpool
+  register: srv_libvirtpool
+  failed_when: srv_libvirtpool.stat.exists is False
+
+- name: Ensure proper ownership in /srv/libvirtpool
+  file: 
+    path: /srv/libvirtpool
+    state: directory
+    owner: libvirt-qemu
+    group: kvm
+    recurse: yes
+  when: srv_libvirtpool.stat.exists
+
+# the dance here is to figure out which pools are already defined,
+# and avoid trying to defining them again.
+
+- name: Find defined vpm names
+  command: ls /srv/libvirtpool
+  register: ls_libvirtpool
+  when: srv_libvirtpool.stat.exists
+
+- name: See which pools are defined and which are not
+  shell: virsh pool-info {{ item }}
+  with_items: ls_libvirtpool.stdout_lines
+  register: pool_info
+  when: srv_libvirtpool.stat.exists
+  # don't bother reporting anything about this command; it's not useful
+  failed_when: false
+
+# pool_info.results is a now list of dicts, one per item, with 'rc',
+# 'changed', 'stdout', 'stderr' etc.  Make a new list for
+# all of the above that failed (i.e. rc == 1), as those
+# are the pools that still need definition.  "" stop
+# jinja templating from being confused with yaml, as usual;
+# {%- and -%} suppress blank lines so that the only thing
+# that expands is the list declaration.
+
+- name: Form list of undefined pools
+  set_fact:
+    pools_to_define:
+      "{%- set l = [] %}
+      {%- for result in pool_info.results %}
+        {%- if result.rc == 1 %}
+          {%- set dummy = l.append(result.item) %}
+        {%- endif %}
+      {%- endfor -%}
+      {{ l | list }}"
+
+- name: Define pools which are left to be defined
+  shell: |
+    virsh pool-define-as --name {{ item | quote }} --type dir --target /srv/libvirtpool/{{ item }};
+    virsh pool-autostart {{ item | quote }};
+    virsh pool-build {{ item | quote }};
+    virsh pool-start {{ item | quote }}
+  with_items: pools_to_define
+  when: pools_to_define|length > 0
+
+# Front network
+
+- name: Query for front network definition
+  command: virsh net-info front
+  failed_when: false
+  register: front_net
+
+- name: Send front network definition file
+  copy:
+    src: ../files/libvirt-net-front.xml
+    dest: /tmp/libvirt-net-front.xml
+  when: front_net is defined and front_net | failed
+
+- name: Create front network
+  command: virsh net-define /tmp/libvirt-net-front.xml
+  when: front_net is defined and front_net | failed
+
+- name: Remove tmp network definition file
+  file:
+    dest: /tmp/libvirt-net-front.xml
+    state: absent
+  when: front_net is defined and front_net | failed
+
+- name: Re-query for front network definition
+  command: virsh net-info front
+  ignore_errors: yes
+  register: front_net
+
+- name: Start front network
+  command: virsh net-start front
+  when: 'front_net is defined and front_net.stdout | search("Active:  *no")'
+
+- name: Set front network to autostart
+  command: virsh net-autostart front
+  when: 'front_net is defined and front_net.stdout | search("Autostart:  *no")'
+
+# Final steps
+
+- name: Allow libvirt for teuthology user
+  user:
+    name: "{{ teuthology_user }}"
+    groups: libvirtd
+    append: yes
+
+- name: Restart libvirt-bin
+  command: service libvirt-bin restart
