@@ -1,0 +1,4 @@
+---
+- hosts: vps_hosts
+  roles:
+    - vmhost

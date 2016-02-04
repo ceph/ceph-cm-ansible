@@ -1,0 +1,8 @@
+- include: packages.yml
+  tags: packages
+
+- include: networking.yml
+  tags: networking
+
+- include: libvirt.yml
+  tags: libvirt

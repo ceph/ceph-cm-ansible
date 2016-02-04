@@ -1,0 +1,17 @@
+# front_mac = ansible_eth0.macaddress
+# front_ip = ansible_eth0.ipv4.address
+
+- name: Install /etc/network/interfaces
+  copy:
+    src: interfaces
+    dest: /etc/network/interfaces
+    force: yes
+    owner: root
+    group: root
+    mode: 0644
+    backup: yes
+  register: interface_install
+
+- name: Activate new network config
+  shell: /sbin/ifdown -a; /sbin/ifup -a
+  when: interface_install|changed
