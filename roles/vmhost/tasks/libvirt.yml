@@ -28,7 +28,7 @@
   stat:
     path: /srv/libvirtpool
   register: srv_libvirtpool
-  failed_when: srv_libvirtpool.stat.exists is False
+  failed_when: srv_libvirtpool.stat.exists == False
 
 - name: Ensure proper ownership in /srv/libvirtpool
   file: 
