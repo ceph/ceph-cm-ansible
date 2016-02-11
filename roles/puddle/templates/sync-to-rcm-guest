@@ -1,0 +1,42 @@
+#!/bin/bash
+#
+# Copy an Ubuntu compose to rcm-guest.
+
+set -e
+
+if [ -z $1 ]; then
+  echo "Usage: $0 directory"
+  echo "       where \"directory\" is a particular compose to copy."
+  echo ""
+  echo "       For example: $0 Ceph-1.3-Ubuntu-x86_64-$(date +"%Y%m%d").t.0"
+  exit 1
+fi
+
+COMPOSE=$1
+
+# Base directory where all composes live.
+cd /var/www/puddle/htdocs/ubuntu-composes/
+
+# Destination server with "ceph-drops" location.
+RCM_GUEST=rcm-guest.app.eng.bos.redhat.com
+
+# Verify that both source locations exist before copying anything.
+for dir in $COMPOSE $COMPOSE-sources; do
+  if [ ! -d $dir ]; then
+    echo Error: $dir does not exist in $(pwd)
+    echo Valid options are:
+    find * -maxdepth 0 -mindepth 0 -type d | grep -v '\-sources$'
+    exit 1
+  fi
+done
+
+# Transfer both the COMPOSE and the COMPOSE's sources.
+for dir in $COMPOSE $COMPOSE-sources; do
+  set -x
+  # Rsync the files to ceph-drops
+  rsync -aP $dir $RCM_GUEST:/mnt/rcm-guest/ceph-drops
+  # Normalize filesystem permissions so others (rel-eng) can write to them.
+  ssh $RCM_GUEST chgrp -R devel /mnt/rcm-guest/ceph-drops/$dir
+  ssh $RCM_GUEST "find /mnt/rcm-guest/ceph-drops/$dir -type f -print0 | xargs -0 chmod 664"
+  ssh $RCM_GUEST "find /mnt/rcm-guest/ceph-drops/$dir -type d -print0 | xargs -0 chmod 775"
+done

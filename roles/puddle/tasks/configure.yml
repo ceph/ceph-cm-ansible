@@ -58,3 +58,11 @@
     owner: root
     group: root
     mode: 0755
+
+- name: add script for syncing to rcm-guest
+  template:
+    src: 'sync-to-rcm-guest'
+    dest: '/usr/local/bin/sync-to-rcm-guest'
+    owner: root
+    group: root
+    mode: 0755
