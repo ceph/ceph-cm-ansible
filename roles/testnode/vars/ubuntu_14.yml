@@ -9,6 +9,5 @@ packages:
   - libgoogle-perftools4
   - libboost-thread1.54.0
   - mpich
-  - qemu-system-x86
 #  - blkin
   - lttng-tools
