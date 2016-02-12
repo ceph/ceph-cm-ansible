@@ -55,11 +55,7 @@ packages:
   - blktrace
   - numpy
   - python-matplotlib
-  - httpd
-  - httpd-devel
-  - httpd-tools
   - mod_ssl
-  - mod_fastcgi-2.4.7-1.ceph.el7
   - libevent-devel
   - perl-XML-Twig
   - java-1.6.0-openjdk-devel
@@ -68,16 +64,12 @@ packages:
   - nfs-utils
   # for xfstests
   - ncurses-devel
-  # for s3 tests
-  - python-devel
-  - python-virtualenv
 
 epel_packages:
   - gperftools-devel
   - cryptopp-devel
   - cryptopp
   - dbench
-  - fcgi
   - fuse-sshfs
   - perl-JSON-XS
   - leveldb

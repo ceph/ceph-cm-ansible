@@ -64,14 +64,6 @@ packages:
   - blktrace
   - numpy
   - python-matplotlib
-  ###
-  # for apache and rgw
-  - httpd
-  - httpd-devel
-  - httpd-tools
-  - mod_ssl
-  - mod_fastcgi-2.4.7-1.ceph.el7.centos
-  ###
   - libevent-devel
   # for pretty-printing xml
   - perl-XML-Twig
@@ -88,7 +80,6 @@ epel_packages:
   - gperftools-devel
   - cryptopp-devel
   - cryptopp
-  - fcgi
   # used by workunits
   - dbench
   # used by workunits
