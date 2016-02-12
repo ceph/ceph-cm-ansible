@@ -55,9 +55,6 @@ packages:
   - blktrace
   - numpy
   - python-matplotlib
-  - qemu-kvm
-  - usbredir
-  - genisoimage
   - httpd
   - httpd-devel
   - httpd-tools

@@ -80,11 +80,6 @@ packages:
   - numpy
   - python-matplotlib
   ###
-  # for qemu
-  - qemu-kvm
-  - usbredir
-  - genisoimage
-  ###
   # for apache and rgw
   - httpd
   - httpd-devel
