@@ -69,6 +69,8 @@ packages:
   - java-1.8.0-openjdk-devel
   - junit
   # for disk/etc monitoring
+  - nrpe
+  - nagios-plugins-all
   - smartmontools
   # for nfs
   - nfs-utils
