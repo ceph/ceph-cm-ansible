@@ -43,6 +43,10 @@ The host to use as a github mirror::
 
     git_mirror_host: git.ceph.com
 
+The host to find package-signing keys on:
+
+    key_host: download.ceph.com
+
 This host is used by teuthology to download ceph packages and will be given higher priority on apt systems::
 
     gitbuilder_host: gitbuilder.ceph.com
