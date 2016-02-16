@@ -17,17 +17,6 @@
     state: touch
   changed_when: false
 
-- name: Ensure the group kvm exists.
-  group:
-    name: kvm
-    state: present
-
-- name: Add the teuthology user to groups kvm,disk
-  user:
-    name: "{{ teuthology_user }}"
-    groups: kvm,disk
-    append: yes
-
 - name: Configure /etc/sudoers.
   template:
     src: sudoers
