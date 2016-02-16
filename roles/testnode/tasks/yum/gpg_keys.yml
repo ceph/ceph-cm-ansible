@@ -13,6 +13,6 @@
     key: "{{ item }}"
     validate_certs: no
   with_items:
-    - 'https://{{ key_host }}/release.asc'
-    - 'https://{{ key_host }}/autobuild.asc'
+    - 'https://{{ key_host }}/keys/release.asc'
+    - 'https://{{ key_host }}/keys/autobuild.asc'
   register: gpg_keys

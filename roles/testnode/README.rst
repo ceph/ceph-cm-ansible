@@ -43,7 +43,7 @@ The host to use as a github mirror::
 
     git_mirror_host: git.ceph.com
 
-The host to find package-signing keys on:
+The host to find package-signing keys on (at https://{{key_host}}/keys/{release,autobuild}.asc)::
 
     key_host: download.ceph.com
 

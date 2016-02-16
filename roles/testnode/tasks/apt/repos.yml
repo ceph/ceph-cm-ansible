@@ -35,8 +35,8 @@
     url: "{{ item }}"
     state: present
   with_items:
-    - "http://{{ key_host }}/autobuild.asc"
-    - "http://{{ key_host }}/release.asc"
+    - "http://{{ key_host }}/keys/autobuild.asc"
+    - "http://{{ key_host }}/keys/release.asc"
   # try for 2 minutes before failing
   retries: 24
   delay: 5
