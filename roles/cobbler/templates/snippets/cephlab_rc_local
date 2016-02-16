@@ -1,6 +1,13 @@
 ## {{ ansible_managed }}
 #set lockfile = '/.cephlab_rc_local'
+# Set proper location for firstboot ansible post-install trigger
+#set distro = $getVar('distro','').split("-")[0]
+#set distro_ver = $int($getVar('distro','').split("-")[1])
+#if $distro == 'Fedora' and $distro_ver >= 22
+#set script = '/etc/rc.d/rc.local'
+#else
 #set script = '/etc/rc.local'
+#end if
 
 cat > $script << EOF
 #!/bin/bash
