@@ -74,3 +74,5 @@ packages:
   - smartmontools
   # for nfs
   - nfs-utils
+  # python-pip is installed via roles/testnode/tasks/pip.yml on other rpm-based distros
+  - python-pip
