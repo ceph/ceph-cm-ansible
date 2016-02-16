@@ -78,10 +78,10 @@ d-i grub-pc/install_devices multiselect /dev/sda
 #User account.
 d-i passwd/root-login boolean false 
 d-i passwd/make-user boolean true
-d-i passwd/user-fullname string {{ ansible_user }}
-d-i passwd/username string {{ ansible_user }}
+d-i passwd/user-fullname string {{ cm_user }}
+d-i passwd/username string {{ cm_user }}
 d-i passwd/user-password-crypted password $default_password_crypted
-d-i passwd/user-uid string {{ ansible_user_uid_ }}
+d-i passwd/user-uid string {{ cm_user_uid }}
 d-i user-setup/allow-password-weak boolean false
 d-i user-setup/encrypt-home boolean false
 
