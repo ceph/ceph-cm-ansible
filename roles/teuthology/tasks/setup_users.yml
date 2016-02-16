@@ -12,7 +12,7 @@
   git:
     repo: "{{ teuthology_repo }}"
     dest: /home/{{ item }}/src/teuthology_master
-  sudo_user: "{{ item }}"
+  become_user: "{{ item }}"
   with_items: "{{ teuthology_users }}"
   tags:
     - repos
@@ -21,7 +21,7 @@
   shell: NO_CLOBBER=true ./bootstrap
   args:
     chdir: /home/{{ item }}/src/teuthology_master/
-  sudo_user: "{{ item }}"
+  become_user: "{{ item }}"
   with_items: "{{ teuthology_users }}"
   register: bootstrap
   changed_when: bootstrap.stdout_lines[-1]|length > 60
@@ -33,13 +33,13 @@
     dest: /home/{{ item }}/.profile
     regexp: teuthology_master
     line: 'PATH="$HOME/src/teuthology_master/virtualenv/bin:$PATH"'
-  sudo_user: "{{ item }}"
+  become_user: "{{ item }}"
   with_items: "{{ teuthology_users }}"
 
 - name: Ensure teuthology is usable
   shell: "./teuthology --version"
   args:
     chdir: /home/{{ item }}/src/teuthology_master/virtualenv/bin/
-  sudo_user: "{{ item }}"
+  become_user: "{{ item }}"
   with_items: "{{ teuthology_users }}"
   changed_when: false
