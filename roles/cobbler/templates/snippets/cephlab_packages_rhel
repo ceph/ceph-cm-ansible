@@ -1,7 +1,17 @@
 ## {{ ansible_managed }}
+## @base group no longer exists in >=Fedora-22
+#set distro = $getVar('distro','').split("-")[0]
+#set distro_ver = $int($getVar('distro','').split("-")[1])
+#if $distro == 'Fedora' and $distro_ver >= 22
+@^infrastructure-server-environment
+## yum is required for GPG installation until we move to ansible v2.0 package module
+yum
+#else
+@base
+#end if
+## Ansible seems to need the SELinux python bindings on RHEL6
 #set os_version = $getVar('os_version','')
 #if $os_version == 'rhel6'
-# Ansible seems to need the SELinux python bindings on RHEL6
 libselinux-python
 #end if
 perl
