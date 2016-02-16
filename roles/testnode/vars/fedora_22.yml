@@ -1,12 +1,4 @@
 ---
-yum_repos:
-  fedora-fcgi-ceph:
-    name: Fedora Local fastcgi Repo
-    baseurl: http://gitbuilder.ceph.com/mod_fastcgi-rpm-fedora20-x86_64-basic/ref/master/
-    enabled: 1
-    gpgcheck: 0
-    priority: 0
-
 packages_to_upgrade:
   - leveldb
 
@@ -15,7 +7,6 @@ packages_to_remove:
 
 packages:
   - '@core'
-  - '@base'
   - yum-plugin-priorities
   - redhat-lsb
   - sysstat
@@ -70,28 +61,18 @@ packages:
   - blktrace
   - numpy
   - python-matplotlib
-  ###
-  # for qemu
-  - qemu-system-x86
-  - genisoimage
-  ###
-  # for apache and rgw
-  - httpd
-  - httpd-devel
-  - httpd-tools
-  - mod_ssl
-  - mod_fastcgi-2.4.7-1.ceph.fc20
-  ###
-  - libevent-devel
-  - python-devel
   # for json_xs to investigate JSON by hand
   - perl-JSON
   # for pretty-printing xml
   - perl-XML-Twig
   # for java bindings, hadoop, etc.
-  - java-1.7.0-openjdk-devel
-  - junit4
+  - java-1.8.0-openjdk-devel
+  - junit
   # for disk/etc monitoring
+  - nrpe
+  - nagios-plugins-all
   - smartmontools
   # for nfs
   - nfs-utils
+  # python-pip is installed via roles/testnode/tasks/pip.yml on other rpm-based distros
+  - python-pip

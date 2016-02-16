@@ -18,6 +18,10 @@ distros:
       iso: ""
   "RHEL-7.2-Server-x86_64":
       iso: ""
+  "Fedora-22-Server-x86_64":
+      iso: http://ftp.linux.ncsu.edu/mirror/ftp.redhat.com/pub/fedora/linux/releases/22/Server/x86_64/iso/Fedora-Server-DVD-x86_64-22.iso
+      sha256: b2acfa7c7c6b5d2f51d3337600c2e52eeaa1a1084991181c28ca30343e52e0df
+      kickstart: cephlab_rhel.ks
   "CentOS-7.0-x86_64":
       iso: http://archive.kernel.org/centos-vault/7.0.1406/isos/x86_64/CentOS-7.0-1406-x86_64-DVD.iso
       sha256: ee505335bcd4943ffc7e6e6e55e5aaa8da09710b6ceecda82a5619342f1d24d9
