@@ -4,8 +4,6 @@
 #set distro_ver = $int($getVar('distro','').split("-")[1])
 #if $distro == 'Fedora' and $distro_ver >= 22
 @^infrastructure-server-environment
-## yum is required for GPG installation until we move to ansible v2.0 package module
-yum
 #else
 @base
 #end if
