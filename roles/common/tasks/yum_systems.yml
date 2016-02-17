@@ -39,6 +39,15 @@
   tags:
     - timezone
 
+# This is temporary to provide reverse compatibility with certain
+# tasks that call yum specifically.
+# Should be deprecated once we move to ansible v2
+- name: Install yum on Fedora 22 and later
+  dnf:
+    name: yum
+    state: present
+  when: ansible_distribution == 'Fedora' and ansible_distribution_major_version|int >= 22
+
 # configure Red Hat entitlements with subscription-manager
 - include: rhel-entitlements.yml
   when: ansible_distribution == 'RedHat'
