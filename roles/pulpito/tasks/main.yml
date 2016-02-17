@@ -24,7 +24,7 @@
   git:
     repo: "{{ pulpito_repo }}"
     dest: "{{ pulpito_repo_path }}"
-  sudo_user: pulpito
+  become_user: pulpito
 
 - name: Look for the virtualenv
   stat: 
@@ -35,7 +35,7 @@
 
 - name: Create the virtualenv
   shell: virtualenv ./virtualenv chdir={{ pulpito_repo_path }}
-  sudo_user: pulpito
+  become_user: pulpito
   when: virtualenv.stat.exists == false
 
 - name: Install requirements via pip
@@ -44,7 +44,7 @@
     requirements: "./requirements.txt"
     virtualenv: "{{ pulpito_repo_path }}/virtualenv"
   no_log: true
-  sudo_user: pulpito
+  become_user: pulpito
 
 - name: Check for pulpito config
   stat:
@@ -56,7 +56,7 @@
 - name: Copy pulpito config
   shell: cp ./config.py.in prod.py chdir={{ pulpito_repo_path }}
   when: pulpito_config.stat.exists == false
-  sudo_user: pulpito
+  become_user: pulpito
 
 - name: Set paddles_address
   lineinfile:

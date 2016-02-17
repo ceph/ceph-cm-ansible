@@ -53,10 +53,10 @@ utils:
   - reboot.sh
   - reimage.sh
 
-ansible_user_ssh_keys: []
+cm_user_ssh_keys: []
 
-ansible_user: ''
-ansible_user_uid_: ''
+cm_user: ''
+cm_user_uid: ''
 
 # A list of lines to add to resolv.conf and resolv.conf.d/base
 # An example:

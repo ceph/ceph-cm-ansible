@@ -3,7 +3,7 @@
   git:
     repo: "{{ paddles_repo }}"
     dest: "{{ paddles_repo_path }}"
-  sudo_user: "{{ paddles_user }}"
+  become_user: "{{ paddles_user }}"
   tags:
     - repos
 
@@ -12,14 +12,14 @@
     chdir: "{{ paddles_repo_path }}"
     requirements: "./requirements.txt"
     virtualenv: "{{ paddles_repo_path }}/virtualenv"
-  sudo_user: "{{ paddles_user }}"
+  become_user: "{{ paddles_user }}"
 
 - name: Run setup inside virtualenv
   command: "./virtualenv/bin/python setup.py develop"
   args:
     chdir: "{{ paddles_repo_path }}"
   changed_when: false
-  sudo_user: "{{ paddles_user }}"
+  become_user: "{{ paddles_user }}"
 
 - name: Ship prod.py
   template:

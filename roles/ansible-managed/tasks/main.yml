@@ -8,18 +8,18 @@
 
 - name: Create the ansible user.
   user:
-    name: "{{ ansible_user }}"
+    name: "{{ cm_user }}"
     groups: sudo
     shell: /bin/bash
-    uid: "{{ ansible_user_uid_ }}"
+    uid: "{{ cm_user_uid }}"
     update_password: on_create
-  when: ansible_user is defined and ansible_user_uid_ is defined
+  when: cm_user is defined and cm_user_uid is defined
   register: user_created
   tags:
    - user
 
 - name: Delete the ansible users password.
-  command: "passwd -d {{ ansible_user }}"
+  command: "passwd -d {{ cm_user }}"
   when: user_created is defined and user_created|changed
   tags:
    - user
@@ -48,10 +48,10 @@
 
 - name: Add authorized keys for the ansible user.
   authorized_key: 
-    user: "{{ ansible_user }}"
+    user: "{{ cm_user }}"
     key: "{{ item }}"
-  with_items: ansible_user_ssh_keys
-  when: ansible_user_ssh_keys is defined and
-        ansible_user is defined
+  with_items: cm_user_ssh_keys
+  when: cm_user_ssh_keys is defined and
+        cm_user is defined
   tags:
     - pubkeys
