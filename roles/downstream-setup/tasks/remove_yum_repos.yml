@@ -3,4 +3,4 @@
   file:
     path: "/etc/yum.repos.d/{{ item }}.repo"
     state: absent
-  with_items: repos
+  with_items: "{{ repos }}"

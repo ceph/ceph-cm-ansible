@@ -13,4 +13,4 @@
   user:
     name: "{{ item }}"
     state: absent
-  with_items: revoked_users
+  with_items: "{{ revoked_users }}"

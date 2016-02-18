@@ -16,7 +16,7 @@
     owner: root
     group: root
     mode: 0644 
-  with_items: kickstarts
+  with_items: "{{ kickstarts }}"
   tags:
     - kickstarts
 
@@ -27,7 +27,7 @@
     owner: root
     group: root
     mode: 0644
-  with_items: snippets
+  with_items: "{{ snippets }}"
   tags:
     - snippets
 
@@ -38,7 +38,7 @@
     owner: root
     group: root
     mode: 0644
-  with_items: scripts
+  with_items: "{{ scripts }}"
   tags:
     - scripts
 
@@ -49,7 +49,7 @@
     owner: root
     group: root
     mode: 0744
-  with_items: triggers
+  with_items: "{{ triggers }}"
   tags:
     - triggers
 
@@ -70,6 +70,6 @@
     owner: root
     group: root
     mode: 0755
-  with_items: utils
+  with_items: "{{ utils }}"
   tags:
     - utils

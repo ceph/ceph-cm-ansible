@@ -8,7 +8,7 @@
 
 - name: Remove custom repos
   file: path=/etc/apt/sources.list.d/{{ item }} state=absent
-  with_items: custom_repos.stdout_lines
+  with_items: "{{ custom_repos.stdout_lines }}"
   # Ignore changes here because we will be removing repos that we end up re-adding later
   changed_when: false
 
@@ -54,6 +54,6 @@
     state: present
     update_cache: no 
     mode: 0644
-  with_items: apt_repos|list + common_apt_repos|list
+  with_items: "{{ apt_repos|list + common_apt_repos|list }}"
   register: local_apt_repos
   when: ansible_architecture != "aarch64"

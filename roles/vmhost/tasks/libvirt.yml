@@ -49,7 +49,7 @@
 
 - name: See which pools are defined and which are not
   shell: virsh pool-info {{ item }}
-  with_items: ls_libvirtpool.stdout_lines
+  with_items: "{{ ls_libvirtpool.stdout_lines }}"
   register: pool_info
   when: srv_libvirtpool.stat.exists
   # don't bother reporting anything about this command; it's not useful

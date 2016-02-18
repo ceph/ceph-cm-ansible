@@ -29,4 +29,4 @@
 
 - name: Update settings
   command: cobbler setting edit --name={{ item.name }} --value={{ item.value}}
-  with_items: settings
+  with_items: "{{ settings }}"

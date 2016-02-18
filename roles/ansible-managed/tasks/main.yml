@@ -50,7 +50,7 @@
   authorized_key: 
     user: "{{ cm_user }}"
     key: "{{ item }}"
-  with_items: cm_user_ssh_keys
+  with_items: "{{ cm_user_ssh_keys }}"
   when: cm_user_ssh_keys is defined and
         cm_user is defined
   tags:

@@ -13,11 +13,11 @@
     groups: sudo
     shell: /bin/bash
     state: present
-  with_items: managed_admin_users
+  with_items: "{{ managed_admin_users }}"
 
 - name: Create all users without sudo access.
   user:
     name: "{{ item.name }}"
     shell: /bin/bash
     state: present
-  with_items: managed_users
+  with_items: "{{ managed_users }}"
