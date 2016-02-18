@@ -8,5 +8,6 @@ cobbler_extra_packages:
   - syslinux
   - pykickstart
   - fence-agents-all
-  - ansible
   - nmap
+  - python-pip
+  - python2-crypto

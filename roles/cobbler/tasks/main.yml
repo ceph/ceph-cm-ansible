@@ -20,7 +20,7 @@
     content: "{{ item.data }}"
     dest: "{{ item.path }}"
     mode: '600'
-  with_items: cobbler_keys["{{ ansible_hostname}}"]
+  with_items: cobbler_keys["{{ ansible_hostname }}"]
   no_log: true
 
 - name: Include package type specific vars.
@@ -33,6 +33,10 @@
 
 - include: apt_systems.yml
   when: ansible_pkg_mgr == "apt"
+
+- include: pip.yml
+  tags:
+    - pip
 
 - name: Start cobbler
   service:
