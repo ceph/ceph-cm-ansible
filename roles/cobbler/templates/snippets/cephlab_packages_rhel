@@ -1,8 +1,8 @@
 ## {{ ansible_managed }}
 ## @base group no longer exists in >=Fedora-22
 #set distro = $getVar('distro','').split("-")[0]
-#set distro_ver = $int($getVar('distro','').split("-")[1])
-#if $distro == 'Fedora' and $distro_ver >= 22
+#set distro_ver = $getVar('distro','').split("-")[1]
+#if $distro == 'Fedora' and int($distro_ver) >= 22
 @^infrastructure-server-environment
 #else
 @base
