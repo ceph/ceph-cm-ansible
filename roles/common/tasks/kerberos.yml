@@ -5,7 +5,7 @@
   yum:
     name: krb5-workstation
     state: present
-  when: ansible_distribution == 'RedHat'
+  when: ansible_os_family == 'RedHat'
 
 - name: Update apt cache.
   apt:
@@ -16,13 +16,13 @@
   # try for 2 minutes before failing
   retries: 24
   delay: 5
-  when: ansible_distribution == 'Debian'
+  when: ansible_os_family == 'Debian'
 
 - name: Install Kerberos Packages (Debian)
   apt:
     name: krb5-user
     state: present
-  when: ansible_distribution == 'Debian'
+  when: ansible_os_family == 'Debian'
 
 - name: Add krb5 config file
   template:
