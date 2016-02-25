@@ -87,6 +87,8 @@ packages:
   - smartmontools
   # for nfs
   - nfs-utils
+  # for xfstests
+  - ncurses-devel
 
 epel_packages:
   # for running ceph
