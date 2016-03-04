@@ -2,6 +2,7 @@
 ## {{ ansible_managed }}
 set -ex
 name=$2
+profile=$(cobbler system dumpvars --name $2 | grep profile_name | cut -d ':' -f2)
 export USER=root
 export HOME=/root
 ANSIBLE_CM_PATH=/root/ceph-cm-ansible
@@ -30,5 +31,11 @@ ansible-playbook testnodes.yml -v --limit $name* --tags user,pubkeys 2>&1 > /var
 # Now run the rest of the playbook. If it fails, at least we have access.
 # Background it so that the request doesn't block for this part and end up 
 # causing the client to retry, thus spawning this trigger multiple times
+
+# Skip the rest of the testnodes playbook if stock profile requested
+if [[ $profile == *"-stock" ]]
+then
+    exit 0
+fi
 ansible-playbook testnodes.yml -v --limit $name* --skip-tags user,pubkeys 2>&1 >> /var/log/ansible/$name.log &
 popd
