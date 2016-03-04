@@ -12,6 +12,8 @@ distros:
       iso: ""
   "RHEL-6.7-Server-x86_64":
       iso: ""
+  "RHEL-6.8-Server-x86_64":
+      iso: ""
   "RHEL-7.0-Server-x86_64":
       iso: ""
   "RHEL-7.1-Server-x86_64":
