@@ -8,13 +8,19 @@
     mode: 0440
     validate: visudo -cf %s
 
-- name: Configure nagios nrpe settings.
-  template:
-    src: nagios/nagios-nrpe-server
-    dest: "/etc/default/{{ nrpe_service_name }}"
-    owner: root
-    group: root
-    mode: 0644
+- name: Configure nagios nrpe settings (Ubuntu)
+  lineinfile:
+    dest: /etc/default/{{ nrpe_service_name }}
+    regexp: "^DAEMON_OPTS"
+    line: "DAEMON_OPTS=\"--no-ssl\""
+  when: ansible_pkg_mgr == "apt"
+
+- name: Configure nagios nrpe settings (RHEL/CentOS)
+  lineinfile:
+    dest: /etc/sysconfig/{{ nrpe_service_name }}
+    regexp: "^NRPE_SSL_OPT"
+    line: "NRPE_SSL_OPT=\"-n\""
+  when: ansible_pkg_mgr == "yum"
 
 - name: Upload nagios nrpe config.
   template:
