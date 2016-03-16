@@ -183,7 +183,7 @@ monitoring-scripts
     Uploads custom disk monitoring scripts. See, ``roles/testnode/tasks/disk_monitoring.yml``.
 
 nagios
-    Configure nagios nrpe server for apt systems. 
+    Configure nagios nrpe service. 
 
 nfs
     Install and start nfs.
