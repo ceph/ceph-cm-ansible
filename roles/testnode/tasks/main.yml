@@ -72,6 +72,12 @@
   tags:
     - nagios
 
+# configure selinux for nagios
+- include: nrpe-selinux.yml
+  when: ansible_pkg_mgr == "yum"
+  tags:
+    - nagios
+
 # configure ntp
 - include: ntp.yml
   tags:

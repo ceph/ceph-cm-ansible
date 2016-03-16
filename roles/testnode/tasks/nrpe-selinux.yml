@@ -1,0 +1,39 @@
+---
+- name: nrpe - Install semanage python bindings
+  yum:
+    pkg: libsemanage-python
+    state: installed
+
+- name: nrpe - Install SELinux tools
+  yum:
+    pkg: policycoreutils-python
+    state: installed
+
+- name: nrpe - Set SELinux boolean nagios_run_sudo true
+  seboolean:
+    name: nagios_run_sudo
+    state: yes
+    persistent: yes
+
+- name: nrpe - Remove SELinux policy package
+  command: semodule -r nrpe
+  failed_when: false
+
+- name: nrpe - Copy SELinux type enforcement file
+  copy:
+    src: nagios/nrpe.te
+    dest: /tmp/nrpe.te
+
+- name: nrpe - Compile SELinux module file
+  command: checkmodule -M -m -o /tmp/nrpe.mod /tmp/nrpe.te
+
+- name: nrpe - Build SELinux policy package
+  command: semodule_package -o /tmp/nrpe.pp -m /tmp/nrpe.mod
+
+- name: nrpe - Load SELinux policy package
+  command: semodule -i /tmp/nrpe.pp
+
+- name: nrpe - Remove temporary files
+  file:
+    path: /tmp/nrpe.*
+    state: absent
