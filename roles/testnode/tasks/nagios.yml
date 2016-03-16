@@ -31,3 +31,9 @@
     mode: 0644
   notify:
     - restart nagios-nrpe-server
+
+- name: Make sure nagios nrpe service is running.
+  service:
+    name: "{{nrpe_service_name}}"
+    enabled: yes
+    state: started
