@@ -31,11 +31,17 @@ d-i mirror/suite string $os_version
 # Stop Ubuntu from installing random kernel choice
 #d-i base-installer/kernel/image select none
 
+# Controls whether or not the hardware clock is set to UTC.
+d-i clock-setup/utc boolean true
+#
+# # You may set this to any valid setting for $TZ; see the contents of
+# # /usr/share/zoneinfo/ for valid values.
+d-i time/zone string Etc/UTC
+
 # Controls whether to use NTP to set the clock during the install
 d-i clock-setup/ntp boolean true
 # NTP server to use. The default is almost always fine here.
 d-i clock-setup/ntp-server string pool.ntp.org
-
 
 # This makes partman automatically partition without confirmation.
 #d-i partman/confirm_write_new_label boolean true

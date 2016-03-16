@@ -33,7 +33,7 @@ selinux --permissive
 # Do not configure the X Window System
 skipx
 # System timezone
-timezone  America/New_York
+timezone Etc/UTC --utc
 # Install OS instead of upgrade
 install
 
