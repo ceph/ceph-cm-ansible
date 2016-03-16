@@ -34,6 +34,6 @@
 
 - name: Make sure nagios nrpe service is running.
   service:
-    name: "{{nrpe_service_name}}"
+    name: "{{ nrpe_service_name }}"
     enabled: yes
     state: started
