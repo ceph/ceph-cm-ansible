@@ -1,0 +1,16 @@
+---
+packages:
+  ## misc tools
+  - vim
+  - wget
+  - mlocate
+  - ipmitool
+  - git
+  - fail2ban
+  ## VPN-specific stuff
+  - openvpn
+  - easy-rsa
+  - iptables-services
+  ## monitoring
+  - nrpe
+  - nagios-plugins-all
