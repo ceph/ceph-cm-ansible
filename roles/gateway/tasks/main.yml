@@ -3,7 +3,7 @@
   include_vars: "{{ secrets_path | mandatory }}/gateway.yml"
   no_log: true
   tags:
-    - vars
+    - always
 
 # Install and update system packages
 - include: packages.yml
