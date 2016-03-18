@@ -1,0 +1,8 @@
+---
+pcp_user: pcp
+pcp_package: pcp
+pmcd_service: pmcd
+pmlogger_service: pmlogger
+pcp_manager_package: pcp
+pmmgr_service: pmmgr
+avahi_package: avahi-daemon

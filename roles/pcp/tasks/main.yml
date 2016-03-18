@@ -1,0 +1,31 @@
+---
+- name: Include package type specific vars.
+  include_vars: "{{ ansible_pkg_mgr }}_systems.yml"
+  tags:
+    - always
+
+- name: Miscellaneous preparation
+  include: prep.yml
+  tags:
+    - always
+
+- name: Set up as collector
+  include: collector.yml
+  when:
+    pcp_collector|bool == true
+  tags:
+    - collector
+
+- name: Set up as manager
+  include: manager.yml
+  when:
+    pcp_manager|bool == true
+  tags:
+    - manager
+
+- name: Set up web UI
+  include: web.yml
+  when:
+    pcp_web|bool == true
+  tags:
+    - web

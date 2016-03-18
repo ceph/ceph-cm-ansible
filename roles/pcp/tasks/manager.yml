@@ -1,0 +1,83 @@
+---
+- name: Install avahi
+  apt:
+    name: "{{ avahi_package }}"
+    state: latest
+  when:
+    ansible_pkg_mgr == "apt" and
+    pcp_use_avahi|bool == true
+
+- name: Install avahi
+  yum:
+    name: "{{ avahi_package }}"
+    state: latest
+  when:
+    ansible_pkg_mgr == "yum" and
+    pcp_use_avahi|bool == true
+
+- name: Install pcp-manager
+  apt:
+    name: "{{ pcp_manager_package }}"
+    state: latest
+  when:
+    ansible_pkg_mgr == "apt"
+  register: install_pmmgr_apt
+
+- name: Install pcp-manager
+  yum:
+    name: "{{ pcp_manager_package }}"
+    state: latest
+  when:
+    ansible_pkg_mgr == "yum"
+  register: install_pmmgr_yum
+
+- name: Enable pmmgr
+  service:
+    name: "{{ pmmgr_service }}"
+    enabled: yes
+
+- set_fact:
+    pcp_target_hosts: "[{% for host in groups.pcp %}'{{ host }}',{% endfor %}]"
+
+- name: Write target-host
+  template:
+    src: target-host
+    dest: /etc/pcp/pmmgr/target-host
+    owner: root
+    group: root
+    mode: 0644
+  register: target_host
+
+- set_fact:
+    network_and_netmask: "{{ ansible_default_ipv4.network }}/{{ ansible_default_ipv4.netmask }}"
+
+- set_fact:
+    # ipaddr('net') converts a 'network/netmask' string to 'network/CIDR' format
+    network_and_cidr: "{{ network_and_netmask|ipaddr('net') }}"
+
+- name: Write target-discovery
+  template:
+    src: target-discovery
+    dest: /etc/pcp/pmmgr/target-discovery
+    owner: root
+    group: root
+    mode: 0644
+  register: target_discovery
+
+- name: Ensure /var/log/pcp is owned by pcp
+  file:
+    path: /var/log/pcp
+    owner: "{{ pcp_user }}"
+    group: "{{ pcp_user }}"
+    recurse: yes
+
+- name: Restart pmmgr
+  service:
+    name: "{{ pmmgr_service }}"
+    state: restarted
+    enabled: yes
+  when:
+    install_pmmgr_apt|changed or
+    install_pmmgr_yum|changed or
+    target_host|changed or
+    target_discovery|changed

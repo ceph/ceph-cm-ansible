@@ -1,0 +1,42 @@
+---
+- name: Fail when on Ubuntu
+  fail:
+    msg: "pcp-web isn't available on Ubuntu yet :("
+  when: ansible_distribution == "Ubuntu"
+
+- name: Install pcp-webapi
+  yum:
+    name: "{{ pcp_webapi_package }}"
+    state: latest
+  register: install_pcp_webapi
+  when: ansible_pkg_mgr == "yum"
+
+- name: Install pcp-webjs
+  yum:
+    name: "{{ pcp_webjs_package }}"
+    state: latest
+  register: install_pcp_webjs
+  when: ansible_pkg_mgr == "yum"
+
+- name: Enable pmwebd
+  service:
+    name: "{{ pmwebd_service }}"
+    enabled: yes
+  register: enable_pmwebd
+
+- name: Ship 1h1m.json dashboard
+  copy:
+    src: "../files/1h1m.json"
+    dest: "/usr/share/pcp/webapps/grafana/app/dashboards/"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Start pmwebd
+  service:
+    name: "{{ pmmgr_service }}"
+    state: restarted
+  when:
+    install_pcp_webapi|changed or
+    install_pcp_webjs|changed or
+    enable_pmwebd|changed

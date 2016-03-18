@@ -18,3 +18,6 @@
 
 # if this node is in the pulpito group, configure it
 - include: pulpito.yml
+
+# if this node is in the pcp group, configure it
+- include: pcp.yml
