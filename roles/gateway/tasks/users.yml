@@ -2,7 +2,7 @@
 - name: Populate list of OpenVPN users
   set_fact:
     openvpn_users:
-      "{{ admin_users|list + lab_users|list }}"
+      "{{ admin_users|list + lab_users|list + openvpn_users|list }}"
 
 - name: Update users file
   template:
