@@ -15,6 +15,14 @@
   tags:
     - users
 
+- name: Write CA, cert, and key
+  copy:
+    content: "{{ item.data }}"
+    dest: "{{ item.path }}"
+    mode: "{{ item.mode }}"
+  with_items: "{{ gateway_secrets }}"
+  no_log: true
+
 - name: Make sure OpenVPN service is running and enabled
   service:
     name: openvpn@server
