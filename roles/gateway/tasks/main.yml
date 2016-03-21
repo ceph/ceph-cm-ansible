@@ -14,3 +14,9 @@
 - include: users.yml
   tags:
     - users
+
+- name: Make sure OpenVPN service is running and enabled
+  service:
+    name: openvpn@server
+    state: started
+    enabled: yes
