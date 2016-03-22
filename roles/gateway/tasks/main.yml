@@ -21,7 +21,7 @@
   tags:
     - users
 
-- name: Write CA, cert, and key
+- name: Write OpenVPN secrets
   copy:
     content: "{{ item.data }}"
     dest: "{{ item.path }}"
