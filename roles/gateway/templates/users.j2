@@ -1,0 +1,6 @@
+#
+# {{ ansible_managed }}
+#
+{% for user in openvpn_users %}
+{{ user.ovpn }}
+{% endfor %}

@@ -1,0 +1,13 @@
+---
+- name: Populate list of OpenVPN users
+  set_fact:
+    openvpn_users:
+      "{{ admin_users|list + lab_users|list + openvpn_users|list }}"
+
+- name: Update users file
+  template:
+    src: users.j2
+    dest: "{{ openvpn_data_dir }}/users"
+    owner: root
+    group: root
+    mode: 0644

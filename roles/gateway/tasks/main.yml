@@ -1,0 +1,30 @@
+---
+- name: Include secrets
+  include_vars: "{{ secrets_path | mandatory }}/gateway.yml"
+  no_log: true
+  tags:
+    - always
+
+# Install and update system packages
+- include: packages.yml
+  tags:
+    - packages
+
+# Manage OpenVPN users list using secrets repo
+- include: users.yml
+  tags:
+    - users
+
+- name: Write CA, cert, and key
+  copy:
+    content: "{{ item.data }}"
+    dest: "{{ item.path }}"
+    mode: "{{ item.mode }}"
+  with_items: "{{ gateway_secrets }}"
+  no_log: true
+
+- name: Make sure OpenVPN service is running and enabled
+  service:
+    name: openvpn@server
+    state: started
+    enabled: yes
