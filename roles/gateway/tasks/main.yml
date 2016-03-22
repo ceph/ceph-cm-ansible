@@ -31,6 +31,6 @@
 
 - name: Make sure OpenVPN service is running and enabled
   service:
-    name: openvpn@server
+    name: "openvpn@{{ openvpn_server_name }}"
     state: started
     enabled: yes
