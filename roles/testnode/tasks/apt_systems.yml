@@ -7,6 +7,13 @@
   tags:
     - repos
 
+# http://tracker.ceph.com/issues/15090
+# We don't know why it's happening, but something is corrupting the
+# apt-cache.  Let's try just blasting it each time.
+- name: Blast the apt cache.
+  command:
+    sudo apt-get clean
+
 - name: Update apt cache.
   apt:
     update_cache: yes
