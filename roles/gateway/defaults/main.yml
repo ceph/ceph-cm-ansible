@@ -5,3 +5,7 @@
 secrets_repo:
   name: UNDEFINED
   url: null
+
+openvpn_server_name: server
+
+openvpn_data_dir: /etc/openvpn/data
