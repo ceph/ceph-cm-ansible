@@ -43,6 +43,8 @@ def authenticate():
             for line in f:
                 assert line.endswith('\n')
                 line = line[:-1]
+                if line.startswith("#") or len(line) == 0:
+                    continue
                 (username, salt, correct) = line.split(' ', 2)
                 if username == wanted:
                     return (salt, correct)
