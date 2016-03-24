@@ -10,12 +10,18 @@
   tags:
     - packages
 
+- name: Ensure data directory exists
+  file:
+    path: "{{ openvpn_data_dir }}"
+    state: directory
+    mode: 0755
+
 # Manage OpenVPN users list using secrets repo
 - include: users.yml
   tags:
     - users
 
-- name: Write CA, cert, and key
+- name: Write OpenVPN secrets
   copy:
     content: "{{ item.data }}"
     dest: "{{ item.path }}"
@@ -25,6 +31,6 @@
 
 - name: Make sure OpenVPN service is running and enabled
   service:
-    name: openvpn@server
+    name: "openvpn@{{ openvpn_server_name }}"
     state: started
     enabled: yes

@@ -23,11 +23,15 @@ A list of packages to install that is specific to the role.  The list is defined
 
     packages: []
 
+A unique name to give to your OpenVPN service.  This name is used to organize configuration files and start/stop the service.  Defined in the secrets repo::
+
+    openvpn_server_name: []
+
 The directory in which the OpenVPN server CA, keys, certs, and user file should be saved.  Defined in the secrets repo::
 
     openvpn_data_dir: []
 
-Contains paths, file permission (modes), and data to store and maintain OpenVPN CA, cert, key, and main server config.  Consult your server.conf on what you should define here.  For reference, we have dh1024.pem, server.crt, server.key, and server.conf defined.  Defined in the secrets repo::
+Contains paths, file permission (modes), and data to store and maintain OpenVPN CA, cert, key, and main server config.  Consult your server.conf on what you should define here.  For reference, we have dh1024.pem, server.crt, server.key, tlsauth, and server.conf defined.  Defined in the secrets repo::
 
     gateway_secrets: []
 

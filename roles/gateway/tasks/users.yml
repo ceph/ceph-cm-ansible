@@ -11,3 +11,11 @@
     owner: root
     group: root
     mode: 0644
+
+- name: Upload auth-openvpn script
+  template:
+    src: auth-openvpn
+    dest: "{{ openvpn_data_dir }}/auth-openvpn"
+    owner: root
+    group: root
+    mode: 0755

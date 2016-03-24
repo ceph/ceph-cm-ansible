@@ -1,4 +1,5 @@
 ---
 - hosts: gateway
   roles:
+    - common
     - gateway
