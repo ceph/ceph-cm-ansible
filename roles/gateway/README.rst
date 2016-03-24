@@ -83,5 +83,6 @@ To Do
 - Configure networking
 - Configure firewall
 - Configure fail2ban
+- Configure log rotation
 
 .. _Sepia: https://ceph.github.io/sepia/
