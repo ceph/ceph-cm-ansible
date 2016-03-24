@@ -47,6 +47,13 @@
     owner: root
     mode: 0644
 
+# http://tracker.ceph.com/issues/15272
+# We don't know why it's happening, but something is corrupting the
+# rpmdb.  Let's try just rebuilding it every time.
+- name: Rebuild rpmdb
+  command:
+    sudo rpm --rebuilddb
+
 - name: Setup local repo files.
   include: yum/repos.yml
   tags:
