@@ -14,7 +14,7 @@
 - name: Set paddles_address
   set_fact:
     paddles_address: http://{{ ansible_hostname }}/
-  when: not paddles_address.startswith('http')
+  when: paddles_address is not defined or not paddles_address.startswith('http')
   tags:
     - always
 
