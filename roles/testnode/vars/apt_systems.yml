@@ -16,6 +16,8 @@ ceph_packages_to_remove:
   - python-rados
   - librbd1
   - librados2
+  - ceph-fs-common-dbg
+  - ceph-fs-common
 
 packages: []
 common_packages: []
