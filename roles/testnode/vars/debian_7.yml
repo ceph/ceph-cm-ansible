@@ -1,7 +1,7 @@
 ---
 apt_repos:
   - "deb http://ceph.com/debian-dumpling/ wheezy main"
-  - "deb http://gitbuilder.ceph.com/libapache-mod-fastcgi-deb-wheezy-x86_64-basic/ref/master/ wheezy main"
+  - "deb http://gitbuilder.ceph.com/libapache-mod-fastcgi-deb-wheezy-{{ansible_architecture}}-basic/ref/master/ wheezy main"
 
 packages:
   - lsb-release
