@@ -11,6 +11,7 @@
   apt:
     name: "{{ item }}"
     state: latest
+    force: yes
   with_items: packages_to_upgrade
   when: packages_to_upgrade|length > 0
 
