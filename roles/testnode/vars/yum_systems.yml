@@ -9,6 +9,8 @@ nagios_plugins_directory: /usr/lib64/nagios/plugins
 # ceph packages that we ensure do not exist
 ceph_packages_to_remove:
   - ceph
+  - ceph-base
+  - ceph-selinux
   - ceph-common
   - ceph-debuginfo
   - ceph-release
@@ -18,6 +20,8 @@ ceph_packages_to_remove:
   - python-rados
   - librbd1
   - librados2
+  - mod_fastcgi
+  - iozone
 
 ceph_dependency_packages_to_remove:
   - boost-random
