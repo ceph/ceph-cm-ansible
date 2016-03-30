@@ -52,7 +52,7 @@
 # rpmdb.  Let's try just rebuilding it every time.
 - name: Rebuild rpmdb
   command:
-    sudo rpm --rebuilddb
+    rpm --rebuilddb
 
 - name: Setup local repo files.
   include: yum/repos.yml

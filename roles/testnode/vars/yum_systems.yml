@@ -18,6 +18,8 @@ ceph_packages_to_remove:
   - ceph-radosgw
   - python-ceph
   - python-rados
+  - python-rbd
+  - python-cephfs
   - librbd1
   - librados2
   - mod_fastcgi
