@@ -2,10 +2,14 @@ PCP
 ===
 This role is used to configure a node to run PCP_.
 
-It has been tested on:
+These distros should be fully supported:
 
 - CentOS 7
 - Ubuntu 14.04 (Trusty)
+
+These distros are supported as ``pcp_collector`` nodes:
+
+- Fedora 22 (Only via ansible 2)
 
 .. _PCP: https://github.com/performancecopilot/pcp
 
