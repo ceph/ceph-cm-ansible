@@ -1,5 +1,4 @@
 # {{ ansible_managed }}
-{{ lab_domain }}
 {% for host in pcp_target_hosts %}
 {{ host }}
 {% endfor %}
