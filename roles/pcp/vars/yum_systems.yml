@@ -1,0 +1,11 @@
+---
+pcp_user: pcp
+pcp_package: pcp
+pmcd_service: pmcd
+pmlogger_service: pmlogger
+pcp_manager_package: pcp-manager
+pmmgr_service: pmmgr
+avahi_package: avahi
+pcp_webapi_package: pcp-webapi
+pcp_webjs_package: pcp-webjs
+pmwebd_service: pmwebd

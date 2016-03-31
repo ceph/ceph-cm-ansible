@@ -1,0 +1,44 @@
+---
+- name: Install pcp
+  apt:
+    name: "{{ pcp_package }}"
+    state: latest
+  register: install_pcp_apt
+  when:
+    ansible_pkg_mgr == "apt"
+
+- name: Install pcp
+  yum:
+    name: "{{ pcp_package }}"
+    state: latest
+  register: install_pcp_yum
+  when:
+    ansible_pkg_mgr == "yum"
+
+- name: Install pcp
+  dnf:
+    name: "{{ pcp_package }}"
+    state: latest
+  register: install_pcp_dnf
+  when:
+    ansible_pkg_mgr == "dnf"
+
+- name: Restart pcp
+  service:
+    name: "{{ pmcd_service }}"
+    state: restarted
+    enabled: yes
+  when:
+    install_pcp_apt|changed or
+    install_pcp_yum|changed or
+    install_pcp_dnf|changed
+
+- name: Restart pmlogger
+  service:
+    name: "{{ pmlogger_service }}"
+    state: restarted
+    enabled: yes
+  when:
+    install_pcp_apt|changed or
+    install_pcp_yum|changed or
+    install_pcp_dnf|changed

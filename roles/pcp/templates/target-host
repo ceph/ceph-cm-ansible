@@ -1,0 +1,4 @@
+# {{ ansible_managed }}
+{% for host in pcp_target_hosts %}
+{{ host }}
+{% endfor %}

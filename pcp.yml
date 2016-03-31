@@ -1,0 +1,4 @@
+---
+- hosts: pcp
+  roles:
+    - pcp

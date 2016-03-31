@@ -1,0 +1,7 @@
+# {{ ansible_managed }}
+{% if pcp_use_avahi %}
+avahi,timeout=5
+{% endif %}
+{% if pcp_probe %}
+probe={{ network_and_cidr }},maxThreads=256
+{% endif %}

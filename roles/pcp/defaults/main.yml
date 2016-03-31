@@ -1,0 +1,18 @@
+---
+## PCP Collector options
+# Set the host up to collect data
+pcp_collector: true
+
+## PCP Manager options
+# Set the host up to be able to monitor other systems
+pcp_manager: false
+# Whether or not to use avahi to auto-discover hosts
+pcp_use_avahi: false
+# Whether or not to probe the local network to auto-discover hosts
+pcp_probe: false
+# PMCD_CONNECT_TIMEOUT in /etc/pcp/pmmgr/pmmgr.options
+pmcd_connect_timeout: "0.1"
+
+## PCP Web UI options
+# Set up the web UI
+pcp_web: false

@@ -4,6 +4,9 @@
 # cobbler / downburst / cloud-init.
 - include: ansible_managed.yml
 
+# if this node is in the pcp group, configure it
+- include: pcp.yml
+
 # if this node is in the teuthology group, configure it
 - include: teuthology.yml
 
