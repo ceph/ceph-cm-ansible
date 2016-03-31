@@ -9,6 +9,8 @@ These distros should be fully supported:
 
 These distros are supported as ``pcp_collector`` nodes:
 
+- CentOS 6
+- Debian 8
 - Fedora 22 (Only via ansible 2)
 
 .. _PCP: https://github.com/performancecopilot/pcp
