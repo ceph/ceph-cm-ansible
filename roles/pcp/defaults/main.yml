@@ -10,6 +10,8 @@ pcp_manager: false
 pcp_use_avahi: false
 # Whether or not to probe the local network to auto-discover hosts
 pcp_probe: false
+# PMCD_CONNECT_TIMEOUT in /etc/pcp/pmmgr/pmmgr.options
+pmcd_connect_timeout: "0.1"
 
 ## PCP Web UI options
 # Set up the web UI

@@ -71,6 +71,14 @@
     group: "{{ pcp_user }}"
     recurse: yes
 
+# This greatly speeds up polling for hosts
+- name: Set PMCD_CONNECT_TIMEOUT in pmmgr.options
+  lineinfile:
+    dest: /etc/pcp/pmmgr/pmmgr.options
+    regexp: "^PMCD_CONNECT_TIMEOUT="
+    line: "PMCD_CONNECT_TIMEOUT={{ pmcd_connect_timeout }}"
+  register: pmmgr_options
+
 - name: Restart pmmgr
   service:
     name: "{{ pmmgr_service }}"
@@ -80,4 +88,5 @@
     install_pmmgr_apt|changed or
     install_pmmgr_yum|changed or
     target_host|changed or
-    target_discovery|changed
+    target_discovery|changed or
+    pmmgr_options|changed
