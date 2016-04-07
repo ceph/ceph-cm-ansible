@@ -1,7 +1,7 @@
 ---
 common_apt_repos:
   # mod_fastcgi for radosgw
-  - "deb http://gitbuilder.ceph.com/libapache-mod-fastcgi-deb-{{ansible_distribution_release}}-{{ansible_architecture}}-basic/ref/master/ {{ansible_distribution_release}} main"
+  - "deb http://gitbuilder.ceph.com/libapache-mod-fastcgi-deb-{{ansible_distribution_release}}-x86_64-basic/ref/master/ {{ansible_distribution_release}} main"
 
 common_packages:
   # for apache
