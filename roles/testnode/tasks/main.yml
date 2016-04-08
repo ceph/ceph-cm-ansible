@@ -58,6 +58,11 @@
 - include: setup-ubuntu.yml
   when: ansible_distribution == "Ubuntu"
 
+- include: setup-ubuntu-non-aarch64.yml
+  when:
+    ansible_distribution == "Ubuntu" and
+    ansible_architecture != "aarch64"
+
 # configure debian specific things
 - include: setup-debian.yml
   when: ansible_distribution == "Debian"

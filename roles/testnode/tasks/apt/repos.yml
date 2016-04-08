@@ -29,6 +29,7 @@
     group: root
     mode: 0644
   register: sources
+  when: ansible_architecture != "aarch64"
 
 - name: Install apt keys
   apt_key:
@@ -55,3 +56,4 @@
     mode: 0644
   with_items: apt_repos|list + common_apt_repos|list
   register: local_apt_repos
+  when: ansible_architecture != "aarch64"

@@ -1,7 +1,7 @@
 ---
 common_apt_repos:
   # mod_fastcgi for radosgw
-  - "deb http://gitbuilder.ceph.com/libapache-mod-fastcgi-deb-{{ansible_distribution_release}}-{{ansible_architecture}}-basic/ref/master/ {{ansible_distribution_release}} main"
+  - "deb http://gitbuilder.ceph.com/libapache-mod-fastcgi-deb-{{ansible_distribution_release}}-x86_64-basic/ref/master/ {{ansible_distribution_release}} main"
 
 common_packages:
   # for apache
@@ -24,18 +24,15 @@ common_packages:
   - python-gevent
   # for running ceph
   - libedit2
-  - libssl0.9.8
   - cryptsetup-bin
   - xfsprogs
   - gdisk
   - parted
   ###
   # for setting BIOS settings
-  - smbios-utils
   ###
   - libcrypto++9
   - libuuid1
-  - libfcgi
   - btrfs-tools
   # for compiling helpers and such
   - libatomic-ops-dev
@@ -45,7 +42,6 @@ common_packages:
   - attr
   - dbench
   - bonnie++
-  - iozone3
   - valgrind
   - python-nose
   - mpich2
@@ -60,7 +56,6 @@ common_packages:
   - libacl1-dev
   - bc
   - xfsdump
-  - dmapi
   - xfslibs-dev
   - libattr1-dev
   - quota
@@ -68,7 +63,6 @@ common_packages:
   - libncurses5-dev
   - lvm2
   ###
-  - sysprof
   - vim
   - pdsh
   - collectl
@@ -104,9 +98,19 @@ common_packages:
   - nfs-common
   - nfs-kernel-server
 
+non_aarch64_common_packages:
+  - libssl0.9.8
+  - smbios-utils
+  - libfcgi
+  - iozone3
+  - dmapi
+  - sysprof
+
 packages_to_upgrade:
   - apt
   - apache2
+
+non_aarch64_packages_to_upgrade:
   - libapache2-mod-fastcgi
 
 packages_to_remove:

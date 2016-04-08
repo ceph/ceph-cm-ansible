@@ -6,9 +6,11 @@
 #  - "deb [arch=amd64] http://{{ mirror_host }}/blkin/ trusty main"
 
 packages:
-  - libgoogle-perftools4
   - libboost-thread1.54.0
   - mpich
   - qemu-system-x86
 #  - blkin
   - lttng-tools
+
+non_aarch64_packages:
+  - libgoogle-perftools4
