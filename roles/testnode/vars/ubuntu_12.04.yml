@@ -5,6 +5,19 @@ packages:
   - ltp-kernel-test
   - libmpich2-3
   - kvm
+  ###
+  # for setting BIOS settings
+  ###
+  - libcrypto++9
+  ###
+  # used by workunits
+  - mpich2
+  - libmpich2-dev
+
+non_aarch64_packages:
+  - iozone3
+  - dmapi
+  - libssl0.9.8
 
 # on precise rpcbind does not provide a way to
 # be managed with upstart
