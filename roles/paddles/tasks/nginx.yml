@@ -20,6 +20,7 @@
     name: "{{ apache_service }}"
     enabled: no
     state: stopped
+  failed_when: false
 
 - name: Enable nginx
   service:
