@@ -38,6 +38,7 @@
     mode: 0644
   notify:
     - start ttyS1
+  when: not ansible_hostname | search("^target")
 
 # this only runs on mira nodes
 - name: Upload ttyS2.conf.
