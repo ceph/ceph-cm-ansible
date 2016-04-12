@@ -1,0 +1,10 @@
+---
+- name: Include nameserver package list
+  include_vars: packages.yml
+
+- name: Install and update packages
+  yum:
+    name: "{{ item }}"
+    state: latest
+    enablerepo: epel
+  with_items: packages

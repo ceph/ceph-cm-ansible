@@ -1,1 +1,5 @@
 ---
+# Install and update system packages
+- include: packages.yml
+  tags:
+    - packages
