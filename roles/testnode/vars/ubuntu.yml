@@ -31,7 +31,6 @@ common_packages:
   ###
   # for setting BIOS settings
   ###
-  - libcrypto++9
   - libuuid1
   - btrfs-tools
   # for compiling helpers and such
@@ -44,8 +43,6 @@ common_packages:
   - bonnie++
   - valgrind
   - python-nose
-  - mpich2
-  - libmpich2-dev
   - ant
   ###
   # used by the xfstests tasks
@@ -99,11 +96,8 @@ common_packages:
   - nfs-kernel-server
 
 non_aarch64_common_packages:
-  - libssl0.9.8
   - smbios-utils
   - libfcgi
-  - iozone3
-  - dmapi
   - sysprof
 
 packages_to_upgrade:
