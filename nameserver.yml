@@ -1,0 +1,5 @@
+---
+- hosts: nameserver
+  roles:
+    - common
+    - nameserver
