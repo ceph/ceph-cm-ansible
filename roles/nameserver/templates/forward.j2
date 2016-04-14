@@ -1,0 +1,36 @@
+{% set domain = item.key %}
+{% if item.value.ipvar is defined and item.value.ipvar.0 is defined %}
+{% set ipvar = item.value.ipvar %}
+{% endif %}
+;
+; {{ ansible_managed }}
+;
+$TTL {{ named_conf_soa_ttl }}
+@		IN	SOA	{{ named_conf_soa }} (
+				{{ named_serial }}	; Serial
+				{{ named_conf_soa_refresh }}		; Refresh
+				{{ named_conf_soa_retry }}		; Retry
+				{{ named_conf_soa_expire }}		; Expire
+				{{ named_conf_soa_ttl }}		; TTL
+				)
+
+{% for nameserver in groups['nameserver'] %}
+		IN	NS	{{ nameserver }}.
+{% endfor %}
+
+$ORIGIN {{ domain }}.
+
+{% if item.value.miscrecords is defined %}
+{% for record in item.value.miscrecords %}
+{{ record }}
+{% endfor %}
+{% endif %}
+
+{% if item.value.ipvar is defined and item.value.ipvar.0 is defined %}
+{% for host in groups['all'] %}
+{% if hostvars[host][ipvar] is defined %}
+{% set ipaddr = hostvars[host][ipvar] %}
+{{ hostvars[host]['inventory_hostname_short'] }}			IN	A	{{ hostvars[host][ipvar] }}
+{% endif %}
+{% endfor %}
+{% endif %}

@@ -1,0 +1,27 @@
+---
+- name: Create zone file path
+  file:
+    path: "{{ named_conf_zones_path }}"
+    state: directory
+
+- name: Set named_serial variable
+  set_fact:
+    named_serial: "{{ ansible_date_time.epoch }}"
+
+- name: Write forward zone files
+  template:
+    src: forward.j2
+    dest: "{{ named_conf_zones_path }}/{{ item.key }}"
+    validate: named-checkzone {{ item.key }} %s
+  with_dict: "{{ named_domains }}"
+
+- name: Write reverse zone files
+  template:
+    src: reverse.j2
+    dest: "{{ named_conf_zones_path }}/{{ item.1 }}"
+    validate: named-checkzone {{ item.1 }} %s
+  with_subelements:
+    - "{{ named_domains }}"
+    - reverse
+    - flags:
+      skip_missing: True

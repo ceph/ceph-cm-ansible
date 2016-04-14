@@ -3,3 +3,8 @@
 - include: packages.yml
   tags:
     - packages
+
+# Compile and write zone files
+- include: records.yml
+  tags:
+    - records

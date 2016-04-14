@@ -5,3 +5,12 @@
 secrets_repo:
   name: null
   url: null
+
+# Main BIND conf vars
+named_conf_zones_path: "/var/named/zones"
+
+# Zone file conf vars
+named_conf_soa_ttl: 3600
+named_conf_soa_refresh: 3600
+named_conf_soa_retry: 3600
+named_conf_soa_expire: 604800
