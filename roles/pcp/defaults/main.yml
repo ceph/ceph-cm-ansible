@@ -1,4 +1,7 @@
 ---
+# Whether or not to use upstream repos
+upstream_repo: false
+
 ## PCP Collector options
 # Set the host up to collect data
 pcp_collector: true

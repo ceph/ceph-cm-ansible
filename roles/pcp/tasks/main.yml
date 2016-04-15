@@ -4,6 +4,13 @@
   tags:
     - always
 
+- name: Set up upstream repo
+  include: repo.yml
+  when:
+    upstream_repo|bool == true
+  tags:
+    - repo
+
 - name: Miscellaneous preparation
   include: prep.yml
   tags:

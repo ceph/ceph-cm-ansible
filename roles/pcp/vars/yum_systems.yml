@@ -1,4 +1,5 @@
 ---
+upstream_repo_url: "https://bintray.com/pcp/{{ {'Fedora': 'f', 'CentOS': 'el', 'RedHat': 'el'}[ansible_distribution] }}{{ ansible_distribution_major_version }}/rpm"
 pcp_user: pcp
 pcp_package: pcp
 pmcd_service: pmcd
