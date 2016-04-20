@@ -4,6 +4,11 @@
   tags:
     - packages
 
+# Configure BIND
+- include: config.yml
+  tags:
+    - config
+
 # Compile and write zone files
 - include: records.yml
   tags:

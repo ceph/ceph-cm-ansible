@@ -7,6 +7,13 @@ secrets_repo:
   url: null
 
 # Main BIND conf vars
+named_conf_dir: "/var/named"
+named_conf_file: "/etc/named.conf"
+named_conf_data_dir: "/var/named/data"
+named_conf_listen_port: 53
+named_conf_listen_iface:
+ - 127.0.0.1
+ - "{{ ansible_all_ipv4_addresses[0] }}"
 named_conf_zones_path: "/var/named/zones"
 
 # Zone file conf vars
