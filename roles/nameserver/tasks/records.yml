@@ -14,6 +14,7 @@
     dest: "{{ named_conf_zones_path }}/{{ item.key }}"
     validate: named-checkzone {{ item.key }} %s
   with_dict: "{{ named_domains }}"
+  notify: reload named
 
 - name: Write reverse zone files
   template:
@@ -25,3 +26,4 @@
     - reverse
     - flags:
       skip_missing: True
+  notify: reload named
