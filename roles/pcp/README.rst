@@ -26,6 +26,10 @@ Variables
 
 Defaults for these variables are defined in ``roles/pcp/defaults/main.yml``.
 
+To use upstream-provided packages instead of the distro's packages, set::
+
+    upstream_repo: true
+
 To tell a given host to collect performance data using ``pmcd``, and to run
 ``pmlogger`` to create archive logs::
 

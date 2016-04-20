@@ -1,0 +1,32 @@
+---
+- name: Add upstream apt repo
+  copy:
+    content: "{{ upstream_repo_source }}"
+    dest: /etc/apt/sources.list.d/pcp.list
+  when:
+    ansible_pkg_mgr == "apt"
+
+- name: Add upstream GPG key to apt
+  apt_key:
+    url: https://bintray.com/user/downloadSubjectPublicKey?username=pcp
+    keyring: /etc/apt/trusted.gpg.d/pcp.gpg
+    state: present
+    validate_certs: true
+  when:
+    ansible_pkg_mgr == "apt"
+
+- name: Add upstream yum repo
+  get_url:
+    url: "{{ upstream_repo_url }}"
+    dest: /etc/apt/sources.list.d/pcp.list
+    dest: /etc/yum.repos.d/pcp.repo
+  when:
+    ansible_pkg_mgr == "yum"
+
+- name: Add upstream GPG key to rpm
+  rpm_key:
+    key: https://bintray.com/user/downloadSubjectPublicKey?username=pcp
+    state: present
+    validate_certs: true
+  when:
+    ansible_pkg_mgr == "yum"
