@@ -1,0 +1,13 @@
+---
+- name: Enable firewalld
+  service:
+    name: firewalld
+    enabled: yes
+    state: started
+
+- name: Allow incoming DNS traffic
+  firewalld:
+    service: dns
+    permanent: true
+    immediate: yes
+    state: enabled

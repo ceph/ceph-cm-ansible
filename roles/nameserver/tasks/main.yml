@@ -4,6 +4,11 @@
   tags:
     - packages
 
+# Configure firewalld
+- include: firewall.yml
+  tags:
+    - firewall
+
 # Configure BIND
 - include: config.yml
   tags:
