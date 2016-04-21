@@ -11,3 +11,12 @@
     validate: named-checkconf %s
   notify: restart named
   with_dict: "{{ named_domains }}"
+
+- name: Apply named daemon options
+  lineinfile:
+    dest: /etc/sysconfig/named
+    regexp: '^OPTIONS='
+    line: "OPTIONS=\"{{ named_conf_daemon_opts }}\""
+    state: present
+    create: True
+  notify: restart named

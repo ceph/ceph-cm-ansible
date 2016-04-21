@@ -15,6 +15,7 @@ named_conf_listen_iface:
  - 127.0.0.1
  - "{{ ansible_all_ipv4_addresses[0] }}"
 named_conf_zones_path: "/var/named/zones"
+named_conf_daemon_opts: ""
 
 # Zone file conf vars
 named_conf_soa_ttl: 3600
