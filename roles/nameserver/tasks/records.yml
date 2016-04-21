@@ -1,4 +1,11 @@
 ---
+# Creating reverse records requires ansible_version.major >=2
+# to use the skip_missing flag of with_subelements
+# https://github.com/ansible/ansible/issues/9827
+- name: Bail if local ansible version is older than v2.0
+  assert:
+    that: "{{ ansible_version.major }} >= 2"
+
 - name: Create zone file path
   file:
     path: "{{ named_conf_zones_path }}"
