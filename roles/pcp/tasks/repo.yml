@@ -18,7 +18,6 @@
 - name: Add upstream yum repo
   get_url:
     url: "{{ upstream_repo_url }}"
-    dest: /etc/apt/sources.list.d/pcp.list
     dest: /etc/yum.repos.d/pcp.repo
   when:
     ansible_pkg_mgr == "yum"
