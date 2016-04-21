@@ -1,8 +1,8 @@
 ---
 - name: Fail when on Ubuntu
   fail:
-    msg: "pcp-web isn't available on Ubuntu yet :("
-  when: ansible_distribution == "Ubuntu"
+    msg: "pcp-webapi is only available when using upstream packages. Set upstream_repo to true."
+  when: ansible_distribution == "Ubuntu" and upstream_repo|bool != true
 
 - name: Install pcp-webapi
   yum:
@@ -17,6 +17,13 @@
     state: latest
   register: install_pcp_webjs
   when: ansible_pkg_mgr == "yum"
+
+- name: Install pcp-webapi
+  apt:
+    name: "{{ pcp_webapi_package }}"
+    state: latest
+  register: install_pcp_webapi
+  when: ansible_pkg_mgr == "apt"
 
 - name: Enable pmwebd
   service:

@@ -7,3 +7,5 @@ pmlogger_service: pmlogger
 pcp_manager_package: pcp
 pmmgr_service: pmmgr
 avahi_package: avahi-daemon
+pcp_webapi_package: pcp-webapi
+pmwebd_service: pmwebd
