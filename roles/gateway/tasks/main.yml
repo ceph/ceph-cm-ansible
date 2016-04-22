@@ -10,6 +10,11 @@
   tags:
     - packages
 
+# Configure networking
+- include: network.yml
+  tags:
+    - networking
+
 - name: Ensure data directory exists
   file:
     path: "{{ openvpn_data_dir }}"
