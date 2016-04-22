@@ -9,6 +9,11 @@
     pkg: policycoreutils-python
     state: installed
 
+- name: nrpe - Ensure SELinux policy is up to date
+  yum:
+    pkg: selinux-policy-targeted
+    state: latest
+
 - name: nrpe - Set SELinux boolean nagios_run_sudo true
   seboolean:
     name: nagios_run_sudo
