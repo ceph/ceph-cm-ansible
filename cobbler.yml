@@ -19,4 +19,5 @@
     - { role: cobbler_profile, distro_name: Ubuntu-12.04-server-x86_64, tags: ['ubuntu-precise'] }
     - { role: cobbler_profile, distro_name: Ubuntu-14.04-server-x86_64, tags: ['ubuntu-trusty'] }
     - { role: cobbler_profile, distro_name: Ubuntu-15.04-server-x86_64, tags: ['ubuntu-vivid'] }
+    - { role: cobbler_profile, distro_name: Ubuntu-16.04-server-x86_64, tags: ['ubuntu-xenial'] }
     - cobbler_systems

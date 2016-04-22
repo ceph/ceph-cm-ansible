@@ -58,3 +58,9 @@ distros:
       kickstart: cephlab_ubuntu.preseed
       kernel_options: "netcfg/choose_interface=auto biosdevname=0 console=tty0 console=ttyS1,115200"
       kernel_options_post: "pci=realloc=off console=tty0 console=ttyS1,115200"
+  "Ubuntu-16.04-server-x86_64":
+      iso: "http://releases.ubuntu.com/16.04/ubuntu-16.04-server-amd64.iso"
+      sha256: b8b172cbdf04f5ff8adc8c2c1b4007ccf66f00fc6a324a6da6eba67de71746f6
+      kickstart: cephlab_ubuntu.preseed
+      kernel_options: "netcfg/choose_interface=auto biosdevname=0 console=tty0 console=ttyS1,115200"
+      kernel_options_post: "pci=realloc=off console=tty0 console=ttyS1,115200"
