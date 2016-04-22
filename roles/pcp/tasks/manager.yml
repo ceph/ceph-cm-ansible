@@ -31,6 +31,14 @@
     ansible_pkg_mgr == "yum"
   register: install_pmmgr_yum
 
+# Make the pmcd connect timeout very small so we don't spend ages looking for
+# hosts that are down
+- name: Set pmcd connect timeout
+  lineinfile:
+    dest: /etc/pcp/pmmgr/pmmgr.options
+    regexp: "^PMCD_CONNECT_TIMEOUT="
+    line: "PMCD_CONNECT_TIMEOUT=0.1"
+
 - name: Enable pmmgr
   service:
     name: "{{ pmmgr_service }}"
