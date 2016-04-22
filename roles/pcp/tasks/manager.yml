@@ -72,12 +72,7 @@
     mode: 0644
   register: target_discovery
 
-- name: Ensure /var/log/pcp is owned by pcp
-  file:
-    path: /var/log/pcp
-    owner: "{{ pcp_user }}"
-    group: "{{ pcp_user }}"
-    recurse: yes
+- include: permissons.yml
 
 # This greatly speeds up polling for hosts
 - name: Set PMCD_CONNECT_TIMEOUT in pmmgr.options

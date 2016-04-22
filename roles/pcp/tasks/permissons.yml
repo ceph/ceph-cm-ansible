@@ -1,0 +1,7 @@
+---
+- name: Ensure /var/log/pcp is owned by pcp
+  file:
+    path: /var/log/pcp
+    owner: "{{ pcp_user }}"
+    group: "{{ pcp_user }}"
+    recurse: yes
