@@ -31,13 +31,18 @@
     enabled: yes
   register: enable_pmwebd
 
-- name: Ship 1h1m.json dashboard
+- name: Ship dashboard
   copy:
-    src: "../files/1h1m.json"
+    src: "../files/{{ item }}"
     dest: "/usr/share/pcp/webapps/grafana/app/dashboards/"
     owner: root
     group: root
     mode: 0644
+  with_items:
+    - 1h1m.json
+    - index.js
+  tags:
+    - dashboards
 
 - name: Start pmwebd
   service:
