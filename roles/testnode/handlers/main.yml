@@ -26,16 +26,6 @@
     name: cron
     state: restarted
 
-- name: start ttyS1
-  service:
-    name: ttyS1
-    state: started
-
-- name: start ttyS2
-  service:
-    name: ttyS2
-    state: started
-
 - name: restart nagios-nrpe-server
   service:
     name: "{{ nrpe_service_name }}"
