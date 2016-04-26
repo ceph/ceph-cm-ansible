@@ -1,0 +1,22 @@
+---
+- name: Create named data directory
+  file:
+    path: "{{ named_conf_data_dir }}"
+    state: directory
+
+- name: Create named.conf
+  template:
+    src: named.conf.j2
+    dest: "{{ named_conf_file }}"
+    validate: named-checkconf %s
+  notify: restart named
+  with_dict: "{{ named_domains }}"
+
+- name: Apply named daemon options
+  lineinfile:
+    dest: /etc/sysconfig/named
+    regexp: '^OPTIONS='
+    line: "OPTIONS=\"{{ named_conf_daemon_opts }}\""
+    state: present
+    create: True
+  notify: restart named

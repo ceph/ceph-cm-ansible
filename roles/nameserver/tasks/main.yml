@@ -1,0 +1,20 @@
+---
+# Install and update system packages
+- include: packages.yml
+  tags:
+    - packages
+
+# Configure firewalld
+- include: firewall.yml
+  tags:
+    - firewall
+
+# Configure BIND
+- include: config.yml
+  tags:
+    - config
+
+# Compile and write zone files
+- include: records.yml
+  tags:
+    - records

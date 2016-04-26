@@ -1,0 +1,12 @@
+---
+# Restart for config file updates
+- name: restart named
+  service:
+    name: named
+    state: restarted
+
+# Reload for zone file updates
+- name: reload named
+  service:
+    name: named
+    state: reloaded

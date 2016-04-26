@@ -1,0 +1,24 @@
+---
+# These defaults are present to allow certain tasks to no-op if a secrets repo
+# hasn't been defined. If you want to override these, do so in the secrets repo
+# itself. We override these in  $repo/ansible/inventory/group_vars/nameserver.yml
+secrets_repo:
+  name: null
+  url: null
+
+# Main BIND conf vars
+named_conf_dir: "/var/named"
+named_conf_file: "/etc/named.conf"
+named_conf_data_dir: "/var/named/data"
+named_conf_listen_port: 53
+named_conf_listen_iface:
+ - 127.0.0.1
+ - "{{ ansible_all_ipv4_addresses[0] }}"
+named_conf_zones_path: "/var/named/zones"
+named_conf_daemon_opts: ""
+
+# Zone file conf vars
+named_conf_soa_ttl: 3600
+named_conf_soa_refresh: 3600
+named_conf_soa_retry: 3600
+named_conf_soa_expire: 604800

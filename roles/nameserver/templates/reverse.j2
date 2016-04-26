@@ -1,0 +1,30 @@
+{% set zone = item.1 %}
+{% set domain = item.0.forward %}
+{% set ipvar = item.0.ipvar %}
+;
+; {{ ansible_managed }}
+;
+$TTL {{ named_conf_soa_ttl }}
+@		IN	SOA	{{ named_conf_soa }} (
+				{{ named_serial }}		; Serial
+				{{ named_conf_soa_refresh }}		; Refresh
+				{{ named_conf_soa_retry }}		; Retry
+				{{ named_conf_soa_expire }}		; Expire
+				{{ named_conf_soa_ttl }}		; TTL
+				)
+
+{% for nameserver in groups['nameserver'] %}
+		IN	NS	{{ nameserver }}.
+{% endfor %}
+
+; Reverse zone {{ zone }} belongs to forward zone {{ domain }}
+
+{% for host in groups['all'] %}
+{% if hostvars[host][ipvar] is defined %}
+{% set octet1,octet2,octet3,octet4 = hostvars[host][ipvar].split('.') %}
+{% set cutip = octet1 + '.' + octet2 + '.' + octet3 %}
+{% if cutip == zone %}
+{{ octet4 }}		IN	PTR	{{ hostvars[host]['inventory_hostname_short'] }}.{{ domain }}.
+{% endif %}
+{% endif %}
+{% endfor %}

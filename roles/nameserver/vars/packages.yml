@@ -1,0 +1,15 @@
+---
+packages:
+  ## misc tools
+  - vim
+  - wget
+  - mlocate
+  - git
+  ## bind-specific packages
+  - bind
+  - bind-utils
+  ## firewall
+  - firewalld
+  ## monitoring
+  - nrpe
+  - nagios-plugins-all
