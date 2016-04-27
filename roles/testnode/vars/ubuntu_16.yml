@@ -1,0 +1,23 @@
+---
+# This is temporarily disabled because of:
+# http://tracker.ceph.com/issues/13572
+#apt_repos:
+#  # blkin libraries, only trusty has new enough lttng for these
+#  - "deb [arch=amd64] http://{{ mirror_host }}/blkin/ trusty main"
+
+packages:
+  - libboost-thread1.58.0
+  - mpich
+  - qemu-system-x86
+#  - blkin
+  - lttng-tools
+  ###
+  # for setting BIOS settings
+  ###
+  - libcrypto++9v5
+  ###
+
+non_aarch64_packages:
+  - libgoogle-perftools4
+  - iozone3
+  - libssl1.0.0
