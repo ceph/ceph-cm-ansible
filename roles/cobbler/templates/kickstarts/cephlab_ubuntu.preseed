@@ -3,6 +3,12 @@
 # Fetch the os_version from the distro using this profile.
 #set os_version = $getVar('os_version','')
 
+# Fetch Ubuntu version (e.g., 14.04)
+#set distro_ver = $getVar('distro','').split("-")[1]
+
+# Fetch Ubuntu major version (e.g., 14)
+#set distro_ver_major = $distro_ver.split(".")[0]
+
 ### Apt setup
 # You can choose to install non-free and contrib software.
 #d-i apt-setup/non-free boolean true
@@ -109,8 +115,8 @@ d-i pkgsel/upgrade select safe-upgrade
 # "landscape" (manage system with Landscape).
 d-i pkgsel/update-policy select none
 
-# Install GRUB to default location.  Required as of Xenial.
-#if $os_version == 'xenial'
+# Set GRUB bootdev to 'default' if Xenial or later
+#if int($distro_ver_major) >= 16
 d-i grub-installer/bootdev  string default
 #end if
 
