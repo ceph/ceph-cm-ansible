@@ -94,6 +94,8 @@ d-i user-setup/encrypt-home boolean false
 # Individual additional packages to install
 #if $os_version == 'precise'
 d-i pkgsel/include string wget ntpdate bash sudo openssh-server
+#else if $os_version == 'xenial'
+d-i pkgsel/include string u-boot-tools pastebinit initramfs-tools wget linux-firmware ntpdate bash devmem2 fbset sudo openssh-server udev-discover gawk
 #else
 d-i pkgsel/include string u-boot-tools pastebinit initramfs-tools wget linux-firmware linux-firmware-nonfree ntpdate bash devmem2 fbset sudo openssh-server udev-discover gawk
 #end if
@@ -106,6 +108,9 @@ d-i pkgsel/upgrade select safe-upgrade
 # "unattended-upgrades" (install security updates automatically), or
 # "landscape" (manage system with Landscape).
 d-i pkgsel/update-policy select none
+
+# Install GRUB to default location.  Required as of Xenial.
+d-i grub-installer/bootdev  string default
 
 # During installations from serial console, the regular virtual consoles
 # (VT1-VT6) are normally disabled in /etc/inittab. Uncomment the next
