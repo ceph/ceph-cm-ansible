@@ -110,7 +110,9 @@ d-i pkgsel/upgrade select safe-upgrade
 d-i pkgsel/update-policy select none
 
 # Install GRUB to default location.  Required as of Xenial.
+#if $os_version == 'xenial'
 d-i grub-installer/bootdev  string default
+#end if
 
 # During installations from serial console, the regular virtual consoles
 # (VT1-VT6) are normally disabled in /etc/inittab. Uncomment the next
