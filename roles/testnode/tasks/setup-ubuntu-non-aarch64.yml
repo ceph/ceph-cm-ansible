@@ -29,29 +29,6 @@
   tags:
     - kernel_logging
 
-- name: Upload ttyS1.conf.
-  template:
-    src: ttyS1.conf
-    dest: /etc/init/ttyS1.conf
-    owner: root
-    group: root
-    mode: 0644
-  notify:
-    - start ttyS1
-  when: not ansible_hostname | search("^target")
-
-# this only runs on mira nodes
-- name: Upload ttyS2.conf.
-  template:
-    src: ttyS2.conf
-    dest: /etc/init/ttyS2.conf
-    owner: root
-    group: root
-    mode: 0644
-  notify:
-    - start ttyS2
-  when: ansible_hostname | search("^mira*")
-
 - name: Enable kernel modules to load at boot time.
   template:
     src: modules
