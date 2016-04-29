@@ -10,7 +10,6 @@ packages:
   ## VPN-specific stuff
   - openvpn
   - easy-rsa
-  - iptables-services
   ## monitoring
   - nrpe
   - nagios-plugins-all

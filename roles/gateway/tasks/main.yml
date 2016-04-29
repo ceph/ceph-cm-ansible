@@ -15,6 +15,11 @@
   tags:
     - networking
 
+# Configure firewalld
+- include: firewall.yml
+  tags:
+    - firewall
+
 - name: Ensure data directory exists
   file:
     path: "{{ openvpn_data_dir }}"
