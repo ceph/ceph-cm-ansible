@@ -77,9 +77,16 @@
   tags:
     - nagios
 
+- name: Get SELinux status
+  command: getenforce
+  register: selinux_status
+  when: ansible_pkg_mgr == "yum"
+  tags:
+    - nagios
+
 # configure selinux for nagios
 - include: nrpe-selinux.yml
-  when: ansible_pkg_mgr == "yum"
+  when: selinux_status is defined and selinux_status.stdout != "Disabled"
   tags:
     - nagios
 
