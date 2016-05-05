@@ -91,6 +91,15 @@
     mode: 0644
   register: update_pmlogmerge_retain
 
+- name: Set /etc/pcp/pmmgr/pmlogmerge-reduce
+  copy:
+    dest: /etc/pcp/pmmgr/pmlogmerge-reduce
+    content: "{{ pmlogmerge_reduce }}"
+    owner: root
+    group: root
+    mode: 0644
+  register: update_pmlogmerge_reduce
+
 - name: Restart pmmgr
   service:
     name: "{{ pmmgr_service }}"
@@ -102,4 +111,5 @@
     target_host|changed or
     target_discovery|changed or
     pmmgr_options|changed or
-    update_pmlogmerge_retain|changed
+    update_pmlogmerge_retain|changed or
+    update_pmlogmerge_reduce|changed

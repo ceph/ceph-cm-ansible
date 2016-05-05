@@ -17,6 +17,8 @@ pcp_probe: false
 pmcd_connect_timeout: "0.1"
 # How long to keep full-resolution archives before reducing to save space
 pmlogmerge_retain: "90days"
+# How long before deleting reduced archives
+pmlogmerge_reduce: "99999weeks"
 
 ## PCP Web UI options
 # Set up the web UI
