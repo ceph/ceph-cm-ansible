@@ -82,6 +82,15 @@
     line: "PMCD_CONNECT_TIMEOUT={{ pmcd_connect_timeout }}"
   register: pmmgr_options
 
+- name: Set /etc/pcp/pmmgr/pmlogmerge-retain
+  copy:
+    dest: /etc/pcp/pmmgr/pmlogmerge-retain
+    content: "{{ pmlogmerge_retain }}"
+    owner: root
+    group: root
+    mode: 0644
+  register: update_pmlogmerge_retain
+
 - name: Restart pmmgr
   service:
     name: "{{ pmmgr_service }}"
@@ -92,4 +101,5 @@
     install_pmmgr_yum|changed or
     target_host|changed or
     target_discovery|changed or
-    pmmgr_options|changed
+    pmmgr_options|changed or
+    update_pmlogmerge_retain|changed
