@@ -53,6 +53,19 @@ connect to hosts that it monitors (in seconds)::
 
     pmcd_connect_timeout: 1
 
+To tell a ``pcp_manager`` host to retain full-resolution archives for a year
+(format is a `PCP time window`_)::
+
+    pmlogmerge_retain: "365days"
+
+To tell a ``pcp_manager`` host to delete reduced archives after two years
+(format is a `PCP time window`_)::
+
+    pmlogmerge_reduce: "730days"
+
 To tell a ``pcp_manager`` host to run PCP's various web UIs::
 
     pcp_web: true
+
+
+.. _PCP time window: http://www.pcp.io/books/PCP_UAG/html/LE14729-PARENT.html
