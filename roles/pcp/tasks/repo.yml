@@ -29,3 +29,15 @@
     validate_certs: true
   when:
     ansible_pkg_mgr == "yum"
+
+- include: apt_update.yml
+
+- name: Ensure packages are updated (apt)
+  shell: "DEBIAN_FRONTEND=noninteractive apt -y install --only-upgrade .*pcp.*"
+  when:
+    ansible_pkg_mgr == "apt"
+
+- name: Ensure packages are updated (yum)
+  shell: "yum update *pcp*"
+  when:
+    ansible_pkg_mgr == "yum"

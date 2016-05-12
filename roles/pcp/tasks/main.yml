@@ -11,8 +11,9 @@
   tags:
     - repo
 
-- name: Miscellaneous preparation
-  include: prep.yml
+- include: apt_update.yml
+  when:
+    upstream_repo|bool == false
   tags:
     - always
 
