@@ -1,0 +1,58 @@
+---
+# Tasks common to all systems that use the zypper
+# package manager
+
+- name: Set mode on /etc/fuse.conf
+  file:
+    path: /etc/fuse.conf
+    mode: 0644
+    state: touch
+  changed_when: false
+
+- name: Ensure the group kvm exists.
+  group:
+    name: kvm
+    state: present
+
+- name: Add the teuthology user to groups kvm,disk
+  user:
+    name: "{{ teuthology_user }}"
+    groups: kvm,disk
+    append: yes
+
+- name: Configure /etc/sudoers.
+  template:
+    src: sudoers
+    dest: /etc/sudoers
+    owner: root
+    group: root
+    mode: 0440
+    validate: visudo -cf %s
+  tags:
+    - sudoers
+
+- name: Configure /etc/security/limits.conf
+  template:
+    src: limits.conf
+    dest: /etc/security/limits.conf
+    group: root
+    owner: root
+    mode: 0644
+
+# http://tracker.ceph.com/issues/15272
+# We don't know why it's happening, but something is corrupting the
+# rpmdb.  Let's try just rebuilding it every time.
+- name: Rebuild rpmdb
+  command:
+    rpm --rebuilddb
+
+#- name: Setup local repo files.
+#  include: yum/repos.yml
+#  tags:
+#    - repos
+
+#- name: Perform package related tasks.
+#  include: yum/packages.yml
+#  tags:
+#    - packages
+

@@ -16,6 +16,7 @@
     owner: root
     group: root
     mode: 0755
+  when: ansible_pkg_mgr != "zypper"
 
 - name: Set the hostname
   include: set_hostname.yml
@@ -41,6 +42,10 @@
 - name: configure things specific to apt systems
   include: apt_systems.yml
   when: ansible_pkg_mgr == "apt"
+
+- name: configure things specific to zypper systems
+  include: zypper_systems.yml
+  when: ansible_pkg_mgr == "zypper"
 
 - name: configure centos specific things
   include: setup-centos.yml
