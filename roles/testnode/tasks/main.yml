@@ -86,6 +86,7 @@
 
 - name: configure nagios
   include: nagios.yml
+  when: ansible_pkg_mgr != "zypper"
   tags:
     - nagios
 
