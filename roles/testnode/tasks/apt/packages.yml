@@ -3,6 +3,7 @@
   apt:
     name: "{{ item }}"
     state: absent
+    force: yes
   with_items: ceph_packages_to_remove|list + packages_to_remove|list
   when: ceph_packages_to_remove|length > 0 or
         packages_to_remove|length > 0
@@ -29,6 +30,7 @@
   apt:
     name: "{{ item }}"
     state: present 
+    force: yes
   with_items: packages|list + common_packages|list
   when: packages|length > 0 or
         common_packages|length > 0
@@ -37,5 +39,6 @@
   apt:
     name: "{{ item }}"
     state: present
+    force: yes
   with_items: non_aarch64_packages|list + non_aarch64_common_packages|list
   when: ansible_architecture != "aarch64"
