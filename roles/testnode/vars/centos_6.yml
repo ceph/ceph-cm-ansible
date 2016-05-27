@@ -4,7 +4,7 @@
 yum_repos:
   centos6-fcgi-ceph:
     name: Cent OS 6 Local fastcgi Repo
-    baseurl: http://gitbuilder.ceph.com/mod_fastcgi-rpm-centos6-x86_64-basic/ref/master/
+    baseurl: "http://{{ gitbuilder_host }}/mod_fastcgi-rpm-centos6-x86_64-basic/ref/master/"
     enabled: 1
     gpgcheck: 0
     priority: 2
