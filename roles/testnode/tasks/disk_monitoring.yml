@@ -28,6 +28,6 @@
     group: root
     mode: 0755
   with_items:
-    - smart.pl
+    - smart.sh
     - raid.pl
     - diskusage.pl
