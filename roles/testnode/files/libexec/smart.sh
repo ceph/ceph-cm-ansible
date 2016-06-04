@@ -21,8 +21,8 @@ numdrives=0
 failingdrives=0
 # Fallback message for UNKNOWN return code output
 unknownmsg="Unknown error"
-# Return code for nagios (Default to UNKNOWN)
-rc=3
+# Return code for nagios (Default to SUCCESS)
+rc=0
 # Array of messages indicating drive health.  Output after nagios status.
 declare -a messages
 
