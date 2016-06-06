@@ -5,3 +5,5 @@
     owner: "{{ pcp_user }}"
     group: "{{ pcp_user }}"
     recurse: yes
+  # http://tracker.ceph.com/issues/16119
+  failed_when: false
