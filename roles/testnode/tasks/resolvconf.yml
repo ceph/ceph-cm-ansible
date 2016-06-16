@@ -40,4 +40,8 @@
 
 - name: ifdown and ifup
   shell: "ifdown {{ interface }} && ifup {{ interface }}"
-  when: bounce_interface == "True"
+  # Even if bounce_interface is False, we need to work around a Xenial issue
+  # where removing resolvconf breaks DNS by removing /etc/resolv.conf. Bouncing
+  # the interface rebuilds it.
+  when: bounce_interface == "True" or 
+        (ansible_lsb.id|lower == 'ubuntu' and ansible_lsb.major_release|int >= 16)
