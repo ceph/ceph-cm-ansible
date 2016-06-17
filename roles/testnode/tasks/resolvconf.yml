@@ -8,7 +8,7 @@
 
 - name: Set interface
   set_fact:
-    interface: "{{ hostvars[inventory_hostname].interface|default('eth0') }}"
+    interface: "{{ ansible_default_ipv4.interface }}"
 
 - name: Check for presence of /etc/network/interfaces
   stat:
@@ -40,4 +40,10 @@
 
 - name: ifdown and ifup
   shell: "ifdown {{ interface }} && ifup {{ interface }}"
-  when: bounce_interface == "True"
+  # Even if bounce_interface is False, we need to work around a Xenial issue
+  # where purging resolvconf breaks DNS by removing /etc/resolv.conf. Bouncing
+  # the interface rebuilds it.
+  # The Ubuntu bug is:
+  # https://bugs.launchpad.net/ubuntu/+source/resolvconf/+bug/1593489
+  when: bounce_interface == "True" or 
+        (ansible_lsb.id|lower == 'ubuntu' and ansible_lsb.major_release|int >= 16)
