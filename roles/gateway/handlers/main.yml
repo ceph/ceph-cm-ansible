@@ -4,3 +4,15 @@
   service:
     name: network
     state: restarted
+
+# Restart fail2ban
+- name: restart fail2ban
+  service:
+    name: fail2ban
+    state: restarted
+
+# Reload fail2ban
+- name: reload fail2ban
+  service:
+    name: fail2ban
+    state: reloaded

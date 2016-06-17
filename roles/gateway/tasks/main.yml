@@ -20,6 +20,11 @@
   tags:
     - firewall
 
+# Configure fail2ban
+- include: fail2ban.yml
+  tags:
+    - fail2ban
+
 - name: Ensure data directory exists
   file:
     path: "{{ openvpn_data_dir }}"
