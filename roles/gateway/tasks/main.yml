@@ -49,3 +49,8 @@
     name: "openvpn@{{ openvpn_server_name }}"
     state: started
     enabled: yes
+
+- name: Write logrotate conf file
+  copy:
+    src: files/openvpn.logrotate
+    dest: /etc/logrotate.d/openvpn

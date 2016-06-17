@@ -152,6 +152,5 @@ To Do
 
 - Support installation of new OpenVPN gateway from scratch
 - Generate and pull (to secrets?) CA, keys, and certificates
-- Configure log rotation
 
 .. _Sepia: https://ceph.github.io/sepia/
