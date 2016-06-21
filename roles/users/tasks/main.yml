@@ -46,6 +46,16 @@
   tags:
     - always
 
+# This is to prevent normal (read: human) users from ending up with UID 1000,
+# which testnodes needs for the teuthology user.
+- name: Set UID_MIN to 1001
+  lineinfile:
+    dest: /etc/login.defs
+    regexp: "^UID_MIN"
+    line: "UID_MIN                  1001"
+  tags:
+    - user
+
 - name: Create all admin users with sudo access.
   user:
     name: "{{ item.name }}"
