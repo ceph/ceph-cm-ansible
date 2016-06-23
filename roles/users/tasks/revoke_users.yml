@@ -1,0 +1,16 @@
+---
+- name: Filter the revoked_users list
+  set_fact:
+    revoked_users:
+        "[{% for user in revoked_users %}
+            {% if user in users %}'{{ user }}',{%endif%}
+        {%endfor%}]"
+  when: users|length > 0
+  tags:
+    - always
+
+- name: Remove revoked users
+  user:
+    name: "{{ item }}"
+    state: absent
+  with_items: revoked_users

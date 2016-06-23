@@ -1,109 +1,17 @@
 ---
-- name: Merge extra_admin_users into managed_admin_users
-  set_fact:
-    # The following adds items from extra_admin_users to managed_admin_users, while
-    # fetching keys from the latter if they are not present in the former. It's as pretty
-    # as it can get without whitespace breaking the parser.
-    managed_admin_users:
-      "{% for new_admin in extra_admin_users -%}
-         {% for lab_user in managed_users -%}
-           {% if new_admin.name == lab_user.name %}{{ new_admin.update(lab_user) }}{% endif %}
-         {%- endfor %}
-      {%- endfor %}{{ managed_admin_users|list + extra_admin_users|list }}"
-  when: extra_admin_users is defined and extra_admin_users|length > 0
+- include: filter_users.yml
   tags:
     - always
 
-- name: Remove managed_admin_users from managed_users
-  set_fact:
-    # The following rebuilds the managed_users list while omitting users already present
-    # in managed_admin_users
-    managed_users:
-      "[{% for lab_user in managed_users -%}
-      {% if not managed_admin_users|selectattr('name', 'equalto', lab_user.name)|list|length %}{{ lab_user}},{% endif %}
-      {%- endfor %}]"
-  when: extra_admin_users is defined and extra_admin_users|length > 0
-  tags:
-    - always
-
-- name: Filter the managed_users list
-  set_fact:
-    managed_users:
-        "[{% for user in managed_users %}
-            {% if user.name in users %}{{ user }},{%endif%}
-        {%endfor%}]"
-  when: users|length > 0
-  tags:
-    - always
-
-- name: Filter the managed_admin_users list
-  set_fact:
-    managed_admin_users:
-        "[{% for user in managed_admin_users %}
-            {% if user.name in users %}{{ user }},{%endif%}
-        {%endfor%}]"
-  when: users|length > 0
-  tags:
-    - always
-
-# This is to prevent normal (read: human) users from ending up with UID 1000,
-# which testnodes needs for the teuthology user.
-- name: Set UID_MIN to 1001
-  lineinfile:
-    dest: /etc/login.defs
-    regexp: "^UID_MIN"
-    line: "UID_MIN                  1001"
+- include: create_users.yml
   tags:
     - user
 
-- name: Create all admin users with sudo access.
-  user:
-    name: "{{ item.name }}"
-    groups: sudo
-    shell: /bin/bash
-    state: present
-  with_items: managed_admin_users
-  tags:
-    - user
-
-- name: Create all users without sudo access.
-  user:
-    name: "{{ item.name }}"
-    shell: /bin/bash
-    state: present
-  with_items: managed_users
-  tags:
-    - user
-
-- name: Update authorized_keys for each user.
-  authorized_key:
-    user: "{{ item.name }}"
-    key: "{{ item.key }}"
-  with_items: managed_users|list + managed_admin_users|list
-  # Register and retry to work around transient githubusercontent.com issues
-  register: ssh_key_update
-  until: ssh_key_update|success
-  # try for 2 minutes to retrieve the key before failing
-  retries: 24
-  delay: 5
+- include: update_keys.yml
   tags:
     - pubkeys
 
-- name: Filter the revoked_users list
-  set_fact:
-    revoked_users:
-        "[{% for user in revoked_users %}
-            {% if user in users %}'{{ user }}',{%endif%}
-        {%endfor%}]"
-  when: users|length > 0
-  tags:
-    - always
-
-- name: Remove revoked users
-  user:
-    name: "{{ item }}"
-    state: absent
-  with_items: revoked_users
+- include: revoke_users.yml
   tags:
     - user
     - revoke

@@ -1,0 +1,40 @@
+---
+- name: Merge managed_users and managed_admin users
+  set_fact:
+    pubkey_users: "{{ managed_users|list + managed_admin_users|list }}"
+
+# The following set_fact calls are apparently necessary to avoid using sudo on
+# localhost to clone the keys repo.
+- set_fact:
+    ansible_become_orig: "{{ ansible_become }}"
+
+- set_fact:
+    ansible_become: false
+
+- name: Clone the keys repo
+  local_action:
+    module: git
+    repo: "{{ keys_repo }}"
+    version: master
+    depth: 1
+    force: yes
+    dest: "{{ keys_repo_path }}"
+  when: keys_repo is defined
+  connection: local
+
+- set_fact:
+    ansible_become: "{{ ansible_become_orig }}"
+
+- name: Update authorized_keys using the keys repo
+  authorized_key:
+    user: "{{ item.name }}"
+    key: "{{ lookup('file', keys_repo_path + '/ssh/' + item.name + '.pub') }}"
+  with_items: "{{ pubkey_users }}"
+  when: item.key is undefined and keys_repo is defined
+
+- name: Update authorized_keys for each user with literal keys
+  authorized_key:
+    user: "{{ item.name }}"
+    key: "{{ item.key }}"
+  with_items: "{{ pubkey_users }}"
+  when: item.key is defined
