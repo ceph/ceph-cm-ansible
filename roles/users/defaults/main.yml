@@ -26,4 +26,4 @@ revoked_users: []
 # specified.
 keys_repo: "https://github.com/ceph/keys"
 # Where to clone keys_repo on the *local* disk
-keys_repo_path: "/tmp/src/keys"
+keys_repo_path: "~/.cache/src/keys"
