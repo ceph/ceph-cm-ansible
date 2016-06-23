@@ -21,3 +21,9 @@ users: []
 
 # A list of users whose access is to be revoked. These accounts will be deleted.
 revoked_users: []
+
+# A repo containing SSH pubkeys. Will be used for each user that has no key
+# specified.
+keys_repo: "https://github.com/ceph/keys"
+# Where to clone keys_repo on the *local* disk
+keys_repo_path: "/tmp/src/keys"
