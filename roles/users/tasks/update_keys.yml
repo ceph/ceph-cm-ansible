@@ -21,6 +21,7 @@
     dest: "{{ keys_repo_path }}"
   when: keys_repo is defined
   connection: local
+  run_once: true
 
 - set_fact:
     ansible_become: "{{ ansible_become_orig }}"
