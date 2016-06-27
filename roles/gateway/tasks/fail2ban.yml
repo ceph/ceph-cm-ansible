@@ -1,0 +1,41 @@
+---
+- name: Write fail2ban defaults conf file
+  template:
+    src: templates/f2b.jail.local.j2
+    dest: /etc/fail2ban/jail.local
+  notify: restart fail2ban
+
+# Set a var equal to our ansible_managed var since ansible_managed
+# can't be called directly in the next task.
+# See https://github.com/ansible/ansible/issues/11317
+- name: Set f2b_grep_var to ansible_managed string
+  set_fact:
+    f2b_grep_var: "This file is managed by ansible, don't make changes here - they will be overwritten."
+
+# Remove all service files in case a malformed config was previously shipped.
+# Malformed service files cause fail2ban to not start.
+- name: Clean up ansible-written service conf files
+  shell: for file in $(grep -l {{ f2b_grep_var|quote }} /etc/fail2ban/jail.d/*); do rm -vf $file; done
+  register: f2b_rm_out
+
+# Show what files were deleted
+- debug: var=f2b_rm_out.stdout
+
+- name: Write fail2ban service conf files
+  template:
+    src: templates/f2b.service.j2
+    dest: "/etc/fail2ban/jail.d/{{ item.key }}.local"
+  with_dict: "{{ gw_f2b_services }}"
+  notify: reload fail2ban
+
+- name: Make sure fail2ban service is running
+  service:
+    name: fail2ban
+    state: started
+
+- name: Check fail2ban status
+  shell: fail2ban-client status
+  register: fail2ban_status
+
+# Show fail2ban status
+- debug: var=fail2ban_status.stdout_lines

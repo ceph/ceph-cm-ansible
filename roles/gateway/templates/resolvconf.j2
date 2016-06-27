@@ -1,0 +1,7 @@
+#
+# {{ ansible_managed }}
+#
+search {{ gw_resolv_search }}
+{% for nameserver in gw_resolv_ns %}
+nameserver {{ nameserver }}
+{% endfor %}

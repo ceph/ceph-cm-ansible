@@ -1,0 +1,27 @@
+#
+# {{ ansible_managed }}
+#
+NAME="{{ item.key }}"
+DEVICE="{{ item.value.ifname }}"
+HWADDR="{{ item.value.mac }}"
+NM_CONTROLLED="no"
+ONBOOT="yes"
+BOOTPROTO="static"
+IPADDR="{{ item.value.ip4 }}"
+NETMASK="{{ item.value.netmask }}"
+GATEWAY="{{ item.value.gw4 }}"
+DEFROUTE="{{ item.value.defroute }}"
+
+# Optional values
+{% if item.value.search is defined %}
+SEARCH="{{ item.value.search }}"
+{% endif %}
+{% if item.value.peerdns is defined %}
+PEERDNS="{{ item.value.peerdns }}"
+{% endif %}
+{% if item.value.dns1 is defined %}
+DNS1="{{ item.value.dns1 }}"
+{% endif %}
+{% if item.value.dns2 is defined %}
+DNS2="{{ item.value.dns2 }}"
+{% endif %}

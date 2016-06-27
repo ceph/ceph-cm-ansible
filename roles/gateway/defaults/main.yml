@@ -9,3 +9,18 @@ secrets_repo:
 openvpn_server_name: server
 
 openvpn_data_dir: /etc/openvpn/data
+
+gw_allow_http: "true"
+gw_allow_https: "true"
+
+# fail2ban-specific vars
+gw_f2b_ignoreip: "127.0.0.1/8"
+gw_f2b_bantime: "43200" # 12hrs
+gw_f2b_findtime: "600" # 10min
+gw_f2b_maxretry: "5"
+
+gw_f2b_services:
+  sshd:
+    enabled: "true"
+    port: "ssh"
+    logpath: "%(sshd_log)s"

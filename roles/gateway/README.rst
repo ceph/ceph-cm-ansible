@@ -8,6 +8,9 @@ This role supports CentOS 7.2 only at this time.  Its current intended use
 is to maintain the existing OpenVPN gateway in our Sepia_ lab.
 
 It does the following:
+- Configures network devices
+- Configures firewalld
+- Configures fail2ban
 - Installs and updates necessary packages
 - Maintains user list
 
@@ -58,6 +61,64 @@ A list of users that don't have their ssh pubkey added to the ``teuthology_user`
     openvpn_users:
       - ovpn: user@host etc...
 
+The following vars are used to populate ``/etc/resolv.conf``.  Defined in the
+secrets repo::
+
+    gw_resolv_search: []
+    # Example: gw_resolv_search: "front.example.com"
+
+    gw_resolv_ns: []
+    # Example:
+    gw_resolv_ns:
+      - 1.2.3.4
+      - 8.8.8.8
+
+The ``gw_networks`` dictionary assumes you have individual NICs for each
+VLAN in your lab.  The subelements ``peerdns`` and ``dns{1,2}`` are optional for
+all but one NIC.  These are what set your nameservers in
+``/etc/resolv.conf``.
+``dns1`` and ``dns2`` should be defined under a single NIC and ``peerdns``
+should be set to ``"yes"``.  Defined in the
+secrets repo::
+
+    # Example:
+    gw_networks:
+      private:
+        ifname: "eth0"
+        mac: "de:ad:be:ef:12:34"
+        ip4: "192.168.1.100"
+        netmask: "255.255.240.0"
+        gw4: "192.168.1.1"
+        defroute: "yes"
+        peerdns: "yes"
+        search "private.example.com"
+        dns1: "192.168.1.1"
+        dns2: "8.8.8.8"
+      public:
+        ifname: "eth1"
+        etc...
+
+The *fail2ban* vars are explained in /etc/fail2ban/jail.conf.  We've set
+defaults in ``roles/gateway/defaults/main.yml`` but they can be overridden in
+the secrets repo::
+
+    gw_f2b_ignoreip: "127.0.0.1/8"
+    gw_f2b_bantime: "43200"
+    gw_f2b_findtime: "600"
+    gw_f2b_maxretry: "5"
+
+``gw_f2b_services`` is a dictionary listing services fail2ban should monitor.  Defined in
+``roles/gateway/defaults/main.yml``.  See example below::
+
+    gw_f2b_services:
+      sshd:
+        enabled: "true"
+        port: "ssh"
+        logpath: "%(sshd_log)s"
+      apache:
+        enabled: "true"
+        port: "http"
+
 Tags
 ++++
 
@@ -66,6 +127,17 @@ packages
 
 users
     Update OpenVPN users list
+
+networking
+    Configure basic networking (NICs, IP forwarding, resolv.conf)
+
+firewall
+    Configure firewalld
+
+**NOTE:** Ansible v2.1 or later is required for the initial firewall setup as the ``masquerade`` parameter is new to that version.
+
+fail2ban
+    Configure fail2ban
 
 Dependencies
 ++++++++++++
@@ -80,9 +152,5 @@ To Do
 
 - Support installation of new OpenVPN gateway from scratch
 - Generate and pull (to secrets?) CA, keys, and certificates
-- Configure networking
-- Configure firewall
-- Configure fail2ban
-- Configure log rotation
 
 .. _Sepia: https://ceph.github.io/sepia/

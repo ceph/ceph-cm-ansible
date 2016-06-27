@@ -1,0 +1,9 @@
+#
+# {{ ansible_managed }}
+#
+[{{ item.key }}]
+enabled = {{ item.value.enabled }}
+port = {{ item.value.port }}
+{% if item.value.logpath is defined %}
+logpath = {{ item.value.logpath }}
+{% endif %}

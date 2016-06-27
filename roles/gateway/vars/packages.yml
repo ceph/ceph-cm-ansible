@@ -7,10 +7,10 @@ packages:
   - ipmitool
   - git
   - fail2ban
+  - fail2ban-firewalld
   ## VPN-specific stuff
   - openvpn
   - easy-rsa
-  - iptables-services
   ## monitoring
   - nrpe
   - nagios-plugins-all

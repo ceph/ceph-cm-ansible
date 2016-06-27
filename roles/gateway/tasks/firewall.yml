@@ -1,0 +1,60 @@
+---
+- name: Make sure iptables isn't running
+  service:
+    name: iptables
+    state: stopped
+    enabled: false
+  ignore_errors: true
+
+- name: Make sure firewalld is enabled
+  service:
+    name: firewalld
+    state: started
+    enabled: yes
+
+- name: firewalld | Allow openvpn traffic
+  firewalld:
+    service: openvpn
+    zone: public
+    state: enabled
+    permanent: true
+    immediate: yes
+
+- name: firewalld | Allow http traffic
+  firewalld:
+    service: http
+    zone: public
+    state: enabled
+    permanent: true
+    immediate: yes
+  when: gw_allow_http == "true"
+
+- name: firewalld | Allow https traffic
+  firewalld:
+    service: https
+    zone: public
+    state: enabled
+    permanent: true
+    immediate: yes
+  when: gw_allow_https =="true"
+
+# The following two tasks require Ansible v2.1 due to the 'masquerade'
+# and 'interface' parameters being new to that version.  They only need to be
+# run the first time the role is run so it's okay for them to be skipped.
+- name: firewalld | Add connection masquerading
+  firewalld:
+    masquerade: yes
+    zone: public
+    state: enabled
+    permanent: true
+    immediate: yes
+  when: "{{ ansible_version.major }} >= 2 and {{ ansible_version.minor }} >= 1"
+
+- name: firewalld | Add tun0 to internal zone
+  firewalld:
+    zone: internal
+    interface: tun0
+    state: enabled
+    permanent: true
+    immediate: yes
+  when: "{{ ansible_version.major }} >= 2 and {{ ansible_version.minor }} >= 1"

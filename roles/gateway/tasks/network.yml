@@ -1,0 +1,36 @@
+---
+- name: Write ifcfg scripts
+  template:
+    src: ifcfg.j2
+    dest: "/etc/sysconfig/network-scripts/ifcfg-{{ item.value.ifname }}"
+  with_dict: "{{ gw_networks }}"
+  register: interfaces
+
+# Restart networking right away if changes made.  This makes sure
+# the public interface is up and ready for OpenVPN to bind to.
+- name: Restart networking
+  service:
+    name: network
+    state: restarted
+  when: interfaces.changed
+
+- name: Write resolv.conf
+  template:
+    src: resolvconf.j2
+    dest: "/etc/resolv.conf"
+
+- name: Disable IPv6
+  sysctl:
+    name: net.ipv6.conf.all.disable_ipv6
+    value: 1
+    sysctl_set: yes
+    state: present
+    reload: yes
+
+- name: Enable IPv4 forwarding
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: 1
+    sysctl_set: yes
+    state: present
+    reload: yes
