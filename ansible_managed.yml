@@ -8,3 +8,4 @@
     ansible_user: ubuntu
   roles:
     - ansible-managed
+  become: true

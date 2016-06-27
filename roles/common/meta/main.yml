@@ -1,6 +1,5 @@
 ---
 dependencies:
-  - role: sudo
   - role: secrets
   - role: users
   
