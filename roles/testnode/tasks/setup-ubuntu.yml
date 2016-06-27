@@ -4,11 +4,6 @@
     path: /etc/ceph
     state: absent
 
-# Install and configure cpan and Amazon::S3
-- include: cpan.yml
-  tags:
-    - cpan
-
 - include: nfs.yml
   tags:
     - nfs

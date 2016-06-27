@@ -67,6 +67,11 @@
 - include: setup-debian.yml
   when: ansible_distribution == "Debian"
 
+# Install and configure cpan and Amazon::S3
+- include: cpan.yml
+  tags:
+    - cpan
+
 # upload custom disk monitoring scripts
 - include: disk_monitoring.yml
   tags:
