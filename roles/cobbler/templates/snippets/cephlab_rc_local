@@ -21,10 +21,15 @@ if [ -e $lockfile ]; then
     exit 0
 fi
 
-# Wait just a bit for the network to come up
-sleep 30
+# Wait until we get 10 ping responses from Cobbler host
+# before calling post-install trigger
+until ping -nq -c10 $http_server
+do
+    echo "Waiting for network"
+    sleep 3
+done
 # Run the post-install trigger a second time
-wget -t1 -O /dev/null "http://$http_server:$http_port/cblr/svc/op/trig/mode/post/system/$system_name" || true
+wget --timeout=1800 -t1 -O /dev/null "http://$http_server:$http_port/cblr/svc/op/trig/mode/post/system/$system_name" || true
 touch $lockfile
 EOF
 
