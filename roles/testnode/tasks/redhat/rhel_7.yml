@@ -7,8 +7,3 @@
   service:
     name: firewalld
     state: stopped
-
-# Install and configure cpan and Amazon::S3
-- include: ../cpan.yml
-  tags:
-    - cpan
