@@ -4,3 +4,4 @@
 - hosts: testnodes
   roles:
     - downstream-setup
+  become: true
