@@ -5,7 +5,7 @@
   # assuming the nodes we run this on will most likely
   # have an ubuntu user already created.
   vars:
-    ansible_user: ubuntu
+    ansible_ssh_user: ubuntu
   roles:
     - ansible-managed
   become: true
