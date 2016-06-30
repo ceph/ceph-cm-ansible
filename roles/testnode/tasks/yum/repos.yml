@@ -7,7 +7,7 @@
     group: root
     mode: 0644
   register: repo_file
-  with_dict: common_yum_repos
+  with_dict: "{{ common_yum_repos }}"
   when: common_yum_repos.keys() | length > 0
 
 - name: Configure version specific repos in /etc/yum.repos.d/
@@ -18,7 +18,7 @@
     group: root
     mode: 0644
   register: version_repo_file
-  with_dict: yum_repos
+  with_dict: "{{ yum_repos }}"
   when: yum_repos.keys() | length > 0
 
 - include: gpg_keys.yml
