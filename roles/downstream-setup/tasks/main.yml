@@ -3,7 +3,7 @@
 # the variables they use.  For example, `disable_yum_repos` would actually
 # disable all repos defined in that list.
 - include: setup.yml
-  when: not cleanup
+  when: not cleanup and (ansible_distribution == "CentOS" or ansible_distribution == "RedHat")
 
 # These are tasks which reverse the actions corresponding to the names of
 # the variables they use. For example, `disable_yum_repos` would actually
@@ -11,4 +11,4 @@
 # teuthology, so that you can tell a teuthology run to disable a set of repos
 # for the test run but then re-enable them during the teuthology cleanup process.
 - include: cleanup.yml
-  when: cleanup
+  when: cleanup and (ansible_distribution == "CentOS" or ansible_distribution == "RedHat")
