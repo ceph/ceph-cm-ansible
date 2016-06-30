@@ -9,5 +9,5 @@
   apt:
     name: "{{ item }}"
     state: latest
-  with_items: cobbler_extra_packages
+  with_items: "{{ cobbler_extra_packages }}"
   when: cobbler_extra_packages|length > 0

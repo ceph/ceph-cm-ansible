@@ -2,3 +2,4 @@
 - hosts: pcp
   roles:
     - pcp
+  become: true

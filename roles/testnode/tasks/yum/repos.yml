@@ -1,7 +1,7 @@
 ---
 - name: Configure common additional repos in /etc/yum.repos.d/
   template:
-    src: ../../templates/yum_repo.j2
+    src: yum_repo.j2
     dest: /etc/yum.repos.d/{{ item.key }}.repo
     owner: root
     group: root
@@ -12,7 +12,7 @@
 
 - name: Configure version specific repos in /etc/yum.repos.d/
   template:
-    src: ../../templates/yum_repo.j2
+    src: yum_repo.j2
     dest: /etc/yum.repos.d/{{ item.key }}.repo
     owner: root
     group: root

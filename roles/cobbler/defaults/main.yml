@@ -70,3 +70,7 @@ power_type: ipmilan
 # repo to be useful
 power_user: poweruser
 power_pass: powerpass
+
+pip_packages:
+  - pip
+  - ansible

@@ -3,14 +3,6 @@
   set_fact:
     pubkey_users: "{{ managed_users|list + managed_admin_users|list }}"
 
-# The following set_fact calls are apparently necessary to avoid using sudo on
-# localhost to clone the keys repo.
-- set_fact:
-    ansible_become_orig: "{{ ansible_become }}"
-
-- set_fact:
-    ansible_become: false
-
 - name: Clone the keys repo
   local_action:
     module: git
@@ -19,12 +11,10 @@
     depth: 1
     force: yes
     dest: "{{ keys_repo_path }}"
+  become: false
   when: keys_repo is defined
   connection: local
   run_once: true
-
-- set_fact:
-    ansible_become: "{{ ansible_become_orig }}"
 
 - name: Update authorized_keys using the keys repo
   authorized_key:

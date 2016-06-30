@@ -4,7 +4,7 @@
     update_cache: true
     name: "{{ item }}"
     state: "{{ state }}"
-  with_items: apt_packages
+  with_items: "{{ apt_packages }}"
   when: apt_packages|length > 0 and
         ansible_pkg_mgr == "apt"
 
@@ -12,6 +12,6 @@
   yum:
     name: "{{ item }}"
     state: "{{ state }}"
-  with_items: yum_packages
+  with_items: "{{ yum_packages }}"
   when: yum_packages|length > 0 and
         ansible_pkg_mgr == "yum"

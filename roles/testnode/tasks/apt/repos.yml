@@ -8,14 +8,14 @@
 
 - name: Remove custom repos
   file: path=/etc/apt/sources.list.d/{{ item }} state=absent
-  with_items: custom_repos.stdout_lines
+  with_items: "{{ custom_repos.stdout_lines }}"
   # Ignore changes here because we will be removing repos that we end up re-adding later
   changed_when: false
 
 - name: Set apt preferences
   template:
     dest: "/etc/apt/preferences.d/ceph.pref"
-    src: "../../templates/apt/ceph.pref"
+    src: "apt/ceph.pref"
     owner: root
     group: root
     mode: 0644
@@ -24,7 +24,7 @@
 - name: Add sources list
   template:
     dest: /etc/apt/sources.list
-    src: "../../templates/apt/sources.list.{{ ansible_distribution_release | lower }}"
+    src: "apt/sources.list.{{ ansible_distribution_release | lower }}"
     owner: root
     group: root
     mode: 0644
@@ -54,6 +54,6 @@
     state: present
     update_cache: no 
     mode: 0644
-  with_items: apt_repos|list + common_apt_repos|list
+  with_items: "{{ apt_repos|list + common_apt_repos|list }}"
   register: local_apt_repos
   when: ansible_architecture != "aarch64"
