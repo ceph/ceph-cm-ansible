@@ -34,7 +34,7 @@
            --activationkey={{ subscription_manager_activationkey }}
            --org={{ subscription_manager_org }}
   no_log: true
-  when: rhsm_registered == "False" and have_entitlements == "True"
+  when: rhsm_registered == false and have_entitlements == true
   register: entitled
   until: entitled|success
   retries: 5
@@ -44,7 +44,7 @@
   shell: sudo subscription-manager repos --list | grep -B4 'Enabled:.*1' | grep 'Repo ID:' | sed -e 's/Repo ID:\s*\(.*\)/\1/' | sort
   register: repo_list_cmd
   # This only needs to happen if we are not newly-subscribed
-  when: rhsm_registered == "True"
+  when: rhsm_registered == true
   changed_when: false
 
 - name: Store list of enabled repos
@@ -54,8 +54,8 @@
 
 - name: Set replace_repos if entitlements are missing
   set_fact:
-    replace_repos: False
-  when: have_entitlements == "False"
+    replace_repos: false
+  when: have_entitlements == false
 
 - name: Set replace_repos if rhsm_repos differs from repo_list
   set_fact:
@@ -64,14 +64,14 @@
 
 - name: Set replace_repos if newly-subscribed
   set_fact:
-    replace_repos: True
+    replace_repos: true
   when: entitled|changed and entitled.rc == 0
 
 - name: Disable all rhsm repos
   command: subscription-manager repos --disable '*'
-  when: replace_repos
+  when: replace_repos|bool == true
   # This produces an absurd amount of useless output
-  no_log: True
+  no_log: true
 
 - name: Enable necessary rhsm repos
   command: subscription-manager repos --enable {{ item }}
