@@ -14,7 +14,7 @@
     group: root
     mode: 0644
   register: epel_repo
-  with_dict: epel_repos
+  with_dict: "{{ epel_repos }}"
 
 - name: Configure local epel mirrorlists
   template:
