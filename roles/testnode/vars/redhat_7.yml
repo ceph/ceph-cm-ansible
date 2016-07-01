@@ -74,6 +74,7 @@ packages:
   # for s3 tests
   - python-devel
   - python-virtualenv
+  - perl-CPAN
 
 epel_packages:
   - gperftools-devel

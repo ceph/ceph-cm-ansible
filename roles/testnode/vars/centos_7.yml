@@ -89,6 +89,10 @@ packages:
   - nfs-utils
   # for xfstests
   - ncurses-devel
+  # for s3 tests
+  - python-devel
+  - python-virtualenv
+  - perl-CPAN
 
 epel_packages:
   # for running ceph
