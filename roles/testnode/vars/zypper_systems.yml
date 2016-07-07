@@ -1,0 +1,43 @@
+---
+ntp_service_name: ntpd
+ssh_service_name: sshd
+nrpe_service_name: nrpe
+nrpe_user: nrpe
+nrpe_group: nrpe
+nagios_plugins_directory: /usr/lib64/nagios/plugins
+
+# ceph packages that we ensure do not exist
+ceph_packages_to_remove:
+  - ceph
+  - ceph-base
+  - ceph-selinux
+  - ceph-common
+  - ceph-debuginfo
+  - ceph-release
+  - libcephfs1
+  - ceph-radosgw
+  - python-ceph
+  - python-rados
+  - python-rbd
+  - python-cephfs
+  - librbd1
+  - librados2
+  - mod_fastcgi
+  - iozone
+
+ceph_dependency_packages_to_remove:
+  - boost-random
+  - boost-program-options
+  - leveldb
+  - xmlstarlet
+  - python-jinja2
+  - python-ceph
+  - python-flask
+  - python-requests
+  - boost-random
+  - python-urllib3
+  - python-babel
+  - hdparm
+  - python-markupsafe
+  - python-werkzeug
+  - python-itsdangerous
