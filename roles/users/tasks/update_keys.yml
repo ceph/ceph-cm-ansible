@@ -8,7 +8,8 @@
     module: git
     repo: "{{ keys_repo }}"
     version: master
-    depth: 1
+    # http://tracker.ceph.com/issues/16615
+    # depth: 1
     force: yes
     dest: "{{ keys_repo_path }}"
   become: false
