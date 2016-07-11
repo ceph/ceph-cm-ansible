@@ -1,4 +1,31 @@
 ---
+- name: Include apt_system vars
+  include_vars: apt_systems.yml
+  when: ansible_pkg_mgr == "apt"
+
+- name: Include yum_systems vars
+  include_vars: yum_systems.yml
+  when: ansible_pkg_mgr == "yum"
+
+- name: Install nrpe package and dependencies (RHEL/CentOS)
+  yum:
+    name: "{{ item }}"
+    state: latest
+    enablerepo: epel
+  with_items:
+    - nrpe
+    - smartmontools
+  when: ansible_pkg_mgr == "yum"
+
+- name: Install nrpe package and dependencies (Ubuntu)
+  apt:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - nagios-nrpe-server
+    - smartmontools
+  when: ansible_pkg_mgr == "apt"
+
 - name: Upload nagios sudoers.d for raid utilities.
   template:
     src: nagios/90-nagios
