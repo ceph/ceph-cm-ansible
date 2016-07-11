@@ -22,6 +22,21 @@
     line: "NRPE_SSL_OPT=\"-n\""
   when: ansible_pkg_mgr == "yum"
 
+- name: Check firewalld status
+  command: systemctl status firewalld
+  register: firewalld
+  ignore_errors: true
+  no_log: true
+  when: ansible_pkg_mgr == "yum"
+
+- name: Open nrpe port if firewalld enabled
+  firewalld:
+    port: 5666/tcp
+    state: enabled
+    permanent: yes
+    immediate: yes
+  when: ansible_pkg_mgr == "yum" and (firewalld is defined and firewalld.stdout.find('running') != -1)
+
 - name: Upload nagios nrpe config.
   template:
     src: nagios/nrpe.cfg 
