@@ -67,7 +67,6 @@ packages:
   - perl-XML-Twig
   - java-1.6.0-openjdk-devel
   - junit4
-  - smartmontools
   - nfs-utils
   # for xfstests
   - ncurses-devel
@@ -86,8 +85,5 @@ epel_packages:
   - perl-JSON-XS
   - leveldb
   - xmlstarlet
-  # for nagios monitoring
-  - nrpe
-  - nagios-plugins-all
 
 nfs_service: nfs-server

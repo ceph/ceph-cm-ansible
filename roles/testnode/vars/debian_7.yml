@@ -84,10 +84,6 @@ packages:
   - default-jdk
   - junit4
   ###
-  # for disk/etc monitoring
-  - smartmontools
-  - nagios-nrpe-server
-  ###
   # for samba testing
   - cifs-utils
   ###

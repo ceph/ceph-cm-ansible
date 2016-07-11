@@ -26,3 +26,26 @@
 - include: kerberos.yml
   tags:
     - kerberos
+
+# upload custom disk monitoring scripts
+- include: disk_monitoring.yml
+  tags:
+    - monitoring-scripts
+
+# configure nagios
+- include: nagios.yml
+  tags:
+    - nagios
+
+- name: Get SELinux status
+  command: getenforce
+  register: selinux_status
+  when: ansible_pkg_mgr == "yum"
+  tags:
+    - nagios
+
+# configure selinux for nagios
+- include: nrpe-selinux.yml
+  when: selinux_status is defined and selinux_status.stdout != "Disabled"
+  tags:
+    - nagios
