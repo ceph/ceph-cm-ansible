@@ -1,18 +1,18 @@
 ---
-- name: nrpe - Install semanage python bindings
+- name: nrpe - Install SELinux dependencies
   yum:
-    pkg: libsemanage-python
+    name: "{{ item }}"
     state: installed
+  with_items:
+    - libsemanage-python
+    - policycoreutils-python
 
-- name: nrpe - Install SELinux tools
-  yum:
-    pkg: policycoreutils-python
-    state: installed
-
+# ignore_errors in case we don't have any repos
 - name: nrpe - Ensure SELinux policy is up to date
   yum:
-    pkg: selinux-policy-targeted
+    name: selinux-policy-targeted
     state: latest
+  ignore_errors: true
 
 - name: nrpe - Set SELinux boolean nagios_run_sudo true
   seboolean:
