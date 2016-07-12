@@ -7,6 +7,26 @@
   include_vars: yum_systems.yml
   when: ansible_pkg_mgr == "yum"
 
+# Returns 0 if found and 1 if not found
+# Task fails if not found.  Hence ignore_errors: true
+- name: Check for epel
+  shell: "grep -q 'epel' /etc/yum.repos.d/*"
+  register: have_epel
+  no_log: true
+  ignore_errors: true
+  when: ansible_pkg_mgr == "yum"
+
+# This task is only run when epel isn't present
+- name: Install nrpe without epel
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - http://{{ mirror_host }}/lab-extras/rhel7/x86_64/nagios-common-4.0.8-2.el7.x86_64.rpm
+    - http://{{ mirror_host }}/lab-extras/rhel7/x86_64/nrpe-2.15-7.el7.x86_64.rpm
+  when: ansible_pkg_mgr == "yum" and
+        have_epel.rc == 1
+
 - name: Install nrpe package and dependencies (RHEL/CentOS)
   yum:
     name: "{{ item }}"
@@ -15,7 +35,8 @@
   with_items:
     - nrpe
     - smartmontools
-  when: ansible_pkg_mgr == "yum"
+  when: ansible_pkg_mgr == "yum" and
+        have_epel.rc == 0
 
 - name: Install nrpe package and dependencies (Ubuntu)
   apt:
