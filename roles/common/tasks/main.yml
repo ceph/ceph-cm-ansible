@@ -31,6 +31,7 @@
 - include: disk_monitoring.yml
   tags:
     - monitoring-scripts
+    - nagios
 
 # configure nagios
 - include: nagios.yml
