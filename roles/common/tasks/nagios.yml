@@ -29,22 +29,16 @@
 
 - name: Install nrpe package and dependencies (RHEL/CentOS)
   yum:
-    name: "{{ item }}"
+    name: "{{ nrpe_service_name }}"
     state: latest
     enablerepo: epel
-  with_items:
-    - nrpe
-    - smartmontools
   when: ansible_pkg_mgr == "yum" and
         have_epel.rc == 0
 
 - name: Install nrpe package and dependencies (Ubuntu)
   apt:
-    name: "{{ item }}"
+    name: "{{ nrpe_service_name }}"
     state: latest
-  with_items:
-    - nagios-nrpe-server
-    - smartmontools
   when: ansible_pkg_mgr == "apt"
 
 - name: Upload nagios sudoers.d for raid utilities.

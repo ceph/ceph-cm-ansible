@@ -1,6 +1,13 @@
 ---
 # We use these scripts to check to see if any of our test nodes have bad disks
 
+# Ignore errors in case there are no repos enabled and package install fails
+- name: Make sure smartmontools is installed
+  package:
+    name: smartmontools
+    state: latest
+  ignore_errors: true
+
 - name: Upload megacli and cli64 for raid monitoring and smart.pl to /usr/sbin/.
   copy:
     src: "../files/sbin/{{ item }}"
