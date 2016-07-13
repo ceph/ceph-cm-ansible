@@ -1,0 +1,97 @@
+Common
+======
+
+The common role consists of tasks we want run on all hosts in the Ansible
+inventory (i.e., not just testnodes).  This includes things like setting the
+timezone and enabling repos.
+
+Usage
++++++
+
+The common role is run on every host in the Ansible inventory and is typically
+called by another role's playbook.  Calling it manually to run a
+specific task (such as setting the timezone) can be done like so::
+
+    ansible-playbook cephlab.yml --limit="host.example.com" --tags="timezone"
+
+**WARNING:** If cephlab.yml is run without a valid tag, the target's corresponding playbook
+will run fully.  For example, calling just ``ansible-playbook cephlab.yml
+--limit="testnode.example.com"`` would run the entire ``testnodes.yml``
+playbook assuming the host is in the testnodes group in the inventory.
+
+Variables
++++++++++
+
+``timezone`` is the desired timezone for all hosts in the Ansible inventory.
+Defined in ``roles/common/defaults/main.yml``.  Values in the TZ column here_ can be used
+in place of the default value.
+
+``subscription_manager_activationkey`` and ``subscription_manager_org`` are used
+to register systems with Red Hat's Subscription Manager tool.  Blank defaults
+are set in ``roles/common/defaults/main.yml`` and should be overridden in the
+secrets repo.
+
+``rhsm_repos`` is a list of Red Hat repos that a system should subscribe to.  We
+have them defined in ``roles/common/vars/redhat_{6,7}.yml``.
+
+``epel_mirror_baseurl`` is self explanatory and defined in
+``roles/common/defaults/main.yml``.  Can be overwritten in secrets if you run
+your own local epel mirror.
+
+``epel_repos`` is a dictionary used to create epel repo files.  Defined in ``roles/common/defaults/main.yml``.
+
+``enable_epel`` is a boolean that sets whether epel repos should be enabled.
+Defined in ``roles/common/defaults/main.yml``.
+
+``yum_timeout`` is an integer used to set the yum timeout.  Defined in
+``roles/common/defaults/main.yml``.
+
+The following variables are used to configure NRPE_ (Nagios Remote Plugin
+Executor) on hosts in ``/etc/nagios/nrpe.cfg``.  The system defaults differ between distros (``nrpe`` in
+RHEL vs ``nagios-nrpe-server`` in Ubuntu).  Setting these allows us to make
+tasks OS-agnostic.  They variables are mostly self-explanatory and defined in
+``roles/common/vars/{yum,apt}_systems.yml``::
+
+    ## Ubuntu variables are used in this example
+
+    # Used to install the package and start/stop the service
+    nrpe_service_name: nagios-nrpe-server
+
+    # NRPE service runs as this user/group
+    nrpe_user: nagios
+    nrpe_group: nagios
+
+    # Where nagios plugins can be found
+    nagios_plugins_directory: /usr/lib/nagios/plugins
+
+Tags
+++++
+
+timezone
+    Sets the timezone
+
+monitoring-scripts
+    Installs smartmontools (if necessary) and uploads custom monitoring scripts.
+    See ``roles/common/tasks/disk_monitoring.yml``.
+
+entitlements
+    Registers a Red Hat host then subscribes and enables repos.  See
+    ``roles/common/tasks/rhel-entitlements.yml``.
+
+kerberos
+    Configures kerberos.  See ``roles/common/tasks/kerberos.yml``.
+
+nagios
+    Installs and configures nrpe service (including firewalld and SELinux if
+    applicable).  ``monitoring-scripts`` is also always run with this tag since
+    NRPE isn't very useful without them.
+
+To Do
++++++
+
+- Rewrite ``roles/common/tasks/rhel-entitlements.yml`` to use Ansible's
+  redhat_subscription_module_.
+
+.. _here: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+.. _NRPE: https://github.com/NagiosEnterprises/nrpe
+.. _redhat_subscription_module: https://docs.ansible.com/ansible/redhat_subscription_module.html
