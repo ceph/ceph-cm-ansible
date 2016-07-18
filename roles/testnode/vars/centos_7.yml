@@ -96,7 +96,6 @@ packages:
 
 epel_packages:
   # for running ceph
-  - gperftools-devel
   - cryptopp-devel
   - cryptopp
   - fcgi

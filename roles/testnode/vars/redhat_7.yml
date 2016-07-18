@@ -77,7 +77,6 @@ packages:
   - perl-CPAN
 
 epel_packages:
-  - gperftools-devel
   - cryptopp-devel
   - cryptopp
   - dbench
