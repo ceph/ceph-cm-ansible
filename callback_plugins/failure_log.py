@@ -40,7 +40,10 @@ def log_failure(host, result):
         failure[host] = result
         if ANSIBLE_MAJOR >= 2:
             failure = sanitize_dict(failure)
-        log.error(yaml.safe_dump(failure))
+        try:
+            log.error(yaml.safe_dump(failure))
+        except Exception:
+            log.exception("Failure object was: %s", str(failure))
 
 
 def sanitize_dict(obj):
