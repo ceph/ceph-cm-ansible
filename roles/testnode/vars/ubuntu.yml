@@ -83,10 +83,6 @@ common_packages:
   - tgt
   - open-iscsi
   ###
-  # for disk/etc monitoring
-  - smartmontools
-  - nagios-nrpe-server
-  ###
   # for samba testing
   - cifs-utils
   # for Static IP

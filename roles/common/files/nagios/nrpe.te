@@ -1,0 +1,27 @@
+module nrpe 1.0;
+
+require {
+	type fsadm_exec_t;
+	type tmp_t;
+	type fixed_disk_device_t;
+	type nrpe_t;
+	type hwdata_t;
+	class capability { dac_read_search sys_admin sys_rawio dac_override };
+	class blk_file { read getattr open ioctl };
+	class unix_dgram_socket sendto;
+	class dir { write remove_name search add_name };
+	class file { execute read create execute_no_trans write getattr unlink
+open };
+}
+
+#============= nrpe_t ==============
+
+allow nrpe_t fixed_disk_device_t:blk_file { read getattr open ioctl };
+allow nrpe_t fsadm_exec_t:file { read execute open getattr execute_no_trans };
+allow nrpe_t hwdata_t:dir search;
+allow nrpe_t hwdata_t:file { read getattr open };
+allow nrpe_t self:capability { dac_read_search sys_admin dac_override sys_rawio };
+allow nrpe_t self:unix_dgram_socket sendto;
+allow nrpe_t tmp_t:dir { write remove_name add_name };
+allow nrpe_t tmp_t:file unlink;
+allow nrpe_t tmp_t:file { write create open };

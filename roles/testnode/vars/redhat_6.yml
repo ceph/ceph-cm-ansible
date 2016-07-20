@@ -86,8 +86,6 @@ packages:
   # for java bindings, hadoop, etc.
   - java-1.6.0-openjdk-devel
   - junit4
-  # for disk/etc monitoring
-  - smartmontools
   # for nfs
   - nfs-utils
 
@@ -107,8 +105,5 @@ epel_packages:
   - python-virtualenv
   # for setting BIOS settings
   - smbios-utils
-  # for nagios monitoring
-  - nrpe
-  - nagios-plugins-all
 
 nfs_service: nfs

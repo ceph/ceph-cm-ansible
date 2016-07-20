@@ -179,12 +179,6 @@ hostname
 kernel_logging
     Runs a script that enabled kernel logging to the console on ubuntu.        
 
-monitoring-scripts
-    Uploads custom disk monitoring scripts. See, ``roles/testnode/tasks/disk_monitoring.yml``.
-
-nagios
-    Configure nagios nrpe service. 
-
 nfs
     Install and start nfs.
 

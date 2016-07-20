@@ -7,10 +7,11 @@
 #else
 @base
 #end if
-## Ansible seems to need the SELinux python bindings on RHEL6
-#set os_version = $getVar('os_version','')
-#if $os_version == 'rhel6'
-libselinux-python
-#end if
 perl
 wget
+## For ansible/NRPE
+smartmontools
+libselinux-python
+libsemanage-python
+policycoreutils-python
+selinux-policy-targeted

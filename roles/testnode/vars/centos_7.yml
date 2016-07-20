@@ -83,8 +83,6 @@ packages:
   # for java bindings, hadoop, etc.
   - java-1.6.0-openjdk-devel
   - junit4
-  # for disk/etc monitoring
-  - smartmontools
   # for nfs
   - nfs-utils
   # for xfstests
@@ -106,6 +104,3 @@ epel_packages:
   - bonnie++
   # for json_xs to investigate JSON by hand
   - perl-JSON-XS
-  # for nagios monitoring
-  - nrpe
-  - nagios-plugins-all
