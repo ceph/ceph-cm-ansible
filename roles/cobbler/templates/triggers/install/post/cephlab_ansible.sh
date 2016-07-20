@@ -19,11 +19,11 @@ if [ $SECRETS_REPO_NAME != 'UNDEFINED' ]
 then
     ANSIBLE_SECRETS_PATH=/root/$SECRETS_REPO_NAME
     pushd $ANSIBLE_SECRETS_PATH
-    git pull
+    flock --close ./.lock git pull
     popd
 fi
 pushd $ANSIBLE_CM_PATH
-git pull
+flock --close ./.lock git pull
 export ANSIBLE_SSH_PIPELINING=1
 export ANSIBLE_HOST_KEY_CHECKING=False
 # Tell ansible to create users and populate authorized_keys
