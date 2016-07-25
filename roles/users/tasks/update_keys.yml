@@ -16,6 +16,10 @@
   when: keys_repo is defined
   connection: local
   run_once: true
+  register: clone_keys
+  until: clone_keys|success
+  retries: 5
+  delay: 10
 
 - name: Update authorized_keys using the keys repo
   authorized_key:
