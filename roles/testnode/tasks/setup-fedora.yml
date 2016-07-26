@@ -8,9 +8,3 @@
     owner: root
     group: root
     mode: 0644
-
-- name: Disable firewalld
-  service:
-    name: firewalld
-    state: stopped
-    enabled: no

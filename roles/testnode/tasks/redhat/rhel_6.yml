@@ -2,9 +2,4 @@
 - name: Fix broken cloud-init
   include: ../cloud-init.yml
 
-- name: Stop iptables
-  service:
-    name: iptables
-    state: stopped
-
 - include: ../imitate_ubuntu.yml

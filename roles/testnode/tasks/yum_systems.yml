@@ -64,6 +64,9 @@
   tags:
     - packages
 
+- name: Disable firewall
+  include: yum/firewall.yml
+
 - name: Enable SELinux
   selinux: state=permissive policy=targeted
   tags:
