@@ -8,6 +8,9 @@ teuthology_extra_packages:
   - libevent-dev
   - python-libvirt
   - beanstalkd
+  - qemu-utils
+  - libev-dev
+  - libvirt-dev
   # The following packages are requirements for running teuthology
   - libmysqlclient-dev
   - libffi-dev
