@@ -1,5 +1,6 @@
 ---
 - hosts: teuthology
+  strategy: free
   roles:
     - common
     - teuthology
