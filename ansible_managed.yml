@@ -2,6 +2,7 @@
 # a playbook to create the necessary users, groups and
 # sudoer settings needed for ansible to manage a node.
 - hosts: all
+  strategy: free
   # assuming the nodes we run this on will most likely
   # have an ubuntu user already created.
   vars:
