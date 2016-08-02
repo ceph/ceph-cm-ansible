@@ -15,11 +15,13 @@
     dest: /etc/nginx/sites-enabled/test_logs
     state: link
 
+# Ignore errors in case service doesn't exist
 - name: Disable apache httpd
   service:
     name: "{{ apache_service }}"
     enabled: no
     state: stopped
+  ignore_errors: true
 
 - name: Enable nginx
   service:
