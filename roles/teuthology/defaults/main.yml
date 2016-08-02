@@ -6,3 +6,4 @@ teuthology_users:
   - teuthworker
 
 teuthology_repo: https://github.com/ceph/teuthology.git
+teuthology_yaml_extra: ""
