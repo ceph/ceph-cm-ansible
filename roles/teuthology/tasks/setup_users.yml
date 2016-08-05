@@ -8,6 +8,34 @@
   tags:
     - user
 
+# test-admins group gets sudo rights to /bin/kill pids (used by teuthology-kill)
+- name: Create test-admins group
+  group:
+    name: test-admins
+    state: present
+  tags:
+    - user
+
+- name: Add test_admins to test-admins group
+  user:
+    name: "{{ item }}"
+    groups: test-admins
+    append: yes
+  with_items: "{{ test_admins }}"
+  tags:
+    - user
+  when: test_admins is defined and test_admins|length > 0
+
+- name: Grant test-admins sudo access to /bin/kill
+  lineinfile:
+    dest: /etc/sudoers.d/cephlab_sudo
+    regexp: "^%test-admins"
+    line: "%test-admins ALL=NOPASSWD: /bin/kill, /usr/bin/kill"
+    state: present
+    validate: visudo -cf %s
+  tags:
+    - user
+
 - name: Clone the teuthology repo
   git:
     repo: "{{ teuthology_repo }}"
