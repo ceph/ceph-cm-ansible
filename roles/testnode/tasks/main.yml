@@ -23,6 +23,10 @@
   tags:
     - hostname
 
+- include: zap_disks.yml
+  tags:
+    - zap
+
 # partition drives, if any are requested
 - include: drive_partitioning.yml
   when: drive_to_partition is defined

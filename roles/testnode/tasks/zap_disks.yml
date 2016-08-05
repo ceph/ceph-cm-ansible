@@ -1,0 +1,16 @@
+---
+- name: Make sure gdisk is installed
+  package:
+    name: gdisk
+    state: present
+
+- name: Set root disk
+  set_fact:
+    root_disk: "{{ item.device|regex_replace('[0-9]+', '') }}"
+  with_items: "{{ ansible_mounts }}"
+  when: item.mount == '/'
+
+- name: Zap all non-root disks
+  command: sgdisk --zap-all "/dev/{{ item.key }}"
+  with_dict: "{{ ansible_devices }}"
+  when: item.key not in root_disk
