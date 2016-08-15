@@ -9,6 +9,7 @@
 #end if
 perl
 wget
+redhat-lsb-core
 ## For ansible/NRPE
 smartmontools
 libselinux-python
