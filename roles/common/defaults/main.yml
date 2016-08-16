@@ -29,7 +29,7 @@ epel_repos:
     gpgcheck: 0
 
 # Override in secrets repo
-beta_repos: []
+beta_repos: {}
 
 # Default to false.  A task in roles/common/tasks/yum_systems.yml
 # will set this to true if lsb_release indicates the distro is an Alpha/Beta release
