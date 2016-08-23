@@ -13,6 +13,7 @@
     groups: sudo
     shell: /bin/bash
     state: present
+    append: yes
   with_items: "{{ managed_admin_users }}"
 
 - name: Create all users without sudo access.
