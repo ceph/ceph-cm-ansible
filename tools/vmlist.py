@@ -52,7 +52,9 @@ VM_HOSTS = textwrap.dedent('''\
     irvingi05.front.sepia.ceph.com
     irvingi06.front.sepia.ceph.com
     irvingi07.front.sepia.ceph.com
-    irvingi08.front.sepia.ceph.com''')
+    irvingi08.front.sepia.ceph.com
+    hv01.front.sepia.ceph.com
+    hv02.front.sepia.ceph.com''')
 
 NOVACLIENT_VERSION = '2'
 
@@ -112,7 +114,7 @@ def list_vms(host, outputfile=None):
         lxc_output = [line for line in lxc_output if line]
 
     virsh_output = subprocess.check_output(
-        ['ssh', host, 'sudo', 'virsh', 'list', '--all']
+        ['ssh', host, 'sudo', 'virsh', '-r', 'list', '--all']
     ).strip().split('\n')
     virsh_output = [line.split()[1] for line in virsh_output[2:] if line]
     virsh_output = [line for line in virsh_output if line]
