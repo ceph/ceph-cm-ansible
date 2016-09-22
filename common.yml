@@ -1,0 +1,6 @@
+---
+- hosts: all
+  strategy: free
+  roles:
+    - common
+  become: true

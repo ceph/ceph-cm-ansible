@@ -12,12 +12,9 @@ The common role is run on every host in the Ansible inventory and is typically
 called by another role's playbook.  Calling it manually to run a
 specific task (such as setting the timezone) can be done like so::
 
-    ansible-playbook cephlab.yml --limit="host.example.com" --tags="timezone"
+    ansible-playbook common.yml --limit="host.example.com" --tags="timezone"
 
-**WARNING:** If cephlab.yml is run without a valid tag, the target's corresponding playbook
-will run fully.  For example, calling just ``ansible-playbook cephlab.yml
---limit="testnode.example.com"`` would run the entire ``testnodes.yml``
-playbook assuming the host is in the testnodes group in the inventory.
+**WARNING:** If the common role is run without a valid tag, the full role will run.  See ``roles/common/tasks`` for what this includes.
 
 Variables
 +++++++++
