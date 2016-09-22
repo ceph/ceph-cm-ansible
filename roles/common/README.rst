@@ -45,6 +45,8 @@ Defined in ``roles/common/defaults/main.yml``.
 ``yum_timeout`` is an integer used to set the yum timeout.  Defined in
 ``roles/common/defaults/main.yml``.
 
+``nagios_allowed_hosts`` should be a comma-separated list of hosts allowed to query NRPE.  Override in the secrets repo.
+
 The following variables are used to configure NRPE_ (Nagios Remote Plugin
 Executor) on hosts in ``/etc/nagios/nrpe.cfg``.  The system defaults differ between distros (``nrpe`` in
 RHEL vs ``nagios-nrpe-server`` in Ubuntu).  Setting these allows us to make

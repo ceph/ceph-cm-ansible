@@ -37,3 +37,6 @@ beta_distro: false
 
 enable_epel: true
 yum_timeout: 300
+
+# Override in secrets repo
+nagios_allowed_hosts: "127.0.0.1"
