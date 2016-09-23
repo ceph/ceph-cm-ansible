@@ -50,6 +50,14 @@
     mode: 0440
     validate: visudo -cf %s
 
+- name: Upload nagios check_mem script
+  copy:
+    src: nagios/check_mem.sh
+    dest: "{{ nagios_plugins_directory }}/check_mem.sh"
+    owner: root
+    group: root
+    mode: 0755
+
 - name: Configure nagios nrpe settings (Ubuntu)
   lineinfile:
     dest: /etc/default/{{ nrpe_service_name }}
