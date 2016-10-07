@@ -18,6 +18,13 @@
   set_fact:
     have_entitlements: "{{ subscription_manager_org != '' and subscription_manager_activationkey != ''}}"
 
+- name: Install CA Cert from Satellite Server
+  yum:
+    name: "{{ satellite_cert_rpm }}"
+    state: present
+    validate_certs: no
+  when: use_satellite == true
+
 - name: Determine if node is registered with subscription-manager.
   command: subscription-manager identity
   register: subscription
