@@ -53,6 +53,7 @@
     beta_distro: true
   when:
     ansible_distribution == 'RedHat' and
+    ansible_lsb.description is defined and
     ('Beta' in ansible_lsb.description or
      'Alpha' in ansible_lsb.description)
 
