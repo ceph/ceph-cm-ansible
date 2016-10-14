@@ -1,0 +1,75 @@
+---
+# This file is only called when current_bios_version
+# and latest_bios_version do not match
+
+- name: Install packages for CentOS/RHEL
+  yum:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - pciutils-devel
+    - zlib-devel
+    - libftdi-devel
+    - libusb-devel
+    - make
+    - gcc
+  when: ansible_pkg_mgr == "yum"
+
+- name: Install packages for Ubuntu
+  apt:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - flashrom
+  when: ansible_pkg_mgr == "apt"
+
+# Flashrom has to be built on CentOS so we add an extra dir for it
+# This is equivalent to 'mkdir -p'
+- name: Create BIOS update working directory structure
+  file:
+    path: "{{ firmware_update_path }}/bios-update/flashrom"
+    state: directory
+
+# This file must be the already-extracted binary blob from the Supermicro
+# firmware archive.  Naming scheme is PPPPPY.MDD
+# PPPPP = Project name; Y = Year; M = Month; DD = Day
+# We rename it to 'new-bios' here so the playbook can consume a universal name
+- name: Download BIOS binary
+  get_url:
+    url: "{{ bios_location }}"
+    dest: "{{ firmware_update_path }}/bios-update/new-bios"
+
+# There is flashrom RPM in any trusted repositories so we have to compile it
+- name: Download flashrom archive (CentOS)
+  get_url:
+    url: "{{ flashrom_location }}"
+    dest: "{{ firmware_update_path }}/bios-update/flashrom.tar.bz2"
+    validate_certs: no
+  when: ansible_pkg_mgr == "yum"
+
+# The flashrom tarballs extract to a directory with its version number by default
+# '--strip-components 1' gets rid of that dir so the playbook can run with any
+# flashrom version
+- name: Extract flashrom (CentOS)
+  shell: "tar -xjf {{ firmware_update_path }}/bios-update/flashrom.tar.bz2 --directory {{ firmware_update_path }}/bios-update/flashrom --strip-components 1"
+  when: ansible_pkg_mgr == "yum"
+
+- name: Compile flashrom (CentOS)
+  shell: "cd {{ firmware_update_path }}/bios-update/flashrom && make"
+  when: ansible_pkg_mgr == "yum"
+
+- name: Back up existing BIOS (CentOS)
+  shell: "cd {{ firmware_update_path }}/bios-update && flashrom/flashrom --programmer internal --read BIOS.bak"
+  when: ansible_pkg_mgr == "yum"
+
+- name: Flash new BIOS (CentOS)
+  shell: "cd {{ firmware_update_path }}/bios-update && flashrom/flashrom --programmer internal --write new-bios"
+  when: ansible_pkg_mgr == "yum"
+
+- name: Back up existing BIOS (Ubuntu)
+  shell: "flashrom -p internal:Supermicro:X8SIL --read {{ firmware_update_path }}/bios-update/BIOS.bak"
+  when: ansible_pkg_mgr == "apt"
+
+- name: Flash new BIOS (Ubuntu)
+  shell: "flashrom -p internal:Supermicro:X8SIL --write {{ firmware_update_path }}/bios-update/new-bios"
+  when: ansible_pkg_mgr == "apt"

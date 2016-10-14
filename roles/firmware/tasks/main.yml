@@ -1,0 +1,19 @@
+---
+- include: mira/bios.yml
+  tags:
+    - bios
+  when: '"mira" in ansible_hostname'
+
+- include: mira/bmc.yml
+  tags:
+    - bmc
+  when: '"mira" in ansible_hostname'
+
+# This won't get run if a previous playbook fails.  So if a backup of a BIOS is
+# needed to restore, it'll still be there
+- name: Clean up firmware update directory
+  file:
+    path: "{{ firmware_update_path }}"
+    state: absent
+  tags:
+    - always

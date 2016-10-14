@@ -1,0 +1,12 @@
+---
+# "any_errors_fatal: true" makes sure the run stops if any problems happen.
+# This gives you the ability to flash backed up firmwares or diagnose
+# problems without the playbook cleaning up after itself or causing more damage.
+
+- hosts: all
+  any_errors_fatal: true
+  strategy: free
+  roles:
+    - secrets
+    - firmware
+  become: true

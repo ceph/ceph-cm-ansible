@@ -1,0 +1,30 @@
+---
+# This file is only called when current_bmc_version
+# and latest_bmc_version do not match
+
+- name: Install unzip
+  package:
+    name: unzip
+    state: latest
+
+- name: Create BMC update working directory structure
+  file:
+    path: "{{ firmware_update_path }}/bmc-update"
+    state: directory
+
+# Download the archive and rename to something the playbook can consume
+- name: Download BMC archive
+  get_url:
+    url: "{{ bmc_location }}"
+    dest: "{{ firmware_update_path }}/bmc-update/bmc.zip"
+    force: yes
+
+- name: Extract IPMI archive
+  shell: "cd {{ firmware_update_path }}/bmc-update && unzip bmc.zip"
+
+- name: Flash new BMC (Takes around 5 minutes)
+  shell: "cd {{ firmware_update_path }}/bmc-update/Linux* && chmod +x lUpdate && ./lUpdate -f ../*.bin -i kcs -r y"
+  register: bmc_flash_output
+
+# Print output of flash script
+- debug: var=bmc_flash_output.stdout_lines|last

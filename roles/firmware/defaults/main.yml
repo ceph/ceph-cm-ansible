@@ -1,0 +1,9 @@
+---
+# Defaults should be overridden in the secrets repo in each machine type's
+# group_vars file
+latest_bios_version: null
+latest_bmc_version: null
+
+flashrom_location: "http://download.flashrom.org/releases/flashrom-0.9.9.tar.bz2"
+
+firmware_update_path: "/home/{{ ansible_user }}/firmware-update"
