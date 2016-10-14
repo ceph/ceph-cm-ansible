@@ -13,6 +13,11 @@
   tags:
     - areca
 
+- include: smithi/bmc.yml
+  tags:
+    - bmc
+  when: '"smithi" in ansible_hostname'
+
 # This won't get run if a previous playbook fails.  So if a backup of a BIOS is
 # needed to restore, it'll still be there
 - name: Clean up firmware update directory
