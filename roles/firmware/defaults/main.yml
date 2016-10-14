@@ -6,4 +6,6 @@ latest_bmc_version: null
 
 flashrom_location: "http://download.flashrom.org/releases/flashrom-0.9.9.tar.bz2"
 
+areca_download_location: null
+
 firmware_update_path: "/home/{{ ansible_user }}/firmware-update"
