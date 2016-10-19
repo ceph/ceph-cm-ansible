@@ -48,22 +48,6 @@
     state: present
   when: ansible_distribution == 'Fedora' and ansible_distribution_major_version|int >= 22
 
-- name: Determine if distro is a Beta or Alpha release
-  set_fact:
-    beta_distro: true
-  when:
-    ansible_distribution == 'RedHat' and
-    ('Beta' in ansible_lsb.description or
-     'Alpha' in ansible_lsb.description)
-
-# include internal repos when distro is a Beta or Alpha release
-- include: beta_repos.yml
-  when:
-    ansible_distribution == 'RedHat' and
-    beta_distro == true
-  tags:
-    - repos
-
 # configure Red Hat entitlements with subscription-manager
 - include: rhel-entitlements.yml
   when:
