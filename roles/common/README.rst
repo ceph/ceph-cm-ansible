@@ -65,6 +65,11 @@ tasks OS-agnostic.  They variables are mostly self-explanatory and defined in
     # Where nagios plugins can be found
     nagios_plugins_directory: /usr/lib/nagios/plugins
 
+    # List of packages needed for NRPE use
+    nrpe_packages:
+      - nagios-nrpe-server
+      - nagios-plugins-basic
+
 Tags
 ++++
 
