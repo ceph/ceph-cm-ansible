@@ -24,21 +24,25 @@
   with_items:
     - http://{{ mirror_host }}/lab-extras/rhel7/x86_64/nagios-common-4.0.8-2.el7.x86_64.rpm
     - http://{{ mirror_host }}/lab-extras/rhel7/x86_64/nrpe-2.15-7.el7.x86_64.rpm
+    - http://{{ mirror_host }}/lab-extras/rhel7/x86_64/nagios-plugins-2.0.3-3.el7.x86_64.rpm
+    - http://{{ mirror_host }}/lab-extras/rhel7/x86_64/nagios-plugins-load-2.0.3-3.el7.x86_64.rpm
   when: ansible_pkg_mgr == "yum" and
         have_epel.rc == 1
 
 - name: Install nrpe package and dependencies (RHEL/CentOS)
   yum:
-    name: "{{ nrpe_service_name }}"
+    name: "{{ item }}"
     state: latest
     enablerepo: epel
+  with_items: "{{ nrpe_packages }}"
   when: ansible_pkg_mgr == "yum" and
         have_epel.rc == 0
 
 - name: Install nrpe package and dependencies (Ubuntu)
   apt:
-    name: "{{ nrpe_service_name }}"
+    name: "{{ item }}"
     state: latest
+  with_items: "{{ nrpe_packages }}"
   when: ansible_pkg_mgr == "apt"
 
 - name: Upload nagios sudoers.d for raid utilities.

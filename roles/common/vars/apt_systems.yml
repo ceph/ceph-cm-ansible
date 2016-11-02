@@ -3,3 +3,7 @@ nrpe_service_name: nagios-nrpe-server
 nrpe_user: nagios
 nrpe_group: nagios
 nagios_plugins_directory: /usr/lib/nagios/plugins
+
+nrpe_packages:
+  - nagios-nrpe-server
+  - nagios-plugins-basic

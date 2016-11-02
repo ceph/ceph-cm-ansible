@@ -3,3 +3,9 @@ nrpe_service_name: nrpe
 nrpe_user: nrpe
 nrpe_group: nrpe
 nagios_plugins_directory: /usr/lib64/nagios/plugins
+
+nrpe_packages:
+  - nagios-common
+  - nrpe
+  - nagios-plugins
+  - nagios-plugins-load
