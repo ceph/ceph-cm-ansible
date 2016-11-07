@@ -29,8 +29,14 @@ epel_packages: []
 # version, distro or package type
 common_packages: []
 
+# common packages that aren't available in aarch64 architecture
+non_aarch64_packages: []
+non_aarch64_packages_to_upgrade: []
+non_aarch64_common_packages: []
+
 # packages used by ceph we want to ensure are removed
 ceph_packages_to_remove: []
+ceph_dependency_packages_to_remove: []
 packages_to_remove: []
 packages_to_upgrade: []
 
