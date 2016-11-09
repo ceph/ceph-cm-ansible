@@ -1,0 +1,27 @@
+---
+- name: Install ipmitool
+  package:
+    name: ipmitool
+    state: latest
+
+- name: Enable IPMI kernel modules
+  modprobe:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - ipmi_devintf
+    - ipmi_si
+
+- name: Determine current BMC firmware version
+  shell: ipmitool mc info | grep "Firmware Revision" | awk '{ print $4 }'
+  register: current_bmc_version
+  changed_when: False
+
+- name: Determine if BMC update is needed
+  set_fact:
+    need_bmc_update: true
+  when: current_bmc_version.stdout != latest_bmc_version
+
+- name: Include BMC update logic
+  include: roles/firmware/tasks/smithi/bmc-update.yml
+  when: need_bmc_update is defined and need_bmc_update == true

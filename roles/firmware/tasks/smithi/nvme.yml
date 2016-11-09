@@ -1,0 +1,29 @@
+---
+- name: Install Intel SSD Data Center Tool
+  yum:
+    name: "{{ nvme_firmware_package }}"
+    state: present
+
+# This will gather a list of serial numbers in case there are multiple NVMe drives.
+- name: Gather list of NVMe device serial numbers
+  shell: isdct show -d SerialNumber -intelssd | grep SerialNumber | awk '{ print $3 }'
+  register: nvme_serial_list_raw
+
+- name: Store ansible-friendly list of NVMe device Serial Numbers
+  set_fact:
+    nvme_device_list: "{{ nvme_serial_list_raw.stdout.split('\n') }}"
+
+# Despite the -force flag, this command won't flash firmware on a device that
+# already has the latest firmware.  It'll just return 3 as the exit code.
+# Ansible fails a task with an rc of 3 hence the added failed_when logic.
+# A successful firmware update return code is 0.
+- name: Update each NVMe device's firmware
+  shell: "isdct load -force -intelssd {{ item }}"
+  with_items: "{{ nvme_device_list|default([]) }}"
+  register: nvme_update_output
+  failed_when: "'Error' in nvme_update_output.stdout"
+  changed_when: nvme_update_output.rc == 0
+
+# Print firmware flash output
+# Syntax discovered here: https://github.com/ansible/ansible/issues/5564
+- debug: var=nvme_update_output.results|map(attribute='stdout_lines')|list

@@ -1,0 +1,34 @@
+---
+- include: mira/bios.yml
+  tags:
+    - bios
+  when: '"mira" in ansible_hostname'
+
+- include: mira/bmc.yml
+  tags:
+    - bmc
+  when: '"mira" in ansible_hostname'
+
+- include: areca/main.yml
+  tags:
+    - areca
+
+- include: smithi/bmc.yml
+  tags:
+    - bmc
+  when: '"smithi" in ansible_hostname'
+
+# NVMe firmware flashing is only supported on RHEL/CentOS
+- include: smithi/nvme.yml
+  tags:
+    - nvme
+  when: '"smithi" in ansible_hostname and ansible_pkg_mgr == "yum"'
+
+# This won't get run if a previous playbook fails.  So if a backup of a BIOS is
+# needed to restore, it'll still be there
+- name: Clean up firmware update directory
+  file:
+    path: "{{ firmware_update_path }}"
+    state: absent
+  tags:
+    - always

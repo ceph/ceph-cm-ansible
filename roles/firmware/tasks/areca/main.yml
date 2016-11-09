@@ -1,0 +1,34 @@
+---
+- name: Check for Areca devices
+  shell: "lspci | grep -q -i areca"
+  register: lspci_output
+#  ignore_errors: true
+  failed_when: False
+
+- name: Determine Areca RAID Controller Model
+  shell: "cli64 sys info | grep 'Controller Name' | awk '{ print $4 }'"
+  register: areca_model
+  when: "lspci_output.rc == 0"
+
+- name: Set areca_model_pretty var
+  set_fact:
+    areca_model_pretty: "{{ areca_model.stdout|lower|replace('-', '') }}"
+  when: "lspci_output.rc == 0"
+
+- name: Determine current Areca firmware version
+  shell: "cli64 sys info | grep 'Firmware Version' | awk '{ print $4 }'"
+  register: current_areca_version
+  when: "lspci_output.rc == 0"
+
+# We have Areca 1222 and 1880 covered.  If any other models exist, the 'when'
+# statement will gracefully allow the rest of this playbook to be skipped.
+- name: Determine if Areca firmware update needed
+  set_fact:
+    need_areca_update: true
+  when: current_areca_version is defined and
+        latest_{{ areca_model_pretty }}_version is defined and
+        (current_areca_version.stdout != latest_{{ areca_model_pretty }}_version)
+
+- name: Run Areca firmware update playbook
+  include: roles/firmware/tasks/areca/areca-update.yml
+  when: need_areca_update is defined and need_areca_update == true

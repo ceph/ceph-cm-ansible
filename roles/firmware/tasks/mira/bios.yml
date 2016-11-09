@@ -1,0 +1,14 @@
+---
+- name: Determine current BIOS firmware version
+  shell: dmidecode --type bios | grep Version | awk '{ print $2 }'
+  register: current_bios_version
+  changed_when: False
+
+- name: Determine if BIOS update is needed
+  set_fact:
+    need_bios_update: true
+  when: current_bios_version.stdout != latest_bios_version
+
+- name: Include BIOS update logic
+  include: roles/firmware/tasks/mira/bios-update.yml
+  when: need_bios_update is defined and need_bios_update == true

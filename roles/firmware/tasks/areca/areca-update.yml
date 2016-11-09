@@ -1,0 +1,27 @@
+---
+# This file is only called when current_areca_version
+# and latest_{{ areca_model_pretty }}_version do not match
+
+- name: Install Unzip
+  package:
+    name: unzip
+    state: latest
+
+- name: Create Areca update working directory structure
+  file:
+    path: "{{ firmware_update_path }}/areca-update"
+    state: directory
+
+# Download Areca zip archive and name it something we can consume reliably
+- name: Download Areca firmware
+  get_url:
+    url: "{{ areca_download_location }}/{{ areca_model.stdout }}.zip"
+    dest: "{{ firmware_update_path }}/areca-update/areca.zip"
+    force: yes
+
+# Only extract the binary blobs and don't recreate dir structure
+- name: Unzip Areca firmware archive
+  shell: "cd {{ firmware_update_path }}/areca-update && unzip -j areca.zip *.BIN"
+
+- name: Flash Areca firmware
+  shell: "for file in $(ls {{ firmware_update_path }}/areca-update/*.BIN); do cli64 sys updatefw path=$file; done"
