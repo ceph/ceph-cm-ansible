@@ -34,3 +34,6 @@ disable_yum_repos: []
 # NOTE: this does not work on repo files with multiple entries in them,
 # it will only enable the first entry in the repo file.
 enable_yum_repos: []
+
+# defining empty var for ansible v2.2 compatibility.
+repos_to_remove: []
