@@ -1,9 +1,13 @@
 ---
+# re: 'static: no' -- See https://github.com/ansible/ansible/issues/18483
+# Can be removed once that fix makes it into Ansible
+
 # These are tasks which perform actions corresponding to the names of
 # the variables they use.  For example, `disable_yum_repos` would actually
 # disable all repos defined in that list.
 - include: setup.yml
   when: not cleanup and (ansible_distribution == "CentOS" or ansible_distribution == "RedHat")
+  static: no
 
 # These are tasks which reverse the actions corresponding to the names of
 # the variables they use. For example, `disable_yum_repos` would actually
@@ -12,3 +16,4 @@
 # for the test run but then re-enable them during the teuthology cleanup process.
 - include: cleanup.yml
   when: cleanup and (ansible_distribution == "CentOS" or ansible_distribution == "RedHat")
+  static: no
