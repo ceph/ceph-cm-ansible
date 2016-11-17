@@ -101,9 +101,9 @@ d-i user-setup/encrypt-home boolean false
 #if $os_version == 'precise'
 d-i pkgsel/include string wget ntpdate bash sudo openssh-server
 #else if $os_version == 'xenial'
-d-i pkgsel/include string u-boot-tools pastebinit initramfs-tools wget linux-firmware ntpdate bash devmem2 fbset sudo openssh-server udev-discover gawk
+d-i pkgsel/include string u-boot-tools pastebinit initramfs-tools wget linux-firmware ntpdate bash devmem2 fbset sudo openssh-server udev-discover gawk gdisk
 #else
-d-i pkgsel/include string u-boot-tools pastebinit initramfs-tools wget linux-firmware linux-firmware-nonfree ntpdate bash devmem2 fbset sudo openssh-server udev-discover gawk
+d-i pkgsel/include string u-boot-tools pastebinit initramfs-tools wget linux-firmware linux-firmware-nonfree ntpdate bash devmem2 fbset sudo openssh-server udev-discover gawk gdisk
 #end if
 
 # Whether to upgrade packages after debootstrap.
