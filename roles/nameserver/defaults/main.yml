@@ -16,6 +16,7 @@ named_conf_listen_iface:
  - "{{ ansible_all_ipv4_addresses[0] }}"
 named_conf_zones_path: "/var/named/zones"
 named_conf_daemon_opts: ""
+named_conf_recursion: "no" # Allow recursion?  [yes|no]
 
 # Zone file conf vars
 named_conf_soa_ttl: 3600

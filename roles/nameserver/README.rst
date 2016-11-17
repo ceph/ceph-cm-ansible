@@ -67,6 +67,10 @@ Most variables are defined in ``roles/nameserver/defaults/main.yml`` and values 
 |  named_conf_soa: "ns1.example.com. admin.example.com." |                                                                                                                           |
 |                                                        |                                                                                                                           |
 +--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+
+|``named_conf_recursion: "no"``                          |Define whether recursion should be allowed or not.  Defaults to "no".  Override in Ansible inventory as a hostvar.         |
+|                                                        |                                                                                                                           |
+|                                                        |**NOTE:** Setting to "yes" will add ``allow-recursion { any; }``. See To-Do.                                               |
++--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+
 
 **named_domains: []**
 
@@ -160,5 +164,6 @@ To-Do
 - Allow additional user-defined firewall rules
 - DNSSEC
 - Dynamic DNS
+- Add support for specifying networks to allow recursion from
 
 .. _Sepia: https://ceph.github.io/sepia/

@@ -11,8 +11,10 @@ options {
 	memstatistics-file	"{{ named_conf_data_dir }}/named_mem_stats.txt";
 
 	allow-query		{ any; };
-	recursion		yes;
+	recursion		{{ named_conf_recursion }};
+{% if named_conf_recursion == "yes" %}
 	allow-recursion		{ any; };
+{% endif %}
 };
 
 logging {
