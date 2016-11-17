@@ -26,8 +26,8 @@ pushd $ANSIBLE_CM_PATH
 flock --close ./.lock git pull
 export ANSIBLE_SSH_PIPELINING=1
 export ANSIBLE_HOST_KEY_CHECKING=False
-# Tell ansible to create users and populate authorized_keys
-ansible-playbook testnodes.yml -v --limit $name* --tags user,pubkeys 2>&1 > /var/log/ansible/$name.log
+# Tell ansible to create users, populate authorized_keys, and zap non-root disks
+ansible-playbook testnodes.yml -v --limit $name* --tags user,pubkeys,zap 2>&1 > /var/log/ansible/$name.log
 # Now run the rest of the playbook. If it fails, at least we have access.
 # Background it so that the request doesn't block for this part and end up 
 # causing the client to retry, thus spawning this trigger multiple times
@@ -37,5 +37,5 @@ if [[ $profile == *"-stock" ]]
 then
     exit 0
 fi
-ansible-playbook testnodes.yml -v --limit $name* --skip-tags user,pubkeys 2>&1 >> /var/log/ansible/$name.log &
+ansible-playbook testnodes.yml -v --limit $name* --skip-tags user,pubkeys,zap 2>&1 >> /var/log/ansible/$name.log &
 popd
