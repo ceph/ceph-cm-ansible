@@ -16,6 +16,8 @@ packages:
   ###
   - libcrypto++9v5
   ###
+  # for building xfstests #18067
+  - libtool-bin
 
 non_aarch64_packages:
   - libgoogle-perftools4
