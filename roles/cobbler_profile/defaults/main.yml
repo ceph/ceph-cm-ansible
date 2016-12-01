@@ -46,23 +46,23 @@ distros:
       iso: "http://releases.ubuntu.com/12.04/ubuntu-12.04.5-server-amd64.iso"
       sha256: af224223de99e2a730b67d7785b657f549be0d63221188e105445f75fb8305c9
       kickstart: cephlab_ubuntu.preseed
-      kernel_options: "netcfg/choose_interface=auto biosdevname=0 console=tty0 console=ttyS1,115200"
+      kernel_options: "netcfg/choose_interface=auto console=tty0 console=ttyS1,115200"
       kernel_options_post: "pci=realloc=off console=tty0 console=ttyS1,115200"
   "Ubuntu-14.04-server-x86_64":
       iso: "http://releases.ubuntu.com/14.04/ubuntu-14.04.3-server-amd64.iso"
       sha256: a3b345908a826e262f4ea1afeb357fd09ec0558cf34e6c9112cead4bb55ccdfb
       kickstart: cephlab_ubuntu.preseed
-      kernel_options: "netcfg/choose_interface=auto biosdevname=0 console=tty0 console=ttyS1,115200"
+      kernel_options: "netcfg/choose_interface=auto console=tty0 console=ttyS1,115200"
       kernel_options_post: "pci=realloc=off console=tty0 console=ttyS1,115200"
   "Ubuntu-15.04-server-x86_64":
       iso: "http://releases.ubuntu.com/15.04/ubuntu-15.04-server-amd64.iso"
       sha256: 6501c8545374665823384bbb6235f865108f56d8a30bbf69dd18df73c14ccb84
       kickstart: cephlab_ubuntu.preseed
-      kernel_options: "netcfg/choose_interface=auto biosdevname=0 console=tty0 console=ttyS1,115200"
+      kernel_options: "netcfg/choose_interface=auto console=tty0 console=ttyS1,115200"
       kernel_options_post: "pci=realloc=off console=tty0 console=ttyS1,115200"
   "Ubuntu-16.04-server-x86_64":
       iso: "http://releases.ubuntu.com/16.04/ubuntu-16.04-server-amd64.iso"
       sha256: b8b172cbdf04f5ff8adc8c2c1b4007ccf66f00fc6a324a6da6eba67de71746f6
       kickstart: cephlab_ubuntu.preseed
-      kernel_options: "netcfg/choose_interface=auto biosdevname=0 net.ifnames=0 console=tty0 console=ttyS1,115200"
-      kernel_options_post: "pci=realloc=off console=tty0 console=ttyS1,115200 biosdevname=0 net.ifnames=0"
+      kernel_options: "netcfg/choose_interface=auto console=tty0 console=ttyS1,115200"
+      kernel_options_post: "pci=realloc=off console=tty0 console=ttyS1,115200"
