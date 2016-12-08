@@ -10,6 +10,14 @@
   tags:
     - packages
 
+- name: Enable and start ntpd
+  service:
+    name: ntpd
+    state: started
+    enabled: yes
+  tags:
+    - always
+
 # Configure firewalld
 - include: firewall.yml
   tags:

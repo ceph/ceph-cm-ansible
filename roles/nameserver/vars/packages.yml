@@ -13,3 +13,6 @@ packages:
   ## monitoring
   - nrpe
   - nagios-plugins-all
+  ## for NTP
+  - ntp
+  - ntpdate
