@@ -74,13 +74,16 @@ Most variables are defined in ``roles/nameserver/defaults/main.yml`` and values 
 
 **named_domains: []**
 
-The ``named_domains`` dictionary is the bread and butter of creating zone files.  It is in standard YAML syntax.  Each domain (key) must have ``forward`` and ``ipvar`` defined although ``ipvar`` can be set to ``NULL``.  Optional values include ``miscrecords`` and ``reverse``.
+The ``named_domains`` dictionary is the bread and butter of creating zone files.  It is in standard YAML syntax.  Each domain (key) must have ``forward``, ``ipvar``, and ``dynamic`` defined.  ``ipvar`` can be set to ``NULL``.  Optional values include ``miscrecords`` and ``reverse``.
 
 ``forward``
   The domain of the forward lookup zone for each domain (key)
 
 ``ipvar``
   The variable assigned to a system in the Ansible inventory.  This allows systems to have multiple IPs assigned for a front and ipmi network, for example.  See **Inventory Example** below.
+
+``dynamic``
+  Specifies whether the parent zone/domain is meant for Dynamic DNS records.  The ``records`` task will skip updating these zone files when the variable is set to ``true``.
 
 ``miscrecords``
   Records to add to corresponding ``forward`` zone file.  This is a good place for CNAMEs and MX records and records for hosts you don't have in your Ansible inventory.  If your main nameserver is in a subdomain, you should create its glue record here.  See example.
@@ -93,6 +96,7 @@ The ``named_domains`` dictionary is the bread and butter of creating zone files.
     named_domains:
       example.com:
         ipvar: NULL
+        dynamic: false
         forward: example.com
         miscrecords:
           - www                 IN      A       8.8.8.8
@@ -100,6 +104,7 @@ The ``named_domains`` dictionary is the bread and butter of creating zone files.
           - ns1.private         IN      A       192.168.0.1
       private.example.com:
         ipvar: ip
+        dynamic: false
         forward: private.example.com
         miscrecords:
           - mail                IN      MX      192.168.0.2
@@ -110,11 +115,15 @@ The ``named_domains`` dictionary is the bread and butter of creating zone files.
           - 192.168.2.0
       mgmt.example.com:
         ipvar: mgmt
+        dynamic: false
         forward: mgmt.example.com
         reverse:
           - 192.168.10.0
           - 192.168.11.0
           - 192.168.12.0
+      ddns.example.com:
+        ipvar: NULL
+        dynamic: true
         
 Inventory
 +++++++++
