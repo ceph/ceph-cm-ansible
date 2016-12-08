@@ -23,3 +23,5 @@ named_conf_soa_ttl: 3600
 named_conf_soa_refresh: 3600
 named_conf_soa_retry: 3600
 named_conf_soa_expire: 604800
+
+ddns_keys: {}

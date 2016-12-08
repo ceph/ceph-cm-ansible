@@ -24,11 +24,28 @@ logging {
         };
 };
 
+# Dynamic DNS
+{% for key, zone in named_domains.iteritems() %}
+{% if zone.dynamic == true %}
+{% for domain, values in ddns_keys.iteritems() %}
+{% if key == domain %}
+key "{{ key }}" {
+	algorithm hmac-md5;
+	secret "{{ values.secret }}";
+};
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}
+
 # Forward zones
 {% for key, zone in named_domains.iteritems() %}
 zone "{{ key }}" {
 	type	master;
 	file	"{{ named_conf_zones_path }}/{{ key }}";
+{% if zone.dynamic == true %}
+	allow-update { key "{{ key }}"; };
+{% endif %}
 };
 
 {% endfor %}
