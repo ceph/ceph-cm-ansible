@@ -15,6 +15,44 @@
   set_fact:
     named_serial: "{{ ansible_date_time.epoch }}"
 
+- name: Create non-existent forward zone files for dynamic domains
+  template:
+    src: forward.j2
+    dest: "{{ named_conf_zones_path }}/{{ item.key }}"
+    validate: named-checkzone {{ item.key }} %s
+    # only write if zone file doesn't already exist
+    # this makes sure we don't clobber ddns records
+    force: no
+  with_dict: "{{ named_domains }}"
+  notify: reload named
+  when: item.value.dynamic == true
+
+# This makes sure dynamic DNS records in the journal files are in sync with the
+# actual zone files so we can store them in the next step.
+- name: Sync Dynamic DNS journals with zone files
+  command: "rndc sync -clean {{ item.key }}"
+  with_dict: "{{ named_domains }}"
+  when: item.value.dynamic == true and
+        item.value.ddns_hostname_prefixes is defined
+  # Don't fail if there is no journal file
+  failed_when: false
+
+- name: Create temporary directory for dynamic A records
+  command: "mktemp -d"
+  register: named_tempdir
+
+# We need to store existing DNS records in a temp file so we can spit
+# them back out into the zone file after static records are written.
+# Given hostname prefix(es) to expect, this task greps for those records
+# and stores them in a temporary file named after the domain.
+- name: Store existing dynamic A records
+  shell: "grep -E '^({% for prefix in item.value.ddns_hostname_prefixes %}{{ prefix }}{% if not loop.last %}|{% endif %}{% endfor %})[0-9]+\\s+A' {{ named_conf_zones_path }}/{{ item.key }} > {{ named_tempdir.stdout }}/{{ item.key }}"
+  with_dict: "{{ named_domains }}"
+  when: item.value.dynamic == true and
+        item.value.ddns_hostname_prefixes is defined
+  # Don't fail if there are no records to store
+  failed_when: false
+
 - name: Write forward zone files
   template:
     src: forward.j2
@@ -22,6 +60,9 @@
     validate: named-checkzone {{ item.key }} %s
   with_dict: "{{ named_domains }}"
   notify: reload named
+  # Don't write zone files for pure dynamic zones
+  when: (item.value.dynamic != true) or
+        (item.value.dynamic == true and item.value.ddns_hostname_prefixes is defined)
 
 - name: Write reverse zone files
   template:
@@ -34,3 +75,20 @@
     - flags:
       skip_missing: True
   notify: reload named
+
+- name: Restore dynamic A records from temp file(s)
+  shell: "cat {{ named_tempdir.stdout }}/{{ item.key }} >> {{ named_conf_zones_path }}/{{ item.key }}"
+  with_dict: "{{ named_domains }}"
+  when: item.value.dynamic == true and
+        item.value.ddns_hostname_prefixes is defined
+  # Don't fail if there are no records to restore
+  failed_when: false
+
+# This gets rid of any cached dynamic records that we didn't just restore
+- name: Freeze, reload, thaw dynamic zone files
+  shell: "rndc freeze; rndc reload; rndc thaw"
+
+- name: Clean up dynamic A records temp dir
+  file:
+    path: "{{ named_tempdir.stdout }}"
+    state: absent
