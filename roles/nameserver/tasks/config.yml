@@ -19,3 +19,9 @@
     state: present
     create: True
   notify: restart named
+
+- name: Configure SELinux to allow named to write to master zone files
+  seboolean:
+    name: named_write_master_zones
+    state: yes
+    persistent: yes
