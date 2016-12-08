@@ -71,6 +71,9 @@ Most variables are defined in ``roles/nameserver/defaults/main.yml`` and values 
 |                                                        |                                                                                                                           |
 |                                                        |**NOTE:** Setting to "yes" will add ``allow-recursion { any; }``. See To-Do.                                               |
 +--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+
+|``ddns_keys: {}``                                       |A dictionary defining each Dynamic DNS zone's authorized key.  See **Dynamic DNS** below.  Defined in an encrypted file in |
+|                                                        |the secrets repo                                                                                                           |
++--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+
 
 **named_domains: []**
 
@@ -124,6 +127,7 @@ The ``named_domains`` dictionary is the bread and butter of creating zone files.
       ddns.example.com:
         ipvar: NULL
         dynamic: true
+        forward: ddns.example.com
         
 Inventory
 +++++++++
@@ -140,6 +144,29 @@ Using the ``named_domains`` example above and inventory below, forward *and reve
     tester050.private.example.com ip=192.168.1.50 mgmt=192.168.11.50
 
 **Note:** Hosts in inventory with no IP address defined will not have records created and should be added to ``miscrecords`` in ``named_domains``.
+
+Dynamic DNS
++++++++++++
+If you wish to use the Dynamic DNS feature of this role, you should generate an HMAC-MD5 keypair using dnssec-keygen_ for each zone you want to be able to dynamically update.  The key generated should be pasted in the ``secret`` value of the ``ddns_keys`` dictionary for the corresponding domain.
+
+**Example**::
+
+    $ dnssec-keygen -a HMAC-MD5 -b 512 -n USER ddns.example.com
+    Kddns.example.com.+157+57501
+    $ cat Kddns.example.com.+157+57501.key
+    ddns.example.com. IN KEY 0 3 157 LxFSAiBgKYtsTTV/hjaK7LNdsbk19xQv0ZY9xLtrpdIWhf2S4gurD5GJ JjP9N8bnlCPKc7zVy+JcBYbSMSsm2A==
+
+    # In {{ secrets_path }}/nameserver.yml
+    ---
+    ddns_keys:
+      ddns.example.com:
+        secret: "LxFSAiBgKYtsTTV/hjaK7LNdsbk19xQv0ZY9xLtrpdIWhf2S4gurD5GJ JjP9N8bnlCPKc7zVy+JcBYbSMSsm2A=="
+
+``roles/nameserver/templates/named.conf.j2`` loops through each domain in ``named_domains``, checks whether ``dynamic: true`` and if so, then loops through ``ddns_keys`` and matches the secret key to the domain.
+
+These instructions assume you'll either have one host updating DNS records or you'll be sharing the resulting key.  Clients can use nsupdate_ to update the nameserver.  Configuring that is outside the scope of this role.
+
+**NOTE:** Reverse zone Dynamic DNS is not supported at this time.
 
 Tags
 ++++
@@ -172,7 +199,8 @@ To-Do
 
 - Allow additional user-defined firewall rules
 - DNSSEC
-- Dynamic DNS
 - Add support for specifying networks to allow recursion from
 
 .. _Sepia: https://ceph.github.io/sepia/
+.. _dnssec-keygen: https://ftp.isc.org/isc/bind9/cur/9.9/doc/arm/man.dnssec-keygen.html
+.. _nsupdate: https://linux.die.net/man/8/nsupdate

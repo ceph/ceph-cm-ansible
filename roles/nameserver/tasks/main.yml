@@ -1,4 +1,10 @@
 ---
+- name: Include secrets
+  include_vars: "{{ secrets_path | mandatory }}/nameserver.yml"
+  no_log: true
+  tags:
+    - always
+
 # Install and update system packages
 - include: packages.yml
   tags:

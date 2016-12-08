@@ -10,7 +10,6 @@
     dest: "{{ named_conf_file }}"
     validate: named-checkconf %s
   notify: restart named
-  with_dict: "{{ named_domains }}"
 
 - name: Apply named daemon options
   lineinfile:
