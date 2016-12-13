@@ -10,7 +10,6 @@
     dest: "{{ named_conf_file }}"
     validate: named-checkconf %s
   notify: restart named
-  with_dict: "{{ named_domains }}"
 
 - name: Apply named daemon options
   lineinfile:
@@ -20,3 +19,9 @@
     state: present
     create: True
   notify: restart named
+
+- name: Configure SELinux to allow named to write to master zone files
+  seboolean:
+    name: named_write_master_zones
+    state: yes
+    persistent: yes

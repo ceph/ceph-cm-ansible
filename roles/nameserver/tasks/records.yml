@@ -15,6 +15,18 @@
   set_fact:
     named_serial: "{{ ansible_date_time.epoch }}"
 
+- name: Create forward zone files for dynamic domains
+  template:
+    src: forward.j2
+    dest: "{{ named_conf_zones_path }}/{{ item.key }}"
+    validate: named-checkzone {{ item.key }} %s
+    # Only write if zone file doesn't already exist
+    # This makes sure we don't clobber DDNS records
+    force: no
+  with_dict: "{{ named_domains }}"
+  notify: reload named
+  when: item.value.dynamic == true
+
 - name: Write forward zone files
   template:
     src: forward.j2
@@ -22,6 +34,7 @@
     validate: named-checkzone {{ item.key }} %s
   with_dict: "{{ named_domains }}"
   notify: reload named
+  when: item.value.dynamic != true
 
 - name: Write reverse zone files
   template:
