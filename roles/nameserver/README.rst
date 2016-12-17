@@ -71,16 +71,25 @@ Most variables are defined in ``roles/nameserver/defaults/main.yml`` and values 
 |                                                        |                                                                                                                           |
 |                                                        |**NOTE:** Setting to "yes" will add ``allow-recursion { any; }``. See To-Do.                                               |
 +--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+
+|``ddns_keys: {}``                                       |A dictionary defining each Dynamic DNS zone's authorized key.  See **Dynamic DNS** below.  Defined in an encrypted file in |
+|                                                        |the secrets repo                                                                                                           |
++--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+
 
 **named_domains: []**
 
-The ``named_domains`` dictionary is the bread and butter of creating zone files.  It is in standard YAML syntax.  Each domain (key) must have ``forward`` and ``ipvar`` defined although ``ipvar`` can be set to ``NULL``.  Optional values include ``miscrecords`` and ``reverse``.
+The ``named_domains`` dictionary is the bread and butter of creating zone files.  It is in standard YAML syntax.  Each domain (key) must have ``forward``, ``ipvar``, and ``dynamic`` defined.  ``ipvar`` can be set to ``NULL``.  Optional values include ``miscrecords``, ``reverse``, and ``ddns_hostname_prefixes``.
 
 ``forward``
   The domain of the forward lookup zone for each domain (key)
 
 ``ipvar``
   The variable assigned to a system in the Ansible inventory.  This allows systems to have multiple IPs assigned for a front and ipmi network, for example.  See **Inventory Example** below.
+
+``dynamic``
+  Specifies whether the parent zone/domain should allow Dynamic DNS records.  See **Dynamic DNS** below for more information.
+
+``ddns_hostname_prefixes``
+  This should be a list of dynamic hostname prefixes you don't want overwritten if a zone/domain has static and dynamic records.  See **Dynamic DNS** below.
 
 ``miscrecords``
   Records to add to corresponding ``forward`` zone file.  This is a good place for CNAMEs and MX records and records for hosts you don't have in your Ansible inventory.  If your main nameserver is in a subdomain, you should create its glue record here.  See example.
@@ -93,6 +102,7 @@ The ``named_domains`` dictionary is the bread and butter of creating zone files.
     named_domains:
       example.com:
         ipvar: NULL
+        dynamic: false
         forward: example.com
         miscrecords:
           - www                 IN      A       8.8.8.8
@@ -100,6 +110,9 @@ The ``named_domains`` dictionary is the bread and butter of creating zone files.
           - ns1.private         IN      A       192.168.0.1
       private.example.com:
         ipvar: ip
+        dynamic: true
+        ddns_hostname_prefixes:
+          - dyn
         forward: private.example.com
         miscrecords:
           - mail                IN      MX      192.168.0.2
@@ -110,11 +123,16 @@ The ``named_domains`` dictionary is the bread and butter of creating zone files.
           - 192.168.2.0
       mgmt.example.com:
         ipvar: mgmt
+        dynamic: false
         forward: mgmt.example.com
         reverse:
           - 192.168.10.0
           - 192.168.11.0
           - 192.168.12.0
+      ddns.example.com:
+        ipvar: NULL
+        dynamic: true
+        forward: ddns.example.com
         
 Inventory
 +++++++++
@@ -131,6 +149,54 @@ Using the ``named_domains`` example above and inventory below, forward *and reve
     tester050.private.example.com ip=192.168.1.50 mgmt=192.168.11.50
 
 **Note:** Hosts in inventory with no IP address defined will not have records created and should be added to ``miscrecords`` in ``named_domains``.
+
+Dynamic DNS
++++++++++++
+If you wish to use the Dynamic DNS feature of this role, you should generate an HMAC-MD5 keypair using dnssec-keygen_ for each zone you want to be able to dynamically update.  The key generated should be pasted in the ``secret`` value of the ``ddns_keys`` dictionary for the corresponding domain.
+
+**Example**::
+
+    $ dnssec-keygen -a HMAC-MD5 -b 512 -n USER ddns.example.com
+    Kddns.example.com.+157+57501
+    $ cat Kddns.example.com.+157+57501.key
+    ddns.example.com. IN KEY 0 3 157 LxFSAiBgKYtsTTV/hjaK7LNdsbk19xQv0ZY9xLtrpdIWhf2S4gurD5GJ JjP9N8bnlCPKc7zVy+JcBYbSMSsm2A==
+
+    # In {{ secrets_path }}/nameserver.yml
+    ---
+    ddns_keys:
+      ddns.example.com:
+        secret: "LxFSAiBgKYtsTTV/hjaK7LNdsbk19xQv0ZY9xLtrpdIWhf2S4gurD5GJ JjP9N8bnlCPKc7zVy+JcBYbSMSsm2A=="
+
+``roles/nameserver/templates/named.conf.j2`` loops through each domain in ``named_domains``, checks whether ``dynamic: true`` and if so, then loops through ``ddns_keys`` and matches the secret key to the domain.
+
+These instructions assume you'll either have one host updating DNS records or you'll be sharing the resulting key.  Clients can use nsupdate_ to update the nameserver.  Configuring that is outside the scope of this role.
+
+You can have two types of Dynamic DNS zones:
+
+  1. A pure dynamic DNS zone with no static A records
+  2. A mixed zone consisting of both dynamic and static records
+
+For a mixed zone, you must specify ``ddns_hostname_prefixes`` under the domain in ``named_domains`` else your dynamic records will be overwritten each time the records task is run.  **Example**::
+
+    named_domains:
+      private.example.com:
+        forward: private.example.com
+        ipvar: ip
+        dynamic: true
+        ddns_hostname_prefixes:
+          - foo
+      ddns.example.com:
+        forward: ddns.example.com
+        ipvar: NULL
+        dynamic: true
+
+In the example above, a dynamic hostname of ``foo001.private.example.com`` will be saved and restored at the end of the records task.  If you *dynamically* added a hostname of ``bar001.private.example.com`` however, the records task will remove it.  Do not create static hostnames in your ansible inventory using any of the prefixes in ``ddns_hostname_prefixes`` or you'll end up with duplicates in the zone file.
+
+The records task will not modify the ddns.example.com zone file.
+
+For our upstream test lab's purposes, this allows us to combine static and dynamic records in our ``front.sepia.ceph.com`` domain so teuthology_'s ``lab_domain`` variable can remain unchanged.
+
+**NOTE:** Reverse zone Dynamic DNS is not supported at this time.
 
 Tags
 ++++
@@ -163,7 +229,9 @@ To-Do
 
 - Allow additional user-defined firewall rules
 - DNSSEC
-- Dynamic DNS
 - Add support for specifying networks to allow recursion from
 
 .. _Sepia: https://ceph.github.io/sepia/
+.. _dnssec-keygen: https://ftp.isc.org/isc/bind9/cur/9.9/doc/arm/man.dnssec-keygen.html
+.. _nsupdate: https://linux.die.net/man/8/nsupdate
+.. _teuthology: http://docs.ceph.com/teuthology/docs/siteconfig.html?highlight=lab_domain
