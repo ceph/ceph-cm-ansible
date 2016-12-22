@@ -1,0 +1,87 @@
+---
+- name: Build args to pass to nsupdate_web
+  set_fact:
+    nsupdate_web_args: "--ttl {{ nsupdate_web_ttl }} -d {{ lab_domain }} -K {{ keys_dir }}/{{ pubkey_name }} -s {{ nsupdate_web_server }}{% if allow_hosts %} -a {{ allow_hosts }}{% endif %}"
+
+- name: Including major version specific variables.
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution | lower }}_{{ ansible_distribution_major_version }}.yml"
+    - empty.yml
+
+- name: Install packages
+  package:
+    name: "{{ item }}"
+    state: latest
+  with_items: "{{ packages }}"
+
+- name: Create nsupdate user
+  user:
+    name: "{{ nsupdate_web_user }}"
+    state: present
+    system: true
+    shell: "/bin/false"
+
+- name: Clone nsupdate_web repo
+  git:
+    repo: "{{ repo_url }}"
+    dest: "~/nsupdate_web"
+  become_user: "{{ nsupdate_web_user }}"
+
+- name: Create/update virtualenv
+  pip:
+    name: pip
+    virtualenv_python: "{{ python_version }}"
+    virtualenv: "{{ virtualenv_path }}"
+  become_user: "{{ nsupdate_web_user }}"
+
+- name: Set up nsupdate_web
+  shell: "source {{ virtualenv_path }}/bin/activate && python setup.py develop"
+  args:
+    chdir: "{{ repo_path }}"
+    executable: "/bin/bash"
+  become_user: "{{ nsupdate_web_user }}"
+
+- name: Ship systemd service
+  template:
+    src: nsupdate-web.service
+    dest: "/etc/systemd/system/"
+    owner: root
+    group: root
+    mode: 0644
+  register: ship_service
+
+- name: Reload systemd and enable/restart service
+  # We use the systemd module here so we can use the daemon_reload feature,
+  # since we're shipping the .service file ourselves
+  systemd:
+    name: nsupdate-web
+    daemon_reload: true
+    enabled: true
+    state: restarted
+  when: ship_service|changed
+
+- name: Ship nginx configuration
+  template:
+    src: nsupdate_web_nginx
+    dest: "/etc/nginx/sites-available/nsupdate_web"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Disable default nginx configuration
+  file:
+    path: "/etc/nginx/sites-enabled/default"
+    state: absent
+
+- name: Enable our nginx configuration
+  file:
+    src: "/etc/nginx/sites-available/nsupdate_web"
+    dest: "/etc/nginx/sites-enabled/nsupdate_web"
+    state: link
+
+- name: Enable and restart nginx
+  service:
+    name: nginx
+    enabled: true
+    state: restarted
