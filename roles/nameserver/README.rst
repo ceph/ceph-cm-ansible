@@ -1,7 +1,7 @@
 nameserver
 ==========
 
-This role is used to set up and configure a very basic **internal** BIND DNS master server.
+This role is used to set up and configure a very basic **internal** BIND DNS server.
 
 This role has only been tested on CentOS 7.2 using BIND9.
 
@@ -70,6 +70,20 @@ Most variables are defined in ``roles/nameserver/defaults/main.yml`` and values 
 |``named_conf_recursion: "no"``                          |Define whether recursion should be allowed or not.  Defaults to "no".  Override in Ansible inventory as a hostvar.         |
 |                                                        |                                                                                                                           |
 |                                                        |**NOTE:** Setting to "yes" will add ``allow-recursion { any; }``. See To-Do.                                               |
++--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+
+|``named_conf_slave: true``                              |Will configure the server as a DNS slave if true.  This variable is not required but should be set to true in the hostvars |
+|                                                        |if desired.                                                                                                                |
+|                                                        |                                                                                                                           |
+|                                                        |**NOTE:** You must also set ``named_conf_master`` if ``named_conf_slave`` is true.  See below.                             |
++--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+
+|``named_conf_master: "1.2.3.4"``                        |Specifies the master server's IP which zones should be transferred from.  Define in hostvars.                              |
++--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+
+|::                                                      |A list of hosts or subnets you want to allow zone transfers to.  This variable is not required but should be defined in    |
+|                                                        |hostvars if you wish.  BIND allows AXFR transfers to anywhere by default.                                                  |
+|  named_conf_allow_axfr:                                |                                                                                                                           |
+|    - localhost                                         |See http://www.zytrax.com/books/dns/ch7/xfer.html#allow-transfer.                                                          |
+|    - 1.2.3.4                                           |                                                                                                                           |
+|                                                        |                                                                                                                           |
 +--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+
 |``ddns_keys: {}``                                       |A dictionary defining each Dynamic DNS zone's authorized key.  See **Dynamic DNS** below.  Defined in an encrypted file in |
 |                                                        |the secrets repo                                                                                                           |
@@ -195,6 +209,8 @@ In the example above, a dynamic hostname of ``foo001.private.example.com`` will 
 The records task will not modify the ddns.example.com zone file.
 
 For our upstream test lab's purposes, this allows us to combine static and dynamic records in our ``front.sepia.ceph.com`` domain so teuthology_'s ``lab_domain`` variable can remain unchanged.
+
+This role also configures DNS slaves to accept DDNS updates and will forward them to the master using the ``allow-update-forwarding`` parameter in ``/etc/named.conf``.  This is particularly useful in our Sepia lab since our master server can't send ``NOTIFY`` messages directly to the slave.
 
 **NOTE:** Reverse zone Dynamic DNS is not supported at this time.
 
