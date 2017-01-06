@@ -32,3 +32,5 @@
 - include: records.yml
   tags:
     - records
+  when: (named_conf_slave is undefined) or
+        (named_conf_slave is defined and named_conf_slave == false)
