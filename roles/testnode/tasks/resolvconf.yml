@@ -48,3 +48,9 @@
   when: bounce_interface == "True" or 
         (ansible_distribution|lower == 'ubuntu' and
         ansible_distribution_major_version|int >= 16)
+
+- name: Ensure lab_domain is in search domains in /etc/resolv.conf
+  lineinfile:
+    dest: /etc/resolv.conf
+    regexp: "^search .*"
+    line: "search {{ lab_domain }}"
