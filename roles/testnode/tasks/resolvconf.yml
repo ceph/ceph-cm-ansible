@@ -54,3 +54,9 @@
     dest: /etc/resolv.conf
     regexp: "^search .*"
     line: "search {{ lab_domain }}"
+
+- name: Ensure domain is set in /etc/resolv.conf
+  lineinfile:
+    dest: /etc/resolv.conf
+    regexp: "^domain .*"
+    line: "domain {{ lab_domain }}"
