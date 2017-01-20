@@ -18,6 +18,15 @@
   tags:
     - always
 
+# DDNS updates fail to create or edit jnl files without this
+- name: Ensure permissions set for /var/named/zones
+  file:
+    path: /var/named/zones
+    owner: named
+    group: named
+  tags:
+    - always
+
 # Configure firewalld
 - include: firewall.yml
   tags:
