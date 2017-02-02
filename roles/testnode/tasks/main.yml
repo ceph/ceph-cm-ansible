@@ -16,6 +16,7 @@
     owner: root
     group: root
     mode: 0755
+  when: ansible_pkg_mgr != "zypper"
 
 - name: Set the hostname
   include: set_hostname.yml
@@ -27,48 +28,53 @@
   tags:
     - zap
 
-# partition drives, if any are requested
-- include: drive_partitioning.yml
+- name: partition drives, if any are requested
+  include: drive_partitioning.yml
   when: drive_to_partition is defined
   tags:
     - partition
 
-# configure ssh
-- include: ssh.yml
+- name: configure ssh
+  include: ssh.yml
   tags:
     - ssh
 
-# configure things specific to yum systems
-- include: yum_systems.yml
+- name: configure things specific to yum systems
+  include: yum_systems.yml
   when: ansible_pkg_mgr == "yum"
 
-# configure things specific to apt systems
-- include: apt_systems.yml
+- name: configure things specific to apt systems
+  include: apt_systems.yml
   when: ansible_pkg_mgr == "apt"
 
-# configure centos specific things
-- include: setup-centos.yml
+- name: configure things specific to zypper systems
+  include: zypper_systems.yml
+  when: ansible_pkg_mgr == "zypper"
+
+- name: configure centos specific things
+  include: setup-centos.yml
   when: ansible_distribution == "CentOS"
 
-# configure red hat specific things
-- include: setup-redhat.yml
+- name: configure red hat specific things
+  include: setup-redhat.yml
   when: ansible_distribution == 'RedHat'
 
-# configure fedora specific things
-- include: setup-fedora.yml
+- name: configure fedora specific things
+  include: setup-fedora.yml
   when: ansible_distribution == "Fedora"
 
-# configure ubuntu specific things
-- include: setup-ubuntu.yml
+- name: configure ubuntu specific things
+  include: setup-ubuntu.yml
   when: ansible_distribution == "Ubuntu"
 
-- include: setup-ubuntu-non-aarch64.yml
+- name: configure ubuntu non-aarch64 specific things
+  include: setup-ubuntu-non-aarch64.yml
   when:
     ansible_distribution == "Ubuntu" and
     ansible_architecture != "aarch64"
 
-# configure debian specific things
-- include: setup-debian.yml
+- name: configure debian specific things
+  include: setup-debian.yml
   when: ansible_distribution == "Debian"
 
 # Install and configure cpan and Amazon::S3
@@ -81,13 +87,13 @@
   tags:
     - ntp-client
 
-# configure pip to use our mirror
-- include: pip.yml
+- name: configure pip to use our mirror
+  include: pip.yml
   tags:
     - pip
 
-# include resolv.conf setup
-- include: resolvconf.yml
+- name: include resolv.conf setup
+  include: resolvconf.yml
   tags:
     - resolvconf
 

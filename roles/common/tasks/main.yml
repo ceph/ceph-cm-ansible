@@ -22,6 +22,9 @@
 - include: apt_systems.yml
   when: ansible_pkg_mgr == "apt"
 
+- include: zypper_systems.yml
+  when: ansible_pkg_mgr == "zypper"
+
 # configure Kerberos
 - include: kerberos.yml
   tags:
@@ -35,6 +38,7 @@
 
 # configure nagios
 - include: nagios.yml
+  when: ansible_pkg_mgr != "zypper"
   tags:
     - nagios
 

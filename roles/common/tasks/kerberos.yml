@@ -24,6 +24,12 @@
     state: present
   when: ansible_os_family == 'Debian'
 
+- name: Install Kerberos Packages (OpenSUSE Leap)
+  zypper:
+    name: krb5-client
+    state: present
+  when: ansible_os_family == 'Suse'
+
 - name: Add krb5 config file
   template:
     src: 'krb5.conf'

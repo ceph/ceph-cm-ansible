@@ -1,0 +1,15 @@
+---
+
+- name: Get the current timezone
+  shell: 'timedatectl | grep -E "Time ?zone" | sed -e "s/.*: \(.*\) (.*/\1/"'
+  register: current_tz
+  changed_when: false
+  tags:
+    - timezone
+
+- name: Set the timezone
+  command: timedatectl set-timezone {{ timezone }}
+  when: current_tz.stdout|default("") != timezone
+  tags:
+    - timezone
+

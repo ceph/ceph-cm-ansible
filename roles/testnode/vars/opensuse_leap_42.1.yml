@@ -1,0 +1,76 @@
+---
+# vars specific to OpenSuse Leap 42.1
+packages_to_remove:
+  - gettext-runtime-mini
+
+packages:
+  - lsb-release
+  - sysstat
+  - gdb
+  - make
+  - git
+  - python-configobj
+  # for running ceph
+  - libedit0
+  - libboost_thread1_54_0
+  - xfsprogs
+  - gptfdisk
+  - parted
+  - libgcrypt20
+  - fuse
+  - fuse-devel
+  - libfuse2
+  ###
+  # for ceph-deploy
+  - python-virtualenv
+  ###
+  - openssl
+  - libuuid1
+  - btrfsprogs
+  # used by workunits
+  - attr
+  - valgrind
+  - python-nose
+  - ant
+  - iozone
+  ###
+  # used by the xfstests tasks
+  - libtool
+  - automake
+  - gettext-runtime
+  - libuuid-devel
+  - libacl-devel
+  - bc
+  - xfsdump
+  - xfsprogs-devel
+  ###
+  # for blktrace and seekwatcher
+  - blktrace
+  - python-numpy
+  - python-matplotlib
+  ###
+  # for qemu
+  - qemu-kvm
+  - usbredir
+  - genisoimage
+  ###
+  # for apache and rgw
+  - apache2
+  - apache2-devel
+  - apache2-utils
+  - apache2-mod_fastcgi
+  ###
+  - libevent-devel
+  # for pretty-printing xml
+  - perl-XML-Twig
+  # for java bindings, hadoop, etc.
+  - java-1_8_0-openjdk-devel
+  - junit
+  # for disk/etc monitoring
+  - smartmontools
+  # for nfs
+  - nfs-kernel-server
+  # for xfstests
+  - ncurses-devel
+
+
