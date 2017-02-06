@@ -15,6 +15,16 @@
   tags:
     - packages
 
+# See https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=806556.
+# ifdown/ifup would often leave ntpd not running on xenial.
+# We do our own ntpdate dance in teuthology's clock task.
+- name: Remove racy /etc/network/if-up.d/ntpdate on xenial
+  file:
+    name: /etc/network/if-up.d/ntpdate
+    state: absent
+  when: ansible_distribution == "Ubuntu" and
+        ansible_distribution_major_version == '16'
+
 - name: Create the ntp.conf file.
   template:
     src: ntp.conf
