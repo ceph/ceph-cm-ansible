@@ -1,0 +1,13 @@
+---
+# local_action in the task after this causes 'ansible_host' to change to 'localhost'
+# we set a temporary variable here to search for in the local_action task
+- set_fact:
+    target_host: "{{ ansible_host }}"
+
+- name: Check for host-specific playbooks
+  local_action: "stat path=roles/public_facing/tasks/{{ target_host }}.yml"
+  register: host_playbook
+
+- name: Include any host-specific playbooks if present
+  include: "{{ ansible_host }}.yml"
+  when: host_playbook.stat.exists
