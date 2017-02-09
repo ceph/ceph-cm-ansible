@@ -5,6 +5,7 @@ packages:
   - wget
   - mlocate
   - git
+  - redhat-lsb-core
   ## bind-specific packages
   - bind
   - bind-utils
