@@ -1,0 +1,9 @@
+---
+## Any of these vars can be overridden in inventory host_vars.
+
+# Don't use ufw by default.
+use_ufw: false
+
+# Default to allow SSH traffic.
+ufw_allowed_ports:
+  - "22"

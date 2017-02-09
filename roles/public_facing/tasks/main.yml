@@ -1,4 +1,15 @@
 ---
+## Common tasks
+
+# Most of our public-facing hosts are running Ubuntu.
+# use_ufw defaults to false but is overridden in inventory host_vars
+- include: ufw.yml
+  when: use_ufw == true
+  tags:
+    - always
+
+## Individual host tasks
+
 # local_action in the task after this causes 'ansible_host' to change to 'localhost'
 # we set a temporary variable here to search for in the local_action task
 - set_fact:

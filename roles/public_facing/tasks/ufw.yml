@@ -1,0 +1,56 @@
+---
+- name: Make sure iptables-persistent is not installed
+  apt:
+    name: iptables-persistent
+    state: absent
+
+- name: Install or update ufw
+  apt:
+    name: ufw
+    state: latest
+
+- name: Get current ufw status
+  shell: ufw status | grep 'Status' | cut -d ' ' -f2
+  register: ufw_status
+
+# policy: allow makes sure we can still ssh if ufw is inactive.
+# We revert this at the end of the playbook
+- name: Enable ufw if inactive
+  ufw:
+    state: enabled
+    policy: allow
+  when: ufw_status.stdout == "inactive"
+
+# Instead of deleting all rules and re-opening ports with each playbook run,
+# we'll compare a list of ports we specify should be open with a list of currently open ports.
+- name: Get list of currently allowed ports
+  shell: ufw status | grep 'ALLOW' | grep -v v6 | grep -o '[0-9]*'
+  register: ufw_current_allowed_raw
+  # Don't fail if we don't get any output
+  failed_when: false
+
+- name: Determine ports to disable
+  set_fact:
+    ufw_ports_to_disable: "{{ ufw_current_allowed_raw.stdout_lines | difference(ufw_allowed_ports) }}"
+
+- name: Determine ports to enable
+  set_fact:
+    ufw_ports_to_enable: "{{ ufw_allowed_ports | difference(ufw_current_allowed_raw.stdout_lines) }}"
+
+- name: Disable any open ports that aren't specified in ufw_allowed_ports
+  ufw:
+    rule: allow
+    port: "{{ item }}"
+    delete: yes
+  with_items: "{{ ufw_ports_to_disable }}"
+
+- name: Enable any ports we're missing
+  ufw:
+    rule: allow
+    port: "{{ item }}"
+  with_items: "{{ ufw_ports_to_enable }}"
+
+# ufw_allowed_ports are excluded from the default policy
+- name: Set default policy to deny
+  ufw:
+    policy: deny
