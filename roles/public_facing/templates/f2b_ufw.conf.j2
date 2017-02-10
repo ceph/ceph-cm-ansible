@@ -1,0 +1,11 @@
+#
+# {{ ansible_managed }}
+#
+# Fail2Ban action configuration file for ufw
+
+[Definition]
+actionstart = 
+actionstop = 
+actioncheck = 
+actionban = ufw insert 1 deny from <ip> to any port <port>
+actionunban = ufw delete deny from <ip> to any port <port>

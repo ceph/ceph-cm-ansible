@@ -1,0 +1,20 @@
+#
+# {{ ansible_managed }}
+#
+[{{ item.key }}]
+enabled = {{ item.value.enabled }}
+{% if item.value.maxretry is defined %}
+maxretry = {{ item.value.maxretry }}
+{% endif %}
+{% if item.value.port is defined %}
+port = {{ item.value.port }}
+{% endif %}
+{% if item.value.findtime is defined %}
+findtime = {{ item.value.findtime }}
+{% endif %}
+{% if item.value.logpath is defined %}
+logpath = {{ item.value.logpath }}
+{% endif %}
+{% if item.value.filter is defined %}
+filter = {{ item.value.filter }}
+{% endif %}

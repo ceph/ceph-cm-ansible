@@ -8,6 +8,11 @@
   tags:
     - always
 
+- include: fail2ban.yml
+  tags:
+    - always
+  when: use_fail2ban == true
+
 ## Individual host tasks
 
 # local_action in the task after this causes 'ansible_host' to change to 'localhost'
