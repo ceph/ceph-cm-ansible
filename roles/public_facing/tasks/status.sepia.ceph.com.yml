@@ -1,0 +1,21 @@
+---
+- name: Create /root/checks directory for Cachet checks
+  file:
+    path: "{{ cachet_checks_path }}"
+    state: directory
+
+- name: Clone nagios-eventhandler-cachet to /root/checks dir
+  git:
+    repo: https://github.com/djgalloway/nagios-eventhandler-cachet.git
+    dest: "{{ cachet_checks_path }}/nagios-eventhandler-cachet"
+    update: yes
+
+- name: Put templated Cachet checks in place
+  template:
+    dest: "{{ cachet_checks_path }}/{{ item.dest }}"
+    src: "{{ item.src }}"
+    mode: "{{ item.mode }}"
+  with_items:
+    - { src: 'templates/status.sepia.ceph.com/lab-pings.j2', dest: 'lab-pings.sh', mode: '0755' }
+    - { src: 'templates/status.sepia.ceph.com/openvpn.j2', dest: 'openvpn.sh', mode: '0755' }
+    - { src: 'templates/status.sepia.ceph.com/nagios-eventhandler-cachet.config.j2', dest: 'nagios-eventhandler-cachet/config.inc.php', mode: '0644' }

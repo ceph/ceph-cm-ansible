@@ -1,0 +1,23 @@
+#!/bin/bash
+#
+# {{ ansible_managed }}
+#
+# Pings the Community Cage edge router, measures packet loss, and reports status to cachet using nagios event handler
+#
+# cachet_notify usage: ./cachet_notify $cachet_component $service_name $service_state $service_state_type $service_output
+
+PERCENT=$(ping -c 10 -q {{ community_cage_ip }} | grep -oP '\d+(?=% packet loss)')
+EXEC=/root/checks/nagios-eventhandler-cachet/cachet_notify
+
+if [ "$PERCENT" -eq 0 ] 2> /dev/null
+then
+  $EXEC 'Community Cage Network' 'Packet Loss' OK HARD '0% packet loss' ''
+elif [ "$PERCENT" -ge 1 ] 2> /dev/null && [ "$PERCENT" -le 99 ] 2> /dev/null
+then
+  $EXEC 'Community Cage Network' 'Packet Loss' CRITICAL SOFT "$PERCENT% packet loss" ''
+elif [ "$PERCENT" -eq 100 ] 2> /dev/null
+then
+  $EXEC 'Community Cage Network' 'Packet Loss' CRITICAL HARD "$PERCENT% packet loss" ''
+else
+  $EXEC 'Community Cage Network' 'Packet Loss' CRITICAL HARD "Couldn't measure packet loss.  Unknown error" ''
+fi

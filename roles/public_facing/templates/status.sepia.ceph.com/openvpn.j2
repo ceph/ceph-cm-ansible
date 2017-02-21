@@ -1,0 +1,17 @@
+#!/bin/bash
+#
+# {{ ansible_managed }}
+#
+# Checks whether Sepia openvpn server is up and listening on 1194
+
+EXEC=/root/checks/nagios-eventhandler-cachet/cachet_notify
+
+# Returns 0 if string found
+sudo nmap -sU -n -p 1194 gw.sepia.ceph.com | grep -q '1194/udp open|filtered openvpn'
+
+if [ $? -eq 0 ]
+then
+  $EXEC 'OpenVPN Server' 'OpenVPN' OK HARD 'OK' ''
+else
+  $EXEC 'OpenVPN Server' 'OpenVPN' CRITICAL HARD "gw.sepia.ceph.com is unreachable or port 1194 closed" ''
+fi

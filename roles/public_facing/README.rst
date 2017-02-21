@@ -81,6 +81,14 @@ fail2ban
 --------
 If ``use_fail2ban`` is set to ``true`` this role will install, configure, and enable fail2ban.
 
+To-Do
++++++
+
+status.sepia.ceph.com
+---------------------
+
+ - Install and update Cachet_?
 
 .. _UFW: https://wiki.ubuntu.com/UncomplicatedFirewall
 .. _fail2ban: http://www.fail2ban.org/wiki/index.php/Main_Page
+.. _Cachet: https://cachethq.io
