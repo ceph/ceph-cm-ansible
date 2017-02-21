@@ -13,6 +13,14 @@
     - always
   when: use_fail2ban == true
 
+- name: Disable password authentication
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "^PasswordAuthentication"
+    line: "PasswordAuthentication no"
+    state: present
+  notify: restart sshd
+
 ## Individual host tasks
 
 # local_action in the task after this causes 'ansible_host' to change to 'localhost'
