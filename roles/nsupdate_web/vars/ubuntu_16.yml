@@ -1,0 +1,6 @@
+packages:
+  - git
+  - python3-minimal
+  - virtualenv
+  - dnsutils
+  - nginx
