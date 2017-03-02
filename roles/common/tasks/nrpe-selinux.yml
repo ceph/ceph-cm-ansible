@@ -20,6 +20,15 @@
     state: yes
     persistent: yes
 
+# See http://tracker.ceph.com/issues/19126
+- name: nrpe - Clean up cephlab SELinux policy modules
+  file:
+    path: "/etc/selinux/targeted/active/modules/400/{{ item }}"
+    state: absent
+  with_items:
+    - mod_fastcgi
+    - nrpe
+
 - name: nrpe - Remove SELinux policy package
   command: semodule -r nrpe
   failed_when: false
