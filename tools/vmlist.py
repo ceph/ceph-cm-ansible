@@ -25,6 +25,7 @@ VM_HOSTS = textwrap.dedent('''\
     mira001.front.sepia.ceph.com
     mira003.front.sepia.ceph.com
     mira004.front.sepia.ceph.com
+    mira005.front.sepia.ceph.com
     mira006.front.sepia.ceph.com
     mira007.front.sepia.ceph.com
     mira008.front.sepia.ceph.com
@@ -43,7 +44,6 @@ VM_HOSTS = textwrap.dedent('''\
     mira044.front.sepia.ceph.com
     mira079.front.sepia.ceph.com
     mira081.front.sepia.ceph.com
-    mira091.front.sepia.ceph.com
     mira098.front.sepia.ceph.com
     irvingi01.front.sepia.ceph.com
     irvingi02.front.sepia.ceph.com
@@ -54,7 +54,8 @@ VM_HOSTS = textwrap.dedent('''\
     irvingi07.front.sepia.ceph.com
     irvingi08.front.sepia.ceph.com
     hv01.front.sepia.ceph.com
-    hv02.front.sepia.ceph.com''')
+    hv02.front.sepia.ceph.com
+    hv03.front.sepia.ceph.com''')
 
 NOVACLIENT_VERSION = '2'
 
