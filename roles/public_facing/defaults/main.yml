@@ -1,0 +1,37 @@
+---
+## Any of these vars can be overridden in inventory host_vars.
+
+# Don't use ufw by default.
+use_ufw: false
+
+# Default to allow SSH traffic.
+ufw_allowed_ports:
+  - "22"
+
+# Use fail2ban by default
+use_fail2ban: true
+
+# Defaults for global fail2ban overrides in /etc/fail2ban/jail.local
+# Override in ansible inventory host_vars, group_vars, or some can be
+# overridden by service files in the f2b_services dict.  See README.
+f2b_ignoreip: "127.0.0.1"
+f2b_bantime: "43200" # 12 hours
+f2b_findtime: "900" # 15 minutes
+f2b_maxretry: 5
+
+# Default fail2ban services to block.  This can be overridden in ansible
+# inventory group_vars or host_vars.
+f2b_services:
+  sshd:
+    enabled: "true"
+    port: "22"
+    maxretry: 3
+    findtime: "3600" # 1hr
+    filter: "sshd"
+    logpath: "{{ sshd_logpath }}"
+  sshd-ddos:
+    enabled: "true"
+    port: "22"
+    maxretry: 3
+    filter: "sshd-ddos"
+    logpath: "{{ sshd_logpath }}"

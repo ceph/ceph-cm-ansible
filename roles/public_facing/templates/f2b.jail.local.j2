@@ -1,0 +1,13 @@
+#
+# {{ ansible_managed }}
+#
+
+# These are global overrides of jail.conf
+[DEFAULT]
+ignoreip = {{ f2b_ignoreip }}
+bantime = {{ f2b_bantime }}
+findtime = {{ f2b_findtime }}
+maxretry = {{ f2b_maxretry }}
+{% if f2b_banaction is defined %}
+banaction = {{ f2b_banaction }}
+{% endif %}

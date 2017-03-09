@@ -1,0 +1,69 @@
+---
+- name: Put logrotate config in place
+  template:
+    src: templates/download.ceph.com/logrotate.j2
+    dest: /etc/logrotate.d/download.ceph.com
+
+# Used for pushing upstream builds
+# https://github.com/ceph/ceph-build/blob/master/scripts/sync-push
+- name: Add signer user
+  user:
+    name: signer
+
+# signer_pubkey defined in inventory host_vars
+- name: Update signer user's authorized_keys
+  authorized_key:
+    user: signer
+    state: present
+    key: "{{ signer_pubkey }}"
+
+# Used to rsync download.ceph.com http logs and compile metrics
+# for metrics.ceph.com
+- name: Create Bitergia user
+  user:
+    name: bitergia
+    groups: adm
+
+# bitergia_pubkey defined in inventory host_vars
+- name: Update bitergia user's authorized_keys
+  authorized_key:
+    user: bitergia
+    state: present
+    key: "{{ bitergia_pubkey }}"
+
+- name: Create ~/bin dir for bitergia user
+  file:
+    path: /home/bitergia/bin
+    state: directory
+    owner: bitergia
+    group: bitergia
+
+# Rsync is almost certainly already installed but it's required for the next task
+- name: Make sure rsync is installed
+  apt:
+    name: rsync
+    state: latest
+
+- name: Put rrsync script in place for bitergia user
+  shell: "gunzip /usr/share/doc/rsync/scripts/rrsync.gz --to-stdout > /home/bitergia/bin/rrsync"
+  changed_when: false
+
+- name: Set permissions for bitergia rrsync script
+  file:
+    dest: /home/bitergia/bin/rrsync
+    owner: bitergia
+    group: bitergia
+    mode: 0774
+
+# Updates download.ceph.com/timestamp
+- name: Put make_timestamp script in place
+  template:
+    src: templates/download.ceph.com/make_timestamp.j2
+    dest: /usr/libexec/make_timestamp
+    mode: 0775
+
+- name: Create cron entry for make_timestamp
+  cron:
+    name: "Update download.ceph.com/timestamp"
+    minute: "0"
+    job: "/usr/libexec/make_timestamp"

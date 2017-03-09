@@ -1,0 +1,77 @@
+---
+- name: Install or update fail2ban
+  package:
+    name: fail2ban
+    state: latest
+
+- name: Check if firewalld is running
+  shell: firewall-cmd --state
+  register: firewalld_status
+  # Don't fail if command not found
+  failed_when: false
+
+- name: Set f2b_banaction if using firewalld
+  set_fact:
+    f2b_banaction: "firewallcmd-ipset"
+  when: firewalld_status.stdout == "running"
+
+- name: Check if UFW is running
+  shell: ufw status | grep Status | cut -d ' ' -f2
+  register: ufw_status
+  # Don't fail if command not found
+  failed_when: false
+
+- name: Set f2b_banaction if using UFW
+  set_fact:
+    f2b_banaction: "ufw"
+  when: ufw_status.stdout == "active"
+
+- name: Write /etc/fail2ban/action.d/ufw.conf if it's missing
+  template:
+    src: f2b_ufw.conf.j2
+    dest: /etc/fail2ban/action.d/ufw.conf
+  when: use_ufw == true
+
+# Any parameters defined in this file overwrite the package-provided jail.conf
+- name: Write global fail2ban defaults
+  template:
+    src: templates/f2b.jail.local.j2
+    dest: /etc/fail2ban/jail.local
+  notify: restart fail2ban
+
+# sshd_logpath is used in the f2b_services dictionary.  fail2ban doesn't know
+# where ssh logs are for services other than sshd so sshd-ddos, for example
+# needs to be told where to look.  For other services (e.g., nginx), the logpath
+# can be set directly in the dict.
+- name: Set sshd_logpath for CentOS/RHEL
+  set_fact:
+    sshd_logpath: "/var/log/messages"
+  when: ansible_os_family == "RedHat"
+
+- name: Set sshd_logpath for Ubuntu
+  set_fact:
+    sshd_logpath: "/var/log/auth.log"
+  when: ansible_os_family == "Debian"
+
+# This makes sure there are no old or malformed service conf files.
+# We'll rewrite them in the next task.
+- name: Clean up local service conf files
+  shell: rm -f /etc/fail2ban/jail.d/*.local
+
+- name: Write fail2ban service conf files
+  template:
+    src: templates/f2b.service.j2
+    dest: "/etc/fail2ban/jail.d/{{ item.key }}.local"
+  with_dict: "{{ f2b_services }}"
+  notify: reload fail2ban
+
+- name: Clean up local filter conf files
+  shell: rm -f /etc/fail2ban/filter.d/*.local
+
+- name: Write fail2ban filter conf files
+  template:
+    src: templates/f2b.filter.j2
+    dest: "/etc/fail2ban/filter.d/{{ item.key }}.local"
+  with_dict: "{{ f2b_filters }}"
+  when: f2b_filters is defined
+  notify: reload fail2ban

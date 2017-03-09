@@ -1,0 +1,5 @@
+---
+- hosts: public_facing
+  roles:
+    - public_facing
+  become: true
