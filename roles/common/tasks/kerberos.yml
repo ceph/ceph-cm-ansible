@@ -7,7 +7,11 @@
     state: present
   when: ansible_os_family == 'RedHat'
 
-- name: Update apt cache.
+# See http://tracker.ceph.com/issues/15439
+- name: Clean apt cache
+  command: apt-get clean
+
+- name: Update apt cache
   apt:
     update_cache: yes
   # Register and retry to work around transient http issues
