@@ -10,6 +10,7 @@
 # See http://tracker.ceph.com/issues/15439
 - name: Clean apt cache
   command: apt-get clean
+  when: ansible_os_family == 'Debian'
 
 - name: Update apt cache
   apt:
