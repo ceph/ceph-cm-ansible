@@ -10,20 +10,6 @@
   register: transaction_cleanup
   changed_when: "'Cleaning up' in transaction_cleanup.stdout"
 
-- name: Check if ceph-debuginfo is installed
-  command: rpm -q ceph-debuginfo
-  ignore_errors: yes
-  changed_when: false
-  register: bz1234967
-  tags:
-    - remove-ceph
-
-- name: Work around https://bugzilla.redhat.com/show_bug.cgi?id=1234967
-  command: rpm -e ceph-debuginfo
-  when: bz1234967 is defined and bz1234967.rc == 0
-  tags:
-    - remove-ceph
-
 - name: Ensure ceph packages are not present.
   yum:
     name: "{{ item }}"
