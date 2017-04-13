@@ -38,3 +38,39 @@
     - smart.sh
     - raid.pl
     - diskusage.pl
+
+- name: Check for NVMe devices
+  shell: "cat /proc/partitions | grep -q nvme"
+  register: found_nvme
+  failed_when: false
+  changed_when: false
+
+- name: Install dependencies to clone and build nvme-cli
+  package:
+    name: "{{ item }}"
+    state: installed
+  when: found_nvme.rc == 0
+  with_items:
+    - git
+    - gcc
+
+# The upstream version is significantly newer than the packages provided
+# in CentOS and Xenial repos
+- name: Clone or update nvme-cli when NVMe devices detected
+  git:
+    repo: "https://github.com/linux-nvme/nvme-cli.git"
+    dest: "/usr/libexec/nvme-cli"
+    update: yes
+    force: yes
+  register: nvme_cli_git
+  when: found_nvme.rc == 0
+
+- name: Check for nvme-cli executable
+  stat:
+    path: "/usr/libexec/nvme-cli/nvme"
+  register: nvme_executable
+
+- name: Compile or recompile nvme-cli if needed
+  make:
+    chdir: "/usr/libexec/nvme-cli"
+  when: nvme_cli_git|changed or nvme_executable.stat.exists == false
