@@ -143,7 +143,8 @@ areca_smart ()
         messages+=("Drive $slot $dl has $reallocated reallocated sectors")
         failed=true
         # A small number of reallocated sectors is OK
-        if [ "$reallocated" -le 5 ]
+	# Don't set rc to WARN if we were already CRIT from previous drive
+        if [ "$reallocated" -le 5 ] && [ "$rc" != 2 ]
         then
           rc=1 # Warn if <= 5
         else
@@ -245,7 +246,8 @@ normal_smart ()
         messages+=("Drive $l has $reallocated reallocated sectors")
         failed=true
         # A small number of reallocated sectors is OK
-        if [ "$reallocated" -le 5 ]
+	# Don't set rc to WARN if we were already CRIT from previous drive
+        if [ "$reallocated" -le 5 ] && [ "$rc" != 2 ]
         then
           rc=1 # Warn if <= 5
         else
