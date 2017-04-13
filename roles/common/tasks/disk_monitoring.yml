@@ -18,6 +18,7 @@
   with_items:
     - megacli
     - cli64
+    - nvme
 
 - name: Create /usr/libexec.
   file:
