@@ -60,6 +60,9 @@
   command: subscription-manager unregister
   when: ansible_distribution_version not in rhsm_release_list.stdout_lines
   register: unregistered_beta_distro
+  until: unregistered_beta_distro|success
+  retries: 5
+  delay: 10
 
 # Setting rhsm_registered back to false allows the rest of the playbook
 # (except beta_repos.yml) to be skipped
