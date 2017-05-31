@@ -19,6 +19,10 @@ packages:
   # for building xfstests #18067
   - libtool-bin
 
+packages_to_upgrade:
+  # http://tracker.ceph.com/issues/13522#note-51
+  - libgoogle-perftools4
+
 non_aarch64_packages:
   - libgoogle-perftools4
   - iozone3
