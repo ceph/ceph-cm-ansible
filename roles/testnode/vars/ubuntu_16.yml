@@ -1,9 +1,7 @@
 ---
-# This is temporarily disabled because of:
-# http://tracker.ceph.com/issues/13572
-#apt_repos:
-#  # blkin libraries, only trusty has new enough lttng for these
-#  - "deb [arch=amd64] http://{{ mirror_host }}/blkin/ trusty main"
+apt_repos:
+  # http://tracker.ceph.com/issues/18126
+  - "deb [trusted=yes] https://chacra.ceph.com/r/valgrind/latest/HEAD/ubuntu/xenial/flavors/default/ xenial main"
 
 packages:
   - libboost-thread1.58.0
@@ -22,6 +20,8 @@ packages:
 packages_to_upgrade:
   # http://tracker.ceph.com/issues/13522#note-51
   - libgoogle-perftools4
+  # http://tracker.ceph.com/issues/18126#note-11
+  - valgrind
 
 non_aarch64_packages:
   - libgoogle-perftools4
