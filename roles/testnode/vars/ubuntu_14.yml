@@ -1,4 +1,8 @@
 ---
+apt_repos:
+  # mod_fastcgi for radosgw
+  - "deb http://gitbuilder.ceph.com/libapache-mod-fastcgi-deb-trusty-x86_64-basic/ref/master/ trusty main"
+
 packages:
   - libboost-thread1.54.0
   - mpich
