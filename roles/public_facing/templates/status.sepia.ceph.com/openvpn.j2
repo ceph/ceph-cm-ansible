@@ -7,11 +7,17 @@
 EXEC=/root/checks/nagios-eventhandler-cachet/cachet_notify
 
 # Returns 0 if string found
-sudo nmap -sU -n -p 1194 gw.sepia.ceph.com | grep -q '1194/udp open|filtered openvpn'
+sudo nmap --max-retries 3 --host-timeout 5s -sU -n -p 1194 gw.sepia.ceph.com | grep -q '1194/udp open|filtered openvpn'
 
-if [ $? -eq 0 ]
+if [ $? -ne 0 ]
 then
-  $EXEC 'OpenVPN Server' 'OpenVPN' OK HARD 'OK' ''
+  # If nmap didn't return 0, check if we're having overall network issues
+  ping -c 1 -q 8.8.8.8
+  # If we can ping Google DNS but didn't get expected nmap output, alert
+  if [ $? -eq 0 ]
+  then
+    $EXEC 'OpenVPN Server' 'OpenVPN' CRITICAL HARD "gw.sepia.ceph.com is unreachable or port 1194 closed" ''
+  fi
 else
-  $EXEC 'OpenVPN Server' 'OpenVPN' CRITICAL HARD "gw.sepia.ceph.com is unreachable or port 1194 closed" ''
+  $EXEC 'OpenVPN Server' 'OpenVPN' OK HARD 'OK' ''
 fi
