@@ -1,20 +1,4 @@
 ---
-- name: Cron entry for letsencrypt cert renewal
-  cron:
-    name: "Renew letsencrypt certificate"
-    minute: "0"
-    hour: "0"
-    day: "1,15"
-    job: "/usr/bin/letsencrypt renew >> /var/log/letsencrypt.log"
-
-- name: Cron entry for reloading nginx
-  cron:
-    name: "Reload nginx to keep SSL cert updated"
-    minute: "5"
-    hour: "0"
-    day: "1,15"
-    job: "/bin/systemctl reload nginx"
-
 # Wordpress has its own cron system that only runs queued jobs when the site
 # is visited.  We want certain jobs to run regardless of page visits.
 # 5 minutes was used because that's the most frequent any job is queued.
@@ -24,3 +8,5 @@
     name: "Call wp-cron.php to run Wordpress cronjobs"
     minute: "*/5"
     job: "/usr/bin/wget -q -O - http://ceph.com/wp-cron.php?doing_wp_cron"
+
+- include: letsencrypt_nginx.yml
