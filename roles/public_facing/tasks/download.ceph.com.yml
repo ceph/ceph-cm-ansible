@@ -68,30 +68,4 @@
     minute: "0"
     job: "/usr/libexec/make_timestamp"
 
-- name: Cron entry for letsencrypt cert renewal
-  cron:
-    name: "Renew letsencrypt certificate"
-    minute: "0"
-    hour: "0"
-    day: "1,15"
-    job: "/usr/bin/letsencrypt renew >> /var/log/letsencrypt.log && service nginx reload"
-
-# Get letsencrypt authority server IPv4 address
-- local_action: shell dig -4 +short acme-v01.api.letsencrypt.org | tail -n 1
-  register: letsencrypt_ipv4_address
-
-# This task really only needs to be run the first time download.ceph.com is set up.
-# An entry matching *letsencrypt* in /etc/hosts is required for the cronjob in the next task however.
-- name: Create entry for letsencrypt authority server in /etc/hosts
-  lineinfile:
-    path: /etc/hosts
-    regexp: '(.*)letsencrypt(.*)'
-    line: '{{ letsencrypt_ipv4_address.stdout }}    acme-v01.api.letsencrypt.org'
-    state: present
-
-# 'letsencrypt renew' fails because it can't reach the letsencrypt authority server using IPv6
-- name: Create cron entry to force IPv4 connectivity to letsencrypt authority server
-  cron:
-    name: "Forces letsencrypt to use IPv4 when accessing acme-v01.api.letsencrypt.org"
-    hour: "0"
-    job: "IP=$(dig -4 +short acme-v01.api.letsencrypt.org | tail -n 1) && sed -i \"s/.*letsencrypt.*/$IP\tacme-v01.api.letsencrypt.org/g\" /etc/hosts"
+- include: letsencrypt_nginx.yml
