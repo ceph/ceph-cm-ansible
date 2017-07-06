@@ -10,6 +10,16 @@
   with_items: "{{ ansible_mounts }}"
   when: item.mount == '/'
 
+- name: Compile list of non-root partitions
+  shell: "lsblk --list --noheadings | grep part | grep -v {{ root_disk|regex_replace('/dev/', '') }} | awk '{ print $1 }'"
+  register: non_root_partitions
+
+## http://tracker.ceph.com/issues/20533
+- name: Wipe filesystems on non-root partitions
+  shell: "wipefs --force --all /dev/{{ item }}"
+  with_items: "{{ non_root_partitions.stdout_lines }}"
+  when: non_root_partitions|length > 0
+
 - name: Zap all non-root disks
   command: sgdisk --zap-all "/dev/{{ item.key }}"
   with_dict: "{{ ansible_devices }}"
