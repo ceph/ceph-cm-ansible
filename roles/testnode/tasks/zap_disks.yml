@@ -20,7 +20,8 @@
   with_items: "{{ non_root_partitions.stdout_lines }}"
   when: non_root_partitions|length > 0
 
+## See https://github.com/ceph/ceph-ansible/issues/759#issue-153248281
 - name: Zap all non-root disks
-  command: sgdisk --zap-all "/dev/{{ item.key }}"
+  shell: "sgdisk --zap-all /dev/{{ item.key }} || sgdisk --zap-all /dev/{{ item.key }}"
   with_dict: "{{ ansible_devices }}"
   when: item.key not in root_disk
