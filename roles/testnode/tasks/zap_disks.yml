@@ -15,8 +15,9 @@
   register: non_root_partitions
 
 ## http://tracker.ceph.com/issues/20533
+## Trusty version of wipefs lacks --force option
 - name: Wipe filesystems on non-root partitions
-  shell: "wipefs --force --all /dev/{{ item }}"
+  shell: "wipefs --force --all /dev/{{ item }} || wipefs --all /dev/{{ item }}"
   with_items: "{{ non_root_partitions.stdout_lines }}"
   when: non_root_partitions|length > 0
 
