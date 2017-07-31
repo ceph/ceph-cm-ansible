@@ -97,6 +97,24 @@
   tags:
     - resolvconf
 
+# http://tracker.ceph.com/issues/20623
+- name: List any leftover Ceph artifacts from previous jobs
+  shell: 'find {{ item }} -name "*ceph*"'
+  with_items:
+    - /var/run/
+    - /etc/systemd/system/
+    - /etc/ceph
+    - /var/log/
+  register: ceph_test_artifacts
+  changed_when: ceph_test_artifacts.stdout != ""
+  failed_when: ceph_test_artifacts.rc != 0 and "No such file or directory" not in ceph_test_artifacts.stderr
+
+- name: Delete any leftover Ceph artifacts from previous jobs
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items: "{{ ceph_test_artifacts.results|map(attribute='stdout_lines')|list }}"
+
 # Touch a file to indicate we are done. This is something chef did;
 # teuthology.task.internal.vm_setup() expects it.
 - name: Touch /ceph-qa-ready
