@@ -23,6 +23,8 @@ failingdrives=0
 unknownmsg="Unknown error"
 # Return code for nagios (Default to SUCCESS)
 rc=0
+# Location of nvme-cli executable
+nvmecli="/usr/sbin/nvme"
 # Array of messages indicating drive health.  Output after nagios status.
 declare -a messages
 
@@ -41,6 +43,11 @@ main ()
   else
     echo "ERROR - Could not determine if RAID present"
     exit 3
+  fi
+
+  if [ "$nvme" = true ]
+  then
+    nvme_smart
   fi
 
   ## Return UNKNOWN if no drives found
@@ -103,6 +110,17 @@ preflight ()
     echo "yum/apt-get install smartmontools"
     exit 3
   fi
+
+  # Check for nvme devices and nvme-cli executable
+  if cat /proc/partitions | grep -q nvme
+  then
+    nvme=true
+    if ! [ -x "$nvmecli" ]
+    then
+      echo "ERROR - NVMe Device detected but no nvme-cli executable"
+      exit 3
+    fi
+  fi
 }
 
 # Gather smart data for drives behind Areca RAID controller
@@ -143,7 +161,8 @@ areca_smart ()
         messages+=("Drive $slot $dl has $reallocated reallocated sectors")
         failed=true
         # A small number of reallocated sectors is OK
-        if [ "$reallocated" -le 5 ]
+	# Don't set rc to WARN if we were already CRIT from previous drive
+        if [ "$reallocated" -le 5 ] && [ "$rc" != 2 ]
         then
           rc=1 # Warn if <= 5
         else
@@ -245,7 +264,8 @@ normal_smart ()
         messages+=("Drive $l has $reallocated reallocated sectors")
         failed=true
         # A small number of reallocated sectors is OK
-        if [ "$reallocated" -le 5 ]
+	# Don't set rc to WARN if we were already CRIT from previous drive
+        if [ "$reallocated" -le 5 ] && [ "$rc" != 2 ]
         then
           rc=1 # Warn if <= 5
         else
@@ -279,6 +299,73 @@ normal_smart ()
       rc=3
     fi
     # Make sure drives with multiple types of bad sectors only get counted once
+    if [ "$failed" = true ]
+    then
+      let "failingdrives+=1"
+    fi
+  done
+}
+
+nvme_smart ()
+{
+  # Loop through NVMe devices
+  for nvmedisk in $(sudo $nvmecli list | grep nvme | awk '{ print $1 }')
+  do
+    # Include NVMe devices in overall drive count
+    let "numdrives+=1"
+    # Clear output variable from any previous disk checks
+    output=""
+    output=$(sudo $nvmecli smart-log $nvmedisk | \
+             grep -E "^"critical_warning"|^"percentage_used"|^"media_errors"|^"num_err_log_entries"" \
+             | awk '{ print $NF }' | sed 's/%//' | tr '\n' ' ')
+    outputcount=$(echo $output | wc -w)
+    # Only continue if we received 4 SMART data points
+    if [ "$outputcount" = "4" ]
+    then
+      read critical_warning percentage_used media_errors num_err_log_entries <<< $output
+      # Check for critical warnings
+      if [ "$critical_warning" != "0" ]
+      then
+        messages+=("$nvmedrive indicates there is a critical warning")
+        failed=true
+        rc=1
+      fi
+      # Alert if >= 90% of manufacturer predicted life consumed
+      if [ "$percentage_used" -ge 90 ] && [ "$percentage_used" -lt 100 ]
+      then
+        messages+=("$nvmedisk has estimated $(expr 100 - $percentage_used)% life remaining")
+        failed=true
+        rc=1 # Warn if >= 90 and < 100
+      elif [ "$percentage_used" -ge 100 ]
+      then
+        messages+=("$nvmedisk has consumed $percentage_used% of its estimated life")
+        failed=true
+        rc=2 # Crit if > 100
+      fi
+      # Check for media errors
+      if [ "$media_errors" != "0" ]
+      then
+        messages+=("$nvmedisk indicates there are $media_errors media errors")
+        failed=true
+        rc=2
+      fi
+      # Check for error log entries
+      if [ "$num_err_log_entries" != "0" ]
+      then
+        messages+=("$nvmedisk indicates there are $num_err_log_entries error log entries")
+        failed=true
+        rc=2
+      fi
+    elif [ "$outputcount" != "4" ]
+    then
+      messages+=("$nvmedisk returned $outputcount of 4 expected attributes")
+      unknownmsg="SMART data could not be read for one or more drives"
+      rc=3
+    else
+      messages+=("Error processing data for $nvmedisk")
+      rc=3
+    fi
+    # Make sure NVMe devices with more than one type of error only get counted once
     if [ "$failed" = true ]
     then
       let "failingdrives+=1"
