@@ -4,7 +4,7 @@ Teuthology
 This role is used to manage the main teuthology node in a lab, e.g.
 ``teuthology.front.sepia.ceph.com``.
 
-It currently depends on the ``sudo`` and ``users`` roles. 
+It only depends on the ``common`` role.
 
 It also does the following:
 
@@ -13,6 +13,7 @@ It also does the following:
   scheduling and executing tests, respectively
 - Clone ``teuthology`` repos into ``~/src/teuthology_master`` under those user accounts
 - Run ``teuthology``'s ``bootstrap`` script
+- Manages user accounts and sudo privileges using the ``test_admins`` group_var in the secrets repo
 
 It currently does NOT do these things:
 
