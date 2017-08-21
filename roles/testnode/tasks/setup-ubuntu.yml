@@ -12,6 +12,6 @@
   lineinfile:
     dest: /etc/lvm/lvm.conf
     regexp: "# types ="
-    line: 'types = [ "rbd", 1024 ]'
+    line: 'types = [ "rbd", 16 ]'
     backrefs: yes
     state: present
