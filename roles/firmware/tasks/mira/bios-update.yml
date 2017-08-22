@@ -67,9 +67,9 @@
   when: ansible_pkg_mgr == "yum"
 
 - name: Back up existing BIOS (Ubuntu)
-  shell: "flashrom -p internal:Supermicro:X8SIL --read {{ firmware_update_path }}/bios-update/BIOS.bak"
+  shell: "cd {{ firmware_update_path }}/bios-update && flashrom --programmer internal --read BIOS.bak"
   when: ansible_pkg_mgr == "apt"
 
 - name: Flash new BIOS (Ubuntu)
-  shell: "flashrom -p internal:Supermicro:X8SIL --write {{ firmware_update_path }}/bios-update/new-bios"
+  shell: "flashrom --programmer internal --write {{ firmware_update_path }}/bios-update/new-bios"
   when: ansible_pkg_mgr == "apt"
