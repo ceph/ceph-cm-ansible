@@ -7,11 +7,3 @@
 - include: nfs.yml
   tags:
     - nfs
-
-- name: Edit lvm.conf to support LVM on RBD.
-  lineinfile:
-    dest: /etc/lvm/lvm.conf
-    regexp: "# types ="
-    line: 'types = [ "rbd", 1024 ]'
-    backrefs: yes
-    state: present

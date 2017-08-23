@@ -82,6 +82,10 @@
   tags:
     - cpan
 
+- include: lvm.yml
+  tags:
+    - lvm
+
 # configure ntp
 - include: ntp.yml
   tags:
