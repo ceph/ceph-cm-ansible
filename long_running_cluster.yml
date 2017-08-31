@@ -1,0 +1,12 @@
+---
+- hosts: long_running_cluster
+  tasks:
+    - name: Pull in vars from common role
+      include_vars: "roles/common/vars/{{ ansible_pkg_mgr }}_systems.yml"
+
+- hosts: long_running_cluster
+  become: true
+  roles:
+    - long_running_cluster
+  handlers:
+    - import_tasks: roles/common/handlers/main.yml

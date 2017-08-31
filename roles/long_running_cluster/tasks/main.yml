@@ -1,0 +1,10 @@
+---
+# We only need to install nagios checks on MON nodes
+- name: Check if MON node
+  command: "systemctl status ceph-mon@{{ ansible_hostname }}"
+  ignore_errors: true
+  changed_when: false
+  register: mon_service_status
+
+- import_tasks: nagios.yml
+  when: mon_service_status.rc == 0
