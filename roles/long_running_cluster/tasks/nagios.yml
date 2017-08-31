@@ -25,3 +25,12 @@
     state: present
     create: yes
   notify: restart nagios-nrpe-server
+
+- name: Write nrpe config for ceph cluster capacity
+  lineinfile:
+    dest: /etc/nagios/nrpe_local.cfg
+    regexp: '.*check_ceph_df.*'
+    line: "command[check_ceph_df]={{ nagios_plugins_directory }}/check_ceph_df --name client.nagios -k /etc/ceph/client.nagios.keyring --pool data --warn 90 --critical 95"
+    state: present
+    create: yes
+  notify: restart nagios-nrpe-server
