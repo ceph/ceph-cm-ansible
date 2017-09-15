@@ -44,19 +44,15 @@
     - pcpupstream_module_status is defined
     - pcpupstream_module_status.stat.size == 0
 
-# abrt was just chosen since it's first in the dir and
-# included with the selinux-policy-targeted package.
-- name: Check for empty SELinux module file
-  stat:
-    path: /etc/selinux/targeted/active/modules/100/abrt/lang_ext
+- name: Check for any empty SELinux module files
+  shell: find /etc/selinux/targeted/active/modules/100 -type f -empty -name lang_ext
   register: selinux_module_status
 
 # ignore_errors in case the package isn't available or installed.
 # The ansible yum module doesn't appear to have a reinstall option.
 - name: Reinstall selinux-policy-targeted if modules are corrupt
   command: yum -y reinstall selinux-policy-targeted
-  when: selinux_module_status.stat.exists == true and
-        selinux_module_status.stat.size == 0
+  when: selinux_module_status.stdout != ''
   ignore_errors: true
 
 - name: nrpe - Remove SELinux policy package
