@@ -1,11 +1,6 @@
 ---
-- name: Cron entry for letsencrypt cert renewal
-  cron:
-    name: "Renew letsencrypt certificate"
-    minute: "0"
-    hour: "0"
-    day: "1,15"
-    job: "/usr/bin/letsencrypt renew >> /var/log/letsencrypt.log && service nginx reload"
+# NOTE: Initial cert creation is a manual process primarily because we'll hopefully never
+# have to start from scratch again.  This playbook just keeps the existing certs up to date.
 
 # Get letsencrypt authority server IPv4 address
 - local_action: shell dig -4 +short acme-v01.api.letsencrypt.org | tail -n 1
@@ -26,3 +21,48 @@
     name: "Forces letsencrypt to use IPv4 when accessing acme-v01.api.letsencrypt.org"
     hour: "0"
     job: "IP=$(dig -4 +short acme-v01.api.letsencrypt.org | tail -n 1) && sed -i \"s/.*letsencrypt.*/$IP\tacme-v01.api.letsencrypt.org/g\" /etc/hosts"
+
+# letsencrypt doesn't recommend using the Ubuntu-provided letsencrypt package
+# https://github.com/certbot/certbot/issues/3538
+# They do recommend using certbot from their PPA for Xenial
+# https://certbot.eff.org/#ubuntuxenial-nginx
+
+- name: install software-properties-common
+  apt:
+    name: software-properties-common
+    state: latest
+    update_cache: yes
+
+- name: add certbot PPA
+  apt_repository:
+    repo: "ppa:certbot/certbot"
+
+- name: install certbot
+  apt:
+    name: python-certbot-nginx
+    state: latest
+    update_cache: yes
+
+- name: setup a cron to attempt to renew the SSL cert every 15ish days
+  cron:
+    name: "renew letsencrypt cert"
+    minute: "0"
+    hour: "0"
+    day: "1,15"
+    job: "certbot renew --renew-hook='systemctl reload nginx'"
+
+# This cronjob would attempt to renew the cert twice a day but doesn't have our required --renew-hook
+- name: make sure certbot's cronbjob is not present
+  file:
+    path: /etc/cron.d/certbot
+    state: absent
+
+# Same thing here.  Let me automate how I wanna automate plz.
+- name: make sure certbot's systemd services are disabled
+  service:
+    name: "{{ item }}"
+    state: stopped
+    enabled: no
+  with_items:
+    - "certbot.service"
+    - "certbot.timer"
