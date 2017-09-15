@@ -20,7 +20,8 @@
     state: yes
     persistent: yes
 
-# See http://tracker.ceph.com/issues/19126 for details on next 3 tasks
+# See http://tracker.ceph.com/issues/19126 and 
+# http://tracker.ceph.com/issues/21403 for details on next 5 tasks
 - name: nrpe - Clean up cephlab SELinux policy modules
   file:
     path: "/etc/selinux/targeted/active/modules/400/{{ item }}"
@@ -28,6 +29,20 @@
   with_items:
     - mod_fastcgi
     - nrpe
+
+# We don't remove the pcpupstream module in the previous task because the
+# pcp role gets run before common so we have to check it individually
+- name: Check for corrupt pcpupstream SELinux policy module
+  stat:
+    path: /etc/selinux/targeted/active/modules/400/pcpupstream/lang_ext
+  register: pcpupstream_module_status
+
+- name: Reinstall pcp-selinux if pcpupstream module is corrupt
+  shell: yum -y remove pcp-selinux && yum -y install pcp-selinux
+  ignore_errors: true
+  when:
+    - pcpupstream_module_status is defined
+    - pcpupstream_module_status.stat.size == 0
 
 # abrt was just chosen since it's first in the dir and
 # included with the selinux-policy-targeted package.
