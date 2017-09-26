@@ -16,5 +16,6 @@ libselinux-python
 libsemanage-python
 policycoreutils-python
 selinux-policy-targeted
+ntp
 ## For disk partitioning
 gdisk
