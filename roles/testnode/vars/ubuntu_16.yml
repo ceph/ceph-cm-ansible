@@ -2,6 +2,9 @@
 apt_repos:
   # http://tracker.ceph.com/issues/18126
   - "deb [trusted=yes] https://chacra.ceph.com/r/valgrind/latest/HEAD/ubuntu/xenial/flavors/default/ xenial main"
+  # http://tracker.ceph.com/issues/21574
+  - "deb [trusted=yes] https://chacra.ceph.com/r/python-openssl/latest/HEAD/ubuntu/xenial/flavors/default/ xenial main"
+  - "deb [trusted=yes] https://chacra.ceph.com/r/python-cryptography/latest/HEAD/ubuntu/xenial/flavors/default/ xenial main"
 
 packages:
   - libboost-thread1.58.0
