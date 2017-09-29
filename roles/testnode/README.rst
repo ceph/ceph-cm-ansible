@@ -162,6 +162,31 @@ The latter is only done if ``lab_domain`` is defined::
 
     lab_domain: ''
 
+A dictionary of drives/devices you want to partition.  ``scratch_devs`` is not required.  All other values are self-explanatory given this example::
+
+    # Example:
+    drives_to_partition:
+      nvme0n1:
+        drive: "/dev/nvme0n1"
+        unit: "GB"
+        sizes:
+          - "0 95"
+          - "95 190"
+          - "190 285"
+          - "285 380"
+          - "380 400"
+        scratch_devs:
+          - p1
+          - p2
+          - p3
+          - p4
+      sdb:
+        drive: "/dev/sdb"
+        unit: "%"
+        sizes:
+          - "0 50"
+          - "50 100"
+
 Tags
 ++++
 
