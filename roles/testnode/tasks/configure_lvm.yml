@@ -1,0 +1,34 @@
+---
+- name: "Create volume group(s)"
+  lvg:
+    vg: "{{ item.key }}"
+    pvs: "{{ item.value.pvs }}"
+    state: present
+  with_dict: "{{ volume_groups }}"
+  when: volume_groups is defined
+
+- name: "Create logical volume(s)"
+  lvol:
+    vg: "{{ item.value.vg }}"
+    lv: "{{ item.key }}"
+    size: "{{ item.value.size }}"
+  with_dict: "{{ logical_volumes }}"
+  when: logical_volumes is defined
+
+- name: "Erase /scratch_devs so we know it's accurate"
+  file:
+    path: /scratch_devs
+    state: absent
+
+- name: "Write /scratch_devs"
+  lineinfile:
+    dest: /scratch_devs
+    create: yes
+    owner: root
+    group: root
+    mode: 0644
+    line: "/dev/{{ item.value.vg }}/{{ item.key }}"
+  with_dict: "{{ logical_volumes }}"
+  when:
+    - logical_volumes is defined
+    - item.value.scratch_dev is defined
