@@ -1,19 +1,10 @@
 ---
 # Partition a data drive, like the nvme devices in smithi.  Only included
-# if drive_to_partition is defined, and only changes the drive if it
-# doesn't already have four partitions
-#
-# It might be nice to make this flexible someday and parameterize the
-# number of chunks
-
-- name: "Check if partitioning is needed for {{ drive_to_partition }}"
-  shell: "parted -m {{ drive_to_partition }} print | grep '^[0-9]:' | wc -l"
-  register: partition_count
+# if partition_dict is defined.
 
 - name: Write a new partition table to {{ drive_to_partition }}
   # -s: don't prompt for "are you sure"
   command: "parted -s {{ drive_to_partition }} mktable msdos"
-  when: partition_count.stdout != '4'
 
 - name: "Write partition entries to {{ drive_to_partition }}"
   command: "parted {{ drive_to_partition }} unit '%' mkpart primary {{ item }}"
@@ -22,7 +13,6 @@
     - "25 50"
     - "50 75"
     - "75 100"
-  when: partition_count.stdout != '4'
 
 - name: "Add /scratch_devs for {{ drive_to_partition }} p1"
   lineinfile:
