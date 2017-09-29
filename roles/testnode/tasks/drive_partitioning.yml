@@ -12,7 +12,12 @@
     - "{{ drives_to_partition }}"
     - sizes
 
-- name: "Add /scratch_devs for {{ item.0.device }}"
+- name: "Erase /scratch_devs so we know it's accurate"
+  file:
+    path: /scratch_devs
+    state: absent
+
+- name: "Write /scratch_devs for {{ item.0.device }}"
   lineinfile:
     dest: /scratch_devs
     create: yes
