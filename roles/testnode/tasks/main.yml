@@ -118,7 +118,9 @@
     - /var/log/
   register: ceph_test_artifacts
   changed_when: ceph_test_artifacts.stdout != ""
-  failed_when: ceph_test_artifacts.rc != 0 and "No such file or directory" not in ceph_test_artifacts.stderr
+  failed_when: ceph_test_artifacts.rc != 0 and
+               "No such file or directory" not in ceph_test_artifacts.stderr and
+               "File system loop detected" not in ceph_test_artifacts.stderr
 
 - name: Delete any leftover Ceph artifacts from previous jobs
   file:
