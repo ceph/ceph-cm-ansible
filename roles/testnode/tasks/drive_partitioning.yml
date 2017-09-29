@@ -1,10 +1,9 @@
 ---
 # Partition a data drive, like the nvme devices in smithi.  Only included
-# if partition_dict is defined.
+# if drives_to_partition is defined.
 
-- name: Write a new partition table to {{ drive_to_partition }}
-  # -s: don't prompt for "are you sure"
-  command: "parted -s {{ drive_to_partition }} mktable msdos"
+- name: "Write a new partition table to {{ drives_to_partition.drive }}"
+  command: "parted -s {{ drives_to_partition.drive }} mktable gpt"
 
 - name: "Write partition entries to {{ drive_to_partition }}"
   command: "parted {{ drive_to_partition }} unit '%' mkpart primary {{ item }}"
