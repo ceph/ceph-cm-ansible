@@ -6,3 +6,7 @@
     line: 'types = [ "rbd", 16 ]'
     backrefs: yes
     state: present
+
+- include: configure_lvm.yml
+  when: (logical_volumes is defined) or
+        (volume_groups is defined)

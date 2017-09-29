@@ -26,3 +26,6 @@
   shell: "sgdisk --zap-all /dev/{{ item.key }} || sgdisk --zap-all /dev/{{ item.key }}"
   with_dict: "{{ ansible_devices }}"
   when: item.key not in root_disk
+
+- name: Remove all LVM data
+  shell: "dmsetup remove_all --force"

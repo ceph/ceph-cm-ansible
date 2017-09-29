@@ -187,6 +187,29 @@ A dictionary of drives/devices you want to partition.  ``scratch_devs`` is not r
           - "0 50"
           - "50 100"
 
+A dictionary of volume groups you want created.  ``pvs`` should be a comma-delimited list.  Example::
+
+    volume_groups:
+      vg_nvme:
+        pvs: "/dev/nvme0n1"
+      vg_hdd:
+        pvs: "/dev/sdb,/dev/sdc"
+
+A dictionary of logical volumes you want created.  See Ansible's docs_ on available sizing options.  The ``vg`` value is the volume group you want the logical volume created on.  Define ``scratch_dev`` if you want it added to ``/scratch_devices`` on the testnode::
+
+    logical_volumes:
+      lv_1:
+        vg: vg_nvme
+        size: "25%VG"
+        scratch_dev: true
+      lv_2:
+        vg: vg_nvme
+        size: "75%VG"
+        scratch_dev: true
+      lv_foo:
+        vg: vg_hdd
+        size: "100%VG"
+
 Tags
 ++++
 
@@ -202,7 +225,10 @@ hostname
     Check and set proper fqdn. See, ``roles/testnode/tasks/set_hostname.yml``.
 
 kernel_logging
-    Runs a script that enabled kernel logging to the console on ubuntu.        
+    Runs a script that enabled kernel logging to the console on ubuntu.
+
+lvm
+    Configures logical volumes if dicts are defined in the secrets repo.
 
 nfs
     Install and start nfs.
@@ -241,7 +267,7 @@ user
     Manages the ``teuthology_user`` and ``xfstests_user``.
 
 zap
-    Zap (``sgdizk -Z``) all non-root drives
+    Zap (``sgdizk -Z``) all non-root drives and **all** logical volumes and volume groups
 
 Dependencies
 ++++++++++++
@@ -263,3 +289,4 @@ To Do
 .. _ceph-qa-chef: https://github.com/ceph/ceph-qa-chef
 .. _teuthology: https://github.com/ceph/teuthology
 .. _ceph-qa-suite: https://github.com/ceph/ceph-qa-suite
+.. _docs: https://docs.ansible.com/ansible/latest/lvol_module.html
