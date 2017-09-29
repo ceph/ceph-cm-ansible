@@ -2,27 +2,27 @@
 # Partition a data drive, like the nvme devices in smithi.  Only included
 # if drives_to_partition is defined.
 
-- name: "Write a new partition table to {{ drives_to_partition.drive }}"
-  command: "parted -s {{ drives_to_partition.drive }} mktable gpt"
+- name: "Write a new partition table to {{ item.value.device }}"
+  command: "parted -s {{ item.value.device }} mktable gpt"
+  with_dict: "{{ drives_to_partition }}"
 
-- name: "Write partition entries to {{ drive_to_partition }}"
-  command: "parted {{ drive_to_partition }} unit '%' mkpart primary {{ item }}"
-  with_items:
-    - "0 25"
-    - "25 50"
-    - "50 75"
-    - "75 100"
+- name: "Write partition entries to {{ item.0.device }}"
+  command: "parted {{ item.0.device }} unit '{{ item.0.unit }}' mkpart foo {{ item.1 }}"
+  with_subelements:
+    - "{{ drives_to_partition }}"
+    - sizes
 
-- name: "Add /scratch_devs for {{ drive_to_partition }} p1"
+- name: "Add /scratch_devs for {{ item.0.device }}"
   lineinfile:
     dest: /scratch_devs
     create: yes
     owner: root
     group: root
     mode: 0644
-    line: "{{ drive_to_partition }}{{ item }}"
-  with_items:
-    - p1
-    - p2
-    - p3
-    - p4
+    line: "{{ item.0.device }}{{ item.1 }}"
+  with_subelements:
+    - "{{ drives_to_partition }}"
+    - scratch_devs
+    - flags:
+      # In case you want to partition a drive but not use it as a scratch device
+      skip_missing: True
