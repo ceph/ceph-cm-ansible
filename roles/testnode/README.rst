@@ -213,6 +213,9 @@ ntp-client
 packages
     Install, update and remove packages.
 
+partition
+    Partition any drives/devices if ``drives_to_partition`` is defined in secrets.
+
 pip
     Install and configure pip.
 
@@ -235,7 +238,10 @@ sudoers
     Manage the /etc/sudoers and the nagios suders.d files.
 
 user
-    Manages the ``teuthology_user`` and ``xfstests_user``. 
+    Manages the ``teuthology_user`` and ``xfstests_user``.
+
+zap
+    Zap (``sgdizk -Z``) all non-root drives
 
 Dependencies
 ++++++++++++
