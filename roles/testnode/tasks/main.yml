@@ -34,6 +34,17 @@
   tags:
     - partition
 
+- name: set up LVM
+  include: lvm.yml
+  tags:
+    - lvm
+
+- name: mount /var/lib/ceph to specified partition
+  include: var_lib.yml
+  when: var_lib_partition is defined
+  tags:
+    - varlib
+
 - name: configure ssh
   include: ssh.yml
   tags:
@@ -81,10 +92,6 @@
 - include: cpan.yml
   tags:
     - cpan
-
-- include: lvm.yml
-  tags:
-    - lvm
 
 # configure ntp
 - include: ntp.yml

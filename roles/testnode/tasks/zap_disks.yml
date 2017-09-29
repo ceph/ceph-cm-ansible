@@ -32,6 +32,13 @@
   shell: "lsblk --list --noheadings | grep part | grep -v {{ root_disk|regex_replace('/dev/', '') }} | awk '{ print $1 }'"
   register: non_root_partitions
 
+- name: Unmount any non-root mountpoints
+  mount:
+    path: "{{ item.mount }}"
+    state: unmounted
+  with_items: "{{ ansible_mounts }}"
+  when: item.mount != '/'
+
 ## http://tracker.ceph.com/issues/20533
 ## Trusty version of wipefs lacks --force option
 - name: Wipe filesystems on non-root partitions

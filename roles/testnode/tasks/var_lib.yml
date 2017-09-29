@@ -1,0 +1,21 @@
+---
+# This set of tasks is intended to mount a small NVMe partition to /var/lib/ceph
+# to fix http://tracker.ceph.com/issues/20910
+
+- name: "Create /var/lib/ceph"
+  file:
+    path: "/var/lib/ceph"
+    state: directory
+
+- name: "Create xfs filesystem on {{ var_lib_partition }}"
+  filesystem:
+    dev: "{{ var_lib_partition }}"
+    fstype: xfs
+    force: yes
+
+- name: "Mount {{ var_lib_partition }} to /var/lib/ceph"
+  mount:
+    path: "/var/lib/ceph"
+    src: "{{ var_lib_partition }}"
+    fstype: xfs
+    state: mounted
