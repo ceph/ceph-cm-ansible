@@ -1,8 +1,26 @@
 ---
-- name: Make sure gdisk is installed
-  package:
-    name: gdisk
+# These zap tasks are run on freshly reimaged cobbler_managed machines
+# even when using the -stock profiles.  Therefore, testnode package
+# installation hasn't happened yet so we install zap dependencies here.
+
+- name: Make sure apt dependencies are installed
+  apt:
+    name: "{{ item }}"
     state: present
+  with_items:
+    - gdisk
+    - dmsetup
+  when: ansible_os_family == "Debian"
+
+- name: Make sure rpm dependencies are installed
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - gdisk
+    # for dmsetup
+    - device-mapper
+  when: ansible_os_family == "RedHat"
 
 - name: Set root disk
   set_fact:
