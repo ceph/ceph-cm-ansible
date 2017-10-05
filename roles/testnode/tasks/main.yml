@@ -24,27 +24,6 @@
   tags:
     - hostname
 
-- include: zap_disks.yml
-  tags:
-    - zap
-
-- name: partition drives, if any are requested
-  include: drive_partitioning.yml
-  when: drives_to_partition is defined
-  tags:
-    - partition
-
-- name: set up LVM
-  include: lvm.yml
-  tags:
-    - lvm
-
-- name: mount /var/lib/ceph to specified partition
-  include: var_lib.yml
-  when: var_lib_partition is defined
-  tags:
-    - varlib
-
 - name: configure ssh
   include: ssh.yml
   tags:
@@ -87,6 +66,27 @@
 - name: configure debian specific things
   include: setup-debian.yml
   when: ansible_distribution == "Debian"
+
+- include: zap_disks.yml
+  tags:
+    - zap
+
+- name: partition drives, if any are requested
+  include: drive_partitioning.yml
+  when: drives_to_partition is defined
+  tags:
+    - partition
+
+- name: set up LVM
+  include: lvm.yml
+  tags:
+    - lvm
+
+- name: mount /var/lib/ceph to specified partition
+  include: var_lib.yml
+  when: var_lib_partition is defined
+  tags:
+    - varlib
 
 # Install and configure cpan and Amazon::S3
 - include: cpan.yml
