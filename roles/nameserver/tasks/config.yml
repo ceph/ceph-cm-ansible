@@ -25,3 +25,10 @@
     name: named_write_master_zones
     state: yes
     persistent: yes
+
+# Helps prevent accidental DoS
+- name: Double maximum configured connections
+  sysctl:
+    name: net.nf_conntrack_max
+    value: 131072
+    state: present
