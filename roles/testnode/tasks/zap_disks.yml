@@ -54,3 +54,53 @@
 
 - name: Remove all LVM data
   shell: "dmsetup remove_all --force"
+  register: removed_lvm_data
+  until: "'Unable to remove' not in removed_lvm_data.stderr"
+  retries: 5
+  delay: 1
+  ignore_errors: true
+
+## See http://tracker.ceph.com/issues/21989
+## Following 6 tasks only get run if `dmsetup remove_all` fails
+- name: Check for logical volumes
+  shell: "lvdisplay | grep 'LV Path' | awk '{ print $3 }'"
+  register: lvs_to_remove
+  when: removed_lvm_data|failed
+
+- name: Check for volume groups
+  shell: "vgdisplay | grep 'VG Name' | awk '{ print $3 }'"
+  register: vgs_to_remove
+  when: removed_lvm_data|failed
+
+- name: Check for physical volumes
+  shell: "pvdisplay | grep 'PV Name' | awk '{ print $3 }'"
+  register: pvs_to_remove
+  when: removed_lvm_data|failed
+
+# The lvol ansible module is not used here because the vg name is required and that'd get messy
+- name: Remove logical volumes
+  shell: "lvremove --force {{ item }}"
+  with_items: "{{ lvs_to_remove.stdout_lines }}"
+  when:
+    - removed_lvm_data|failed
+    - lvs_to_remove is defined
+    - lvs_to_remove.stdout_lines|length > 0
+
+- name: Remove volume groups
+  lvg:
+    vg: "{{ item }}"
+    state: absent
+    force: yes
+  with_items: "{{ vgs_to_remove.stdout_lines }}"
+  when:
+    - removed_lvm_data|failed
+    - vgs_to_remove is defined
+    - vgs_to_remove.stdout_lines|length > 0
+
+- name: Remove physical volumes
+  shell: "pvremove --force {{ item }}"
+  with_items: "{{ pvs_to_remove.stdout_lines }}"
+  when:
+    - removed_lvm_data|failed
+    - pvs_to_remove is defined
+    - pvs_to_remove.stdout_lines|length > 0
