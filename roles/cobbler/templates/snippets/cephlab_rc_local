@@ -9,12 +9,44 @@
 #set script = '/etc/rc.local'
 #end if
 
-cat > $script << EOF
+cat > $script <<\EOF
 #!/bin/bash
 # First, redirect stderr and stdout to a logfile
 exec 2> /tmp/rc.local.log
 exec 1>&2
 set -ex
+
+{% if rclocal_nameserver is defined %}
+#raw
+
+myips=$(ip -4 addr | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '127.0.0.1\|127.0.1.1')
+
+if [ -n "$myips" ]; then
+  for ip in $myips; do
+    if timeout 1s ping -I $ip -nq -c1 {{ rclocal_nameserver }} 2>&1 >/dev/null; then
+      newhostname=$(dig +short -x $ip @{{ rclocal_nameserver }} | sed 's/\.com.*/\.com/g')
+        if [ -n "$newhostname" ]; then
+          hostname $newhostname
+          newdomain=$(hostname -d)
+          shorthostname=$(hostname -s)
+          echo $newhostname > /etc/hostname
+          if grep -q $newdomain /etc/hosts; then
+            # Replace
+            sed -i "s/.*$newdomain.*/$ip $newhostname $shorthostname/g" /etc/hosts
+          else
+            # Or add to top of file
+            sed -i '1i'$ip' '$newhostname' '$shorthostname'\' /etc/hosts
+          fi
+        fi
+    # Quit after first IP that can ping our nameserver 
+    # in the extremely unlikely event the testnode has two IPs
+    break
+    fi
+  done
+fi
+
+#end raw
+{% endif %}
 
 # Only run once.
 if [ -e $lockfile ]; then
