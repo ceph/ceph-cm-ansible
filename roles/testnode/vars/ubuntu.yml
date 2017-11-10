@@ -86,6 +86,8 @@ common_packages:
   # nfs
   - nfs-common
   - nfs-kernel-server
+  # for add-apt-repository
+  - software-properties-common
 
 non_aarch64_common_packages:
   - smbios-utils
