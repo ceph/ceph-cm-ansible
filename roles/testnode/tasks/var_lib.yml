@@ -12,10 +12,14 @@
     dev: "{{ var_lib_partition }}"
     fstype: xfs
     force: yes
+    # Don't use a version 5 superblock as it's too new for some kernels
+    opts: "-m crc=0,finobt=0"
 
 - name: "Mount {{ var_lib_partition }} to /var/lib/ceph"
   mount:
     path: "/var/lib/ceph"
     src: "{{ var_lib_partition }}"
     fstype: xfs
+    # Don't fail to boot if the mount fails
+    opts: defaults,nofail
     state: mounted
