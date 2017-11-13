@@ -18,4 +18,6 @@
     path: "/var/lib/ceph"
     src: "{{ var_lib_partition }}"
     fstype: xfs
+    # Don't fail to boot if the mount fails
+    opts: defaults,nofail
     state: mounted
