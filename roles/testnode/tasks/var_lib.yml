@@ -7,13 +7,19 @@
     path: "/var/lib/ceph"
     state: directory
 
+- name: Set xfs_opts on newer OSes
+  set_fact:
+    xfs_opts: "-m crc=0,finobt=0"
+  when: (ansible_distribution | lower == 'ubuntu' and ansible_distribution_major_version|int >= 16) or
+        (ansible_distribution | lower in ['centos', 'rhel'] and ansible_distribution_major_version|int >= 7)
+
 - name: "Create xfs filesystem on {{ var_lib_partition }}"
   filesystem:
     dev: "{{ var_lib_partition }}"
     fstype: xfs
     force: yes
     # Don't use a version 5 superblock as it's too new for some kernels
-    opts: "-m crc=0,finobt=0"
+    opts: "{{ xfs_opts|default('') }}"
 
 - name: "Mount {{ var_lib_partition }} to /var/lib/ceph"
   mount:
