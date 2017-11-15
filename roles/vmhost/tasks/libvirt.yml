@@ -87,7 +87,7 @@
 
 - name: Query for front network definition
   command: virsh net-info front
-  failed_when: false
+  ignore_errors: true
   register: front_net
 
 - name: Send front network definition file
