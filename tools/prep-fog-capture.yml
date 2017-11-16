@@ -1,0 +1,43 @@
+---
+### This standalone playbook can be used to prep a COBBLER-IMAGED testnode
+### so that it can be used to capture an OS image for FOG.
+### This playbook is needed for a couple reasons
+###   - NIC configs get hard coded into the captured FOG images so nodes reimaged by FOG don't come up with network
+
+- hosts:
+    - testnodes
+  become: true
+  tasks:
+
+  # The machine used to *capture* the trusty image gets its MAC addresses hard coded in any subsequent cloned machines
+  - name: Remove udev rules
+    file:
+      path: /etc/udev/rules.d/70-persistent-net.rules
+      state: absent
+
+  # On the off chance that the rc.local script got run and touched this lockfile, remove it
+  - name: Remove /.cephlab_net_configured
+    file:
+      path: /.cephlab_net_configured
+      state: absent
+
+  - name: Get list of ifcfg scripts from host used to capture image
+    shell: "ls -1 /etc/sysconfig/network-scripts/ifcfg-* | grep -v ifcfg-lo"
+    register: ifcfg_scripts
+    when: ansible_os_family == "RedHat"
+    ignore_errors: true
+
+  - name: Delete ifcfg scripts
+    file:
+      path: "{{ item }}"
+      state: absent
+    with_items: "{{ ifcfg_scripts.stdout_lines|default([]) }}"
+    when: ifcfg_scripts is defined
+
+  - name: Remove /var/lib/ceph mountpoint from fstab
+    shell: sed -i '/\/var\/lib\/ceph/d' /etc/fstab
+
+  - name: Unmount /var/lib/ceph
+    mount:
+      path: /var/lib/ceph
+      state: unmounted
