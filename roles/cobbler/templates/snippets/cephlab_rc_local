@@ -18,6 +18,35 @@ set -ex
 
 {% if rclocal_nameserver is defined %}
 #raw
+if [ ! -f /.cephlab_net_configured ]; then
+  nics=$(ls -1 /sys/class/net | grep -v lo)
+
+  for nic in $nics; do
+    # Bring the NIC up so we can detect if a link is present
+    ifconfig $nic up
+    # Sleep for a bit to let the NIC come up
+    sleep 5
+    if ethtool $nic | grep -q "Link detected: yes"; then
+      if command -v apt-get &>/dev/null; then
+        echo -e "auto lo\niface lo inet loopback\n\nauto $nic\niface $nic inet dhcp" > /etc/network/interfaces
+      else
+        #if [ ! -f /etc/sysconfig/network-scripts/ifcfg-$nic ]; then
+          echo -e "DEVICE=$nic\nBOOTPROTO=dhcp\nONBOOT=yes" > /etc/sysconfig/network-scripts/ifcfg-$nic
+        #fi
+      fi
+      # Bounce the NIC so it gets a DHCP address
+      ifdown $nic
+      ifup $nic
+      # Write our lockfile so this only gets run on firstboot
+      touch /.cephlab_net_configured
+      # Quit loop after first NIC is configured
+      break
+    else
+      # Take the NIC back down if it's not connected
+      ifconfig $nic down
+    fi
+  done
+fi
 
 # Don't error out if the `ip` command returns rc 1
 set +e
