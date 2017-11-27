@@ -9,12 +9,91 @@
 #set script = '/etc/rc.local'
 #end if
 
-cat > $script << EOF
+cat > $script <<\EOF
 #!/bin/bash
 # First, redirect stderr and stdout to a logfile
 exec 2> /tmp/rc.local.log
 exec 1>&2
 set -ex
+
+{% if rclocal_nameserver is defined %}
+#raw
+if [ ! -f /.cephlab_net_configured ]; then
+  nics=$(ls -1 /sys/class/net | grep -v lo)
+
+  for nic in $nics; do
+    # Bring the NIC up so we can detect if a link is present
+    ifconfig $nic up
+    # Sleep for a bit to let the NIC come up
+    sleep 5
+    if ethtool $nic | grep -q "Link detected: yes"; then
+      if command -v apt-get &>/dev/null; then
+        echo -e "auto lo\niface lo inet loopback\n\nauto $nic\niface $nic inet dhcp" > /etc/network/interfaces
+      else
+        #if [ ! -f /etc/sysconfig/network-scripts/ifcfg-$nic ]; then
+          echo -e "DEVICE=$nic\nBOOTPROTO=dhcp\nONBOOT=yes" > /etc/sysconfig/network-scripts/ifcfg-$nic
+        #fi
+      fi
+      # Bounce the NIC so it gets a DHCP address
+      ifdown $nic
+      ifup $nic
+      # Write our lockfile so this only gets run on firstboot
+      touch /.cephlab_net_configured
+      # Quit loop after first NIC is configured
+      break
+    else
+      # Take the NIC back down if it's not connected
+      ifconfig $nic down
+    fi
+  done
+fi
+
+# Don't error out if the `ip` command returns rc 1
+set +e
+
+attempts=0
+myips=""
+until [ "$myips" != "" ] || [ $attempts -ge 10 ]; do
+  myips=$(ip -4 addr | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '127.0.0.1\|127.0.1.1')
+  attempts=$[$attempts+1]
+  sleep 1
+done
+
+set -e
+
+if [ -n "$myips" ]; then
+  for ip in $myips; do
+    if timeout 1s ping -I $ip -nq -c1 {{ rclocal_nameserver }} 2>&1 >/dev/null; then
+      newhostname=$(dig +short -x $ip @{{ rclocal_nameserver }} | sed 's/\.com.*/\.com/g')
+        if [ -n "$newhostname" ]; then
+          hostname $newhostname
+          newdomain=$(hostname -d)
+          shorthostname=$(hostname -s)
+          echo $newhostname > /etc/hostname
+          if grep -q $newdomain /etc/hosts; then
+            # Replace
+            sed -i "s/.*$newdomain.*/$ip $newhostname $shorthostname/g" /etc/hosts
+          else
+            # Or add to top of file
+            sed -i '1i'$ip' '$newhostname' '$shorthostname'\' /etc/hosts
+          fi
+        fi
+    # Quit after first IP that can ping our nameserver
+    # in the extremely unlikely event the testnode has two IPs
+    break
+    fi
+  done
+fi
+
+{% endif %}
+
+# Regenerate SSH host keys on boot if needed
+if command -v apt-get &>/dev/null; then
+  if [ ! -f /etc/ssh/ssh_host_rsa_key ]; then
+     dpkg-reconfigure openssh-server
+  fi
+fi
+#end raw
 
 # Only run once.
 if [ -e $lockfile ]; then
