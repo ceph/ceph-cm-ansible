@@ -85,8 +85,15 @@ if [ -n "$myips" ]; then
   done
 fi
 
-#end raw
 {% endif %}
+
+# Regenerate SSH host keys on boot if needed
+if command -v apt-get &>/dev/null; then
+  if [ ! -f /etc/ssh/ssh_host_rsa_key ]; then
+     dpkg-reconfigure openssh-server
+  fi
+fi
+#end raw
 
 # Only run once.
 if [ -e $lockfile ]; then
