@@ -41,3 +41,17 @@
     mount:
       path: /var/lib/ceph
       state: unmounted
+
+  - name: Get list of SSH host keys
+    shell: "ls -1 /etc/ssh/ssh_host_*"
+    register: ssh_host_keys
+    ignore_errors: true
+
+  # Key regeneration is done automatically on CentOS firstboot.
+  # For Ubuntu, we'll add `dpkg-reconfigure openssh-server` to rc.local
+  - name: Delete SSH host keys so they're generated during firstboot on cloned machines
+    file:
+      path: "{{ item }}"
+      state: absent
+    with_items: "{{ ssh_host_keys.stdout_lines|default([]) }}"
+    when: ssh_host_keys is defined
