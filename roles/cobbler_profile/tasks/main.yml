@@ -1,4 +1,4 @@
 ---
-- include: import_distro.yml
+- include_tasks: import_distro.yml
   tags:
     - distros

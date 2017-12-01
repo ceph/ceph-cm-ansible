@@ -1,5 +1,5 @@
 ---
-- include: populate_systems.yml
+- include_tasks: populate_systems.yml
   tags:
     - systems
 

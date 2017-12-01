@@ -4,10 +4,10 @@
   tags:
     - always
 
-- include: yum_systems.yml
+- include_tasks: yum_systems.yml
   when: ansible_pkg_mgr == "yum"
 
-- include: apt_systems.yml
+- include_tasks: apt_systems.yml
   when: ansible_pkg_mgr == "apt"
 
 - name: Create the user

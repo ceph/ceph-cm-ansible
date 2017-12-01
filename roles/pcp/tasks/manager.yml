@@ -72,7 +72,7 @@
     mode: 0644
   register: target_discovery
 
-- include: permissons.yml
+- include_tasks: permissons.yml
 
 # This greatly speeds up polling for hosts
 - name: Set PMCD_CONNECT_TIMEOUT in pmmgr.options

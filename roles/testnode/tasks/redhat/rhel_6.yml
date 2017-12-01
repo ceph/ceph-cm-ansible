@@ -1,5 +1,5 @@
 ---
 - name: Fix broken cloud-init
-  include: ../cloud-init.yml
+  include_tasks: ../cloud-init.yml
 
-- include: ../imitate_ubuntu.yml
+- include_tasks: ../imitate_ubuntu.yml

@@ -1,13 +1,13 @@
 ---
-- include: apt_systems.yml
+- include_tasks: apt_systems.yml
   when: ansible_pkg_mgr == "apt"
 
 # Yum systems support is not implemented yet.
-- include: yum_systems.yml
+- include_tasks: yum_systems.yml
   when: ansible_pkg_mgr == "yum"
 
 # Set up the different users that teuthology uses
-- include: setup_users.yml
+- include_tasks: setup_users.yml
 
 - name: Ship /etc/teuthology.yaml
   template:
@@ -18,6 +18,6 @@
     - config
 
 # Serve logs over HTTP
-- include: setup_log_access.yml
+- include_tasks: setup_log_access.yml
   tags:
     - logs

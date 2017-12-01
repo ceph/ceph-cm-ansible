@@ -41,10 +41,10 @@
   ignore_errors: true
   changed_when: false
 
-- include: import_distro_iso.yml
+- include_tasks: import_distro_iso.yml
   when: profile_type|default('') == 'iso'
 
-- include: import_distro_image.yml
+- include_tasks: import_distro_image.yml
   when: profile_type|default('') == 'image'
 
 # If either the profile already existed or we successfully imported the
@@ -55,17 +55,17 @@
         ((profile is defined and profile.stdout == distro_name) or
          (import is defined and import.rc == 0))
 
-- include: update_kickstart.yml
+- include_tasks: update_kickstart.yml
   when: distro.kickstart is defined and
         distro.kickstart != '' and
         profile_found
 
-- include: update_kernel_options.yml
+- include_tasks: update_kernel_options.yml
   when: distro.kernel_options is defined and
         distro.kernel_options != '' and
         profile_found
 
-- include: update_kernel_options_post.yml
+- include_tasks: update_kernel_options_post.yml
   when: distro.kernel_options_post is defined and
         distro.kernel_options_post != '' and
         profile_found

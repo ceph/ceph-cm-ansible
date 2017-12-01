@@ -1,26 +1,26 @@
 ---
-- include: yum_repos.yml
+- include_tasks: yum_repos.yml
   when: yum_repos|length > 0
   vars:
     repos: "{{ yum_repos }}"
   tags:
     - yum-repos
 
-- include: remove_yum_repos.yml
+- include_tasks: remove_yum_repos.yml
   when: remove_yum_repos|length > 0
   vars:
     repos: "{{ remove_yum_repos }}"
   tags:
     - delete-yum-repos
 
-- include: disable_yum_repos.yml
+- include_tasks: disable_yum_repos.yml
   when: disable_yum_repos|length > 0
   vars:
     repos: "{{ disable_yum_repos }}"
   tags:
     - disable-yum-repos
 
-- include: enable_yum_repos.yml
+- include_tasks: enable_yum_repos.yml
   when: enable_yum_repos|length > 0
   vars:
     repos: "{{ enable_yum_repos }}"

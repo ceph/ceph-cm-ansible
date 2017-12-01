@@ -30,7 +30,7 @@
   when:
     ansible_pkg_mgr == "yum"
 
-- include: apt_update.yml
+- include_tasks: apt_update.yml
 
 - name: Ensure packages are updated (apt)
   shell: "DEBIAN_FRONTEND=noninteractive apt -y install --only-upgrade .*pcp.*"

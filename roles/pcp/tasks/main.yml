@@ -5,34 +5,34 @@
     - always
 
 - name: Set up upstream repo
-  include: repo.yml
+  include_tasks: repo.yml
   when:
     upstream_repo|bool == true
   tags:
     - repo
 
-- include: apt_update.yml
+- include_tasks: apt_update.yml
   when:
     upstream_repo|bool == false
   tags:
     - always
 
 - name: Set up as collector
-  include: collector.yml
+  include_tasks: collector.yml
   when:
     pcp_collector|bool == true
   tags:
     - collector
 
 - name: Set up as manager
-  include: manager.yml
+  include_tasks: manager.yml
   when:
     pcp_manager|bool == true
   tags:
     - manager
 
 - name: Set up web UI
-  include: web.yml
+  include_tasks: web.yml
   when:
     pcp_web|bool == true
   tags:

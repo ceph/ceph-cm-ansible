@@ -6,22 +6,22 @@
     - always
 
 # Install and update system packages
-- include: packages.yml
+- include_tasks: packages.yml
   tags:
     - packages
 
 # Configure networking
-- include: network.yml
+- include_tasks: network.yml
   tags:
     - networking
 
 # Configure firewalld
-- include: firewall.yml
+- include_tasks: firewall.yml
   tags:
     - firewall
 
 # Configure fail2ban
-- include: fail2ban.yml
+- include_tasks: fail2ban.yml
   tags:
     - fail2ban
 
@@ -32,7 +32,7 @@
     mode: 0755
 
 # Manage OpenVPN users list using secrets repo
-- include: users.yml
+- include_tasks: users.yml
   tags:
     - users
 

@@ -4,33 +4,33 @@
   when: ansible_distribution != 'RedHat'
 
 # install puddle
-- include: install.yml
+- include_tasks: install.yml
   tags:
     - install-puddle
 
 # configure NFS
-- include: nfs.yml
+- include_tasks: nfs.yml
 
 # configure puddle
-- include: configure.yml
+- include_tasks: configure.yml
   tags:
     - configure-puddle
 
 # install and configure web server
-- include: nginx.yml
+- include_tasks: nginx.yml
   tags:
     - nginx
 
 # install and configure distill
-- include: distill/install.yml
+- include_tasks: distill/install.yml
   tags:
     - install-distill
 
-- include: distill/configure.yml
+- include_tasks: distill/configure.yml
   tags:
     - configure-distill
 
 # install and configure rsyncd
-- include: rsync.yml
+- include_tasks: rsync.yml
   tags:
     - rsync

@@ -1,4 +1,4 @@
 ---
-- include: packages.yml
+- include_tasks: packages.yml
   vars:
     state: "present"

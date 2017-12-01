@@ -1,5 +1,5 @@
 ---
-- include: imitate_ubuntu.yml
+- include_tasks: imitate_ubuntu.yml
 
 - name: Set grub config.
   template:
