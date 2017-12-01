@@ -1,0 +1,5 @@
+---
+- template:
+    src: csv.j2
+    dest: /tmp/fog_hostfile.csv
+  delegate_to: localhost
