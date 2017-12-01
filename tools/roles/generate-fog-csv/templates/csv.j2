@@ -1,0 +1,3 @@
+{% for host in groups['cobbler_managed'] %}
+"{{ hostvars[host]['mac'] }}","{{ hostvars[host]['inventory_hostname_short'] }}","","","1","0","","","fog","","","","","","","","","{{ hostvars[host]['kernel_options'] }}","","/dev/sda","","","","","0000-00-00 00:00:00","110","","",""
+{% endfor %}

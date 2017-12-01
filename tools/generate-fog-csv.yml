@@ -1,0 +1,9 @@
+---
+# This playbook can be used to generate a CSV file of testnodes
+# that can be imported to the FOG web UI.
+# It outputs a CSV file to /tmp/fog_hostfile.csv
+
+- hosts: localhost
+  roles:
+    - generate-fog-csv
+  become: false
