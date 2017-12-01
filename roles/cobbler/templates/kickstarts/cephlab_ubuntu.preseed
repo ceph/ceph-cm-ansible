@@ -100,7 +100,7 @@ d-i user-setup/encrypt-home boolean false
 # Individual additional packages to install
 #if $os_version == 'precise'
 d-i pkgsel/include string wget ntpdate bash sudo openssh-server
-#else if $os_version == 'xenial'
+#else if int($distro_ver_major) >= 16
 d-i pkgsel/include string u-boot-tools pastebinit initramfs-tools wget linux-firmware ntpdate bash devmem2 fbset sudo openssh-server udev-discover gawk gdisk
 #else
 d-i pkgsel/include string u-boot-tools pastebinit initramfs-tools wget linux-firmware linux-firmware-nonfree ntpdate bash devmem2 fbset sudo openssh-server udev-discover gawk gdisk
