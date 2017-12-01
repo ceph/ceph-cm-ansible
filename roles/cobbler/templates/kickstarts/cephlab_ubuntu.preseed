@@ -115,9 +115,9 @@ d-i pkgsel/upgrade select safe-upgrade
 # "landscape" (manage system with Landscape).
 d-i pkgsel/update-policy select none
 
-# Set GRUB bootdev to 'default' if Xenial or later
+# Set GRUB bootdev to '/dev/sda' if Xenial or later
 #if int($distro_ver_major) >= 16
-d-i grub-installer/bootdev  string default
+d-i grub-installer/bootdev  string /dev/sda
 #end if
 
 # During installations from serial console, the regular virtual consoles
