@@ -1,4 +1,58 @@
 ---
+- name: Set root disk
+  set_fact:
+    root_disk: "{{ item.device|regex_replace('[0-9]+', '')|regex_replace('/dev/', '') }}"
+  with_items: "{{ ansible_mounts }}"
+  when:
+    - item.mount == '/'
+    - quick_lvs_to_create is defined
+
+- name: Combine list of non-root disks
+  set_fact:
+      disks_for_vg: "{{ ansible_devices.keys() | sort | reject('match',root_disk) | reject('match','loop') | reject('match','ram') | map('regex_replace','^','/dev/') | join(',') }}"
+  when: quick_lvs_to_create is defined
+
+- set_fact: vg_name=vg_hdd
+  when:
+    - disks_for_vg is defined
+    - "'nvme' not in disks_for_vg"
+
+- set_fact: vg_name=vg_nvme
+  when:
+    - disks_for_vg is defined
+    - "'nvme' in disks_for_vg"
+
+- name: Create volume_groups dict
+  set_fact:
+    volume_groups:
+      "{'{{ vg_name }}': {'pvs': '{{ disks_for_vg }}' }}"
+  when: vg_name is defined
+
+# This isn't perfect but with the |int at the end, this'll just round down
+# if quick_lvs_to_create won't divide evenly to make sure the VG doesn't run out of space
+- name: Determine desired logical volume percentage size
+  set_fact:
+    quick_lv_size: "{{ (100 / quick_lvs_to_create|int)|int }}"
+  when: quick_lvs_to_create is defined
+
+- name: Create logical_volumes dict
+  set_fact:
+    logical_volumes:
+      "{
+         {%- for lv in range(quick_lvs_to_create|int) -%}
+         'lv_{{ lv + 1 }}':
+           {
+             'vg': '{{ vg_name }}',
+             'size': '{{ quick_lv_size }}%VG',
+             'scratch_dev': true
+           }
+           {%- if not loop.last -%}
+             ,
+           {%- endif -%}
+         {%- endfor -%}
+       }"
+  when: quick_lvs_to_create is defined
+
 - name: "Create volume group(s)"
   lvg:
     vg: "{{ item.key }}"
