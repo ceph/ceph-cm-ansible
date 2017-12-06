@@ -53,6 +53,7 @@
   when:
     - item.key not in root_disk
     - '"loop" not in item.key'
+    - '"ram" not in item.key'
 
 - name: Remove all LVM data
   shell: "dmsetup remove_all --force"
