@@ -50,7 +50,9 @@
 - name: Zap all non-root disks
   shell: "sgdisk --zap-all /dev/{{ item.key }} || sgdisk --zap-all /dev/{{ item.key }}"
   with_dict: "{{ ansible_devices }}"
-  when: item.key not in root_disk
+  when:
+    - item.key not in root_disk
+    - '"loop" not in item.key'
 
 - name: Remove all LVM data
   shell: "dmsetup remove_all --force"
