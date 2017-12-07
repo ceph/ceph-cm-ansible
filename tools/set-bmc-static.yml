@@ -1,0 +1,213 @@
+---
+### This standalone playbook can be used to (re)configure BMC network settings.
+### Override vars at the top of file if needed.  This has only been tested on
+### Supermicro BMCs but could easily be adapted for other manufacturers.
+###
+### This playbook should allow you to configure a BMC whether you have
+### SSH access to the host or not
+
+- hosts:
+    - testnodes
+  become: true
+  gather_facts: false
+  vars:
+    # Set to true if setting up a bunch of BMCs for the first time
+    setup_user: false
+    initial_user: ADMIN
+    initial_pass: ADMIN
+    # On Supermicro BMCs, Anonymous is UID 1 and reserved.  UID 2 is the default ADMIN:ADMIN
+    power_uid: 2
+    # Change this if the ipmi interface isn't found at channel 1
+    # (i.e., if `ipmitool lan print 1` returns 'Invalid channel: 1')
+    ipmi_channel_id: 1
+    use_dhcp: false
+    # "off" will disable setting a VLAN ID.  Octo needs VLAN 101 set.
+    vlan_id: "off"
+    # Define these for static settings.  These defaults are for Sepia.
+    static_netmask: 255.255.240.0
+    static_gateway: 172.21.47.254
+    # Change to true if you want to force an 'mc reset cold' no matter what
+    force_mc_reset: false
+  tasks:
+
+  # Pull in IPMI creds from secrets repo.
+  # Override power_user and power_pass with --extra-vars if needed
+  - include_vars: ../roles/secrets/defaults/main.yml
+  - include_vars: "{{ secrets_path }}/ipmi.yml"
+
+  - name: Check if we have SSH access
+    shell: "timeout 3s ssh {{ inventory_hostname }} true"
+    register: have_ssh_access
+    delegate_to: localhost
+    failed_when: false
+    changed_when: false
+
+  # These first 4 tasks assume you don't have SSH access to the host yet.  We'll try again via SSH later if these fail.
+  - name: Initial setup of username from localhost
+    shell: "ipmitool -I lanplus -U {{ initial_user }} -P {{ initial_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} user set name {{ power_uid }} {{ power_user }}"
+    register: set_username_locally
+    delegate_to: localhost
+    when:
+      - setup_user
+      - have_ssh_access.rc != 0
+    ignore_errors: true
+
+  - name: Initial setup of permissions from localhost
+    shell: "ipmitool -I lanplus -U {{ power_user }} -P {{ initial_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} channel setaccess {{ ipmi_channel_id }} {{ power_uid }} privilege=4"
+    register: set_permissions_locally
+    delegate_to: localhost
+    when:
+      - setup_user
+      - have_ssh_access.rc != 0
+    ignore_errors: true
+
+  - name: Initial setup of password from localhost
+    shell: "ipmitool -I lanplus -U {{ power_user }} -P {{ initial_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} user set password {{ power_uid }} {{ power_pass }}"
+    register: set_password_locally
+    delegate_to: localhost
+    when:
+      - setup_user
+      - have_ssh_access.rc != 0
+    ignore_errors: true
+
+  - name: Check if DHCP already enabled
+    shell: "ipmitool -I lanplus -U {{ power_user }} -P {{ power_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} lan print 1 | grep -q DHCP"
+    register: dhcp_already_enabled
+    delegate_to: localhost
+    when: use_dhcp
+    failed_when: dhcp_already_enabled.stderr != ''
+    changed_when: false
+
+  - name: Set BMC to use DHCP from localhost
+    shell: "ipmitool -I lanplus -U {{ power_user }} -P {{ power_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} lan set {{ ipmi_channel_id }} ipsrc dhcp"
+    register: set_to_dhcp_locally
+    delegate_to: localhost
+    when:
+      - use_dhcp
+      - (dhcp_already_enabled is defined and dhcp_already_enabled.rc != 0)
+    ignore_errors: true
+
+  - name: Install ipmitool
+    package:
+      name: ipmitool
+      state: latest
+    when: have_ssh_access.rc == 0
+
+  - name: Activate kernel modules
+    modprobe:
+      name: "{{ item }}"
+      state: present
+    with_items:
+      - ipmi_devintf
+      - ipmi_si
+    when: have_ssh_access.rc == 0
+    ignore_errors: true
+
+  - name: Initial setup of username
+    shell: "ipmitool user set name {{ power_uid }} {{ power_user }}"
+    when:
+      - setup_user
+      - (set_username_locally is defined and set_username_locally|failed)
+
+  - name: Initial setup of permissions
+    shell: "ipmitool channel setaccess {{ ipmi_channel_id }} {{ power_uid }} privilege=4"
+    when:
+      - setup_user
+      - (set_permissions_locally is defined and set_permissions_locally|failed)
+
+  - name: Initial setup of password
+    shell: "ipmitool user set password {{ power_uid }} {{ power_pass }}"
+    register: set_password_locally
+    when:
+      - setup_user
+      - (set_password_locally is defined and set_password_locally|failed)
+    ignore_errors: true
+
+  - name: Set BMC to use DHCP via SSH
+    shell: "ipmitool lan set {{ ipmi_channel_id }} ipsrc dhcp"
+    register: set_to_dhcp_remotely
+    when:
+      - use_dhcp
+      - set_to_dhcp_locally|failed
+
+  - name: Check existing network settings via SSH
+    shell: "ipmitool lan print {{ ipmi_channel_id }} | grep 'IP Address Source\\|IP Address\\|Subnet Mask\\|Default Gateway IP\\|VLAN ID' | cut -d ':' -f2 | sed 's/^ //g'"
+    register: existing_network_settings
+    changed_when: false
+    when:
+      - not use_dhcp
+      - have_ssh_access.rc == 0
+
+  - name: Check existing network settings via localhost
+    shell: "ipmitool -I lanplus -U {{ power_user }} -P {{ power_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} lan print {{ ipmi_channel_id }} | grep 'IP Address Source\\|IP Address\\|Subnet Mask\\|Default Gateway IP\\|VLAN ID' | cut -d ':' -f2 | sed 's/^ //g'"
+    register: existing_network_settings
+    delegate_to: localhost
+    changed_when: false
+    when:
+      - not use_dhcp
+      - have_ssh_access.rc != 0
+
+  - set_fact:
+      existing_network_settings_list: "{{ existing_network_settings.stdout.split('\n') }}"
+    when:
+      - not use_dhcp
+
+  - set_fact:
+      desired_network_settings_list: "[ 'Static Address', '{{ hostvars[inventory_hostname].ipmi }}', '{{ static_netmask }}', '{{ static_gateway }}', 'Disabled' ]"
+    when:
+      - not use_dhcp
+      - vlan_id == "off"
+
+  - set_fact:
+      desired_network_settings_list: "[ 'Static Address', '{{ hostvars[inventory_hostname].ipmi }}', '{{ static_netmask }}', '{{ static_gateway }}', '{{ vlan_id }}' ]"
+    when:
+      - not use_dhcp
+      - vlan_id != "off"
+
+  - set_fact:
+      network_settings_change_required: "{{ existing_network_settings_list|sort != desired_network_settings_list|sort }}"
+    when:
+      - not use_dhcp
+      - desired_network_settings_list is defined
+
+  - name: Set BMC to use static IP via SSH
+    shell: "{{ item }}"
+    with_items:
+      - "ipmitool lan set {{ ipmi_channel_id }} ipsrc static"
+      - "ipmitool lan set {{ ipmi_channel_id }} ipaddr {{ hostvars[inventory_hostname].ipmi }}"
+      - "ipmitool lan set {{ ipmi_channel_id }} netmask {{ static_netmask }}"
+      - "ipmitool lan set {{ ipmi_channel_id }} defgw ipaddr {{ static_gateway }}"
+      - "ipmitool lan set {{ ipmi_channel_id }} vlan id {{ vlan_id }}"
+    register: set_to_static
+    when:
+      - not use_dhcp
+      - network_settings_change_required
+      - have_ssh_access.rc == 0
+    failed_when: "set_to_static.stderr != ''"
+    ignore_errors: true
+
+  - name: Set BMC to use static IP via localhost
+    shell: "{{ item }}"
+    with_items:
+      - "ipmitool -I lanplus -U {{ power_user }} -P {{ power_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} lan set {{ ipmi_channel_id }} ipsrc static"
+      - "ipmitool -I lanplus -U {{ power_user }} -P {{ power_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} lan set {{ ipmi_channel_id }} ipaddr {{ hostvars[inventory_hostname].ipmi }}"
+      - "ipmitool -I lanplus -U {{ power_user }} -P {{ power_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} lan set {{ ipmi_channel_id }} netmask {{ static_netmask }}"
+      - "ipmitool -I lanplus -U {{ power_user }} -P {{ power_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} lan set {{ ipmi_channel_id }} defgw ipaddr {{ static_gateway }}"
+      # https://sourceforge.net/p/ipmitool/bugs/456/
+      #- "ipmitool -I lanplus -U {{ power_user }} -P {{ power_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} lan set {{ ipmi_channel_id }} vlan id {{ vlan_id }}"
+    register: set_to_static
+    delegate_to: localhost
+    when:
+      - not use_dhcp
+      - network_settings_change_required
+      - have_ssh_access.rc != 0
+    failed_when: "set_to_static.stderr != ''"
+    ignore_errors: true
+
+  - name: Reset BMC
+    shell: "ipmitool -I lanplus -U {{ power_user }} -P {{ power_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} mc reset cold"
+    delegate_to: localhost
+    when: force_mc_reset or
+          (set_to_dhcp_locally is defined and set_to_dhcp_locally|changed) or
+          (set_to_dhcp_remotely is defined and set_to_dhcp_remotely|changed) or
+          (network_settings_change_required is defined and network_settings_change_required and not set_to_static|failed)
