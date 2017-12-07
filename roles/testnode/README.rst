@@ -210,6 +210,16 @@ A dictionary of logical volumes you want created.  See Ansible's docs_ on availa
         vg: vg_hdd
         size: "100%VG"
 
+Setting ``quick_lvs_to_create`` will:
+
+    #. Create one large volume group using all non-root devices listed in ``ansible_devices``
+    #. Create X number of logical volumes equal in size
+
+    Defining this variable will override ``volume_groups`` and ``logical_volumes`` dicts if defined in secrets::
+
+        # Example would create 4 logical volumes each using 25% of a volume group created using all non-root physical volumes
+        quick_lvs_to_create: 4
+
 Tags
 ++++
 
