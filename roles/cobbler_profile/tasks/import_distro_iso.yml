@@ -7,7 +7,7 @@
   set_fact:
       iso_path: "{{ iso_dir }}/{{ iso_name }}"
 
-- include: download_iso.yml
+- include_tasks: download_iso.yml
   when: distro.iso != ''
 
 # we do this so that if the playbook fails

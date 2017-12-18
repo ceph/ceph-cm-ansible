@@ -3,12 +3,12 @@
 
 # Most of our public-facing hosts are running Ubuntu.
 # use_ufw defaults to false but is overridden in inventory host_vars
-- include: ufw.yml
+- include_tasks: ufw.yml
   when: use_ufw == true
   tags:
     - always
 
-- include: fail2ban.yml
+- include_tasks: fail2ban.yml
   tags:
     - always
   when: use_fail2ban == true
@@ -33,5 +33,5 @@
   register: host_playbook
 
 - name: Include any host-specific playbooks if present
-  include: "{{ ansible_host }}.yml"
+  include_tasks: "{{ ansible_host }}.yml"
   when: host_playbook.stat.exists

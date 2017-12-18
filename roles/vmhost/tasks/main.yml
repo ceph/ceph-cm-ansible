@@ -1,8 +1,8 @@
-- include: packages.yml
+- include_tasks: packages.yml
   tags: packages
 
-- include: networking.yml
+- include_tasks: networking.yml
   tags: networking
 
-- include: libvirt.yml
+- include_tasks: libvirt.yml
   tags: libvirt

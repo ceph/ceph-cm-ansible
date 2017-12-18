@@ -1,25 +1,25 @@
 ---
-- include: mira/bios.yml
+- include_tasks: mira/bios.yml
   tags:
     - bios
   when: '"mira" in ansible_hostname'
 
-- include: mira/bmc.yml
+- include_tasks: mira/bmc.yml
   tags:
     - bmc
   when: '"mira" in ansible_hostname'
 
-- include: areca/main.yml
+- include_tasks: areca/main.yml
   tags:
     - areca
 
-- include: smithi/bmc.yml
+- include_tasks: smithi/bmc.yml
   tags:
     - bmc
   when: '"smithi" in ansible_hostname'
 
 # NVMe firmware flashing is only supported on RHEL/CentOS
-- include: smithi/nvme.yml
+- include_tasks: smithi/nvme.yml
   tags:
     - nvme
   when: '"smithi" in ansible_hostname and ansible_pkg_mgr == "yum"'

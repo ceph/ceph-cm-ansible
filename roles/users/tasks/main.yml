@@ -1,17 +1,17 @@
 ---
-- include: filter_users.yml
+- include_tasks: filter_users.yml
   tags:
     - always
 
-- include: create_users.yml
+- include_tasks: create_users.yml
   tags:
     - user
 
-- include: update_keys.yml
+- include_tasks: update_keys.yml
   tags:
     - pubkeys
 
-- include: revoke_users.yml
+- include_tasks: revoke_users.yml
   tags:
     - user
     - revoke

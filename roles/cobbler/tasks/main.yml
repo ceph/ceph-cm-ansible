@@ -1,5 +1,5 @@
 ---
-- include: ipmi_secrets.yml
+- include_tasks: ipmi_secrets.yml
   tags:
     - always
 
@@ -28,13 +28,13 @@
   tags:
     - always
 
-- include: yum_systems.yml
+- include_tasks: yum_systems.yml
   when: ansible_pkg_mgr == "yum"
 
-- include: apt_systems.yml
+- include_tasks: apt_systems.yml
   when: ansible_pkg_mgr == "apt"
 
-- include: pip.yml
+- include_tasks: pip.yml
   tags:
     - pip
 
@@ -70,24 +70,24 @@
     enabled: yes
 
 - name: Update settings
-  include: settings.yml
+  include_tasks: settings.yml
   tags:
     - settings
 
-- include: fetch_cm_repos.yml
+- include_tasks: fetch_cm_repos.yml
   tags:
    - cm_repos
 
-- include: upload_templates.yml
+- include_tasks: upload_templates.yml
   tags:
     - templates
 
-- include: distro_prep.yml
+- include_tasks: distro_prep.yml
   tags:
     - distros
     - distro_prep
 
-- include: restart.yml
+- include_tasks: restart.yml
 
 - name: Run cobbler check
   command: cobbler check

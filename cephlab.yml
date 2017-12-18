@@ -2,22 +2,22 @@
 # ensure the node is setup to be managed by ansible
 # eventually, most of the things here will be done by
 # cobbler / downburst / cloud-init.
-- include: ansible_managed.yml
+- import_playbook: ansible_managed.yml
 
 # if this node is in the pcp group, configure it
-- include: pcp.yml
+- import_playbook: pcp.yml
 
 # if this node is in the teuthology group, configure it
-- include: teuthology.yml
+- import_playbook: teuthology.yml
 
 # if this node is in the testnode group, configure it
-- include: testnodes.yml
+- import_playbook: testnodes.yml
 
 # if this node is in the cobbler group, configure it
-- include: cobbler.yml
+- import_playbook: cobbler.yml
 
 # if this node is in the paddles group, configure it
-- include: paddles.yml
+- import_playbook: paddles.yml
 
 # if this node is in the pulpito group, configure it
-- include: pulpito.yml
+- import_playbook: pulpito.yml

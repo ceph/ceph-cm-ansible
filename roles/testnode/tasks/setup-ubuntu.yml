@@ -4,6 +4,6 @@
     path: /etc/ceph
     state: absent
 
-- include: nfs.yml
+- include_tasks: nfs.yml
   tags:
     - nfs

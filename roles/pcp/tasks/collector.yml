@@ -23,7 +23,7 @@
   when:
     ansible_pkg_mgr == "dnf"
 
-- include: permissons.yml
+- include_tasks: permissons.yml
 
 - name: Restart pcp
   service:

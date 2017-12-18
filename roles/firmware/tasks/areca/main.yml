@@ -30,5 +30,5 @@
         (current_areca_version.stdout != latest_{{ areca_model_pretty }}_version)
 
 - name: Run Areca firmware update playbook
-  include: roles/firmware/tasks/areca/areca-update.yml
+  include_tasks: roles/firmware/tasks/areca/areca-update.yml
   when: need_areca_update is defined and need_areca_update == true
