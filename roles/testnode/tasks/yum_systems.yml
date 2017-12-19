@@ -55,17 +55,17 @@
     rpm --rebuilddb
 
 - name: Setup local repo files.
-  include_tasks: yum/repos.yml
+  import_tasks: yum/repos.yml
   tags:
     - repos
 
 - name: Perform package related tasks.
-  include_tasks: yum/packages.yml
+  import_tasks: yum/packages.yml
   tags:
     - packages
 
 - name: Disable firewall
-  include_tasks: yum/firewall.yml
+  import_tasks: yum/firewall.yml
 
 - name: Enable SELinux
   selinux: state=permissive policy=targeted

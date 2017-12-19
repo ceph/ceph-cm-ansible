@@ -72,7 +72,7 @@
   when: not unregistered_beta_distro|skipped
 
 - name: Run beta_repos.yml playbook for Beta/Alpha/RC release
-  include_tasks: beta_repos.yml
+  import_tasks: beta_repos.yml
   when: ansible_distribution_version not in rhsm_release_list.stdout_lines
 
 - name: Get list of enabled RHSM repos

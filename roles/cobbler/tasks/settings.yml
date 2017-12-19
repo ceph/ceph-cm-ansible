@@ -24,7 +24,7 @@
     line: "server{{':'}} {% for setting in settings %}{% if setting.name == 'server' %}{{ setting.value }}{% endif %}{% endfor %}"
   register: server_value
 
-- include_tasks: restart.yml
+- import_tasks: restart.yml
   when: users_digest|changed or dynamic_settings|changed or server_value|changed
 
 - name: Update settings

@@ -6,7 +6,7 @@
     - always
 
 # Install and update system packages
-- include_tasks: packages.yml
+- import_tasks: packages.yml
   tags:
     - packages
 
@@ -28,17 +28,17 @@
     - always
 
 # Configure firewalld
-- include_tasks: firewall.yml
+- import_tasks: firewall.yml
   tags:
     - firewall
 
 # Configure BIND
-- include_tasks: config.yml
+- import_tasks: config.yml
   tags:
     - config
 
 # Compile and write zone files
-- include_tasks: records.yml
+- import_tasks: records.yml
   tags:
     - records
   when: (named_conf_slave is undefined) or

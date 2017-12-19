@@ -47,7 +47,7 @@
     rpm --rebuilddb
 
 - name: Perform package related tasks.
-  include_tasks: zypper/packages.yml
+  import_tasks: zypper/packages.yml
   tags:
     - packages
 

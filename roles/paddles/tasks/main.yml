@@ -25,24 +25,24 @@
   tags:
     - always
 
-- include_tasks: apt_systems.yml
+- import_tasks: apt_systems.yml
   when: ansible_pkg_mgr == "apt"
 
 # Yum systems support is not implemented yet.
-- include_tasks: yum_systems.yml
+- import_tasks: yum_systems.yml
   when: ansible_pkg_mgr == "yum"
 
 # Set up the paddles user
-- include_tasks: setup_user.yml
+- import_tasks: setup_user.yml
 
 # Set up the actual paddles project
-- include_tasks: setup_paddles.yml
+- import_tasks: setup_paddles.yml
 
 # Set up the DB which paddles uses
-- include_tasks: setup_db.yml
+- import_tasks: setup_db.yml
 
 # Configure the system to run paddles as a daemon
-- include_tasks: setup_service.yml
+- import_tasks: setup_service.yml
 
 # Configure nginx as a reverse proxy
-- include_tasks: nginx.yml
+- import_tasks: nginx.yml
