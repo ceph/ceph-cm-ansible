@@ -68,4 +68,4 @@
     minute: "0"
     job: "/usr/libexec/make_timestamp"
 
-- include_tasks: letsencrypt_nginx.yml
+- import_tasks: letsencrypt_nginx.yml

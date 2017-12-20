@@ -19,7 +19,7 @@
   set_fact:
       initrd_path: "{{ other_image_dir }}/{{ initrd_name }}"
 
-- include_tasks: download_image.yml
+- import_tasks: download_image.yml
   when: distro.kernel != ''
 
 - name: Set arch

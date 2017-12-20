@@ -1,6 +1,6 @@
 ---
 - name: Fix broken cloud-init
-  include_tasks: cloud-init.yml
+  import_tasks: cloud-init.yml
   when: ansible_distribution_major_version == "6"
 
-- include_tasks: imitate_ubuntu.yml
+- import_tasks: imitate_ubuntu.yml

@@ -1,11 +1,11 @@
 ---
 # loading vars
-- include_tasks: vars.yml
+- import_tasks: vars.yml
   tags:
     - vars
     - always
 
-- include_tasks: user.yml
+- import_tasks: user.yml
   tags:
     - user
 
@@ -19,92 +19,92 @@
   when: ansible_pkg_mgr != "zypper"
 
 - name: Set the hostname
-  include_tasks: set_hostname.yml
+  import_tasks: set_hostname.yml
   when: lab_domain != ""
   tags:
     - hostname
 
 - name: configure ssh
-  include_tasks: ssh.yml
+  import_tasks: ssh.yml
   tags:
     - ssh
 
 - name: configure things specific to yum systems
-  include_tasks: yum_systems.yml
+  import_tasks: yum_systems.yml
   when: ansible_pkg_mgr == "yum"
 
 - name: configure things specific to apt systems
-  include_tasks: apt_systems.yml
+  import_tasks: apt_systems.yml
   when: ansible_pkg_mgr == "apt"
 
 - name: configure things specific to zypper systems
-  include_tasks: zypper_systems.yml
+  import_tasks: zypper_systems.yml
   when: ansible_pkg_mgr == "zypper"
 
 - name: configure centos specific things
-  include_tasks: setup-centos.yml
+  import_tasks: setup-centos.yml
   when: ansible_distribution == "CentOS"
 
 - name: configure red hat specific things
-  include_tasks: setup-redhat.yml
+  import_tasks: setup-redhat.yml
   when: ansible_distribution == 'RedHat'
 
 - name: configure fedora specific things
-  include_tasks: setup-fedora.yml
+  import_tasks: setup-fedora.yml
   when: ansible_distribution == "Fedora"
 
 - name: configure ubuntu specific things
-  include_tasks: setup-ubuntu.yml
+  import_tasks: setup-ubuntu.yml
   when: ansible_distribution == "Ubuntu"
 
 - name: configure ubuntu non-aarch64 specific things
-  include_tasks: setup-ubuntu-non-aarch64.yml
+  import_tasks: setup-ubuntu-non-aarch64.yml
   when:
     ansible_distribution == "Ubuntu" and
     ansible_architecture != "aarch64"
 
 - name: configure debian specific things
-  include_tasks: setup-debian.yml
+  import_tasks: setup-debian.yml
   when: ansible_distribution == "Debian"
 
-- include_tasks: zap_disks.yml
+- import_tasks: zap_disks.yml
   tags:
     - zap
 
 - name: partition drives, if any are requested
-  include_tasks: drive_partitioning.yml
+  import_tasks: drive_partitioning.yml
   when: drives_to_partition is defined
   tags:
     - partition
 
 - name: set up LVM
-  include_tasks: lvm.yml
+  import_tasks: lvm.yml
   tags:
     - lvm
 
 - name: mount /var/lib/ceph to specified partition
-  include_tasks: var_lib.yml
+  import_tasks: var_lib.yml
   when: var_lib_partition is defined
   tags:
     - varlib
 
 # Install and configure cpan and Amazon::S3
-- include_tasks: cpan.yml
+- import_tasks: cpan.yml
   tags:
     - cpan
 
 # configure ntp
-- include_tasks: ntp.yml
+- import_tasks: ntp.yml
   tags:
     - ntp-client
 
 - name: configure pip to use our mirror
-  include_tasks: pip.yml
+  import_tasks: pip.yml
   tags:
     - pip
 
 - name: include resolv.conf setup
-  include_tasks: resolvconf.yml
+  import_tasks: resolvconf.yml
   tags:
     - resolvconf
 

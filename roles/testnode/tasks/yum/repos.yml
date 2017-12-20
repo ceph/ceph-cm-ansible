@@ -21,7 +21,7 @@
   with_dict: "{{ yum_repos }}"
   when: yum_repos.keys() | length > 0
 
-- include_tasks: gpg_keys.yml
+- import_tasks: gpg_keys.yml
   when: ansible_distribution == "Fedora"
   tags:
     - gpg-keys

@@ -15,29 +15,29 @@
     - entitlements
 
 # configure things specific to yum systems
-- include_tasks: yum_systems.yml
+- import_tasks: yum_systems.yml
   when: ansible_pkg_mgr == "yum"
 
 # configure things specific to apt systems
-- include_tasks: apt_systems.yml
+- import_tasks: apt_systems.yml
   when: ansible_pkg_mgr == "apt"
 
-- include_tasks: zypper_systems.yml
+- import_tasks: zypper_systems.yml
   when: ansible_pkg_mgr == "zypper"
 
 # configure Kerberos
-- include_tasks: kerberos.yml
+- import_tasks: kerberos.yml
   tags:
     - kerberos
 
 # upload custom disk monitoring scripts
-- include_tasks: disk_monitoring.yml
+- import_tasks: disk_monitoring.yml
   tags:
     - monitoring-scripts
     - nagios
 
 # configure nagios
-- include_tasks: nagios.yml
+- import_tasks: nagios.yml
   when: ansible_pkg_mgr != "zypper"
   tags:
     - nagios
@@ -50,7 +50,7 @@
     - nagios
 
 # configure selinux for nagios
-- include_tasks: nrpe-selinux.yml
+- import_tasks: nrpe-selinux.yml
   when: ansible_os_family == "RedHat" and
         (selinux_status is defined and selinux_status.stdout != "Disabled")
   tags:

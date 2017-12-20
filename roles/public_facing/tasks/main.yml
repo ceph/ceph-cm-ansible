@@ -3,12 +3,12 @@
 
 # Most of our public-facing hosts are running Ubuntu.
 # use_ufw defaults to false but is overridden in inventory host_vars
-- include_tasks: ufw.yml
+- import_tasks: ufw.yml
   when: use_ufw == true
   tags:
     - always
 
-- include_tasks: fail2ban.yml
+- import_tasks: fail2ban.yml
   tags:
     - always
   when: use_fail2ban == true

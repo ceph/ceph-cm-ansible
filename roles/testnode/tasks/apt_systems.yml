@@ -1,6 +1,6 @@
 ---
 - name: Setup local repo files.
-  include_tasks: apt/repos.yml
+  import_tasks: apt/repos.yml
   tags:
     - repos
 
@@ -22,7 +22,7 @@
     - packages
 
 - name: Perform package related tasks.
-  include_tasks: apt/packages.yml
+  import_tasks: apt/packages.yml
   tags:
     - packages
 
@@ -67,7 +67,7 @@
     groups: fuse,kvm,disk
     append: yes
 
-- include_tasks: static_ip.yml
+- import_tasks: static_ip.yml
   when: "'vps' not in group_names"
 
 - name: Stop apache2

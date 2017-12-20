@@ -7,7 +7,7 @@
     backrefs: yes
     state: present
 
-- include_tasks: configure_lvm.yml
+- import_tasks: configure_lvm.yml
   when: (logical_volumes is defined) or
         (volume_groups is defined) or
         (quick_lvs_to_create is defined)

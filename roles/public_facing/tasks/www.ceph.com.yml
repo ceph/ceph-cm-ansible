@@ -9,4 +9,4 @@
     minute: "*/5"
     job: "/usr/bin/wget -q -O - http://ceph.com/wp-cron.php?doing_wp_cron"
 
-- include_tasks: letsencrypt_nginx.yml
+- import_tasks: letsencrypt_nginx.yml
