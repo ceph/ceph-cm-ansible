@@ -39,8 +39,6 @@ if [ ! -f /.cephlab_net_configured ]; then
       ifup $nic
       # Write our lockfile so this only gets run on firstboot
       touch /.cephlab_net_configured
-      # Quit loop after first NIC is configured
-      break
     else
       # Take the NIC back down if it's not connected
       ifconfig $nic down
