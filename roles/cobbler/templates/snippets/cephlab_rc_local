@@ -36,7 +36,16 @@ if [ ! -f /.cephlab_net_configured ]; then
       fi
       # Bounce the NIC so it gets a DHCP address
       ifdown $nic
+      # Don't bail if NIC fails to come up
+      set +e
       ifup $nic
+      if [ $? -ne 0 ]; then
+        # If the NIC failed to DHCP, delete its ifcfg script.  Must be static or tagged
+        rm -f /etc/sysconfig/network-scripts/ifcfg-$nic
+        ifdown $nic
+      fi
+      # Go back to bailing if anything above fails on the next NIC
+      set -e
       # Write our lockfile so this only gets run on firstboot
       touch /.cephlab_net_configured
     else
