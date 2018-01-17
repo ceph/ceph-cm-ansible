@@ -1,0 +1,20 @@
+---
+# This playbook can be used to mass update NVMe card firmware.
+# The isdct RPM (no DEB unfortunately) can be obtained from Intel's website.
+# Download the zip, unpack, and push to drop.front.
+# https://downloadcenter.intel.com/product/87278/Intel-SSD-Data-Center-Tool
+
+- hosts:
+    - smithi
+  become: true
+  tasks:
+
+  - name: Install tool
+    yum:
+      name: http://drop.front.sepia.ceph.com/firmware/smithi/isdct-3.0.9.400-17.x86_64.rpm
+      state: installed
+    register: installed
+
+  - name: Update firmware
+    command: "isdct load -f -intelssd 0"
+    when: installed|changed
