@@ -61,3 +61,6 @@ ntp_servers:
   - 1.us.pool.ntp.org
   - 2.us.pool.ntp.org
   - 3.us.pool.ntp.org
+
+# Set to true in group_vars if the testnode/machine type should have an NVMe device
+check_for_nvme: false
