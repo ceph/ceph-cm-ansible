@@ -22,7 +22,7 @@ url --url=$tree
 # If any cobbler repo definitions were referenced in the kickstart profile, include them here.
 $yum_repo_stanza
 # Network information
-network --bootproto=dhcp --device=eth0 --onboot=on
+network --bootproto=dhcp --device=$mac_address_eth0 --onboot=on
 # Reboot after installation
 reboot
 
