@@ -67,6 +67,9 @@
   import_tasks: setup-debian.yml
   when: ansible_distribution == "Debian"
 
+- import_tasks: check-for-nvme.yml
+  when: check_for_nvme == true
+
 - import_tasks: zap_disks.yml
   tags:
     - zap

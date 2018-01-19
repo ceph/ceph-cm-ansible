@@ -1,0 +1,41 @@
+---
+# NVMe cards have started failing frequently.  These tasks will mark a
+# system down in the paddles DB so it doesn't repeatedly fail jobs if the device is missing.
+# https://wiki.sepia.ceph.com/doku.php?id=hardware:smithi&#nvme_failure_tracking
+# These tasks can also be used by a few machine types in Octo
+
+# Default to false
+- set_fact:
+    nvme_card_present: false
+
+- name: Check for NVMe drive
+  set_fact:
+    nvme_card_present: true
+  with_items: "{{ ansible_devices }}"
+  when: "'nvme' in item"
+
+- name: Check for teuthology-lock command
+  local_action: shell which teuthology-lock
+  register: teuthology_lock
+  ignore_errors: true
+  become: false
+
+- name: Mark system down if NVMe card missing
+  local_action: "shell {{ teuthology_lock.stdout }} --update --status down {{ inventory_hostname }}"
+  become: false
+  when:
+    - teuthology_lock.rc == 0
+    - nvme_card_present == false
+
+- name: Update description in paddles lock DB if NVMe card missing
+  local_action: "shell {{ teuthology_lock.stdout }} --update --desc 'Marked down by ceph-cm-ansible due to missing NVMe card {{ ansible_date_time.iso8601 }}' {{ inventory_hostname }}"
+  become: false
+  when:
+    - teuthology_lock.rc == 0
+    - nvme_card_present == false
+
+- name: Fail rest of playbook due to missing NVMe card
+  fail:
+    msg: "Failing rest of playbook due to missing NVMe card"
+  when:
+    - nvme_card_present == false

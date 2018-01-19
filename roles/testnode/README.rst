@@ -225,6 +225,10 @@ Setting ``quick_lvs_to_create`` will:
         # Example would create 4 logical volumes each using 25% of a volume group created using all non-root physical volumes
         quick_lvs_to_create: 4
 
+Define ``check_for_nvme: true`` in Ansible inventory group_vars (by machine type) if the testnode should have an NVMe device.  This will include a few tasks to verify an NVMe device is present.  If the drive is missing, the tasks will mark the testnode down in the paddles_ lock database so the node doesn't repeatedly fail jobs.  Defaults to false::
+
+    check_for_nvme: false
+
 Tags
 ++++
 
@@ -308,3 +312,4 @@ To Do
 .. _teuthology: https://github.com/ceph/teuthology
 .. _ceph-qa-suite: https://github.com/ceph/ceph-qa-suite
 .. _docs: https://docs.ansible.com/ansible/latest/lvol_module.html
+.. _paddles: https://github.com/ceph/paddles
