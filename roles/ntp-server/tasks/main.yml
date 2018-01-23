@@ -1,0 +1,119 @@
+---
+- name: Check if ntp package installed
+  command: rpm -q ntp
+  ignore_errors: true
+  register: ntp_installed
+
+- name: Check if chrony package installed
+  command: rpm -q chrony
+  ignore_errors: true
+  register: chrony_installed
+
+# Use NTP if neither time service is installed
+- set_fact:
+    use_ntp: true
+    use_chrony: false
+  when:
+    - ntp_installed.rc != 0
+    - chrony_installed.rc != 0
+
+# Use NTP if it's installed and Chrony isn't
+- set_fact:
+    use_ntp: true
+    use_chrony: false
+  when:
+    - ntp_installed.rc == 0
+    - chrony_installed.rc != 0
+
+# Use Chrony if it's installed and NTP isn't
+- set_fact:
+    use_ntp: false
+    use_chrony: true
+  when:
+    - ntp_installed.rc != 0
+    - chrony_installed.rc == 0
+
+# It's unlikely we have four baremetal hosts doing nothing but serving as NTP servers.
+# Thus, we shouldn't go uninstalling anything since either package could be a dependency
+# of an already running service.
+- fail:
+    msg: "Both NTP and Chrony are installed.  Check dependencies before removing either package and proceeding."
+  when:
+    - ntp_installed.rc == 0
+    - chrony_installed.rc == 0
+
+- name: Install and update ntp package
+  yum:
+    name: ntp
+    state: latest
+  when: use_ntp == true
+
+- name: Install and update chrony package
+  yum:
+    name: chrony
+    state: latest
+  when: use_chrony == true
+
+- name: Write NTP config file
+  template:
+    src: ntp.conf.j2
+    dest: /etc/ntp.conf
+  register: conf_written
+  when: use_ntp == true
+
+- name: Write chronyd config file
+  template:
+    src: chrony.conf.j2
+    dest: /etc/chrony.conf
+  register: conf_written
+  when: use_chrony == true
+
+- name: Start and enable NTP service
+  service:
+    name: ntpd
+    state: started
+    enabled: yes
+  when: use_ntp == true
+
+- name: Start and enable chronyd service
+  service:
+    name: chronyd
+    state: started
+    enabled: yes
+  when: use_chrony == true
+
+- name: Restart NTP service when conf changed
+  service:
+    name: ntpd
+    state: restarted
+  when:
+    - conf_written|changed
+    - use_ntp == true
+
+- name: Restart chronyd service when conf changed
+  service:
+    name: chronyd
+    state: restarted
+  when:
+    - conf_written|changed
+    - use_chrony == true
+
+- name: Check for firewalld
+  command: firewall-cmd --state
+  failed_when: false
+  register: firewalld_state
+
+- name: Allow NTP traffic through firewalld
+  firewalld:
+    service: ntp
+    permanent: true
+    immediate: true
+    state: enabled
+  when: firewalld_state.rc == 0
+
+- name: Allow NTP traffic through iptables
+  command: "{{ item }}"
+  with_items:
+    - "iptables -I INPUT -p udp -m udp --dport 123 -j ACCEPT"
+    - "service iptables save"
+  when: firewalld_state.rc != 0

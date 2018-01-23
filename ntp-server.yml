@@ -1,0 +1,5 @@
+---
+- hosts: ntp_server
+  roles:
+    - ntp-server
+  become: true
