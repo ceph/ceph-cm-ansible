@@ -1,0 +1,16 @@
+# {{ ansible_managed }}
+
+# Allow these networks to query this NTP server
+{% for lan in ntp_permitted_lans %}
+allow {{ lan }}
+{% endfor %}
+
+# Get time from these public hosts
+server 0.rhel.pool.ntp.org
+server 1.rhel.pool.ntp.org
+server 2.rhel.pool.ntp.org
+server 3.rhel.pool.ntp.org
+
+log measurements statistics tracking
+
+logdir /var/log/chrony
