@@ -25,3 +25,6 @@ named_conf_soa_retry: 3600
 named_conf_soa_expire: 604800
 
 ddns_keys: {}
+
+# Default to false.  Override in group or host vars
+nameserver_as_ntp_server: false

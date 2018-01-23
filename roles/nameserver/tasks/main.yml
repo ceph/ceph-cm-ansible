@@ -10,6 +10,17 @@
   tags:
     - packages
 
+# Configure firewalld
+- import_tasks: firewall.yml
+  tags:
+    - firewall
+
+# Configure host as NTP server if desired
+- import_tasks: ntp_server.yml
+  when: nameserver_as_ntp_server == true
+  tags:
+    - ntp-server
+
 - name: Enable and start ntpd
   service:
     name: ntpd
@@ -26,11 +37,6 @@
     group: named
   tags:
     - always
-
-# Configure firewalld
-- import_tasks: firewall.yml
-  tags:
-    - firewall
 
 # Configure BIND
 - import_tasks: config.yml

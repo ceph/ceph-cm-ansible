@@ -88,6 +88,17 @@ Most variables are defined in ``roles/nameserver/defaults/main.yml`` and values 
 |``ddns_keys: {}``                                       |A dictionary defining each Dynamic DNS zone's authorized key.  See **Dynamic DNS** below.  Defined in an encrypted file in |
 |                                                        |the secrets repo                                                                                                           |
 +--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+
+|``nameserver_as_ntp_server: false``                     |Set to ``true`` in Ansible inventory host or group variables if you want the nameserver to act as an NTP server as well.   |
+|                                                        |                                                                                                                           |
+|                                                        |**NOTE:** You must also define ``ntp_permitted_lans``.  See below.                                                         |
++--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+
+|::                                                      |A list of LANs that are permitted to query the NTP server running on the host.                                             |
+|                                                        |                                                                                                                           |
+|  ntp_permitted_lans:                                   |                                                                                                                           |
+|    - 192.168.0.0/24                                    |Must be in CIDR format as shown.                                                                                           |
+|    - 172.20.20.0/20                                    |                                                                                                                           |
+|                                                        |                                                                                                                           |
++--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+
 
 **named_domains: []**
 

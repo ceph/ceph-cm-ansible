@@ -1,0 +1,28 @@
+---
+- name: Install NTP package
+  yum:
+    name: ntp
+    state: latest
+
+- name: Make sure chrony is not installed
+  yum:
+    name: chrony
+    state: absent
+
+- name: Write NTP config file
+  template:
+    src: ntp.conf.j2
+    dest: /etc/ntp.conf
+
+- name: Start and enable NTP service
+  service:
+    name: ntpd
+    state: started
+    enabled: yes
+
+- name: Allow NTP traffic through firewalld
+  firewalld:
+    service: ntp
+    permanent: true
+    immediate: true
+    state: enabled
