@@ -1,0 +1,10 @@
+---
+- hosts: fog_server
+  roles:
+    - fog-server
+  become: true
+  vars_prompt:
+    - name: "fog_force"
+      prompt: "\nWARNING: It is not safe to run this role on a running FOG server that\nhas or may have scheduled tasks.\nDo you want to forcefully install/update/restart FOG? (yes|no)"
+      default: "no"
+      private: no

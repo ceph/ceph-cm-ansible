@@ -1,0 +1,99 @@
+{% if fog_ipaddress is defined %}
+ipaddress='{{ fog_ipaddress }}'
+{% else %}
+ipaddress='{{ ansible_default_ipv4.address }}'
+{% endif %}
+{% if fog_interface is defined %}
+interface='{{ fog_interface }}'
+{% else %}
+interface='{{ ansible_default_ipv4.alias }}'
+{% endif %}
+{% if fog_submask is defined %}
+submask='{{ fog_submask }}'
+{% else %}
+submask='{{ ansible_default_ipv4.netmask }}'
+{% endif %}
+{% if fog_routeraddress is defined %}
+routeraddress='{{ fog_routeraddress }}'
+{% else %}
+routeraddress='{{ ansible_default_ipv4.gateway }}'
+{% endif %}
+{% if fog_plainrouter is defined %}
+plainrouter='{{ fog_plainrouter }}'
+{% else %}
+plainrouter=''
+{% endif %}
+{% if fog_dnsaddress is defined %}
+dnsaddress='{{ fog_dnsaddress }}'
+{% else %}
+dnsaddress=''
+{% endif %}
+username='{{ fog_user }}'
+{% if fog_password is defined %}
+password='{{ fog_password }}'
+{% endif %}
+{% if ansible_os_family == "RedHat" %}
+osid='1'
+{% elif ansible_os_family == "Debian" %}
+osid='2'
+{% elif ansible_os_family == "Archlinux" %}
+osid='3'
+{% endif %}
+{% if fog_dhcp_server == true %}
+dodhcp='Y'
+bldhcp='1'
+startrange='{{ fog_startrange }}'
+endrange='{{ fog_endrange }}'
+{% else %}
+dodhcp='N'
+bldhcp='0'
+startrange=''
+endrange=''
+{% endif %}
+dhcpd='isc-dhcp-server'
+blexports='1'
+installtype='N'
+{% if fog_snmysqluser is defined %}
+snmysqluser='{{ fog_snmysqluser }}'
+{% else %}
+snmysqluser='root'
+{% endif %}
+{% if fog_snmysqlpass is defined %}
+snmysqlpass='{{ fog_snmysqlpass }}'
+{% else %}
+snmysqlpass=''
+{% endif %}
+{% if fog_snmysqlhost is defined %}
+snmysqlhost='{{ fog_snmysqlhost }}'
+{% else %}
+snmysqlhost='localhost'
+{% endif %}
+installlang='0'
+{% if fog_images_path is defined %}
+storageLocation='{{ fog_images_path }}'
+{% else %}
+storageLocation='/images'
+{% endif %}
+fogupdateloaded=1
+{% if fog_docroot is defined %}
+docroot='{{ fog_docroot }}'
+{% else %}
+docroot='/var/www/html/'
+{% endif %}
+{% if fog_webroot is defined %}
+webroot='{{ fog_webroot }}'
+{% else %}
+webroot='/fog/'
+{% endif %}
+caCreated='yes'
+bootfilename='undionly.kpxe'
+noTftpBuild=''
+notpxedefaultfile=''
+sslpath='/opt/fog/snapins/ssl/'
+backupPath=''
+sslprivkey='/opt/fog/snapins/ssl//.srvprivate.key'
+{% if fog_httpproto is defined %}
+httpproto='{{ fog_httpproto }}'
+{% else %}
+httpproto='http'
+{% endif %}

@@ -1,0 +1,48 @@
+---
+- name: Ensure a user for FOG
+  user:
+    name: "{{ fog_user }}"
+    shell: /bin/bash
+    group: sudo
+    append: yes
+    createhome: yes
+
+- name: Ensure a path for FOG
+  file:
+    path: "/home/{{ fog_user}}/fog"
+    owner: "{{ fog_user }}"
+    state: directory
+
+- name: Write temp settings/answer file for FOG
+  template:
+    src: temp_settings.j2
+    dest: "/home/{{ fog_user }}/temp_settings"
+    owner: "{{ fog_user }}"
+
+# Unattended upgrades (of mysql specifically) will break FOG
+# https://forums.fogproject.org/topic/10006/ubuntu-is-fog-s-enemy
+- name: Make sure unattended-upgrades is not installed
+  apt:
+    name: unattended-upgrades
+    state: absent
+  when: ansible_os_family == "Debian"
+
+- name: Check if FOG is already installed
+  stat:
+    path: /opt/fog
+  register: fog_path_found
+
+- import_tasks: install.yml
+  when:
+    - fog_path_found.stat.exists == false
+    - fog_force == "yes"
+
+- import_tasks: update.yml
+  when:
+    - fog_path_found.stat.exists == true
+    - fog_force == "yes"
+
+- name: Clean up temp settings/answer file for FOG
+  file:
+    path: "/home/{{ fog_user }}/temp_settings"
+    state: absent
