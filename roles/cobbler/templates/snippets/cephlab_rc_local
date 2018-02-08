@@ -30,9 +30,7 @@ if [ ! -f /.cephlab_net_configured ]; then
       if command -v apt-get &>/dev/null; then
         echo -e "auto lo\niface lo inet loopback\n\nauto $nic\niface $nic inet dhcp" > /etc/network/interfaces
       else
-        #if [ ! -f /etc/sysconfig/network-scripts/ifcfg-$nic ]; then
-          echo -e "DEVICE=$nic\nBOOTPROTO=dhcp\nONBOOT=yes" > /etc/sysconfig/network-scripts/ifcfg-$nic
-        #fi
+        echo -e "DEVICE=$nic\nBOOTPROTO=dhcp\nONBOOT=yes" > /etc/sysconfig/network-scripts/ifcfg-$nic
       fi
       # Bounce the NIC so it gets a DHCP address
       ifdown $nic
