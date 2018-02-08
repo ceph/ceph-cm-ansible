@@ -55,3 +55,8 @@
       state: absent
     with_items: "{{ ssh_host_keys.stdout_lines|default([]) }}"
     when: ssh_host_keys is defined
+
+  - name: Unsubscribe RHEL
+    command: subscription-manager unregister
+    when: '"Red Hat" in ansible_lsb.description'
+    failed_when: false
