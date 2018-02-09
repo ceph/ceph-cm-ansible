@@ -30,24 +30,28 @@ if [ ! -f /.cephlab_net_configured ]; then
       if command -v apt-get &>/dev/null; then
         echo -e "auto lo\niface lo inet loopback\n\nauto $nic\niface $nic inet dhcp" > /etc/network/interfaces
       else
-        #if [ ! -f /etc/sysconfig/network-scripts/ifcfg-$nic ]; then
-          echo -e "DEVICE=$nic\nBOOTPROTO=dhcp\nONBOOT=yes" > /etc/sysconfig/network-scripts/ifcfg-$nic
-        #fi
+        echo -e "DEVICE=$nic\nBOOTPROTO=dhcp\nONBOOT=yes" > /etc/sysconfig/network-scripts/ifcfg-$nic
       fi
       # Bounce the NIC so it gets a DHCP address
       ifdown $nic
       # Don't bail if NIC fails to come up
       set +e
       ifup $nic
-      if [ $? -ne 0 ]; then
-        # If the NIC failed to DHCP, delete its ifcfg script.  Must be static or tagged
-        rm -f /etc/sysconfig/network-scripts/ifcfg-$nic
+#end raw
+      if ! timeout 1s ping -I $nic -nq -c1 $http_server 2>&1 >/dev/null; then
+#raw
+        # If we can't ping our Cobbler host, remove the DHCP config for this NIC.
+        # It must either be on a non-routable network or has no reachable DHCP server.
         ifdown $nic
+        rm -f /etc/sysconfig/network-scripts/ifcfg-$nic
+        sed -i "/$nic/d" /etc/network/interfaces
       fi
-      # Go back to bailing if anything above fails on the next NIC
+      # Go back to bailing if anything fails bringing the next NIC up
       set -e
       # Write our lockfile so this only gets run on firstboot
       touch /.cephlab_net_configured
+      # Break out of the loop once we've found our routable NIC
+      break
     else
       # Take the NIC back down if it's not connected
       ifconfig $nic down
