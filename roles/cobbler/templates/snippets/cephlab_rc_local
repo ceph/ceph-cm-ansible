@@ -80,7 +80,7 @@ if [ -n "$myips" ]; then
           hostname $newhostname
           newdomain=$(hostname -d)
           shorthostname=$(hostname -s)
-          echo $newhostname > /etc/hostname
+          echo $shorthostname > /etc/hostname
           if grep -q $newdomain /etc/hosts; then
             # Replace
             sed -i "s/.*$newdomain.*/$ip $newhostname $shorthostname/g" /etc/hosts
