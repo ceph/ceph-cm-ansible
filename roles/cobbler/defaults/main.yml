@@ -40,6 +40,7 @@ snippets:
   - cephlab_rc_local
   - cephlab_rhel_disks
   - cephlab_post_install_kernel_options
+  - cephlab_rhel_rhsm
 
 scripts:
   - cephlab_preseed_late

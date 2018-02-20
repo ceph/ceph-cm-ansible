@@ -70,6 +70,12 @@ $SNIPPET('post_anamon')
 # Start final steps
 $SNIPPET('cephlab_hostname')
 $SNIPPET('cephlab_user')
+#set distro = $getVar('distro','').split("-")[0]
+#if $distro == 'RHEL'
+$SNIPPET('cephlab_rhel_rhsm')
+#end if
+# Update to latest kernel before rebooting
+yum -y update kernel
 $SNIPPET('cephlab_rc_local')
 $SNIPPET('kickstart_done')
 # End final steps
