@@ -1,4 +1,15 @@
 ---
+# We need to include our RHSM entitlements from the secrets repo to subscribe
+# RHEL systems during post-install.
+- name: Include RHSM entitlement credentials
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ secrets_path }}/entitlements.yml"
+    - roles/common/vars/empty.yml
+  no_log: true
+  tags:
+    - always
+
 - name: Upload index.html template
   template:
     src: "httpd/index.html"
