@@ -4,14 +4,14 @@
 # cobbler / downburst / cloud-init.
 - import_playbook: ansible_managed.yml
 
-# if this node is in the pcp group, configure it
-- import_playbook: pcp.yml
-
 # if this node is in the teuthology group, configure it
 - import_playbook: teuthology.yml
 
 # if this node is in the testnode group, configure it
 - import_playbook: testnodes.yml
+
+# if this node is in the pcp group, configure it
+#- import_playbook: pcp.yml
 
 # if this node is in the cobbler group, configure it
 - import_playbook: cobbler.yml
