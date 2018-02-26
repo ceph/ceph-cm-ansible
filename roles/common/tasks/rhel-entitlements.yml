@@ -60,6 +60,7 @@
   shell: "subscription-manager release --list | grep -E '[0-9]'"
   register: rhsm_release_list
   changed_when: false
+  failed_when: rhsm_release_list.rc != 0 and "Beta" not in ansible_lsb.description
 
 # We don't need to be registered to CDN since there's no packages available
 # for this Beta/Alpha/RC installation
