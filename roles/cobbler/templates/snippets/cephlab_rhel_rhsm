@@ -1,4 +1,9 @@
 ## {{ ansible_managed }}
+{% if use_satellite %}
+## Install our satellite server's CA RPM if use_satellite is true
+wget -O /tmp/satellite-ca.rpm {{ satellite_cert_rpm }}
+rpm -U /tmp/satellite-ca.rpm
+{% endif %}
 ## Subscribe (These vars will be empty and this snippet won't get run if the vars aren't set like in Sepia)
 subscription-manager register --activationkey={{ subscription_manager_activationkey }} --org={{ subscription_manager_org }}
 ## Enable repos

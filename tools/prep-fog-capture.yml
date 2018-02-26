@@ -60,3 +60,11 @@
     command: subscription-manager unregister
     when: '"Red Hat" in ansible_lsb.description'
     failed_when: false
+
+  # A file gets leftover when a testnode is registered with Satellite that caused
+  # each registered subsequent testnode to report the wrong hostname
+  - name: Clean up katello facts
+    file:
+      path: /etc/rhsm/facts/katello.facts
+      state: absent
+    when: '"Red Hat" in ansible_lsb.description'

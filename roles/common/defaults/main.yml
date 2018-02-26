@@ -8,6 +8,9 @@ subscription_manager_org: ""
 # Repos to enable in Red Hat Subscription Manager
 rhsm_repos: []
 
+# Defines whether to use a Red Hat Satellite server
+use_satellite: false
+
 kerberos_realm: EXAMPLE.COM
 
 epel_mirror_baseurl: "http://dl.fedoraproject.org/pub/epel"

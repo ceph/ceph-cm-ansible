@@ -31,6 +31,14 @@ secrets repo.
 ``rhsm_repos`` is a list of Red Hat repos that a system should subscribe to.  We
 have them defined in ``roles/common/vars/redhat_{6,7}.yml``.
 
+``use_satellite`` is a boolean that sets whether a local Red Hat Satellite server is available and should be used instead of Red Hat's CDN.  If ``use_satellite`` is set to true, you must also define ``subscription_manager_activationkey``, ``subscription_manager_org``, and ``satellite_cert_rpm`` in your secrets repo.  See example::
+
+    # Red Hat Satellite vars
+    use_satellite: true
+    satellite_cert_rpm: "http://satellite.example.com/pub/katello-ca-consumer-latest.noarch.rpm"
+    subscription_manager_org: "Your Org"
+    subscription_manager_activationkey: "abc123"
+
 ``epel_mirror_baseurl`` is self explanatory and defined in
 ``roles/common/defaults/main.yml``.  Can be overwritten in secrets if you run
 your own local epel mirror.
