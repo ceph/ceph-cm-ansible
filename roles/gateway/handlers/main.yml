@@ -16,3 +16,15 @@
   service:
     name: fail2ban
     state: reloaded
+
+# Restart OpenVPN
+- name: restart openvpn
+  service:
+    name: "openvpn@{{ openvpn_server_name }}"
+    state: restarted
+
+# Restart rsyslog
+- name: restart rsyslog
+  service:
+    name: rsyslog
+    state: restarted

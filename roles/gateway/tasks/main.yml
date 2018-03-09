@@ -43,6 +43,7 @@
     mode: "{{ item.mode }}"
   with_items: "{{ gateway_secrets }}"
   no_log: true
+  notify: restart openvpn
 
 - name: Make sure OpenVPN service is running and enabled
   service:
