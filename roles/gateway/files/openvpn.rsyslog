@@ -1,0 +1,5 @@
+# Log syslog messages matching 'ovpn-' or 'openvpn' to /var/log/openvpn/openvpn.log
+if $programname startswith 'ovpn-' or $programname startswith 'openvpn' then /var/log/openvpn/openvpn.log
+
+# Stop processing matched logs (don't log them anywhere else)
+if $programname startswith 'ovpn-' or $programname startswith 'openvpn' then stop

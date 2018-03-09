@@ -1,9 +1,10 @@
-/var/log/openvpn.log {
+/var/log/openvpn/*.log {
 	daily
 	size 100M
-	rotate 14
+	rotate 90
 	compress
 	missingok
 	copytruncate
+	notifempty
 	create 644 nobody nobody
 }

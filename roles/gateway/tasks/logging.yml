@@ -1,0 +1,20 @@
+---
+- name: Create log directory
+  file:
+    path: /var/log/openvpn
+    state: directory
+
+- name: Set log dir SELinux context
+  command: restorecon -R /var/log/openvpn
+
+- name: Write logrotate conf file
+  copy:
+    src: files/openvpn.logrotate
+    dest: /etc/logrotate.d/openvpn
+  notify: restart rsyslog
+
+- name: Write rsyslog conf file
+  copy:
+    src: files/openvpn.rsyslog
+    dest: /etc/rsyslog.d/20-openvpn.conf
+  notify: restart rsyslog
