@@ -17,18 +17,6 @@
     group: root
     mode: 0755
 
-- name: Enable kernel logging to console.
-  script: scripts/kernel_logging.sh creates=/kernel-logging-setup
-  register: kernel_logging
-  tags:
-    - kernel_logging
-
-- name: Update grub
-  command: update-grub
-  when: kernel_logging|changed
-  tags:
-    - kernel_logging
-
 - name: Enable kernel modules to load at boot time.
   template:
     src: modules

@@ -245,9 +245,6 @@ gpg-keys
 hostname
     Check and set proper fqdn. See, ``roles/testnode/tasks/set_hostname.yml``.
 
-kernel_logging
-    Runs a script that enabled kernel logging to the console on ubuntu.
-
 lvm
     Configures logical volumes if dicts are defined in the secrets repo.
 
