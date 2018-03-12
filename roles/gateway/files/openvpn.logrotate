@@ -1,6 +1,5 @@
 /var/log/openvpn/*.log {
 	daily
-	size 100M
 	rotate 90
 	compress
 	missingok
