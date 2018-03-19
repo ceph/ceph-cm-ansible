@@ -172,7 +172,7 @@ A dictionary of drives/devices you want to partition.  ``scratch_devs`` is not r
     # Example:
     drives_to_partition:
       nvme0n1:
-        drive: "/dev/nvme0n1"
+        device: "/dev/nvme0n1"
         unit: "GB"
         sizes:
           - "0 95"
@@ -186,11 +186,13 @@ A dictionary of drives/devices you want to partition.  ``scratch_devs`` is not r
           - p3
           - p4
       sdb:
-        drive: "/dev/sdb"
+        device: "/dev/sdb"
         unit: "%"
         sizes:
           - "0 50"
           - "50 100"
+        scratch_devs:
+          - 2
 
 A dictionary of volume groups you want created.  ``pvs`` should be a comma-delimited list.  Example::
 
