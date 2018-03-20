@@ -37,9 +37,15 @@ if [ ! -f /.cephlab_net_configured ]; then
       # Don't bail if NIC fails to come up
       set +e
       ifup $nic
+      attempts=0
+      # Try for 5 seconds to ping our Cobbler host
 #end raw
-      if ! timeout 5s ping -I $nic -nq -c1 $http_server 2>&1 >/dev/null; then
+      while ! ping -I $nic -nq -c1 $http_server && [ $attempts -lt 5 ]; do
 #raw
+        sleep 1
+        attempts=$[$attempts+1]
+      done
+      if [ $attempts == 5 ]; then
         # If we can't ping our Cobbler host, remove the DHCP config for this NIC.
         # It must either be on a non-routable network or has no reachable DHCP server.
         ifdown $nic
