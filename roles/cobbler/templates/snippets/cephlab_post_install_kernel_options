@@ -1,12 +1,18 @@
 ## {{ ansible_managed }}
-#if $getVar('kernel_options_post','') != ''
 # Start post install kernel options update
-if [ -f /etc/default/grub ]; then
-  # set GRUB_CMDLINE_LINUX
-  TMP_GRUB=\$(gawk 'match(\$0,/^GRUB_CMDLINE_LINUX="([^"]+)"/,a) {printf("%s\n",a[1])}' /etc/default/grub)
-  sed -i '/^GRUB_CMDLINE_LINUX=/d' /etc/default/grub
-  echo "GRUB_CMDLINE_LINUX=\"\$TMP_GRUB $kernel_options_post\"" >> /etc/default/grub
-  grub-mkconfig -o /boot/grub/grub.cfg
-fi
-# End post install kernel options update
+cat > /etc/default/grub <<-EOF
+	# {{ ansible_managed }}
+	GRUB_DEFAULT=0
+	GRUB_TIMEOUT=5
+	GRUB_DISTRIBUTOR=`lsb_release -i -s 2> /dev/null || echo Debian`
+	GRUB_CMDLINE_LINUX_DEFAULT=""
+	GRUB_TERMINAL="console"
+	GRUB_SERIAL_COMMAND="console --unit=1 --speed=115200 --stop=1"
+#if $getVar('kernel_options_post','') != ''
+	GRUB_CMDLINE_LINUX="$kernel_options_post"
+#else
+	GRUB_CMDLINE_LINUX="console=tty0"
 #end if
+	EOF
+update-grub
+# End post install kernel options update

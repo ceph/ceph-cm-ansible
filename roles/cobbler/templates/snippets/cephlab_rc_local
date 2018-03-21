@@ -8,11 +8,16 @@
 #else
 #set script = '/etc/rc.local'
 #end if
+# Search for 'ttyS' in kernel_options and set $console accordingly
+# so rc.local output gets sent to the proper tty
+#import re
+#set kernel_options = $getVar('kernel_options','ttyS1')
+#set console = re.match('.*(ttyS\d+).*', $kernel_options).groups()[0]
 
 cat > $script <<\EOF
 #!/bin/bash
-# First, redirect stderr and stdout to a logfile
-exec 2> /tmp/rc.local.log
+# Redirect rc.local output to our console so it's in teuthology console logs
+exec 2> /dev/$console
 exec 1>&2
 set -ex
 
@@ -101,6 +106,7 @@ if [ -n "$myips" ]; then
     fi
   done
 fi
+#end raw
 
 {% endif %}
 
@@ -110,7 +116,6 @@ if command -v apt-get &>/dev/null; then
      dpkg-reconfigure openssh-server
   fi
 fi
-#end raw
 
 # Only run once.
 if [ -e $lockfile ]; then
@@ -125,7 +130,9 @@ do
     sleep 3
 done
 # Output message to console indicating Ansible is being run
+set +x
 echo -e "==================================\nInstructing Cobbler to run Ansible\n      Waiting for completion\n==================================" > /dev/console
+set -x
 # Run the post-install trigger a second time
 wget --timeout=1800 -t1 -O /dev/null "http://$http_server:$http_port/cblr/svc/op/trig/mode/post/system/$system_name" || true
 touch $lockfile
