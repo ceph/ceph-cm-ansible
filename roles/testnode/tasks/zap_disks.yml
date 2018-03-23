@@ -107,3 +107,6 @@
     - removed_lvm_data|failed
     - pvs_to_remove is defined
     - pvs_to_remove.stdout_lines|length > 0
+
+- name: Notify OS of partition changes
+  command: partprobe
