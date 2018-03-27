@@ -7,3 +7,5 @@ teuthology_users:
 
 teuthology_repo: https://github.com/ceph/teuthology.git
 teuthology_yaml_extra: ""
+
+remote_crontab_url: "https://raw.githubusercontent.com/ceph/ceph/master/qa/crontab/teuthology-cronjobs"

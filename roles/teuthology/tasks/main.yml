@@ -17,6 +17,16 @@
   tags:
     - config
 
+- name: Ship teuthology user's crontab update script
+  template:
+    src: update-crontab.sh
+    dest: /home/teuthology/bin/update-crontab.sh
+    mode: 0775
+    owner: teuthology
+    group: teuthology
+  tags:
+    - crontab
+
 # Serve logs over HTTP
 - import_tasks: setup_log_access.yml
   tags:

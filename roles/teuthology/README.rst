@@ -14,9 +14,9 @@ It also does the following:
 - Clone ``teuthology`` repos into ``~/src/teuthology_master`` under those user accounts
 - Run ``teuthology``'s ``bootstrap`` script
 - Manages user accounts and sudo privileges using the ``test_admins`` group_var in the secrets repo
+- Includes a script to keep the ``teuthology`` user's crontab up to date with remote version-controlled versions (``--tags="crontab")
 
 It currently does NOT do these things:
 
-- Manage crontab entries
 - Manage ``teuthology-worker`` processes
 - Run ``teuthology-nuke --stale``
