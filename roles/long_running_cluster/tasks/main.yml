@@ -8,3 +8,7 @@
 
 - import_tasks: nagios.yml
   when: mon_service_status.rc == 0
+
+- import_tasks: logrotate.yml
+  tags:
+    - logrotate
