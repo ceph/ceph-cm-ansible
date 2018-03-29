@@ -1,0 +1,59 @@
+---
+- name: Install/update packages
+  yum:
+    name: dhcp
+    state: latest
+  register: dhcp_yum_transaction
+
+- name: Check for firewalld
+  command: firewall-cmd --state
+  register: firewalld_state
+  ignore_errors: true
+
+- name: Check for iptables
+  command: systemctl status iptables
+  register: iptables_state
+  ignore_errors: true
+
+- name: Make sure firewalld is running
+  service:
+    name: firewalld
+    state: started
+    enabled: yes
+  when: iptables_state.rc != 0
+
+- name: Configure firewalld
+  firewalld:
+    service: dhcp
+    state: enabled
+    permanent: true
+    immediate: yes
+  when: iptables_state.rc != 0
+
+- name: Write global dhcpd.conf
+  template:
+    src: dhcpd.conf.j2
+    dest: /etc/dhcp/dhcpd.conf
+    backup: yes
+  register: dhcp_global_config
+
+- name: Write each subnet config
+  template:
+    src: dhcpd.subnet.conf.j2
+    dest: "/etc/dhcp/dhcpd.{{ item }}.conf"
+    backup: yes
+  with_items: "{{ dhcp_subnets }}"
+  register: dhcp_subnet_config
+
+- name: Test new config
+  command: dhcpd -t -cf /etc/dhcp/dhcpd.conf
+  register: dhcpd_config_test_result
+  when: dhcp_global_config|changed or dhcp_subnet_config|changed
+
+- name: Restart dhcpd
+  service:
+    name: dhcpd
+    state: restarted
+  when:
+    - dhcpd_config_test_result is defined
+    - dhcpd_config_test_result.rc == 0

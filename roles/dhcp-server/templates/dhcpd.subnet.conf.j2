@@ -1,0 +1,70 @@
+{% for subnet, subnet_item in dhcp_subnets.iteritems() %}
+{% if subnet == item %}
+subnet {{ subnet_item.cidr | ipaddr('network') }} netmask {{ subnet_item.cidr | ipaddr('netmask') }} {
+  {% if subnet_item.domain_name is defined -%}
+  option domain-name           "{{ subnet_item.domain_name }}";
+  {% endif -%}
+  {% if subnet_item.domain_search is defined -%}
+  option domain-search         "{{ subnet_item.domain_search|join('", "') }}";
+  {% endif -%}
+  {% if subnet_item.domain_name_servers is defined -%}
+  option domain-name-servers   {{ subnet_item.domain_name_servers|join(', ') }};
+  {% endif -%}
+  {% if subnet_item.routers is defined -%}
+  option routers               {{ subnet_item.routers }};
+  {% endif -%}
+  {% if subnet_item.next_server is defined -%}
+  next-server                  {{ subnet_item.next_server }};
+  {% endif -%}
+  {% if subnet_item.filename is defined -%}
+  filename                     "{{ subnet_item.filename }}";
+  {% endif %}
+
+  {% if subnet_item.classes is defined -%}
+  {% for class_name, class_string in subnet_item.classes.items() -%}
+  class "{{ class_name }}" {
+    {{ class_string }};
+  }
+
+  {% endfor -%}
+  {%- endif -%}
+
+  {% if subnet_item.pools is defined -%}
+  {% for pool, pool_value in subnet_item.pools.items() -%}
+  pool {
+    {% if pool == "unknown_clients" -%}
+    allow unknown-clients;
+    {% else -%}
+    allow members of "{{ pool }}";
+    {% endif -%}
+    {% if pool_value.range is string -%}
+    range {{ pool_value.range }};
+    {% else -%}
+    range {{ pool_value.range|join(';\n    range ') }};
+    {% endif -%}
+    {% if pool_value.next_server is defined -%}
+    next-server {{ pool_value.next_server }};
+    {% endif -%}
+    {% if pool_value.filename is defined -%}
+    filename "{{ pool_value.filename }}";
+    {% endif -%}
+  }
+
+  {% endfor -%}
+  {%- endif -%}
+
+  {% for host in groups['all'] | sort | unique -%}
+  {% if hostvars[host][subnet_item.macvar] is defined -%}
+  host {{ host.split('.')[0] }}-{{ subnet }} {
+    {% if hostvars[host]['dhcp_next_server'] is defined -%}
+    next-server {{ hostvars[host]['dhcp_next_server'] }};
+    filename "{{ hostvars[host]['dhcp_filename'] }}";
+    {% endif -%}
+    hardware ethernet {{ hostvars[host][subnet_item.macvar] }};
+    fixed-address {{ hostvars[host][subnet_item.ipvar] }};
+  }
+  {% endif -%}
+  {% endfor -%}
+} # end subnet
+{% endif %}
+{% endfor %}

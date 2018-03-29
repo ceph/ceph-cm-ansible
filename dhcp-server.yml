@@ -1,0 +1,5 @@
+---
+- hosts: dhcp_server
+  roles:
+    - dhcp-server
+  become: true
