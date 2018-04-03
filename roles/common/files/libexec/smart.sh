@@ -388,12 +388,16 @@ nvme_smart ()
         rc=2
       fi
       # Check for error log entries
-      if [ "$num_err_log_entries" != "0" ]
-      then
-        messages+=("$nvmedisk indicates there are $num_err_log_entries error log entries")
-        failed=true
-        rc=2
-      fi
+#     This doesn't appear to be a useful or reliable method of measuring NVMe health.
+#     I've done a bunch of research and haven't been able to find much of anything
+#     about this metric.  On top of that, all our new reesi NVMe indicate errors but
+#     there's nothing in the error-logs so I'm commenting this for now.
+#      if [ "$num_err_log_entries" != "0" ]
+#      then
+#        messages+=("$nvmedisk indicates there are $num_err_log_entries error log entries")
+#        failed=true
+#        rc=2
+#      fi
     elif [ "$outputcount" != "4" ]
     then
       messages+=("$nvmedisk returned $outputcount of 4 expected attributes")
