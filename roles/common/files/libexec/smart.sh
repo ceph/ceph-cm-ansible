@@ -3,14 +3,6 @@
 # and reallocated sector count
 #
 # Nagios return codes: 0 = OK; 1 = WARNING; 2 = CRITICAL; 3 = UNKNOWN
-# SMART Attribute Codes:
-#   5 = Reallocated
-#   187 = Reported Uncorrect
-#   197 = Pending
-#   198 = Uncorrectable Sector Count
-#
-# TO-DO: Add support for dynamic SMART attribute lookup.  For example,
-#        187 is reported for Seagate HDD and all SSDs but not Hitachi HDDs.
 #
 # See https://en.wikipedia.org/wiki/S.M.A.R.T.#ATA_S.M.A.R.T._attributes
 
@@ -128,11 +120,11 @@ areca_smart ()
 {
   # Store output of cli64 to reduce repeated executions
   cli64out=$(sudo cli64 disk info | grep -E "Slot#[[:digit:]]")
-  numdrives=$(echo "$cli64out" | wc -l)
   # Loop through all disks not marked as 'N.A.' or 'Failed'
   for slot in $(echo "$cli64out" | grep -v 'N.A.\|Failed' \
   | grep -o "Slot#[[:digit:]]" | cut -c6-)
   do
+    let "numdrives+=1"
     failed=false
     # Determine if disk is JBOD or part of hardware RAID
     if echo "$cli64out" | grep -E "Slot#$slot" | grep -q 'JBOD'
@@ -241,62 +233,107 @@ areca_failed ()
 normal_smart ()
 {
   # The grep regex will include drives named sdaa, for example
-  numdrives=$(cat /proc/partitions | grep -w 'sd[a-z]\|sd[a-z]\{2\}' | wc -l)
   for l in $(cat /proc/partitions | grep -w 'sd[a-z]\|sd[a-z]\{2\}' \
   | awk '{ print $NF }')
   do
+    let "numdrives+=1"
     failed=false
-    output=$(sudo smartctl -a /dev/$l | grep -E "^  "5"|^"197"|^"198"" \
-    | awk '{ print $NF }' | tr '\n' ' ')
-    outputcount=$(echo $output | wc -w)
-    # Check if drive is SSD and set var accordingly
+    # The general consensus online is that some SMART attributes are less
+    # worrisome when it comes to SSDs (e.g., Reallocated_Sector_Ct)
     if sudo smartctl -i /dev/$l | grep -q 'Solid State Device'; then
       is_ssd=true
     else
       is_ssd=false
     fi
-    # Only continue if we received 3 SMART data points and drive is not SSD
-    if [ "$outputcount" = "3" ] && [ "$is_ssd" = false ]
-    then
-      read reallocated pending uncorrect <<< $output
-      if [ "$reallocated" != "0" ]
-      then
+    output=$(sudo smartctl -f hex -A /dev/$l | grep '^0')
+    # This block is mainly for the SAS drives in the reesi since they
+    # don't report regular SMART attributes
+    if [ $? != 0 ]; then
+      if output=$(sudo smartctl -l error /dev/$l | grep '^read:\|^write:'); then
+        uncorrect_read=$(echo "$output" | grep '^read:' | awk '{print $NF}')
+        uncorrect_write=$(echo "$output" | grep '^write:' | awk '{print $NF}')
+        if [ "$uncorrect_read" != "0" ]; then
+          messages+=("Drive $l reports $uncorrect_read uncorrected read errors")
+        failed=true
+        rc=2
+        fi
+        if [ "$uncorrect_write" != "0" ]; then
+          messages+=("Drive $l reports $uncorrect_write uncorrected write errors")
+        failed=true
+        rc=2
+        fi
+      else
+        messages+=("No SMART data found for drive $l")
+        failed=true
+        rc=3
+      fi
+    fi
+    # 0x05 (5) Reallocated_Sector_Ct
+    if echo "$output" | grep -q '^0x05'; then
+      reallocated=$(echo "$output" | grep '^0x05' | awk '{print $NF}')
+      if [ "$reallocated" != "0" ] && [ $is_ssd = false ]; then
         messages+=("Drive $l has $reallocated reallocated sectors")
         failed=true
         # A small number of reallocated sectors is OK
 	# Don't set rc to WARN if we were already CRIT from previous drive
-        if [ "$reallocated" -le 5 ] && [ "$rc" != 2 ]
+        if [ $reallocated -le 5 ] && [ "$rc" -lt 2 ]
         then
           rc=1 # Warn if <= 5
         else
           rc=2 # Crit if >5
         fi
       fi
-      if [ "$pending" != "0" ]
-      then
+    fi
+    # 0xbb (187) Reported_Uncorrect
+    if echo "$output" | grep -q '^0xbb'; then
+      uncorrect=$(echo "$output" | grep '^0xbb' | awk '{print $NF}')
+      if [ "$uncorrect" != "0" ]; then
+        messages+=("Drive $l has $uncorrect reported uncorrect sectors")
+        failed=true
+        rc=2
+      fi
+    fi
+    # 0xc4 (196) Reallocated_Event_Count
+    if echo "$output" | grep -q '^0xc4'; then
+      reallocatedevents=$(echo "$output" | grep '^0xc4' | awk '{print $NF}')
+      if [ "$reallocatedevents" != "0" ]; then
+        messages+=("Drive $l has $reallocatedevents reallocated events")
+        failed=true
+        rc=2
+      fi
+    fi
+    # 0xc5 (197) Current_Pending_Sector
+    if echo "$output" | grep -q '^0xc5'; then
+      pending=$(echo "$output" | grep '^0xc5' | awk '{print $NF}')
+      if [ "$pending" != "0" ]; then
         messages+=("Drive $l has $pending pending sectors")
         failed=true
         rc=2
       fi
-      if [ "$uncorrect" != "0" ]
-      then
+    fi
+    # 0xc6 (198) Offline_Uncorrectable
+    if echo "$output" | grep -q '^0xc6'; then
+      uncorrect=$(echo "$output" | grep '^0xc6' | awk '{print $NF}')
+      if [ "$uncorrect" != "0" ]; then
         messages+=("Drive $l has $uncorrect uncorrect sectors")
         failed=true
         rc=2
       fi
-    elif [ "$outputcount" != "3" ] && [ "$is_ssd" = false ]
-    then
-      messages+=("Drive $l returned $outputcount of 3 expected attributes")
-      unknownmsg="SMART data could not be read for one or more drives"
-      rc=3
-    # Set no return code and assume any SSD is healthy for now
-    elif [ "$is_ssd" = true ]
-    then
-      messages+=("Drive $l is an SSD.  Not yet supported.")
-      rc=0
-    else
-      messages+=("Error processing data for drive $l")
-      rc=3
+    fi
+    # 0xe9 (233) Media_Wearout_Indicator
+    if echo -e "$output" | grep -q '^0xe9'; then
+      wearout=$(echo "$output" | grep '^0xe9' | awk '{print $NF}')
+      if [ "$wearout" == "1" ]; then
+        messages+=("Drive $l has exhausted its Media_Wearout_Indicator")
+        failed=true
+	# Don't set rc to WARN if we were already CRIT from previous drive
+        if [ "$rc" != 2 ]
+        then
+          rc=1
+        else
+          rc=2
+        fi
+      fi
     fi
     # Make sure drives with multiple types of bad sectors only get counted once
     if [ "$failed" = true ]
@@ -313,6 +350,7 @@ nvme_smart ()
   do
     # Include NVMe devices in overall drive count
     let "numdrives+=1"
+    failed=false
     # Clear output variable from any previous disk checks
     output=""
     output=$(sudo $nvmecli smart-log $nvmedisk | \
