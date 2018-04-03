@@ -6,9 +6,11 @@
 #
 # This script should live on the DHCP server somewhere executable
 #
-# NOTE: DHCP entries *must* be in the following format (including domain)
-# host foo.front.sepia.ceph.com {
-#   hardware ethernet: aa:bb:cc:11:22:33;
+# NOTE: DHCP entries *must* be in the following format
+# (dhcp-server role write entries like this)
+#
+# host foo-front {
+#   hardware ethernet aa:bb:cc:11:22:33;
 #   fixed-address 1.2.3.4;
 # }
 
@@ -31,8 +33,10 @@ dhcpconfig="/etc/dhcp/dhcpd.front.conf"
 timestamp=$(date +%s)
 cobblerip="172.21.0.11"
 cobblerfilename="/pxelinux.0"
-macaddr=$(sed -n "/host ${host}.front.sepia.ceph.com/,/}/p" $dhcpconfig | grep 'hardware ethernet' | awk '{ print $3 }' | tr -d ';')
-ipaddr=$(sed -n "/host ${host}.front.sepia.ceph.com/,/}/p" $dhcpconfig | grep 'fixed-address' | awk '{ print $2 }' | tr -d ';')
+fogip="172.21.0.72"
+fogfilename="/undionly.kpxe"
+macaddr=$(sed -n "/host ${host}-front/,/}/p" $dhcpconfig | grep 'hardware ethernet' | awk '{ print $3 }' | tr -d ';')
+ipaddr=$(sed -n "/host ${host}-front/,/}/p" $dhcpconfig | grep 'fixed-address' | awk '{ print $2 }' | tr -d ';')
 linenum=$(grep -n $host $dhcpconfig | cut -d ':' -f1)
 
 if [ -z "$macaddr" ]; then
@@ -50,12 +54,12 @@ fi
 cp $dhcpconfig ${dhcpconfig}_$timestamp.bak
 
 # Delete
-sed -i "/host ${host}.front.sepia.ceph.com {/,/}/d" $dhcpconfig
+sed -i "/host ${host}-front {/,/}/d" $dhcpconfig
 
 if [ "$2" == "cobbler" ]; then
-  sed -i "${linenum} i \    host ${host}.front.sepia.ceph.com {\n\      hardware ethernet $macaddr;\n\      fixed-address $ipaddr;\n\      next-server $cobblerip;\n\      filename \"$cobblerfilename\";\n\    }" $dhcpconfig
+  sed -i "${linenum} i \  host ${host}-front {\n\    hardware ethernet $macaddr;\n\    fixed-address $ipaddr;\n\    next-server $cobblerip;\n\    filename \"$cobblerfilename\";\n\  }" $dhcpconfig
 elif [ "$2" == "fog" ]; then
-  sed -i "${linenum} i \    host ${host}.front.sepia.ceph.com {\n\      hardware ethernet $macaddr;\n\      fixed-address $ipaddr;\n\    }" $dhcpconfig
+  sed -i "${linenum} i \  host ${host}-front {\n\    hardware ethernet $macaddr;\n\    fixed-address $ipaddr;\n\    next-server $fogip;\n\    filename \"$fogfilename\";\n\  }" $dhcpconfig
 fi
 
 dhcpd -q -t -cf $dhcpconfig
@@ -67,5 +71,5 @@ if [ $? != 0 ]; then
   exit 1
 else
   rm ${dhcpconfig}_$timestamp.bak
-  service dhcpd restart
+#  service dhcpd restart
 fi
