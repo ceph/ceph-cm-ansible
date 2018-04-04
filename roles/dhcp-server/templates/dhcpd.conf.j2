@@ -1,0 +1,9 @@
+{% for item in dhcp_global_options %}
+{% for key, value in item.items() %}
+{{ key }} {{ value }};
+{% endfor %}
+{% endfor %}
+
+{% for key, value in dhcp_subnets.iteritems() %}
+include "/etc/dhcp/dhcpd.{{ key }}.conf";
+{% endfor %}
