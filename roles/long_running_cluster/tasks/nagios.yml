@@ -1,0 +1,36 @@
+---
+- name: Clone ceph-nagios-plugins on MON nodes
+  git:
+    repo: https://github.com/ceph/ceph-nagios-plugins.git
+    dest: "{{ nagios_plugins_directory }}/ceph-nagios-plugins"
+    update: yes
+
+- name: Make install ceph-nagios-plugins
+  shell: "cd /tmp/ceph-nagios-plugins && make libdir={{ nagios_plugins_directory|replace('/nagios/plugins', '') }} install"
+
+- name: Check for nagios ceph keyring
+  stat:
+    path: /etc/ceph/client.nagios.keyring
+  register: nagios_keyring
+
+- name: Create nagios ceph keyring
+  shell: "ceph auth get-or-create client.nagios mon 'allow r' > /etc/ceph/client.nagios.keyring && chown ceph:ceph /etc/ceph/client.nagios.keyring"
+  when: nagios_keyring.stat.exists == false
+
+- name: Write nrpe config for ceph health checks
+  lineinfile:
+    dest: /etc/nagios/nrpe_local.cfg
+    regexp: '.*check_ceph_health.*'
+    line: "command[check_ceph_health]={{ nagios_plugins_directory }}/check_ceph_health --name client.nagios -k /etc/ceph/client.nagios.keyring --whitelist 'failing to respond to cache pressure|requests are blocked'"
+    state: present
+    create: yes
+  notify: restart nagios-nrpe-server
+
+- name: Write nrpe config for ceph cluster capacity
+  lineinfile:
+    dest: /etc/nagios/nrpe_local.cfg
+    regexp: '.*check_ceph_df.*'
+    line: "command[check_ceph_df]={{ nagios_plugins_directory }}/check_ceph_df --name client.nagios -k /etc/ceph/client.nagios.keyring --pool data --warn 90 --critical 95"
+    state: present
+    create: yes
+  notify: restart nagios-nrpe-server

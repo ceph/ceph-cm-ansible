@@ -1,0 +1,12 @@
+# {{ ansible_managed }}
+/var/log/ceph/*.log {
+    rotate 12
+    compress
+    sharedscripts
+    postrotate
+        killall -q -1 ceph-mon ceph-mgr ceph-mds ceph-osd ceph-fuse radosgw || true
+    endscript
+    missingok
+    notifempty
+    su root ceph
+}
