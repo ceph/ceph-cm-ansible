@@ -8,7 +8,7 @@ rpm -U /tmp/satellite-ca.rpm
 subscription-manager register --activationkey={{ subscription_manager_activationkey }} --org={{ subscription_manager_org }}
 ## Enable repos
 #if $os_version == 'rhel7'
-subscription-manager repos --enable rhel-7-server-rpms --enable=rhel-7-server-optional-rpms --enable=rhel-7-server-extras-rpms
+subscription-manager repos --enable=rhel-7-server-rpms --enable=rhel-7-server-optional-rpms --enable=rhel-7-server-extras-rpms
 #else
-subscription-manager repos --enable rhel-6-server-rpms --enable=rhel-6-server-optional-rpms --enable=rhel-6-server-extras-rpms --enable=rhel-scalefs-for-rhel-6-server-rpms
+subscription-manager repos --enable=rhel-6-server-rpms --enable=rhel-6-server-optional-rpms --enable=rhel-6-server-extras-rpms --enable=rhel-scalefs-for-rhel-6-server-rpms
 #end if
