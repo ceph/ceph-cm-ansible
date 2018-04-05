@@ -8,16 +8,11 @@
 #else
 #set script = '/etc/rc.local'
 #end if
-# Search for 'ttyS' in kernel_options and set $console accordingly
-# so rc.local output gets sent to the proper tty
-#import re
-#set kernel_options = $getVar('kernel_options','ttyS1')
-#set console = re.match('.*(ttyS\d+).*', $kernel_options).groups()[0]
 
 cat > $script <<\EOF
 #!/bin/bash
 # Redirect rc.local output to our console so it's in teuthology console logs
-exec 2> /dev/$console
+exec 2> /dev/ttyS1
 exec 1>&2
 set -ex
 
