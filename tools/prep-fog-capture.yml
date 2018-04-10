@@ -68,3 +68,31 @@
       path: /etc/rhsm/facts/katello.facts
       state: absent
     when: '"Red Hat" in ansible_lsb.description'
+
+  - set_fact:
+      ntp_service: ntp
+    when: ansible_os_family == "Debian"
+
+  - set_fact:
+      ntp_service: ntpd
+    when: ansible_os_family == "RedHat"
+
+  - name: "Stop {{ ntp_service }} service"
+    service:
+      name: "{{ ntp_service }}"
+      state: stopped
+
+  # The theory here is although we do have the ntp service running on boot,
+  # if the time is off, it slowly drifts back in sync.  Since our testnodes
+  # are ephemeral, they don't ever have enough time to correctly drift
+  # back to the correct time.  So we'll force it in the captured OS images.
+  - name: Force time synchronization using stepping
+    command: "ntpdate -b {{ ntp_servers|join(' ') }}"
+
+  - name: "Start {{ ntp_service }} again"
+    service:
+      name: "{{ ntp_service }}"
+      state: started
+
+  - name: Sync the hardware clock
+    command: "hwclock --systohc"
