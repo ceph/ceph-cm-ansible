@@ -25,6 +25,11 @@
 - import_tasks: zypper_systems.yml
   when: ansible_pkg_mgr == "zypper"
 
+- name: Set the hardware clock
+  command: hwclock --systohc
+  tags:
+    - timezone
+
 # configure Kerberos
 - import_tasks: kerberos.yml
   tags:

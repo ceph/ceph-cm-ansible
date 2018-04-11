@@ -26,12 +26,6 @@
   tags:
     - timezone
 
-- name: Set the hardware clock (RHEL/CentOS 6)
-  command: hwclock --systohc
-  when: ansible_distribution_major_version == "6" and current_tz.stdout|default("") != timezone
-  tags:
-    - timezone
-
 - name: Set the timezone (RHEL/CentOS 7)
   command: timedatectl set-timezone {{ timezone }}
   # Default is used below to avoid breaking check mode
