@@ -9,7 +9,7 @@
 
 - name: Combine list of non-root disks
   set_fact:
-      disks_for_vg: "{{ ansible_devices.keys() | sort | reject('match',root_disk) | reject('match','loop') | reject('match','ram') | map('regex_replace','^','/dev/') | join(',') }}"
+      disks_for_vg: "{{ ansible_devices.keys() | sort | reject('match',root_disk) | reject('match','loop') | reject('match','ram') | reject('match','dm-') | map('regex_replace','^','/dev/') | join(',') }}"
   when: quick_lvs_to_create is defined
 
 - set_fact: vg_name=vg_hdd
