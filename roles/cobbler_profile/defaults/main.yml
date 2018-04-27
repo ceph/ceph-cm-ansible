@@ -78,3 +78,9 @@ distros:
       kickstart: cephlab_ubuntu.preseed
       kernel_options: "netcfg/choose_interface=auto console=tty0 console=ttyS1,115200"
       kernel_options_post: "pci=realloc=off console=tty0 console=ttyS1,115200"
+  "Ubuntu-18.04-server-x86_64":
+      iso: "http://cdimage.ubuntu.com/releases/18.04/release/ubuntu-18.04-server-amd64.iso"
+      sha256: a7f5c7b0cdd0e9560d78f1e47660e066353bb8a79eb78d1fc3f4ea62a07e6cbc
+      kickstart: cephlab_ubuntu.preseed
+      kernel_options: "netcfg/choose_interface=auto console=tty0 console=ttyS1,115200"
+      kernel_options_post: "pci=realloc=off console=tty0 console=ttyS1,115200"
