@@ -1,0 +1,15 @@
+---
+packages:
+  - mpich
+  - qemu-system-x86
+#  - blkin
+  - lttng-tools
+  # for building xfstests #18067
+  - libtool-bin
+
+non_aarch64_packages:
+  - libgoogle-perftools4
+  - iozone3
+  - libssl1.0.0
+
+non_aarch64_packages_to_upgrade: []
