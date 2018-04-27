@@ -30,6 +30,7 @@
     dest: /etc/default/rcS
     line: "FSCKFIX=yes"
     regexp: "FSCKFIX=no"
+    create: yes
     # backrefs makes it so that if the regexp
     # isn't found the file is left unchanged
     backrefs: yes
