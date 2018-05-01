@@ -40,6 +40,7 @@
   command: subscription-manager register
            --activationkey={{ subscription_manager_activationkey }}
            --org={{ subscription_manager_org }}
+           --force
   no_log: true
   when: rhsm_registered == false and have_entitlements == true
   register: entitled
