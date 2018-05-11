@@ -123,6 +123,8 @@
   with_items: "{{ rhsm_repos }}"
   when: rhsm_registered == true and
         replace_repos|bool == true
+  retries: 5
+  delay: 10
 
 - name: Remove old apt-mirror repository definition.
   file:
