@@ -76,8 +76,8 @@ packages:
   - httpd-tools
   - mod_ssl
   - mod_fastcgi-2.4.7-1.ceph.el7.centos
-  ###
-  - libevent-devel
+  ### for swift and s3-tests
+  - libev-devel
   # for pretty-printing xml
   - perl-XML-Twig
   # for java bindings, hadoop, etc.

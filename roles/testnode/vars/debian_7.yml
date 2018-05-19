@@ -12,7 +12,7 @@ packages:
   - python-gevent
   - python-dev
   - python-virtualenv
-  - libevent-dev
+  - libev-dev
   - fuse
   - libssl1.0.0
   - libgoogle-perftools4
