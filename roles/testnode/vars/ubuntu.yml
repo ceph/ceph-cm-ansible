@@ -6,7 +6,7 @@ common_packages:
   # for s3 tests
   - python-virtualenv
   - python-dev
-  - libevent-dev
+  - libev-dev
   ###
   # for cpan
   - perl

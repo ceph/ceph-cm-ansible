@@ -63,7 +63,7 @@ packages:
   - httpd-tools
   - mod_ssl
   - mod_fastcgi-2.4.7-1.ceph.el7
-  - libevent-devel
+  - libev-devel
   - perl-XML-Twig
   - java-1.6.0-openjdk-devel
   - junit4
