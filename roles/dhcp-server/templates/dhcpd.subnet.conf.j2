@@ -60,6 +60,9 @@ subnet {{ subnet_item.cidr | ipaddr('network') }} netmask {{ subnet_item.cidr | 
     next-server {{ hostvars[host]['dhcp_next_server'] }};
     filename "{{ hostvars[host]['dhcp_filename'] }}";
     {% endif -%}
+    {% if hostvars[host]['domain_name_servers'] is defined -%}
+    option domain-name-servers {{ hostvars[host]['domain_name_servers']|join(', ') }};
+    {% endif -%}
     hardware ethernet {{ hostvars[host][subnet_item.macvar] }};
     fixed-address {{ hostvars[host][subnet_item.ipvar] }};
   }
