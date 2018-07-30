@@ -59,8 +59,17 @@
   tags:
     - repos
 
+# skip_packaging=true set in group_vars for OVH testnodes.  We still want these
+# tasks to run on CentOS though so we set it back to false here.
+- set_fact:
+    skip_packaging: false
+  when: ansible_distribution != "RedHat"
+  tags:
+    - packages
+
 - name: Perform package related tasks.
   import_tasks: yum/packages.yml
+  when: skip_packaging|default(false)|bool != true
   tags:
     - packages
 

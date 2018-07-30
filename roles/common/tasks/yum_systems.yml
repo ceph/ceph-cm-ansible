@@ -43,10 +43,12 @@
   when: ansible_distribution == 'Fedora' and ansible_distribution_major_version|int >= 22
 
 # configure Red Hat entitlements with subscription-manager
+# skip_entitlements=true on OVH testnodes
 - import_tasks: rhel-entitlements.yml
   when:
     ansible_distribution == 'RedHat' and
-    beta_distro == false
+    beta_distro == false and
+    skip_entitlements|default(false)|bool != true
   tags:
     - entitlements
 
