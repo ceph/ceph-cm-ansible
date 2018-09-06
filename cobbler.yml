@@ -15,6 +15,7 @@
     - { role: cobbler_profile, distro_name: RHEL-7.4-Server-x86_64, tags: ['rhel7.4'] }
     - { role: cobbler_profile, distro_name: RHEL-7.5-Server-x86_64, tags: ['rhel7.5'] }
     - { role: cobbler_profile, distro_name: RHEL-7.6-Server-x86_64, tags: ['rhel7.6'] }
+    - { role: cobbler_profile, distro_name: RHEL-8.0-Server-x86_64, tags: ['rhel8.0'] }
     - { role: cobbler_profile, distro_name: Fedora-22-Server-x86_64, tags: ['fedora22'] }
     - { role: cobbler_profile, distro_name: CentOS-7.0-x86_64, tags: ['centos7.0'] }
     - { role: cobbler_profile, distro_name: CentOS-7.1-x86_64, tags: ['centos7.1'] }
