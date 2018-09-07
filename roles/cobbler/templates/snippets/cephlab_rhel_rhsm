@@ -6,6 +6,8 @@ rpm -U /tmp/satellite-ca.rpm
 {% endif %}
 ## Subscribe (These vars will be empty and this snippet won't get run if the vars aren't set like in Sepia)
 subscription-manager register --activationkey={{ subscription_manager_activationkey }} --org={{ subscription_manager_org }}
+## Disable all repos
+subscription-manager repos --disable '*'
 ## Enable repos
 #if $os_version == 'rhel7'
 subscription-manager repos --enable=rhel-7-server-rpms --enable=rhel-7-server-optional-rpms --enable=rhel-7-server-extras-rpms
