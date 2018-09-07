@@ -58,7 +58,7 @@
 
   - name: Unsubscribe RHEL
     command: subscription-manager unregister
-    when: '"Red Hat" in ansible_lsb.description'
+    when: ansible_distribution == "RedHat"
     failed_when: false
 
   # A file gets leftover when a testnode is registered with Satellite that caused
@@ -67,7 +67,7 @@
     file:
       path: /etc/rhsm/facts/katello.facts
       state: absent
-    when: '"Red Hat" in ansible_lsb.description'
+    when: ansible_distribution == "RedHat"
 
   - set_fact:
       ntp_service: ntp
@@ -75,7 +75,11 @@
 
   - set_fact:
       ntp_service: ntpd
-    when: ansible_os_family == "RedHat"
+    when: ansible_os_family == "RedHat" and ansible_distribution_major_version <= 7
+
+  - set_fact:
+      ntp_service: chronyd
+    when: ansible_os_family == "RedHat" and ansible_distribution_major_version >= 8
 
   - name: "Stop {{ ntp_service }} service"
     service:
@@ -88,6 +92,8 @@
   # back to the correct time.  So we'll force it in the captured OS images.
   - name: Force time synchronization using stepping
     command: "ntpdate -b {{ ntp_servers|join(' ') }}"
+    # Fix after RHEL8 GAs!
+    ignore_errors: true
 
   - name: "Start {{ ntp_service }} again"
     service:
