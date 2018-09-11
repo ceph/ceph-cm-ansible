@@ -8,4 +8,6 @@ actionstart =
 actionstop = 
 actioncheck = 
 actionban = ufw insert 1 deny from <ip> to any port <port>
+            ufw insert 1 deny proto tcp from <ip> to any port <port>
 actionunban = ufw delete deny from <ip> to any port <port>
+              ufw delete deny proto tcp from <ip> to any port <port>
