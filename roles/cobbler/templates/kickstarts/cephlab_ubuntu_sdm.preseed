@@ -102,11 +102,11 @@ d-i user-setup/encrypt-home boolean false
 #if $os_version == 'precise'
 d-i pkgsel/include string wget ntpdate bash sudo openssh-server
 #else if int($distro_ver_major) == 16
-d-i pkgsel/include string u-boot-tools pastebinit initramfs-tools wget linux-firmware ntpdate bash devmem2 fbset sudo openssh-server udev-discover gawk gdisk ethtool
+d-i pkgsel/include string u-boot-tools pastebinit initramfs-tools wget linux-firmware ntpdate bash devmem2 fbset sudo openssh-server udev-discover gawk gdisk ethtool curl
 #else if int($distro_ver_major) == 18
-d-i pkgsel/include string u-boot-tools pastebinit initramfs-tools wget linux-firmware ntpdate bash devmem2 fbset sudo openssh-server gawk gdisk ethtool net-tools ifupdown python ntp
+d-i pkgsel/include string u-boot-tools pastebinit initramfs-tools wget linux-firmware ntpdate bash devmem2 fbset sudo openssh-server gawk gdisk ethtool net-tools ifupdown python ntp curl
 #else
-d-i pkgsel/include string u-boot-tools pastebinit initramfs-tools wget linux-firmware linux-firmware-nonfree ntpdate bash devmem2 fbset sudo openssh-server udev-discover gawk gdisk ethtool
+d-i pkgsel/include string u-boot-tools pastebinit initramfs-tools wget linux-firmware linux-firmware-nonfree ntpdate bash devmem2 fbset sudo openssh-server udev-discover gawk gdisk ethtool curl
 #end if
 
 # Whether to upgrade packages after debootstrap.
