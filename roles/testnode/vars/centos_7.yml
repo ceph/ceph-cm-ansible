@@ -25,6 +25,7 @@ packages:
   - gdb
   - git-all
   - python-configobj
+  - gcc-c++
   # for running ceph
   - libedit
   - openssl098e

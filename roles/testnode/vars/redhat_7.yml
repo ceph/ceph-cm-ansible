@@ -25,6 +25,7 @@ packages:
   - gdb
   - git-all
   - python-configobj
+  - gcc-c++
   - libedit
   - openssl098e
   - boost-thread
