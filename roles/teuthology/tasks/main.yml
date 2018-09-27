@@ -1,4 +1,7 @@
 ---
+- import_tasks: zypper_systems.yml
+  when: ansible_pkg_mgr == "zypper"
+
 - import_tasks: apt_systems.yml
   when: ansible_pkg_mgr == "apt"
 
@@ -13,6 +16,14 @@
   template:
     src: teuthology.yaml
     dest: /etc/teuthology.yaml
+    mode: 0755
+  tags:
+    - config
+
+- name: Ship /etc/init.d/teuthology-worker
+  template:
+    src: teuthology-worker.init
+    dest: /etc/init.d/teuthology-worker
     mode: 0755
   tags:
     - config

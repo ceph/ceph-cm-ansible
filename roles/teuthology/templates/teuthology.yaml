@@ -4,7 +4,7 @@ results_server: {{ paddles_address }}
 results_ui_server: {{ pulpito_address }}
 results_email: {{ teuthology_results_email|default('null') }}
 results_sending_email: {{ teuthology_results_sending_email|default('null') }}
-lab_domain: {{ lab_domain }}
+lab_domain: {{ lab_domain|default('teuthology') }}
 default_machine_type: {{ teuthology_default_machine_type|default('null') }}
 max_job_time: {{ teuthology_max_job_time|default(129600) }}
 {{ teuthology_yaml_extra }}

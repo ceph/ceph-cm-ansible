@@ -20,3 +20,5 @@ teuthology_extra_packages:
   - nginx
 
 apache_service: apache2
+nginx_available: "/etc/nginx/sites-available"
+nginx_enabled: "/etc/nginx/sites-enabled"
