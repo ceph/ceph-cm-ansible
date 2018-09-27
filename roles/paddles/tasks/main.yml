@@ -25,6 +25,9 @@
   tags:
     - always
 
+- import_tasks: zypper_systems.yml
+  when: ansible_pkg_mgr == "zypper"
+
 - import_tasks: apt_systems.yml
   when: ansible_pkg_mgr == "apt"
 
@@ -46,3 +49,4 @@
 
 # Configure nginx as a reverse proxy
 - import_tasks: nginx.yml
+  when: not ansible_distribution is search("openSUSE")

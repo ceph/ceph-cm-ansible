@@ -1,4 +1,12 @@
 ---
+- name: Create group
+  group:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ teuthology_users }}"
+  tags:
+    - user
+
 - name: Create users
   user:
     name: "{{ item }}"
