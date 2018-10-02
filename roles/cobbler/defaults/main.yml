@@ -32,6 +32,7 @@ settings:
 kickstarts:
   - cephlab_rhel.ks
   - cephlab_ubuntu.preseed
+  - cephlab_opensuse_leap.xml
   
 snippets:
   - cephlab_user
