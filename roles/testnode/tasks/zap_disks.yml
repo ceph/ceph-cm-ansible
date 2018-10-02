@@ -37,7 +37,17 @@
     path: "{{ item.mount }}"
     state: unmounted
   with_items: "{{ ansible_mounts }}"
-  when: item.mount != '/'
+  when:
+    - item.mount != '/' and
+      item.mount != '/var' and
+      item.mount != '/tmp' and
+      item.mount != '/root' and
+      item.mount != '/home' and
+      '"/boot" not in item.mount' and
+      item.mount != '/.snapshots' and
+      item.mount != '/usr/local' and
+      item.mount != '/srv' and
+      item.mount != '/opt'
 
 ## http://tracker.ceph.com/issues/20533
 ## Trusty version of wipefs lacks --force option

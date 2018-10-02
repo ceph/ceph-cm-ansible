@@ -6,3 +6,5 @@
 - name: "Set the system's hostname"
   hostname:
      name: "{{ hostname }}"
+  # https://github.com/ansible/ansible/issues/42726
+  when: ansible_os_family != "Suse"
