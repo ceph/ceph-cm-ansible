@@ -1,0 +1,24 @@
+---
+paddles_extra_packages:
+  # The following is a requirement of ansible's postgresql module
+  - python-psycopg2
+  # The following packages are requirements for running paddles
+  - gcc
+  - git
+  - python-devel
+  - python-pip
+  - python-virtualenv
+  - postgresql
+  - postgresql-contrib
+  - postgresql-devel
+  - postgresql-server
+  - supervisor
+  # We use nginx to reverse-proxy
+  - nginx
+
+# We need this so we can disable apache2 to get out of the way of nginx
+apache_service: 'apache2'
+
+#supervisor_conf_d: /etc/supervisor/conf.d
+supervisor_conf_d: /etc/supervisord.d
+supervisor_conf_suffix: conf

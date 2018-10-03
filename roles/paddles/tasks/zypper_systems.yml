@@ -1,0 +1,37 @@
+---
+- name: Include package type specific vars.
+  include_vars: "zypper_systems.yml"
+  tags:
+    - always
+
+- name: Install packages via zypper
+  zypper:
+    name: "{{ item }}"
+    state: latest
+    update_cache: yes
+  with_items: "{{ paddles_extra_packages }}"
+  tags:
+    - packages
+
+- name: Enable and start database
+  service:
+    name: postgresql
+    state: started
+    enabled: yes
+
+- name: Enable and start supervisor
+  service:
+    name: supervisord
+    state: started
+    enabled: yes
+
+- name: Setup hba_conf
+  lineinfile:
+    path: "/var/lib/pgsql/data/pg_hba.conf"
+    insertafter: "^#\\s+TYPE\\s+DATABASE\\s+USER\\s+ADDRESS\\s+METHOD.*"
+    line: "host    paddles         {{ paddles_user }}        ::1/128             trust"
+
+- name: Reload database
+  service:
+    name: postgresql
+    state: reloaded
