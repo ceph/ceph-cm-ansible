@@ -1,0 +1,166 @@
+#!/bin/bash
+#
+# Copyright (c) 2015 Red Hat, Inc.
+#
+# Author: Loic Dachary <loic@dachary.org>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+#
+### BEGIN INIT INFO
+# Provides:        teuthology
+# Required-Start:  $network $remote_fs $syslog beanstalkd nginx
+# Required-Stop:   $network $remote_fs $syslog
+# Default-Start:   2 3 4 5
+# Default-Stop:
+# Short-Description: Start teuthology
+### END INIT INFO
+
+export NWORKERS=20
+
+[ -f /etc/default/teuthology ] && source /etc/default/teuthology
+
+user=${TEUTHOLOGY_USERNAME:-teuthworker}
+export HOME=/home/$user
+export WORKER_HOME=$HOME/src/teuthology_master
+#/usr/share/nginx/html
+export WORKER_ARCH=$HOME/archive
+
+[ -d $WORKER_ARCH ] || sudo -u $user mkdir -p $WORKER_ARCH
+
+function worker_pidfile() {
+    echo /var/run/teuthology-worker.$1.pid
+}
+function worker_logfile() {
+    echo /var/log/teuthology.${1}.log
+}
+
+function stop_worker() {
+    wnum=$1
+    wpidfile=$(worker_pidfile $wnum)
+    if [[ -f $wpidfile ]] ; then
+        wpid=$(cat $wpidfile)
+        echo Killing worker $wnum with pid=$wpid...
+        pkill -P $wpid
+        pkill $wpid
+        rm -f $wpidfile
+    fi
+}
+
+function stop_workers() {
+    for i in $(seq 1 $NWORKERS) ; do
+        stop_worker $i
+    done
+}
+
+function start_worker() {
+    local wlogfile=$1
+    local wpidfile=$2
+    local worklogs=/tmp/$user-logs
+    mkdir -p $worklogs && chown $user: $worklogs
+    su - -c "
+cd /home/$user
+source openrc.sh
+cd $WORKER_HOME
+export LC_ALL=C
+virtualenv/bin/teuthology-worker --tube openstack -l $worklogs --archive-dir $WORKER_ARCH
+" $user > $wlogfile 2>&1 & {
+        echo $! > $wpidfile
+        echo "Started worker with pid=$! see log $wlogfile"
+    }
+}
+
+function rkill() {
+    local pid=$1
+    for i in $(pgrep -P $pid) ; do
+        rkill $i
+    done
+    echo Killing process $pid
+    kill -9 $pid
+}
+
+function stop_process() {
+    local pidfile=$1
+    [[ -f $pidfile ]] && {
+        local pid=$(cat $pidfile)
+        rkill $pid
+        ps --no-headers $pid 2>&1 > /dev/null || rm $pidfile
+    }
+}
+
+function start_workers() {
+    for i in $(seq 1 $NWORKERS) ; do
+        local wpidfile=$(worker_pidfile $i)
+        local wlogfile=$(worker_logfile $i)
+        [[ -f $wpidfile ]] && {
+            local wpid=$(cat $wpidfile)
+            ps --no-headers -p $wpid 2>&1 > /dev/null && {
+                echo Worker $i is already running with process $wpid
+                continue
+            }
+        }
+        start_worker $wlogfile $wpidfile
+    done
+}
+echo $1
+case $1 in
+        start-workers)
+            start_workers
+            ;;
+        list-workers)
+            for i in $(ls /var/run | grep teuthology-worker | sort) ; do
+                WPID=$(cat /var/run/$i)
+                WORKER=${i##teuthology-worker.}
+                WORKER=${WORKER%%.pid}
+                STATUS=$(ps --no-headers -p $WPID 2>&1 > /dev/null && echo running || echo dead)
+                echo $WORKER PID:$WPID STATUS:$STATUS
+            done
+            ;;
+        stop-workers)
+            echo Stopping workers
+            stop_workers
+            ;;
+        stop-worker)
+            stop_worker $2
+            ;;
+        restart-workers)
+            $0 stop-workers
+            $1 start-workers
+            ;;
+        start)
+                (
+                   cd /home/$user
+                   source openrc.sh
+                   cd teuthology
+                   . virtualenv/bin/activate
+                   teuthology-lock --list-targets --owner scheduled_$user@teuthology > /tmp/t
+                   if test -s /tmp/t && ! grep -qq 'targets: {}' /tmp/t ; then
+		       teuthology-lock --unlock -t /tmp/t --owner scheduled_$user@teuthology
+		   fi
+                   start_workers
+                )
+                ;;
+        stop)
+                $0 stop-workers
+		;;
+        restart)
+                $0 stop
+                $0 start
+                ;;
+        *)
+esac

@@ -1,0 +1,14 @@
+---
+- name: Include package type specific vars.
+  include_vars: "zypper_systems.yml"
+  tags:
+    - always
+
+- name: Install packages via zypper
+  zypper:
+    name: "{{ item }}"
+    state: latest
+    update_cache: yes
+  with_items: "{{ teuthology_extra_packages }}"
+  tags:
+    - packages
