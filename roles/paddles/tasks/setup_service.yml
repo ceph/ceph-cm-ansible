@@ -1,4 +1,11 @@
 ---
+- name: Make sure supervisor config directory exists
+  file:
+    path: "{{ supervisor_conf_d }}"
+    state: directory
+    recurse: yes
+    mode: 0755
+
 - name: Ship supervisor config
   template:
     src: supervisor.conf

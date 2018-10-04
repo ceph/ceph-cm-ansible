@@ -1,4 +1,10 @@
 ---
+- name: Create group
+  group:
+    name: "{{ paddles_user }}"
+    state: present
+  tags:
+    - user
 - name: Create user
   user:
     name: "{{ paddles_user }}"

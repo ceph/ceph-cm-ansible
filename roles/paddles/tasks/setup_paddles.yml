@@ -7,6 +7,13 @@
   tags:
     - repos
 
+- name: Install latest pip via pip
+  pip:
+    name: "pip"
+    state: "latest"
+    chdir: "{{ paddles_repo_path }}"
+    virtualenv: "{{ paddles_repo_path }}/virtualenv"
+  become_user: "{{ paddles_user }}"
 - name: Install requirements via pip
   pip:
     chdir: "{{ paddles_repo_path }}"
