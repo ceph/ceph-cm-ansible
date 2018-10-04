@@ -7,12 +7,12 @@
 - name: Ship nginx config
   template:
     src: nginx.conf
-    dest: /etc/nginx/sites-available/test_logs
+    dest: "{{ nginx_available }}/test_logs.conf"
 
 - name: Enable nginx config
   file:
-    src: /etc/nginx/sites-available/test_logs
-    dest: /etc/nginx/sites-enabled/test_logs
+    src: "{{ nginx_available }}/test_logs.conf"
+    dest: "{{ nginx_enabled }}/test_logs.conf"
     state: link
 
 # Ignore errors in case service doesn't exist
