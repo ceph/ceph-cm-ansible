@@ -3,7 +3,7 @@
   zypper:
     name: "{{ item }}"
     state: absent
-  with_items: ceph_packages_to_remove
+  with_items: "{{ ceph_packages_to_remove }}"
   tags:
     - remove-ceph
 
@@ -11,7 +11,7 @@
   zypper:
     name: "{{ item }}"
     state: absent
-  with_items: ceph_dependency_packages_to_remove
+  with_items: "{{ ceph_dependency_packages_to_remove }}"
   tags:
     - remove-ceph-dependency
 
@@ -19,19 +19,19 @@
   zypper:
     name: "{{ item }}"
     state: absent
-  with_items: packages_to_remove
+  with_items: "{{ packages_to_remove }}"
   when: packages_to_remove|length > 0
 
 - name: Install packages
   zypper:
     name: "{{ item }}"
     state: present
-  with_items: packages
+  with_items: "{{ packages }}"
   when: packages|length > 0
 
 - name: Upgrade packages
   zypper:
     name: "{{ item }}"
     state: latest
-  with_items: packages_to_upgrade
+  with_items: "{{ packages_to_upgrade }}"
   when: packages_to_upgrade|length > 0

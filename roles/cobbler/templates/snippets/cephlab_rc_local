@@ -5,6 +5,8 @@
 #set distro_ver = $getVar('distro','').split("-")[1]
 #if $distro == 'Fedora' and int($distro_ver) >= 22
 #set script = '/etc/rc.d/rc.local'
+#else if $distro == 'openSUSE'
+#set script = '/etc/init.d/boot.local'
 #else
 #set script = '/etc/rc.local'
 #end if
@@ -17,17 +19,23 @@ exec 1>&2
 set -ex
 
 {% if rclocal_nameserver is defined %}
-#raw
 if [ ! -f /.cephlab_net_configured ]; then
+#if $distro == 'openSUSE'
+  udevadm trigger
+  sleep 5
+#end if
+#raw
   nics=$(ls -1 /sys/class/net | grep -v lo)
 
   for nic in $nics; do
     # Bring the NIC up so we can detect if a link is present
-    ifconfig $nic up
+    ifconfig $nic up || ip link set $nic up
     # Sleep for a bit to let the NIC come up
     sleep 5
     if ethtool $nic | grep -q "Link detected: yes"; then
-      if command -v apt-get &>/dev/null; then
+      if command -v zypper &>/dev/null; then
+        echo -e "DEVICE=$nic\nBOOTPROTO=dhcp\nONBOOT=yes" > /etc/sysconfig/network/ifcfg-$nic
+      elif command -v apt-get &>/dev/null; then
         echo -e "auto lo\niface lo inet loopback\n\nauto $nic\niface $nic inet dhcp" > /etc/network/interfaces
       else
         echo -e "DEVICE=$nic\nBOOTPROTO=dhcp\nONBOOT=yes" > /etc/sysconfig/network-scripts/ifcfg-$nic
@@ -62,7 +70,7 @@ if [ ! -f /.cephlab_net_configured ]; then
       fi
     else
       # Take the NIC back down if it's not connected
-      ifconfig $nic down
+      ifconfig $nic down || ip link set $nic down
     fi
   done
 fi
@@ -108,7 +116,12 @@ fi
 {% endif %}
 
 # Regenerate SSH host keys on boot if needed
-if command -v apt-get &>/dev/null; then
+if command -v zypper &> /dev/null; then
+  if [ ! -f /etc/ssh/ssh_host_rsa_key ]; then
+    ssh-keygen -f /etc/ssh/ssh_host_rsa_key -N '' -t rsa
+    systemctl restart sshd
+  fi
+elif command -v apt-get &>/dev/null; then
   if [ ! -f /etc/ssh/ssh_host_rsa_key ]; then
      dpkg-reconfigure openssh-server
   fi

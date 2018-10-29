@@ -3,7 +3,13 @@
 #set $home = '/home/' + $user
 #set $auth_keys = $home + '/.ssh/authorized_keys'
 groupadd sudo
+#set distro = $getVar('distro','').split("-")[0]
+#set distro_ver = $getVar('distro','').split("-")[1]
+#if $distro == 'openSUSE'
+useradd -U -u {{ cm_user_uid }} -G sudo $user
+#else
 useradd -u {{ cm_user_uid }} -G sudo $user
+#end if
 passwd -d $user
 
 cat >> /etc/sudoers.d/cephlab_sudo << EOF

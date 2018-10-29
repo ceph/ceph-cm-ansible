@@ -1,5 +1,5 @@
 ---
-ntp_service_name: ntpd
+ntp_service_name: chronyd
 ssh_service_name: sshd
 nrpe_service_name: nrpe
 nrpe_user: nrpe

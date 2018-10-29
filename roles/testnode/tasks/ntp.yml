@@ -34,6 +34,18 @@
     mode: 0644
   notify:
     - restart ntp
+  when: ntp_service_name == "ntp" or ntp_service_name == "ntpd"
+
+- name: Create the chrony.conf file
+  template:
+    src: chrony.conf
+    dest: /etc/chrony.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - restart ntp
+  when: ntp_service_name == "chronyd"
 
 - name: Make sure ntpd is running.
   service:

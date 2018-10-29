@@ -13,3 +13,22 @@
   tags:
     - timezone
 
+- name: Add base OpenSUSE Leap repo
+  zypper_repository:
+    name: repo-oss
+    repo: "http://download.opensuse.org/distribution/leap/{{ ansible_distribution_version }}/repo/oss/"
+    state: present
+    auto_import_keys: yes
+
+- name: Add updates OpenSUSE Leap repo
+  zypper_repository:
+    name: repo-update-oss
+    repo: "http://download.opensuse.org/update/leap/{{ ansible_distribution_version }}/oss/"
+    state: present
+    auto_import_keys: yes
+
+- name: Refresh repos
+  zypper_repository:
+    repo: '*'
+    runrefresh: yes
+    auto_import_keys: yes

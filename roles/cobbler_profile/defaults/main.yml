@@ -92,3 +92,7 @@ distros:
       kickstart: cephlab_ubuntu.preseed
       kernel_options: "netcfg/choose_interface=auto console=tty0 console=ttyS1,115200"
       kernel_options_post: "pci=realloc=off console=tty0 console=ttyS1,115200"
+  "openSUSE-15.0-x86_64":
+      iso: "https://download.opensuse.org/distribution/leap/15.0/iso/openSUSE-Leap-15.0-DVD-x86_64.iso"
+      sha256: c477428c7830ca76762d2f78603e13067c33952b936ff100189523e1fabe5a77
+      kickstart: cephlab_opensuse_leap.xml

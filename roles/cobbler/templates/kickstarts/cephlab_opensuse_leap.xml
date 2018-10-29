@@ -1,0 +1,131 @@
+<?xml version="1.0"?>
+<!DOCTYPE profile>
+<profile xmlns="http://www.suse.com/1.0/yast2ns" xmlns:config="http://www.suse.com/1.0/configns">
+  <deploy_image>
+    <image_installation config:type="boolean">false</image_installation>
+  </deploy_image>
+  <general>
+    <mode>
+      <confirm config:type="boolean">false</confirm>
+      <final_reboot config:type="boolean">true</final_reboot>	
+    </mode>
+  </general>
+  <software>
+    <packages config:type="list">
+      <package>python</package>
+      <package>python-xml</package>
+      <package>sudo</package>
+      <package>gptfdisk</package>
+      <package>vim</package>
+      <package>curl</package>
+      <package>iputils</package>
+      <package>ethtool</package>
+      <package>bind-utils</package>
+      <package>wget</package>
+    </packages>
+  </software>
+  <partitioning config:type="list">
+    <drive>
+      <device>/dev/sda</device>
+      <use>all</use>
+      <partitions config:type="list">
+        <partition>
+          <create config:type="boolean">true</create>
+          <format config:type="boolean">true</format>
+          <mount>/</mount>
+          <filesystem config:type="symbol">ext4</filesystem>
+          <size>100%</size>
+        </partition>
+      </partitions>
+    </drive>
+  </partitioning>
+  $SNIPPET('addons.xml')
+  $SNIPPET('kdump.xml')
+  <keyboard>
+    <keymap>english</keymap>
+  </keyboard>
+  <language>
+    <language>en_US</language>
+    <languages></languages>
+  </language>
+  <login_settings/>
+  $SNIPPET('networking.xml')
+  <runlevel>
+    <default>3</default>
+  </runlevel>
+  <services-manager>
+    <default_target>multi-user</default_target>
+    <services>
+      <enable config:type="list">
+        <service>sshd</service>
+        <service>rc-local</service>
+      </enable>
+    </services>
+  </services-manager>
+  <users config:type="list">
+    <user>
+      <encrypted config:type="boolean">true</encrypted>
+      <fullname>root</fullname>
+      <gid>0</gid>
+      <home>/root</home>
+      <password_settings>
+        <expire></expire>
+        <flag></flag>
+        <inact></inact>
+        <max></max>
+        <min></min>
+        <warn></warn>
+      </password_settings>
+      <shell>/bin/bash</shell>
+      <uid>0</uid>
+	<user_password>$default_password_crypted</user_password>
+      <username>root</username>
+    </user>
+  </users>
+  <scripts>
+    ## we have to include the pre-scripts tag to get kickstart_start included
+    <pre-scripts config:type="list">
+      #set global $wrappedscript = 'kickstart_start'
+      $SNIPPET('suse_scriptwrapper.xml')
+	## SuSE has an annoying habit on ppc64 of changing the system
+	## boot order after installation. This makes it non-trivial to
+	## automatically re-install future OS.
+	#set global $wrappedscript = 'save_boot_device'
+	$SNIPPET('suse_scriptwrapper.xml')
+    </pre-scripts>
+    <chroot-scripts config:type="list">
+	#set global $wrappedscript = 'cephlab_user'
+	$SNIPPET('suse_scriptwrapper.xml')
+    </chroot-scripts>
+    <post-scripts config:type="list">
+	##
+	## This plugin wrapper provides the flexibility to call pure shell
+	## snippets which can be used directly on autoinst file and with
+	## wrapper on SuSE.
+	##
+	## To use it
+	## - exchange name_of_pure_shell_snippet with the name of this shell snippet
+	## - and remove the '##' in front of the line with suse_scriptwrapper.xml
+	##
+	#set global $wrappedscript = 'name_of_pure_shell_snippet'
+	## $SNIPPET('suse_scriptwrapper.xml')
+
+	## SuSE has an annoying habit on ppc64 of changing the system
+	## boot order after installation. This makes it non-trivial to
+	## automatically re-install future OS.
+	#set global $wrappedscript = 'restore_boot_device'
+	$SNIPPET('suse_scriptwrapper.xml')
+
+	#set global $wrappedscript = 'cephlab_rc_local'
+	$SNIPPET('suse_scriptwrapper.xml')
+
+  	#set global $wrappedscript = 'cephlab_user'
+	$SNIPPET('suse_scriptwrapper.xml')
+    </post-scripts>
+    ## we have to include the init-scripts tag to get kickstart_done included
+    <init-scripts config:type="list">
+      #set global $wrappedscript = 'kickstart_done'
+      $SNIPPET('suse_scriptwrapper.xml')
+    </init-scripts>
+  </scripts>
+</profile>
