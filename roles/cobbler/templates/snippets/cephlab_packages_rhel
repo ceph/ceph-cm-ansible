@@ -10,6 +10,7 @@
 perl
 wget
 redhat-lsb-core
+python-jwt
 ## For ansible/NRPE
 smartmontools
 libselinux-python
