@@ -9,17 +9,15 @@
   become: true
   tasks:
 
-  # The machine used to *capture* the trusty image gets its MAC addresses hard coded in any subsequent cloned machines
-  - name: Remove udev rules
+  # We need to leave /.cephlab_rc_local or else each FOG reimage would tell Cobbler to run ceph-cm-ansible
+  - name: Remove lock files and udev rules
     file:
-      path: /etc/udev/rules.d/70-persistent-net.rules
+      path: "{{ item }}"
       state: absent
-
-  # On the off chance that the rc.local script got run and touched this lockfile, remove it
-  - name: Remove /.cephlab_net_configured
-    file:
-      path: /.cephlab_net_configured
-      state: absent
+    with_items:
+      - /etc/udev/rules.d/70-persistent-net.rules
+      - /.cephlab_net_configured
+      - /ceph-qa-ready
 
   - name: Get list of ifcfg scripts from host used to capture image
     shell: "ls -1 /etc/sysconfig/network-scripts/ifcfg-* | grep -v ifcfg-lo"
