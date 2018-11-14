@@ -1,0 +1,73 @@
+---
+### This standalone playbook can be used on SuperMicro servers.  By default, SuperMicro BMCs come with "Lan Interface" in Failover mode.
+### This causes issues when a switch is rebooted.  Often times, most of the BMCs won't come back up even if they have static network settings defined.
+### This playbook is used when the BMC isn't reachable but the OS is.
+
+- hosts:
+    - testnodes
+  become: true
+  vars:
+    use_satellite: false
+  tasks:
+
+  - name: Including major version specific variables.
+    include_vars: "{{ item }}"
+    with_first_found:
+      - "../roles/common/vars/{{ ansible_distribution | lower }}_{{ ansible_distribution_major_version }}.yml"
+      - ../roles/common/vars/empty.yml
+
+  - set_fact:
+      secrets_path: "{{ lookup('env', 'ANSIBLE_SECRETS_PATH') | default('/etc/ansible/secrets', true) }}"
+
+  - name: Register RHEL with CDN
+    include_tasks: ../roles/common/tasks/rhel-entitlements.yml
+    when: ansible_distribution == 'RedHat'
+
+  - name: Enable kernel modules
+    modprobe:
+      name: "{{ item }}"
+      state: present
+    with_items:
+      - ipmi_devintf
+      - ipmi_si
+    ignore_errors: true
+
+  - name: Update apt cache
+    apt:
+      update_cache: yes
+      cache_valid_time: 86400
+    when: ansible_os_family == 'Debian'
+
+  - name: Install ipmitool
+    package:
+      name: ipmitool
+      state: present
+
+  - name: Set Lan Interface to dedicated
+    shell: ipmitool raw 0x30 0x70 0x0c 1 0
+
+  - name: Unregister with CDN
+    shell: subscription-manager unregister
+    when:
+      - ansible_distribution == 'RedHat'
+      - rhsm_registered == true
+
+  - set_fact:
+      ipmi_domain: ipmi.ceph.redhat.com
+    when: lab_name == 'octo'
+
+  - set_fact:
+      ipmi_domain: ipmi.sepia.ceph.com
+    when: lab_name == 'sepia'
+
+  - name: Check if the BMC is up
+    wait_for:
+      host: "{{ ansible_hostname }}.{{ ipmi_domain }}"
+      port: 443
+      timeout: 10
+    register: ping_result
+    ignore_errors: true
+
+  - name: Reset the BMC if necessary
+    shell: ipmitool mc reset cold
+    when: ping_result is failed
