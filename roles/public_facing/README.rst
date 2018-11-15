@@ -46,6 +46,7 @@ Defined in ``roles/public_facing/defaults/main.yml``  Override these in the ansi
         maxretry: 3
         filter: "sshd-ddos"
         logpath: "{{ sshd_logpath }}"
+        bantime: -1 # optionally set in host_vars
 
     # Note: sshd_logpath gets defined automatically in roles/public_facing/tasks/fail2ban.yml
 
