@@ -3,3 +3,8 @@
 #
 [Definition]
 failregex = {{ item.value.failregex }}
+
+{% if item.value.maxlines is defined %}
+[Init]
+maxlines = {{ item.value.maxlines }}
+{% endif %}

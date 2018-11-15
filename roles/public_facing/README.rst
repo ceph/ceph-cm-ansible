@@ -60,11 +60,14 @@ If required, define these in your ansible inventory ``host_vars`` file.
       - "80"
       - "443"
 
-``f2b_filters: {}`` is a dictionary of additional filters fail2ban should use.  For example, our status portal running Cachet has an additional fail2ban service monitoring repeated login attempts to the admin portal.  See filter example::
+``f2b_filters: {}`` is a dictionary of additional filters fail2ban should use.  For example, our status portal running Cachet has an additional fail2ban service monitoring repeated login attempts to the admin portal.  ``maxlines`` is an optional variable.  See filter example::
 
     f2b_filters:
       apache-cachet:
-      failregex: "<HOST> .*GET /auth/login.*$"
+        failregex: "<HOST> .*GET /auth/login.*$"
+      example-filter:
+        failregex: "<HOST> .*foo$"
+        maxlines: 3
 
 Common Tasks
 ++++++++++++
