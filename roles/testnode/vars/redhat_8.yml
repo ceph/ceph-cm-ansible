@@ -1,0 +1,36 @@
+---
+# vars specific to any rhel 8.x version
+
+common_yum_repos: {}
+
+packages:
+  - '@core'
+  - '@base'
+  - sysstat
+  - libedit
+  - boost-thread
+  - xfsprogs
+  - gdisk
+  - parted
+  - libgcrypt
+  - fuse-libs
+  - openssl
+  - libuuid
+  - attr
+  - ant
+  - lsof
+  - gettext
+  - bc
+  - xfsdump
+  - blktrace
+  - usbredir
+  - libev-devel
+  # for xfstests
+  - ncurses-devel
+  # for s3 tests
+
+epel_packages: []
+
+nfs_service: nfs-server
+
+ntp_service_name: chronyd
