@@ -7,16 +7,21 @@
 #else
 @base
 #end if
-perl
-wget
-redhat-lsb-core
-python-jwt
-## For ansible/NRPE
-smartmontools
+#if $distro == 'RHEL'
+#set distro_ver = $distro_ver.split(".")[0]
+#end if
+#if not int($distro_ver) == 8
 libselinux-python
 libsemanage-python
 policycoreutils-python
-selinux-policy-targeted
 ntp
-## For disk partitioning
+python-jwt
+#else
+python3
+#end if
+perl
+wget
+redhat-lsb-core
+smartmontools
+selinux-policy-targeted
 gdisk
