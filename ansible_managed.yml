@@ -3,10 +3,10 @@
 # sudoer settings needed for ansible to manage a node.
 - hosts: all
   strategy: free
-  # assuming the nodes we run this on will most likely
-  # have an ubuntu user already created.
+# this used to be set to ubuntu but the {{ cm_user }} is the only
+# user that gets created during kickstart
   vars:
-    ansible_ssh_user: ubuntu
+    ansible_ssh_user: "{{ cm_user }}"
   roles:
     - ansible-managed
   become: true
