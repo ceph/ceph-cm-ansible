@@ -16,7 +16,7 @@
 
 # configure things specific to yum systems
 - import_tasks: yum_systems.yml
-  when: ansible_pkg_mgr == "yum"
+  when: ansible_os_family == "RedHat"
 
 # configure things specific to apt systems
 - import_tasks: apt_systems.yml
@@ -41,9 +41,11 @@
     - monitoring-scripts
     - nagios
 
-# configure nagios
+# configure nagios (Except OpenSUSE and RHEL8)
 - import_tasks: nagios.yml
-  when: ansible_pkg_mgr != "zypper"
+  when:
+    - ansible_pkg_mgr != "zypper"
+    - not (ansible_distribution == "RedHat" and ansible_distribution_major_version == "8")
   tags:
     - nagios
 
@@ -57,6 +59,7 @@
 # configure selinux for nagios
 - import_tasks: nrpe-selinux.yml
   when: ansible_os_family == "RedHat" and
+        ansible_distribution_major_version != "8" and
         (selinux_status is defined and selinux_status.stdout != "Disabled")
   tags:
     - nagios

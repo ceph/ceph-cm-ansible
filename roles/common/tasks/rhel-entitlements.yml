@@ -47,6 +47,9 @@
   until: entitled|success
   retries: 5
   delay: 10
+  failed_when:
+    - entitled.rc != 0
+    - '"Beta" not in ansible_lsb.description'
 
 - name: Set rhsm_registered if we just registered
   set_fact:
@@ -61,7 +64,10 @@
   shell: "subscription-manager release --list | grep -E '[0-9]'"
   register: rhsm_release_list
   changed_when: false
-  failed_when: rhsm_release_list.rc != 0 and "Beta" not in ansible_lsb.description
+  failed_when:
+    - rhsm_release_list.rc != 0
+    - ansible_lsb.description is defined
+    - '"Beta" not in ansible_lsb.description'
 
 # We don't need to be registered to CDN since there's no packages available
 # for this Beta/Alpha/RC installation
