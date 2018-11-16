@@ -7,7 +7,22 @@
 - hosts:
     - testnodes
   become: true
+  gather_facts: false
   tasks:
+
+  # (Missing in RHEL8)
+  - name: Check for /usr/bin/python
+    shell: echo marco
+    register: polo
+    ignore_errors: true
+
+  - name: Set ansible_python_interpreter=/usr/bin/python3
+    set_fact:
+      ansible_python_interpreter: /usr/bin/python3
+    when: polo.rc != 0
+
+  # Now that we know where python is, we can gather_facts
+  - setup:
 
   # We need to leave /.cephlab_rc_local or else each FOG reimage would tell Cobbler to run ceph-cm-ansible
   - name: Remove lock files and udev rules
