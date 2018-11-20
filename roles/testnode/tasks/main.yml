@@ -31,7 +31,7 @@
 
 - name: configure things specific to yum systems
   import_tasks: yum_systems.yml
-  when: ansible_pkg_mgr == "yum"
+  when: ansible_os_family == "RedHat"
 
 - name: configure things specific to apt systems
   import_tasks: apt_systems.yml
@@ -95,6 +95,9 @@
 - import_tasks: cpan.yml
   tags:
     - cpan
+  when:
+    - ansible_os_family != "RedHat"
+    - ansible_distribution_major_version != 8
 
 # configure ntp
 - import_tasks: ntp.yml

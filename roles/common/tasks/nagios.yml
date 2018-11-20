@@ -5,7 +5,7 @@
 
 - name: Include yum_systems vars
   include_vars: yum_systems.yml
-  when: ansible_pkg_mgr == "yum"
+  when: ansible_os_family == "RedHat"
 
 # Returns 0 if found and 1 if not found
 # Task fails if not found.  Hence ignore_errors: true
@@ -14,11 +14,11 @@
   register: have_epel
   no_log: true
   ignore_errors: true
-  when: ansible_pkg_mgr == "yum"
+  when: ansible_os_family == "RedHat"
 
 # This task is only run when epel isn't present
 - name: Install nrpe without epel
-  yum:
+  package:
     name: "{{ item }}"
     state: present
   with_items:
@@ -26,20 +26,24 @@
     - http://{{ mirror_host }}/lab-extras/rhel7/x86_64/nrpe-2.15-7.el7.x86_64.rpm
     - http://{{ mirror_host }}/lab-extras/rhel7/x86_64/nagios-plugins-2.0.3-3.el7.x86_64.rpm
     - http://{{ mirror_host }}/lab-extras/rhel7/x86_64/nagios-plugins-load-2.0.3-3.el7.x86_64.rpm
-  when: ansible_pkg_mgr == "yum" and
-        have_epel.rc == 1
+  when:
+    - ansible_os_family == "RedHat"
+    - ansible_distribution_major_version <= 7
+    - have_epel.rc == 1
 
 - name: Install nrpe package and dependencies (RHEL/CentOS)
-  yum:
+  package:
     name: "{{ item }}"
     state: latest
     enablerepo: epel
   with_items: "{{ nrpe_packages }}"
-  when: ansible_pkg_mgr == "yum" and
-        have_epel.rc == 0
+  when:
+    - ansible_os_family == "RedHat"
+    - ansible_distribution_major_version <= 7
+    - have_epel.rc == 0
 
 - name: Install nrpe package and dependencies (Ubuntu)
-  apt:
+  package:
     name: "{{ item }}"
     state: latest
   with_items: "{{ nrpe_packages }}"
@@ -74,14 +78,14 @@
     dest: /etc/sysconfig/{{ nrpe_service_name }}
     regexp: "^NRPE_SSL_OPT"
     line: "NRPE_SSL_OPT=\"-n\""
-  when: ansible_pkg_mgr == "yum"
+  when: ansible_os_family == "RedHat"
 
 - name: Check firewalld status
   command: systemctl status firewalld
   register: firewalld
   ignore_errors: true
   no_log: true
-  when: ansible_pkg_mgr == "yum"
+  when: ansible_os_family == "RedHat"
 
 - name: Open nrpe port if firewalld enabled
   firewalld:
@@ -89,7 +93,7 @@
     state: enabled
     permanent: yes
     immediate: yes
-  when: ansible_pkg_mgr == "yum" and (firewalld is defined and firewalld.stdout.find('running') != -1)
+  when: ansible_os_family == "RedHat" and (firewalld is defined and firewalld.stdout.find('running') != -1)
 
 - name: Upload nagios nrpe config.
   template:

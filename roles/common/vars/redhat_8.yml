@@ -1,0 +1,19 @@
+---
+# RHEL8 repos are not yet available via RHSM
+rhsm_repos: []
+
+# Don't use satellite until RHEL8 is GAed
+use_satellite: false
+
+# These are temporary until RHEL8 is GAed
+beta_repos:
+  rhel-beta-baseos:
+    name: "RHEL {{ ansible_distribution_version }} BaseOS (RPMs)"
+    baseurl: "https://downloads.redhat.com/redhat/rhel/rhel-8-beta/baseos/x86_64/"
+    enabled: 1
+    gpgcheck: 0
+  rhel-beta-appstream:
+    name: "RHEL {{ ansible_distribution_version }} AppStream (RPMs)"
+    baseurl: "https://downloads.redhat.com/redhat/rhel/rhel-8-beta/appstream/x86_64/"
+    enabled: 1
+    gpgcheck: 0

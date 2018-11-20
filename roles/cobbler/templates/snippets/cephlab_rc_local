@@ -3,7 +3,10 @@
 # Set proper location for firstboot ansible post-install trigger
 #set distro = $getVar('distro','').split("-")[0]
 #set distro_ver = $getVar('distro','').split("-")[1]
-#if $distro == 'Fedora' and int($distro_ver) >= 22
+#if $distro == 'RHEL'
+#set distro_ver = $distro_ver.split(".")[0]
+#end if
+#if ($distro == 'Fedora' and int($distro_ver) >= 22) or ($distro == 'RHEL' and int($distro_ver) >= 8)
 #set script = '/etc/rc.d/rc.local'
 #else if $distro == 'openSUSE'
 #set script = '/etc/init.d/boot.local'
@@ -144,7 +147,7 @@ set +x
 echo -e "==================================\nInstructing Cobbler to run Ansible\n      Waiting for completion\n==================================" > /dev/console
 set -x
 # Run the post-install trigger a second time
-wget --timeout=1800 -t1 -O /dev/null "http://$http_server:$http_port/cblr/svc/op/trig/mode/post/system/$system_name" || true
+curl --max-time 1800 --silent "http://$http_server:$http_port/cblr/svc/op/trig/mode/post/system/$system_name" -o /dev/null || true
 touch $lockfile
 EOF
 

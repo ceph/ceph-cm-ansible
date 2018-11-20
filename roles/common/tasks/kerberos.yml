@@ -2,7 +2,7 @@
 # Install and Configure a Kerberos client
 
 - name: Install Kerberos Packages (RedHat)
-  yum:
+  package:
     name: krb5-workstation
     state: present
   when: ansible_os_family == 'RedHat'

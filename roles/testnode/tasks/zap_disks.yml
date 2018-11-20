@@ -13,7 +13,7 @@
   when: ansible_os_family == "Debian"
 
 - name: Make sure rpm dependencies are installed
-  yum:
+  package:
     name: "{{ item }}"
     state: present
   with_items:

@@ -1,0 +1,18 @@
+---
+# This will set ansible_python_interpreter to use python3
+# if the shell module fails (like it will on RHEL8 since
+# /usr/bin/python is no more).
+- hosts: all
+  gather_facts: false
+  vars:
+    ansible_ssh_user: "{{ cm_user }}"
+  become: true
+  tasks:
+    - name: Check for /usr/bin/python
+      shell: echo marco
+      register: polo
+      ignore_errors: true
+    - name: Set ansible_python_interpreter=/usr/bin/python3
+      set_fact:
+        ansible_python_interpreter: /usr/bin/python3
+      when: polo.rc != 0
