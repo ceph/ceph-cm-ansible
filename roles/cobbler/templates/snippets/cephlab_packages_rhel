@@ -8,14 +8,17 @@
 @base
 #end if
 #if $distro == 'RHEL'
-#set distro_ver = $distro_ver.split(".")[0]
+#set distro_ver_major = $distro_ver.split(".")[0]
+#set distro_ver_minor = $distro_ver.split(".")[1]
 #end if
-#if not int($distro_ver) == 8
+#if not int($distro_ver_major) == 8
 libselinux-python
 libsemanage-python
 policycoreutils-python
 ntp
+#if int($distro_ver_minor) >= 5
 python-jwt
+#end if
 #else
 python3
 #end if
