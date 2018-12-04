@@ -28,7 +28,7 @@
     - http://{{ mirror_host }}/lab-extras/rhel7/x86_64/nagios-plugins-load-2.0.3-3.el7.x86_64.rpm
   when:
     - ansible_os_family == "RedHat"
-    - ansible_distribution_major_version <= 7
+    - ansible_distribution_major_version|int <= 7
     - have_epel.rc == 1
 
 - name: Install nrpe package and dependencies (RHEL/CentOS)
@@ -39,7 +39,7 @@
   with_items: "{{ nrpe_packages }}"
   when:
     - ansible_os_family == "RedHat"
-    - ansible_distribution_major_version <= 7
+    - ansible_distribution_major_version|int <= 7
     - have_epel.rc == 0
 
 - name: Install nrpe package and dependencies (Ubuntu)

@@ -6,7 +6,7 @@
     state: present
   when:
     - ansible_os_family == "RedHat"
-    - ansible_distribution_major_version <= 7
+    - ansible_distribution_major_version|int <= 7
 
 - name: Removing saved yum transactions
   command: yum-complete-transaction --cleanup-only
@@ -14,7 +14,7 @@
   changed_when: "'Cleaning up' in transaction_cleanup.stdout"
   when:
     - ansible_os_family == "RedHat"
-    - ansible_distribution_major_version <= 7
+    - ansible_distribution_major_version|int <= 7
 
 - name: Check if ceph-debuginfo is installed
   command: rpm -q ceph-debuginfo
