@@ -2,6 +2,8 @@
 # This playbook can be used to generate a CSV file of testnodes
 # that can be imported to the FOG web UI.
 # It outputs a CSV file to /tmp/fog_hostfile.csv
+#
+# Define 'fog_install_drive: "/dev/sdX"' in ansible group_vars if it should be any drive other than sda
 
 - hosts: localhost
   roles:
