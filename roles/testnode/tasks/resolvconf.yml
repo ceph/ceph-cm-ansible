@@ -47,7 +47,7 @@
   # https://bugs.launchpad.net/ubuntu/+source/resolvconf/+bug/1593489
   when: bounce_interface == "True" or 
         (ansible_distribution|lower == 'ubuntu' and
-        ansible_distribution_major_version|int >= 16)
+        ansible_distribution_major_version|int == 16)
 
 - name: Ensure lab_domain is in search domains in /etc/resolv.conf
   lineinfile:
