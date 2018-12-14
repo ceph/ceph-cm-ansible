@@ -65,6 +65,16 @@
     - '"loop" not in item.key'
     - '"ram" not in item.key'
 
+## See https://tracker.ceph.com/issues/22354 and
+## https://github.com/ceph/ceph/pull/20400
+- name: Blow away lingering OSD data and FSIDs
+  shell: "dd if=/dev/zero of=/dev/{{ item.key }} bs=1M count=110"
+  with_dict: "{{ ansible_devices }}"
+  when:
+    - item.key not in root_disk
+    - '"loop" not in item.key'
+    - '"ram" not in item.key'
+
 - name: Remove all LVM data
   shell: "dmsetup remove_all --force"
   register: removed_lvm_data
