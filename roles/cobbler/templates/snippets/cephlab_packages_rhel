@@ -7,7 +7,7 @@
 #else
 @base
 #end if
-#if $distro == 'RHEL'
+#if $distro == 'RHEL' or $distro == 'CentOS'
 #set distro_ver_major = $distro_ver.split(".")[0]
 #set distro_ver_minor = $distro_ver.split(".")[1]
 #end if
