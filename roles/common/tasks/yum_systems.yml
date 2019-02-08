@@ -15,6 +15,24 @@
   tags:
     - timezone
 
+# See http://tracker.ceph.com/issues/24197
+# If/when we use ansible 2.7, the next two tasks can be replaced with the 'reboot' ansible module
+- name: Reboot RHEL7 to workaround systemd bug
+  shell: "sleep 5 && reboot"
+  async: 1
+  poll: 0
+  when: '"Connection timed out" in current_tz.stderr'
+  tags:
+    - timezone
+
+- name: Wait for reboot in case of systemd workaround
+  wait_for_connection:
+    delay: 20
+    timeout: 300
+  when: '"Connection timed out" in current_tz.stderr'
+  tags:
+    - timezone
+
 - name: Set /etc/localtime (RHEL/CentOS 6)
   file:
     src: /usr/share/zoneinfo/{{ timezone }}
