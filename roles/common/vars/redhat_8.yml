@@ -11,9 +11,11 @@ beta_repos:
     name: "RHEL {{ ansible_distribution_version }} BaseOS (RPMs)"
     baseurl: "https://downloads.redhat.com/redhat/rhel/rhel-8-beta/baseos/x86_64/"
     enabled: 1
-    gpgcheck: 0
+    gpgcheck: 1
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
   rhel-beta-appstream:
     name: "RHEL {{ ansible_distribution_version }} AppStream (RPMs)"
     baseurl: "https://downloads.redhat.com/redhat/rhel/rhel-8-beta/appstream/x86_64/"
     enabled: 1
-    gpgcheck: 0
+    gpgcheck: 1
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
