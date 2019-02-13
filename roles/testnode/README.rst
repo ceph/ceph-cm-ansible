@@ -130,6 +130,10 @@ A list of packages to upgrade. These lists are defined in the vars files in ``va
 
     packages_to_upgrade: []
 
+A list of packages to install via pip. These lists are defined in the vars files in ``vars/``::
+
+    pip_packages_to_install: []
+
 The user that teuthology will use to connect to testnodes. This user will be created by this role and assigned to the appropriate groups.
 Even though this variable exists, teuthology is not quite ready to support a configurable user::
 

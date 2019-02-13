@@ -37,3 +37,6 @@ ceph_dependency_packages_to_remove:
   - python-markupsafe
   - python-werkzeug
   - python-itsdangerous
+
+pip_packages_to_install:
+  - remoto>=0.0.35

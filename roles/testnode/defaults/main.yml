@@ -64,3 +64,6 @@ ntp_servers:
 
 # Set to true in group_vars if the testnode/machine type should have an NVMe device
 check_for_nvme: false
+
+# packages to install via pip
+pip_packages_to_install: []
