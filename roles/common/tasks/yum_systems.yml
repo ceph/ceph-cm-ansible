@@ -27,7 +27,7 @@
 
 - name: Wait for reboot in case of systemd workaround
   wait_for_connection:
-    delay: 20
+    delay: 40
     timeout: 300
   when: '"Connection timed out" in current_tz.stderr'
   tags:
