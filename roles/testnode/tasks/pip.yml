@@ -28,3 +28,8 @@
     owner: "{{ teuthology_user }}"
     group: "{{ teuthology_user }}"
     mode: 0644
+
+- name: Install packages via pip
+  pip:
+    name: "{{ item }}"
+  with_items: "{{ pip_packages_to_install }}"

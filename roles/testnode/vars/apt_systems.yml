@@ -22,3 +22,6 @@ common_packages: []
 
 apt_repos: []
 common_apt_repos: []
+
+pip_packages_to_install:
+  - remoto>=0.0.35
