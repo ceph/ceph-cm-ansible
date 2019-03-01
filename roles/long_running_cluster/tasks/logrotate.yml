@@ -2,8 +2,7 @@
 # Because of the high debug level enabled for LRC daemons, the root drives
 # fill up rather quickly.  The drives fill up before the daily logrotate can
 # run so we rotate every 6 hours and keep 3 days worth.  This can be adjusted
-# as needed.  Logrotate already runs daily at 06:25 so there are 3 additional
-# scheduled cronjobs to rotate 4x daily.
+# as needed.
 
 - name: "Write custom ceph logrotate config"
   template:
@@ -14,6 +13,6 @@
   cron:
     name: "Logrotate ceph logs every 6 hours"
     minute: "25"
-    hour: "0,12,18"
+    hour: "0,6,12,18"
     job: "/usr/sbin/logrotate -f /etc/logrotate.d/ceph-common"
     user: root
