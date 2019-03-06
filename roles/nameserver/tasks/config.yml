@@ -3,6 +3,8 @@
   file:
     path: "{{ named_conf_data_dir }}"
     state: directory
+    owner: named
+    group: named
 
 - name: Create named.conf
   template:

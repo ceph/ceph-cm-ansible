@@ -19,9 +19,11 @@
     - always
 
 # DDNS updates fail to create or edit jnl files without this
-- name: Ensure permissions set for /var/named/zones
+- name: Ensure permissions set for "{{ named_conf_zones_path }}"
   file:
-    path: /var/named/zones
+    path: "{{ named_conf_zones_path }}"
+    mode: '0700'
+    state: directory
     owner: named
     group: named
   tags:
