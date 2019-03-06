@@ -6,7 +6,7 @@
 - name: Including major version specific variables.
   include_vars: "{{ item }}"
   with_first_found:
-    - "{{ ansible_distribution | lower }}_{{ ansible_distribution_major_version }}.yml"
+    - "{{ ansible_distribution | lower | replace(' ', '_') }}_{{ ansible_distribution_major_version }}.yml"
     - empty.yml
 
 - name: Install packages
@@ -64,20 +64,20 @@
 - name: Ship nginx configuration
   template:
     src: nsupdate_web_nginx
-    dest: "/etc/nginx/sites-available/nsupdate_web"
+    dest: "{{ nginx_available }}/nsupdate_web"
     owner: root
     group: root
     mode: 0644
 
 - name: Disable default nginx configuration
   file:
-    path: "/etc/nginx/sites-enabled/default"
+    path: "{{ nginx_enabled }}/default"
     state: absent
 
 - name: Enable our nginx configuration
   file:
-    src: "/etc/nginx/sites-available/nsupdate_web"
-    dest: "/etc/nginx/sites-enabled/nsupdate_web"
+    src: "{{ nginx_available }}/nsupdate_web"
+    dest: "{{ nginx_enabled }}/nsupdate_web"
     state: link
 
 - name: Enable and restart nginx
