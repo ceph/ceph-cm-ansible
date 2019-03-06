@@ -1,10 +1,24 @@
 ---
 - name: Include nameserver package list
-  include_vars: packages.yml
+  include_vars: packages_redhat.yml
+  when: ansible_os_family == "RedHat"
 
-- name: Install and update packages
+- name: Include nameserver package list
+  include_vars: packages_suse.yml
+  when: ansible_os_family == "Suse"
+
+- name: Install and update packages via yum
   yum:
-    name: "{{ item }}"
+    name: "{{ packages }}"
     state: latest
     enablerepo: epel
-  with_items: "{{ packages }}"
+  when: ansible_pkg_mgr == "yum"
+
+- name: Install and update packages via zypper
+  zypper:
+    name: "{{ packages }}"
+    state: latest
+    update_cache: yes
+  when: ansible_pkg_mgr == "zypper"
+  tags:
+    - packages
