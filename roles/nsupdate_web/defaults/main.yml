@@ -3,7 +3,7 @@ packages: []
 nsupdate_web_user: "nsupdate"
 nsupdate_web_ttl: "60"
 virtualenv_path: "~/venv"
-python_version: "python3.5"
+python_version: "python3"
 repo_url: "https://github.com/zmc/nsupdate-web.git"
 repo_path: "/home/{{ nsupdate_web_user }}/nsupdate_web"
 # The public and private keys must be manually placed on the host; 
