@@ -3,6 +3,7 @@
   git:
     repo: "{{ pulpito_repo }}"
     dest: "{{ pulpito_repo_path }}"
+    version: "{{ pulpito_branch }}"
   become_user: "{{ pulpito_user }}"
   tags:
     - repos
