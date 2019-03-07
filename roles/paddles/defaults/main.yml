@@ -2,6 +2,7 @@
 paddles_user: paddles
 
 paddles_repo: https://github.com/ceph/paddles.git
+paddles_branch: master
 
 paddles_port: 8080
 

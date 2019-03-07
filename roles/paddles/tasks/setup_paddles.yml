@@ -3,6 +3,7 @@
   git:
     repo: "{{ paddles_repo }}"
     dest: "{{ paddles_repo_path }}"
+    version: "{{ paddles_branch }}"
   become_user: "{{ paddles_user }}"
   tags:
     - repos
