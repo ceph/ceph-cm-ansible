@@ -48,6 +48,7 @@
   git:
     repo: "{{ teuthology_repo }}"
     dest: /home/{{ item }}/src/teuthology_master
+    version: "{{ teuthology_branch }}"
   become_user: "{{ item }}"
   with_items: "{{ teuthology_users }}"
   tags:
