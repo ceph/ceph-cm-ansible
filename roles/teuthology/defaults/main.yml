@@ -1,11 +1,16 @@
 ---
+teuthology_scheduler_user: teuthology
+teuthology_execution_user: teuthworker
+
 teuthology_users:
   # for scheduling tests
-  - teuthology
+  - "{{ teuthology_scheduler_user }}"
   # for executing tests
-  - teuthworker
+  - "{{ teuthology_execution_user }}"
 
 teuthology_repo: https://github.com/ceph/teuthology.git
 teuthology_yaml_extra: ""
+
+archive_base: "/home/{{ teuthology_execution_user }}/archive"
 
 remote_crontab_url: "https://raw.githubusercontent.com/ceph/ceph/master/qa/crontab/teuthology-cronjobs"

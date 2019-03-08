@@ -79,3 +79,9 @@
   become_user: "{{ item }}"
   with_items: "{{ teuthology_users }}"
   changed_when: false
+
+- name: Ensure archive directory exists
+  shell: "mkdir -p {{ archive_base }}/worker_logs"
+  become_user: "{{ teuthology_execution_user }}"
+  tags:
+    - logs
