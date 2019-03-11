@@ -4,3 +4,6 @@ packages:
   - virtualenv
   - dnsutils
   - nginx
+
+nginx_available: "/etc/nginx/sites-available"
+nginx_enabled: "/etc/nginx/sites-enabled"
