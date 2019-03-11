@@ -9,6 +9,7 @@ teuthology_users:
   - "{{ teuthology_execution_user }}"
 
 teuthology_repo: https://github.com/ceph/teuthology.git
+teuthology_branch: "master"
 teuthology_yaml_extra: ""
 
 archive_base: "/home/{{ teuthology_execution_user }}/archive"
