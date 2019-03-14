@@ -36,6 +36,7 @@ packages:
   - libgcrypt
   - fuse
   - fuse-libs
+  - lvm2
   - openssl
   - libuuid
   - btrfs-progs
