@@ -42,3 +42,9 @@
 - import_tasks: setup_log_access.yml
   tags:
     - logs
+
+- name: Enable and start beanstalkd
+  service:
+    name: beanstalkd
+    state: started
+    enabled: yes
