@@ -7,3 +7,4 @@ packages:
 
 nginx_available: "/etc/nginx/sites-available"
 nginx_enabled: "/etc/nginx/sites-enabled"
+nsupdate_web_conf: "nsupdate_web"
