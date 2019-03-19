@@ -6,7 +6,7 @@ Description=DDNS HTTP update service.
 Type=simple
 User={{ nsupdate_web_user }}
 Group={{ nsupdate_web_user }}
-ExecStart=/usr/bin/python3 {{ repo_path }}/ddns-server.py {{ nsupdate_web_args }}
+ExecStart=/usr/bin/python3 {{ repo_path }}/ddns-server.py -p {{ nsupdate_web_port }} {{ nsupdate_web_args }}
 
 [Install]
 WantedBy=multi-user.target

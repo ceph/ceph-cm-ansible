@@ -3,6 +3,6 @@ server {
 
     location = /update {
         include proxy_params;
-        proxy_pass http://localhost:8080;
+        proxy_pass http://localhost:{{ nsupdate_web_port }};
     }
 }

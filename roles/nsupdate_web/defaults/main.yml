@@ -1,6 +1,7 @@
 ---
 packages: []
 nsupdate_web_user: "nsupdate"
+nsupdate_web_port: "8080"
 nsupdate_web_ttl: "60"
 virtualenv_path: "~/venv"
 python_version: "python3"
