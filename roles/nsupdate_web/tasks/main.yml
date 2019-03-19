@@ -24,8 +24,9 @@
 
 - name: Clone nsupdate_web repo
   git:
-    repo: "{{ repo_url }}"
-    dest: "~/nsupdate_web"
+    repo: "{{ nsupdate_web_repo }}"
+    dest: "{{ nsupdate_web_path }}"
+    version: "{{ nsupdate_web_branch }}"
   become_user: "{{ nsupdate_web_user }}"
 
 - name: Create/update virtualenv
@@ -38,7 +39,7 @@
 - name: Set up nsupdate_web
   shell: "source {{ virtualenv_path }}/bin/activate && python setup.py develop"
   args:
-    chdir: "{{ repo_path }}"
+    chdir: "{{ nsupdate_web_path }}"
     executable: "/bin/bash"
   become_user: "{{ nsupdate_web_user }}"
 
