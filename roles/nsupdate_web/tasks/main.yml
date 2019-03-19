@@ -29,6 +29,24 @@
     system: true
     shell: "/bin/false"
 
+- name: Make sure keys_dir exists
+  file:
+    path: "{{ keys_dir }}"
+    state: directory
+    owner: "{{ nsupdate_web_user }}"
+    group: "{{ nsupdate_web_user }}"
+  when: "'{{ secrets_path }}/{{ pubkey_name }}' is file"
+
+- name: Copy .key and .private keys to keys_dir
+  copy:
+    src: "{{ item }}"
+    dest: "{{ keys_dir }}/"
+    owner: "{{ nsupdate_web_user }}"
+    group: "{{ nsupdate_web_user }}"
+  with_fileglob:
+    - "{{ secrets_path }}/{{ pubkey_name | regex_replace('\\.[^\\.]+$', '') }}.*"
+  when: "'{{ secrets_path }}/{{ pubkey_name }}' is file"
+
 - name: Clone nsupdate_web repo
   git:
     repo: "{{ nsupdate_web_repo }}"
