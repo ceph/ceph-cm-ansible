@@ -3,6 +3,6 @@
 #
 
 [{{ item.key }}]
-{% for k, v in item.value.iteritems() | sort -%}
+{% for k, v in item.value.items() | sort -%}
   {{ k }}={{ v }}
 {% endfor %}

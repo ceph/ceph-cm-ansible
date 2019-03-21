@@ -4,6 +4,6 @@
 {% endfor %}
 {% endfor %}
 
-{% for key, value in dhcp_subnets.iteritems() %}
+{% for key, value in dhcp_subnets.items() %}
 include "/etc/dhcp/dhcpd.{{ key }}.conf";
 {% endfor %}
