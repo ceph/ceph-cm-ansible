@@ -1,6 +1,6 @@
 ---
 - name: Include package type specific vars.
-  include_vars: "zypper_systems.yml"
+  include_vars: "zypper_{{ ansible_distribution | lower | replace(' ', '_') }}_{{ ansible_distribution_version }}.yml"
   tags:
     - always
 
