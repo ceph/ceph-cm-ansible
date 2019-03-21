@@ -15,9 +15,16 @@
     state: latest
   with_items: "{{ packages }}"
 
+- name: Create nsupdate group
+  group:
+    name: "{{ nsupdate_web_user }}"
+    state: present
+    system: true
+
 - name: Create nsupdate user
   user:
     name: "{{ nsupdate_web_user }}"
+    group: "{{ nsupdate_web_user }}"
     state: present
     system: true
     shell: "/bin/false"
