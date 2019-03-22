@@ -1,4 +1,4 @@
-{% for subnet, subnet_item in dhcp_subnets.iteritems() %}
+{% for subnet, subnet_item in dhcp_subnets.items() %}
 {% if subnet == item %}
 subnet {{ subnet_item.cidr | ipaddr('network') }} netmask {{ subnet_item.cidr | ipaddr('netmask') }} {
   {% if subnet_item.domain_name is defined -%}
