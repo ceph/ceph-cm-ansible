@@ -9,13 +9,21 @@ use_satellite: false
 beta_repos:
   rhel-beta-baseos:
     name: "RHEL {{ ansible_distribution_version }} BaseOS (RPMs)"
-    baseurl: "https://downloads.redhat.com/redhat/rhel/rhel-8-beta/baseos/x86_64/"
+    baseurl: "http://drop.front.sepia.ceph.com/el8/baseos/"
     enabled: 1
-    gpgcheck: 1
-    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-beta
+    gpgcheck: 0
   rhel-beta-appstream:
     name: "RHEL {{ ansible_distribution_version }} AppStream (RPMs)"
-    baseurl: "https://downloads.redhat.com/redhat/rhel/rhel-8-beta/appstream/x86_64/"
+    baseurl: "http://drop.front.sepia.ceph.com/el8/appstream/"
     enabled: 1
-    gpgcheck: 1
-    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-beta
+    gpgcheck: 0
+  rhel8-ceph:
+    name: "RHCS 4.0 Scratch Build RPMs"
+    baseurl: "http://drop.front.sepia.ceph.com/el8/latest/"
+    enabled: 1
+    gpgcheck: 0
+  rhel8-ceph-deps:
+    name: "RHCS 4.0 Scratch Build Dependency RPMs"
+    baseurl: "http://drop.front.sepia.ceph.com/el8/deps/"
+    enabled: 1
+    gpgcheck: 0
