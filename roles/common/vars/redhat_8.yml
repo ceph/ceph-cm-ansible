@@ -1,29 +1,4 @@
 ---
-# RHEL8 repos are not yet available via RHSM
-rhsm_repos: []
-
-# Don't use satellite until RHEL8 is GAed
-use_satellite: false
-
-# These are temporary until RHEL8 is GAed
-beta_repos:
-  rhel-beta-baseos:
-    name: "RHEL {{ ansible_distribution_version }} BaseOS (RPMs)"
-    baseurl: "http://drop.front.sepia.ceph.com/el8/baseos/"
-    enabled: 1
-    gpgcheck: 0
-  rhel-beta-appstream:
-    name: "RHEL {{ ansible_distribution_version }} AppStream (RPMs)"
-    baseurl: "http://drop.front.sepia.ceph.com/el8/appstream/"
-    enabled: 1
-    gpgcheck: 0
-  rhel8-ceph:
-    name: "RHCS 4.0 Scratch Build RPMs"
-    baseurl: "http://drop.front.sepia.ceph.com/el8/latest/"
-    enabled: 1
-    gpgcheck: 0
-  rhel8-ceph-deps:
-    name: "RHCS 4.0 Scratch Build Dependency RPMs"
-    baseurl: "http://drop.front.sepia.ceph.com/el8/deps/"
-    enabled: 1
-    gpgcheck: 0
+rhsm_repos:
+  - rhel-8-for-x86_64-baseos-rpms
+  - rhel-8-for-x86_64-appstream-rpms
