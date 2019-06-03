@@ -9,8 +9,10 @@ subscription-manager register --activationkey={{ subscription_manager_activation
 ## Disable all repos
 subscription-manager repos --disable '*'
 ## Enable repos
-#if $os_version == 'rhel7'
-subscription-manager repos --enable=rhel-7-server-rpms --enable=rhel-7-server-optional-rpms --enable=rhel-7-server-extras-rpms
-#else
+#if $os_version == 'rhel6'
 subscription-manager repos --enable=rhel-6-server-rpms --enable=rhel-6-server-optional-rpms --enable=rhel-6-server-extras-rpms --enable=rhel-scalefs-for-rhel-6-server-rpms
+#else if $os_version == 'rhel7'
+subscription-manager repos --enable=rhel-7-server-rpms --enable=rhel-7-server-optional-rpms --enable=rhel-7-server-extras-rpms
+#else if $os_version == 'rhel8'
+subscription-manager repos --enable=rhel-8-for-x86_64-baseos-rpms --enable=rhel-8-for-x86_64-appstream-rpms
 #end if
