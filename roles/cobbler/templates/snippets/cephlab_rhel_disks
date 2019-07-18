@@ -9,6 +9,9 @@ zerombr
 # System bootloader configuration
 #if $os_version == 'rhel7'
     #set bootloader_args = "--location=mbr --boot-drive=sda"
+#else if $os_version == 'rhel8'
+    #set bootloader_args = "--location=mbr --boot-drive=sda"
+ignoredisk --only-use=sda
 #else
     #set bootloader_args = "--location=mbr --driveorder=sda"
 #end if
