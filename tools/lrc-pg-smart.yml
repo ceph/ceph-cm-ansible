@@ -1,0 +1,44 @@
+---
+### This standalone playbook can be used to check SMART data on long_running_cluster hosts that have a bad PG
+
+- hosts:
+    - long_running_cluster
+  become: true
+  gather_facts: false
+  tasks:
+
+  # We need to leave /.cephlab_rc_local or else each FOG reimage would tell Cobbler to run ceph-cm-ansible
+  - name: Get bad PG IDs
+    shell: "ceph health detail | grep \"active+clean+inconsistent\" | awk '{ print $2 }'"
+    register: pg_output
+    delegate_to: reesi001.front.sepia.ceph.com
+
+  - debug: var=pg_output
+
+  - name: Find OSD IDs
+    shell: "ceph pg {{ item }} query | jq -r '.acting[]'"
+    register: osd_ids
+    with_items: "{{ pg_output.stdout_lines }}"
+#    with_items: "{{ pg_output.stdout_lines }}"
+    with_items:
+      - 4.2
+      - 4.3
+
+  - debug: var=osd_ids.results
+
+  - set_fact:
+      combined_osd_ids: "{{ combined_osd_ids | default([]) | union(item.stdout_lines) }}"
+    with_items: "{{ osd_ids.results }}"
+#      combined_osd_ids: "{{ osd_ids.results|map(attribute='stdout_lines')|list }}"
+#      combined_osd_ids: []
+
+#  - name: Combine OSD IDs
+#    set_fact:
+#      combined_osd_ids: "{{ combined_osd_ids + item }}"
+#    with_items: "{{ osd_ids.results|map(attribute='stdout_lines')|list }}"
+#      combined_osd_ids: "{{ osd_ids.results | map(attribute='stdout') | join('\n') }}"
+#      combined_osd_ids: "{{ combined_osd_ids + item.stdout_lines }}"
+#    when: item.rc == 0
+#    with_items: "{{ osd_ids.results }}"
+
+  - debug: var=combined_osd_ids
