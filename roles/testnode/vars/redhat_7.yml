@@ -7,13 +7,11 @@ common_yum_repos:
     baseurl: "http://{{ gitbuilder_host }}/mod_fastcgi-rpm-rhel7-x86_64-basic/ref/master/"
     enabled: 1
     gpgcheck: 0
-    priority: 2
   lab-extras:
     name: "lab-extras"
     baseurl: "http://{{ mirror_host }}/lab-extras/rhel7/"
     enabled: 1
     gpgcheck: 0
-    priority: 2
 
 packages:
   - '@core'
