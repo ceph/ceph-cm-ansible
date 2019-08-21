@@ -28,6 +28,8 @@ distros:
       iso: ""
   "RHEL-7.6-Server-x86_64":
       iso: ""
+  "RHEL-7.7-Server-x86_64":
+      iso: ""
   "RHEL-8.0-Server-x86_64":
       iso: ""
   "Fedora-22-Server-x86_64":
