@@ -55,5 +55,6 @@
     name: dhcpd
     state: restarted
   when:
+    - (dhcp_global_config|changed or dhcp_subnet_config|changed)
     - dhcpd_config_test_result is defined
     - dhcpd_config_test_result.rc == 0
