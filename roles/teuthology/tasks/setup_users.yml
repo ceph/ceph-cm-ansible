@@ -46,7 +46,7 @@
 
 - name: Determine teuthology GitHub PR
   set_fact:
-    teuthology_ghpr: "{{ teuthology_branch | regex_replace( '^origin/pr/([^\/]+)/.*$', '\\1') }}"
+    teuthology_ghpr: "{{ teuthology_branch | regex_replace( '^origin/pr/([^/]+)/.*$', '\\1') }}"
 
 - name: Clone the teuthology repo for GitHub PR
   git:
