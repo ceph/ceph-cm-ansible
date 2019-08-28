@@ -44,6 +44,22 @@
   tags:
     - user
 
+- name: Determine teuthology GitHub PR
+  set_fact:
+    teuthology_ghpr: "{{ teuthology_branch | regex_replace( '^origin/pr/([^\/]+)/.*$', '\\1') }}"
+
+- name: Clone the teuthology repo for GitHub PR
+  git:
+    repo: "https://github.com/ceph/teuthology"
+    dest: /home/{{ item }}/src/teuthology_master
+    version: "{{ teuthology_branch }}"
+    refspec: '+refs/pull/{{ teuthology_ghpr }}/*:refs/origin/pr/{{ teuthology_ghpr }}/*'
+  become_user: "{{ item }}"
+  with_items: "{{ teuthology_users }}"
+  tags:
+    - repos
+  when: teuthology_ghpr is defined and teuthology_ghpr != teuthology_branch
+
 - name: Clone the teuthology repo
   git:
     repo: "{{ teuthology_repo }}"
@@ -53,6 +69,7 @@
   with_items: "{{ teuthology_users }}"
   tags:
     - repos
+  when: teuthology_ghpr is not defined or teuthology_ghpr == teuthology_branch
 
 - name: Run bootstrap
   shell: NO_CLOBBER=true ./bootstrap
