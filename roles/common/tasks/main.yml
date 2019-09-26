@@ -43,23 +43,20 @@
 
 # configure nagios (Except OpenSUSE and RHEL8)
 - import_tasks: nagios.yml
-  when:
-    - ansible_pkg_mgr != "zypper"
-    - not (ansible_distribution == "RedHat" and ansible_distribution_major_version == "8")
+  when: ansible_pkg_mgr != "zypper"
   tags:
     - nagios
 
 - name: Get SELinux status
   command: getenforce
   register: selinux_status
-  when: ansible_pkg_mgr == "yum"
+  when: ansible_os_family == "RedHat"
   tags:
     - nagios
 
 # configure selinux for nagios
 - import_tasks: nrpe-selinux.yml
   when: ansible_os_family == "RedHat" and
-        ansible_distribution_major_version != "8" and
         (selinux_status is defined and selinux_status.stdout != "Disabled")
   tags:
     - nagios
