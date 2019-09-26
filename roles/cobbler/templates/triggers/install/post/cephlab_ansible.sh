@@ -29,8 +29,9 @@ export ANSIBLE_HOST_KEY_CHECKING=False
 
 # Set ansible_python_interpeter var if RHEL8
 # https://docs.ansible.com/ansible/2.7/reference_appendices/python_3_support.html
-if [[ $(cobbler system dumpvars --name $2 | grep os_version | awk '{ print $3 }') == "rhel8" ]]; then
-  # Nagios packages aren't available in the RHEL8 beta image so we'll skip those tasks
+os=$(cobbler system dumpvars --name $2 | grep os_version | awk '{ print $3 }')
+if [ $os == "rhel8" -o $os == "centos8" ]; then
+  # Nagios packages aren't available in the CentOS/RHEL8 yet so we'll skip those tasks
   ANSIBLE_EXTRAVAR="-e ansible_python_interpreter=/usr/bin/python3 --skip-tags nagios"
 else
   ANSIBLE_EXTRAVAR=""
