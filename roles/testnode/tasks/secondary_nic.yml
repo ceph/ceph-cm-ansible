@@ -30,7 +30,7 @@
   set_fact: mtu=9000
   when:
     - nic_to_configure_speed is defined
-    - nic_to_configure_speed.stdout == '10000Mb/s'
+    - (nic_to_configure_speed.stdout == '10000Mb/s' or nic_to_configure_speed.stdout == '25000Mb/s')
 
 - name: "Write Ubuntu network config for {{ nic_to_configure }}"
   blockinfile:
