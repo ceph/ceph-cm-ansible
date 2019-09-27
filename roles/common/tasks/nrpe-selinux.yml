@@ -1,15 +1,13 @@
 ---
 - name: nrpe - Install SELinux dependencies
-  yum:
+  package:
     name: "{{ item }}"
     state: installed
-  with_items:
-    - libsemanage-python
-    - policycoreutils-python
+  with_items: "{{ nrpe_selinux_packages }}"
 
 # ignore_errors in case we don't have any repos
 - name: nrpe - Ensure SELinux policy is up to date
-  yum:
+  package:
     name: selinux-policy-targeted
     state: latest
   ignore_errors: true

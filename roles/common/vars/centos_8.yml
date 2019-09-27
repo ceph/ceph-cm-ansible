@@ -1,8 +1,4 @@
 ---
-rhsm_repos:
-  - rhel-8-for-x86_64-baseos-rpms
-  - rhel-8-for-x86_64-appstream-rpms
-
 epel_repos:
   epel:
     name: "Extra Packages for Enterprise Linux $releasever - $basearch"
