@@ -43,10 +43,10 @@ if [ ! -f /.cephlab_net_configured ]; then
       else
         echo -e "DEVICE=$nic\nBOOTPROTO=dhcp\nONBOOT=yes" > /etc/sysconfig/network-scripts/ifcfg-$nic
       fi
+      # Don't bail if NIC fails to go down or come up
+      set +e
       # Bounce the NIC so it gets a DHCP address
       ifdown $nic
-      # Don't bail if NIC fails to come up
-      set +e
       ifup $nic
       attempts=0
       # Try for 5 seconds to ping our Cobbler host
