@@ -6,6 +6,10 @@ nrpe_user: nrpe
 nrpe_group: nrpe
 nagios_plugins_directory: /usr/lib64/nagios/plugins
 
+packages_to_remove:
+  # multipath interferes with krbd tests
+  - multipath-tools
+
 # ceph packages that we ensure do not exist
 ceph_packages_to_remove:
   - ceph
