@@ -24,6 +24,7 @@ packages:
   - xfsdump
   - blktrace
   - usbredir
+  - podman
   - libev-devel
   # for xfstests
   - ncurses-devel

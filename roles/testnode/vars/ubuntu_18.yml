@@ -6,6 +6,8 @@ packages:
   - lttng-tools
   # for building xfstests #18067
   - libtool-bin
+  # for ceph-daemon (no podman on ubuntu/debian, yet)
+  - docker.io
 
 non_aarch64_packages:
   - libgoogle-perftools4

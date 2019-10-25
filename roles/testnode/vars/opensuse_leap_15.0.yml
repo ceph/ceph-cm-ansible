@@ -15,6 +15,7 @@ packages:
 #  - libboost_thread1_54_0
   - libboost_thread1_66_0
   - xfsprogs
+  - podman
   - gptfdisk
   - parted
   - libgcrypt20
