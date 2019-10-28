@@ -1,0 +1,12 @@
+---
+jenkins_image: jenkins/jenkins:2.190.1
+keypair: root-jenkins-new-key
+instance_type: m4.large
+security_group: rook-jenkins-group
+image: ami-09c003703cafa9056
+region: us-east-1
+vpc_subnet_id: subnet-c72b609b
+instance_name: Recovery-Rook-Jenkins
+aws_tags:
+  Name: "{{ instance_name }}"
+  Application: "Jenkins"
