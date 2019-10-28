@@ -16,6 +16,7 @@ packages:
   - fuse-libs
   - openssl
   - libuuid
+  - podman
   - attr
   - ant
   - lsof

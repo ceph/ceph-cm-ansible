@@ -46,6 +46,7 @@ packages:
   - valgrind
   - python-nose
   - mpich
+  - podman
   - ant
   - iozone
   ###

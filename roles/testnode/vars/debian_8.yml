@@ -15,6 +15,7 @@ packages:
   - cryptsetup-bin
   - libcrypto++9
   - iozone3
+  - docker.io
   - collectl
   - nfs-kernel-server
   # for running ceph
