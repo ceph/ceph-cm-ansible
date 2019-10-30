@@ -3,6 +3,10 @@ ntp_service_name: ntp
 ssh_service_name: ssh
 nfs_service: nfs-kernel-server
 
+packages_to_remove:
+  # multipath interferes with krbd tests
+  - multipath-tools
+
 ceph_packages_to_remove:
   - ceph
   - ceph-common
