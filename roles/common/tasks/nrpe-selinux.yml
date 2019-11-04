@@ -1,9 +1,8 @@
 ---
 - name: nrpe - Install SELinux dependencies
   package:
-    name: "{{ item }}"
+    name: "{{ nrpe_selinux_packages|list }}"
     state: installed
-  with_items: "{{ nrpe_selinux_packages }}"
 
 # ignore_errors in case we don't have any repos
 - name: nrpe - Ensure SELinux policy is up to date

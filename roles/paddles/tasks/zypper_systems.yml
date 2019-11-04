@@ -6,10 +6,9 @@
 
 - name: Install packages via zypper
   zypper:
-    name: "{{ item }}"
+    name: "{{ paddles_extra_packages|list }}"
     state: latest
     update_cache: yes
-  with_items: "{{ paddles_extra_packages }}"
   tags:
     - packages
 

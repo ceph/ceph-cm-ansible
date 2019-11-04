@@ -32,46 +32,40 @@
 
 - name: Ensure ceph packages are not present.
   package:
-    name: "{{ item }}"
+    name: "{{ ceph_packages_to_remove|list }}"
     state: absent
-  with_items: "{{ ceph_packages_to_remove }}"
   tags:
     - remove-ceph
 
 - name: Ensure ceph dependency packages are not present.
   package:
-    name: "{{ item }}"
+    name: "{{ ceph_dependency_packages_to_remove|list }}"
     state: absent
-  with_items: "{{ ceph_dependency_packages_to_remove }}"
   tags:
     - remove-ceph-dependency
 
 
 - name: Install packages
   package:
-    name: "{{ item }}"
+    name: "{{ packages|list }}"
     state: present 
-  with_items: "{{ packages }}"
   when: packages|length > 0
 
 - name: Install epel packages
   package:
-    name: "{{ item }}"
+    name: "{{ epel_packages|list }}"
     state: present
     enablerepo: epel
-  with_items: "{{ epel_packages }}"
   when: epel_packages|length > 0
 
 - name: Remove packages
   package:
-    name: "{{ item }}"
+    name: "{{ packages_to_remove|list }}"
     state: absent
-  with_items: "{{ packages_to_remove }}"
   when: packages_to_remove|length > 0
 
 - name: Upgrade packages
   package:
-    name: "{{ item }}"
+    name: "{{ packages_to_upgrade|list }}"
     state: latest
-  with_items: "{{ packages_to_upgrade }}"
   when: packages_to_upgrade|length > 0

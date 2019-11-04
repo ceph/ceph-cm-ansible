@@ -1,10 +1,9 @@
 ---
 - name: Install packages via zypper
   zypper:
-    name: "{{ item }}"
+    name: "{{ pulpito_extra_packages|list }}"
     state: latest
     update_cache: yes
   #no_log: true
-  with_items: "{{ pulpito_extra_packages }}"
   tags:
     - packages
