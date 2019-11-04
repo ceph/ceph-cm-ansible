@@ -15,7 +15,7 @@
 
 - name: Read supervisord config
   command: supervisorctl update
-  when: supervisor_conf|changed
+  when: supervisor_conf is changed
 
 - name: Ensure paddles is running
   supervisorctl:
@@ -26,7 +26,7 @@
   supervisorctl:
     name: paddles
     state: restarted
-  when: prod_conf is defined and prod_conf|changed
+  when: prod_conf is defined and prod_conf is changed
   tags:
     - config
 

@@ -107,20 +107,20 @@
     shell: "ipmitool user set name {{ power_uid }} {{ power_user }}"
     when:
       - setup_user
-      - (set_username_locally is defined and set_username_locally|failed)
+      - (set_username_locally is defined and set_username_locally is failed)
 
   - name: Initial setup of permissions
     shell: "ipmitool channel setaccess {{ ipmi_channel_id }} {{ power_uid }} privilege=4"
     when:
       - setup_user
-      - (set_permissions_locally is defined and set_permissions_locally|failed)
+      - (set_permissions_locally is defined and set_permissions_locally is failed)
 
   - name: Initial setup of password
     shell: "ipmitool user set password {{ power_uid }} {{ power_pass }}"
     register: set_password_locally
     when:
       - setup_user
-      - (set_password_locally is defined and set_password_locally|failed)
+      - (set_password_locally is defined and set_password_locally is failed)
     ignore_errors: true
 
   - name: Set BMC to use DHCP via SSH
@@ -128,7 +128,7 @@
     register: set_to_dhcp_remotely
     when:
       - use_dhcp
-      - set_to_dhcp_locally|failed
+      - set_to_dhcp_locally is failed
 
   - name: Check existing network settings via SSH
     shell: "ipmitool lan print {{ ipmi_channel_id }} | grep 'IP Address Source\\|IP Address\\|Subnet Mask\\|Default Gateway IP\\|VLAN ID' | cut -d ':' -f2 | sed 's/^ //g'"
@@ -208,6 +208,6 @@
     shell: "ipmitool -I lanplus -U {{ power_user }} -P {{ power_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} mc reset cold"
     delegate_to: localhost
     when: force_mc_reset or
-          (set_to_dhcp_locally is defined and set_to_dhcp_locally|changed) or
-          (set_to_dhcp_remotely is defined and set_to_dhcp_remotely|changed) or
-          (network_settings_change_required is defined and network_settings_change_required and not set_to_static|failed)
+          (set_to_dhcp_locally is defined and set_to_dhcp_locally is changed) or
+          (set_to_dhcp_remotely is defined and set_to_dhcp_remotely is changed) or
+          (network_settings_change_required is defined and network_settings_change_required and not set_to_static is failed)

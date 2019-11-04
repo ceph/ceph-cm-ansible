@@ -87,7 +87,7 @@
     name: ntpd
     state: restarted
   when:
-    - conf_written|changed
+    - conf_written is changed
     - use_ntp == true
 
 - name: Restart chronyd service when conf changed
@@ -95,7 +95,7 @@
     name: chronyd
     state: restarted
   when:
-    - conf_written|changed
+    - conf_written is changed
     - use_chrony == true
 
 - name: Check for firewalld

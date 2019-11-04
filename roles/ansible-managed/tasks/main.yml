@@ -20,7 +20,7 @@
 
 - name: Delete the ansible users password.
   command: "passwd -d {{ cm_user }}"
-  when: user_created is defined and user_created|changed
+  when: user_created is defined and user_created is changed
   tags:
    - user
 

@@ -44,7 +44,7 @@
   command:
     mount -o remount,user_xattr /
   when: add_user_xattr is defined and
-        add_user_xattr|changed
+        add_user_xattr is changed
 
 - name: Ensure fuse group exists.
   group:

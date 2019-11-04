@@ -31,9 +31,9 @@
     state: restarted
     enabled: yes
   when:
-    install_pcp_apt|changed or
-    install_pcp_yum|changed or
-    install_pcp_dnf|changed
+    install_pcp_apt is changed or
+    install_pcp_yum is changed or
+    install_pcp_dnf is changed
 
 - name: Restart pmlogger
   service:
@@ -41,6 +41,6 @@
     state: restarted
     enabled: yes
   when:
-    install_pcp_apt|changed or
-    install_pcp_yum|changed or
-    install_pcp_dnf|changed
+    install_pcp_apt is changed or
+    install_pcp_yum is changed or
+    install_pcp_dnf is changed

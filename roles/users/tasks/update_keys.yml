@@ -17,7 +17,7 @@
   connection: local
   run_once: true
   register: clone_keys
-  until: clone_keys|success
+  until: clone_keys is success
   retries: 5
   delay: 10
 

@@ -36,7 +36,7 @@
 
 - name: Set bounce_interface if we just enabled dhcp
   set_fact:
-    bounce_interface: "{{ dhcp_enabled|changed }}"
+    bounce_interface: "{{ dhcp_enabled is changed }}"
 
 - name: ifdown and ifup
   shell: "ifdown {{ interface }} && ifup {{ interface }}"

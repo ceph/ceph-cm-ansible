@@ -25,11 +25,11 @@
 - name: Set arch
   set_fact:
       arch: "{{ distro.arch|default('x86_64') }}"
-  when: download_kernel is defined and download_kernel|success
+  when: download_kernel is defined and download_kernel is success
 
 - name: Add the distro to cobbler
   command: cobbler distro add --kernel {{ kernel_path }} --initrd {{ initrd_path }} --name {{ distro_name }}
-  when: download|changed or (files_exist and
+  when: download is changed or (files_exist and
         profile is defined and profile.stdout == '')
   register: import
 

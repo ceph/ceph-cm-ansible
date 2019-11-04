@@ -21,6 +21,6 @@
 
 - name: Inform the OS of the new timezone
   command: dpkg-reconfigure --frontend noninteractive tzdata
-  when: etc_timezone|changed
+  when: etc_timezone is changed
   tags:
     - timezone

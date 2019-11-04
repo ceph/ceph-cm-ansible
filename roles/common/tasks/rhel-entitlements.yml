@@ -44,7 +44,7 @@
   no_log: true
   when: rhsm_registered == false and have_entitlements == true
   register: entitled
-  until: entitled|success
+  until: entitled is success
   retries: 5
   delay: 10
   failed_when:
@@ -54,7 +54,7 @@
 - name: Set rhsm_registered if we just registered
   set_fact:
     rhsm_registered: true
-  when: entitled|success
+  when: entitled is success
 
 # Output of this command is, for example:
 # 7.1
@@ -75,7 +75,7 @@
   command: subscription-manager unregister
   when: ansible_distribution_version not in rhsm_release_list.stdout_lines
   register: unregistered_beta_distro
-  until: unregistered_beta_distro|success
+  until: unregistered_beta_distro is success
   retries: 5
   delay: 10
 
@@ -84,7 +84,7 @@
 - name: Set rhsm_registered to false if Beta/Alpha/RC release
   set_fact:
     rhsm_registered: false
-  when: not unregistered_beta_distro|skipped
+  when: unregistered_beta_distro is not skipped
 
 - name: Run beta_repos.yml playbook for Beta/Alpha/RC release
   import_tasks: beta_repos.yml
@@ -99,12 +99,12 @@
 - name: Store list of enabled repos
   set_fact:
     repo_list: "{{ repo_list_cmd.stdout.split('\n') }}"
-  when: repo_list_cmd is defined and not repo_list_cmd|skipped
+  when: repo_list_cmd is defined and repo_list_cmd is not skipped
 
 - name: Set replace_repos false if entitlements are missing or if we unregistered
   set_fact:
     replace_repos: false
-  when: have_entitlements == false or unregistered_beta_distro|changed
+  when: have_entitlements == false or unregistered_beta_distro is changed
 
 - name: Set replace_repos true if rhsm_repos differs from repo_list
   set_fact:
@@ -115,7 +115,7 @@
   set_fact:
     replace_repos: true
   when: rhsm_registered == true and
-        (entitled|changed and entitled.rc == 0)
+        (entitled is changed and entitled.rc == 0)
 
 - name: Disable all rhsm repos
   command: subscription-manager repos --disable '*'
@@ -136,4 +136,4 @@
   file:
     path: /etc/yum.repos.d/cd.repo
     state: absent
-  when: entitled|success
+  when: entitled is success

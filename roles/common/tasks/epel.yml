@@ -29,4 +29,4 @@
 
 - name: Clean yum cache
   shell: yum clean all
-  when: epel_repo is defined and epel_repo|changed
+  when: epel_repo is defined and epel_repo is changed

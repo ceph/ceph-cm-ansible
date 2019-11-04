@@ -17,4 +17,4 @@
 
   - name: Update firmware
     command: "isdct load -f -intelssd 0"
-    when: installed|changed
+    when: installed is changed

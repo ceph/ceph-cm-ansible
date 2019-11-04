@@ -49,6 +49,6 @@
     name: "{{ pmmgr_service }}"
     state: restarted
   when:
-    install_pcp_webapi|changed or
-    install_pcp_webjs|changed or
-    enable_pmwebd|changed
+    install_pcp_webapi is changed or
+    install_pcp_webjs is changed or
+    enable_pmwebd is changed

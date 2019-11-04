@@ -14,4 +14,4 @@
 
 - name: Activate new network config
   shell: /sbin/ifdown -a; /sbin/ifup -a
-  when: interface_install|changed
+  when: interface_install is changed

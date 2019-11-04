@@ -25,4 +25,4 @@
 
 - name: Set files_exist if the required files are in place
   set_fact:
-    files_exist: "{{ ( kernel_stat.stat.exists or download_kernel|changed) and ( initrd_stat.stat.exists or download_initrd|changed ) }}"
+    files_exist: "{{ ( kernel_stat.stat.exists or download_kernel is changed) and ( initrd_stat.stat.exists or download_initrd is changed ) }}"

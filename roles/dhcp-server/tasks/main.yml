@@ -48,13 +48,13 @@
 - name: Test new config
   command: dhcpd -t -cf /etc/dhcp/dhcpd.conf
   register: dhcpd_config_test_result
-  when: dhcp_global_config|changed or dhcp_subnet_config|changed
+  when: dhcp_global_config is changed or dhcp_subnet_config is changed
 
 - name: Restart dhcpd
   service:
     name: dhcpd
     state: restarted
   when:
-    - (dhcp_global_config|changed or dhcp_subnet_config|changed)
+    - (dhcp_global_config is changed or dhcp_subnet_config is changed)
     - dhcpd_config_test_result is defined
     - dhcpd_config_test_result.rc == 0

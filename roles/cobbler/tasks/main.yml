@@ -59,7 +59,7 @@
     name: xinetd
     state: reloaded
     enabled: yes
-  when: tftp_enabled is defined and tftp_enabled|changed
+  when: tftp_enabled is defined and tftp_enabled is changed
   tags:
     - tftp
 
