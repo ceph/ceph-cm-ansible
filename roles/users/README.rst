@@ -88,6 +88,14 @@ A list of usernames whose access is to be revoked::
 
     revoked_users: []
 
+The users role writes a sentinel file, ``/keys-repo-sha1``, to indicate the sha1 of the keys repo when ceph-cm-ansible last ran.  If the sha1 in that file matches the current keys repo HEAD sha1, users tasks will be skipped unless you set ``force_users_update: True``::
+
+    force_users_update: False
+
+By default, the users and pubkeys should be updated.  A task in ``main.yml`` changes this to ``False`` if the machine's users and keys are already up to date (unless ``force_users_update: True``)::
+
+    perform_users_role: True
+
 Tags
 ++++
 

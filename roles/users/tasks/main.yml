@@ -1,17 +1,53 @@
 ---
+- name: Check keys_repo HEAD sha1
+  shell: "git ls-remote {{ keys_repo }} HEAD | awk '{ print $1 }'"
+  register: keys_repo_head
+  become: false
+  when: keys_repo is defined
+  connection: local
+  run_once: true
+  retries: 5
+  delay: 10
+  # perform_users_role is True by default so no need to fail the play if there's an error.
+  ignore_errors: true
+
+- name: Check host's /keys-repo-sha1 sentinel file
+  command: cat /keys-repo-sha1
+  register: sentinel_sha1
+  # perform_users_role is True by default so no need to fail the play if there's an error.
+  failed_when: false
+
+- name: Determine if we can skip users and pubkeys updates
+  set_fact:
+    perform_users_role: False
+  # perform_users_role is True by default so no need to fail the play if there's an error.
+  ignore_errors: true
+  when: (keys_repo_head.stdout == sentinel_sha1.stdout) and
+        not force_users_update
+
 - import_tasks: filter_users.yml
+  when: perform_users_role
   tags:
     - always
 
 - import_tasks: create_users.yml
+  when: perform_users_role
   tags:
     - user
 
 - import_tasks: update_keys.yml
+  when: perform_users_role
   tags:
     - pubkeys
 
 - import_tasks: revoke_users.yml
+  when: perform_users_role
   tags:
     - user
     - revoke
+
+- name: Write /keys-repo-sha1 sentinel file
+  copy:
+    content: "{{ keys_repo_head.stdout }}"
+    dest: /keys-repo-sha1
+  when: keys_repo_head is defined

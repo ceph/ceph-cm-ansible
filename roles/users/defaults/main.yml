@@ -27,3 +27,9 @@ revoked_users: []
 keys_repo: "https://github.com/ceph/keys"
 # Where to clone keys_repo on the *local* disk
 keys_repo_path: "~/.cache/src/keys"
+
+# If the keys git repo HEAD sha1 matches the sha1 of the host's /keys-repo-sha1 file, the users role will get skipped to save time.
+# Update users and pubkeys by default (this is changed to False during the play if keys_repo_head.stdout == sentinel_sha1.stdout)
+perform_users_role: True
+# Set this to True if you want to run the users tasks anyway
+force_users_update: False
