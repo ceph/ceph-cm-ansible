@@ -1,0 +1,87 @@
+---
+# vars specific to any rhel 7.x version
+
+common_yum_repos:
+  rhel-7-fcgi-ceph:
+    name: "RHEL 7 Local fastcgi Repo"
+    baseurl: "http://{{ gitbuilder_host }}/mod_fastcgi-rpm-rhel7-x86_64-basic/ref/master/"
+    enabled: 1
+    gpgcheck: 0
+  lab-extras:
+    name: "lab-extras"
+    baseurl: "http://{{ mirror_host }}/lab-extras/rhel7/"
+    enabled: 1
+    gpgcheck: 0
+
+packages:
+  - '@core'
+  - '@base'
+  - yum-plugin-priorities
+  - yum-plugin-fastestmirror
+  - redhat-lsb
+  - sysstat
+  - gdb
+  - git-all
+  - python-configobj
+  - gcc-c++
+  - libedit
+  - openssl098e
+  - boost-thread
+  - xfsprogs
+  - xfsprogs-devel
+  - gdisk
+  - parted
+  - libgcrypt
+  - fuse
+  - fuse-libs
+  - lvm2
+  - openssl
+  - libuuid
+  - btrfs-progs
+  - attr
+  - valgrind
+  - python-nose
+  - mpich
+  - ant
+  - lsof
+  - iozone
+  - libtool
+  - automake
+  - gettext
+  - libuuid-devel
+  - libacl-devel
+  - bc
+  - xfsdump
+  - blktrace
+  - numpy
+  - python-matplotlib
+  - qemu-kvm
+  - usbredir
+  - genisoimage
+  - httpd
+  - httpd-devel
+  - httpd-tools
+  - mod_ssl
+  - mod_fastcgi-2.4.7-1.ceph.el7
+  - perl-XML-Twig
+  - java-1.6.0-openjdk-devel
+  - junit4
+  - nfs-utils
+  # for xfstests
+  - ncurses-devel
+  # for s3 tests
+  - python-devel
+  - python-virtualenv
+  - perl-CPAN
+
+epel_packages:
+  - cryptopp-devel
+  - cryptopp
+  - dbench
+  - fcgi
+  - fuse-sshfs
+  - perl-JSON-XS
+  - leveldb
+  - xmlstarlet
+
+nfs_service: nfs-server
