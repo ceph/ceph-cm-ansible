@@ -34,6 +34,8 @@ distros:
       iso: ""
   "RHEL-8.0-Server-x86_64":
       iso: ""
+  "RHEL-8.1-Server-x86_64":
+      iso: ""
   "Fedora-22-Server-x86_64":
       iso: http://ftp.linux.ncsu.edu/mirror/ftp.redhat.com/pub/fedora/linux/releases/22/Server/x86_64/iso/Fedora-Server-DVD-x86_64-22.iso
       sha256: b2acfa7c7c6b5d2f51d3337600c2e52eeaa1a1084991181c28ca30343e52e0df
