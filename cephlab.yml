@@ -1,6 +1,4 @@
 ---
-- import_playbook: set_python_path.yml
-
 # ensure the node is setup to be managed by ansible
 # eventually, most of the things here will be done by
 # cobbler / downburst / cloud-init.
