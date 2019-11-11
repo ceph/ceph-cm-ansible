@@ -4,6 +4,7 @@
   register: keys_repo_head
   become: false
   when: keys_repo is defined
+  delegate_to: localhost
   connection: local
   run_once: true
   retries: 5
