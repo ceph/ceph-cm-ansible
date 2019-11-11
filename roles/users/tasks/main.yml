@@ -23,25 +23,25 @@
   # perform_users_role is True by default so no need to fail the play if there's an error.
   ignore_errors: true
   when: (keys_repo_head.stdout == sentinel_sha1.stdout) and
-        not force_users_update
+        not force_users_update|bool
 
 - import_tasks: filter_users.yml
-  when: perform_users_role
+  when: perform_users_role|bool
   tags:
     - always
 
 - import_tasks: create_users.yml
-  when: perform_users_role
+  when: perform_users_role|bool
   tags:
     - user
 
 - import_tasks: update_keys.yml
-  when: perform_users_role
+  when: perform_users_role|bool
   tags:
     - pubkeys
 
 - import_tasks: revoke_users.yml
-  when: perform_users_role
+  when: perform_users_role|bool
   tags:
     - user
     - revoke
