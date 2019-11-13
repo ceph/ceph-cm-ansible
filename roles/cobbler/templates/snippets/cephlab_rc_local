@@ -19,7 +19,7 @@ cat > $script <<\EOF
 # Redirect rc.local output to our console so it's in teuthology console logs
 exec 2> /dev/ttyS1
 exec 1>&2
-set -ex
+set -x
 
 {% if rclocal_nameserver is defined %}
 if [ ! -f /.cephlab_net_configured ]; then
@@ -43,8 +43,6 @@ if [ ! -f /.cephlab_net_configured ]; then
       else
         echo -e "DEVICE=$nic\nBOOTPROTO=dhcp\nONBOOT=yes" > /etc/sysconfig/network-scripts/ifcfg-$nic
       fi
-      # Don't bail if NIC fails to go down or come up
-      set +e
       # Bounce the NIC so it gets a DHCP address
       ifdown $nic
       ifup $nic
@@ -62,8 +60,6 @@ if [ ! -f /.cephlab_net_configured ]; then
         ifdown $nic
         rm -f /etc/sysconfig/network-scripts/ifcfg-$nic
         sed -i "/$nic/d" /etc/network/interfaces
-        # Go back to bailing if anything fails bringing the next NIC up
-        set -e
       else
         # We found our routable NIC!
         # Write our lockfile so this only gets run on firstboot
@@ -78,9 +74,6 @@ if [ ! -f /.cephlab_net_configured ]; then
   done
 fi
 
-# Don't error out if the `ip` command returns rc 1
-set +e
-
 attempts=0
 myips=""
 until [ "$myips" != "" ] || [ $attempts -ge 10 ]; do
@@ -88,8 +81,6 @@ until [ "$myips" != "" ] || [ $attempts -ge 10 ]; do
   attempts=$[$attempts+1]
   sleep 1
 done
-
-set -e
 
 if [ -n "$myips" ]; then
   for ip in $myips; do
