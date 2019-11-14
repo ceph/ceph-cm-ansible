@@ -28,7 +28,7 @@
 - name: Delete the teuthology users password.
   command: "passwd -d {{ teuthology_user }}"
   when: teuthology_user_existence is defined and
-        teuthology_user_existence|changed
+        teuthology_user_existence is changed
 
 - name: Add a user for xfstests to test user quotas.
   user:

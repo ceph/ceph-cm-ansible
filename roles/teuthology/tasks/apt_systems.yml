@@ -6,10 +6,9 @@
 
 - name: Install packages via apt
   apt:
-    name: "{{ item }}"
+    name: "{{ teuthology_extra_packages|list }}"
     state: latest
     update_cache: yes
     cache_valid_time: 600
-  with_items: "{{ teuthology_extra_packages }}"
   tags:
     - packages

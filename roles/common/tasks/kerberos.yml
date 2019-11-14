@@ -17,7 +17,7 @@
     update_cache: yes
   # Register and retry to work around transient http issues
   register: apt_cache_update
-  until: apt_cache_update|success
+  until: apt_cache_update is success
   # try for 2 minutes before failing
   retries: 24
   delay: 5

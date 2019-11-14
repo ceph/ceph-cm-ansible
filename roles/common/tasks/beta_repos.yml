@@ -12,4 +12,4 @@
 
 - name: Clean yum cache
   shell: yum clean all
-  when: beta_repo is defined and beta_repo|changed
+  when: beta_repo is defined and beta_repo is changed

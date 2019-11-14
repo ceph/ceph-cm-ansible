@@ -5,21 +5,14 @@
 
 - name: Make sure apt dependencies are installed
   apt:
-    name: "{{ item }}"
+    name: ['gdisk', 'dmsetup']
     state: present
-  with_items:
-    - gdisk
-    - dmsetup
   when: ansible_os_family == "Debian"
 
 - name: Make sure rpm dependencies are installed
   package:
-    name: "{{ item }}"
+    name: ['gdisk', 'device-mapper']
     state: present
-  with_items:
-    - gdisk
-    # for dmsetup
-    - device-mapper
   when: ansible_os_family == "RedHat"
 
 - name: Set root disk

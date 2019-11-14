@@ -106,10 +106,10 @@
     state: restarted
     enabled: yes
   when:
-    install_pmmgr_apt|changed or
-    install_pmmgr_yum|changed or
-    target_host|changed or
-    target_discovery|changed or
-    pmmgr_options|changed or
-    update_pmlogmerge_retain|changed or
-    update_pmlogmerge_reduce|changed
+    install_pmmgr_apt is changed or
+    install_pmmgr_yum is changed or
+    target_host is changed or
+    target_discovery is changed or
+    pmmgr_options is changed or
+    update_pmlogmerge_retain is changed or
+    update_pmlogmerge_reduce is changed

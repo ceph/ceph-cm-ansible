@@ -25,7 +25,7 @@
   register: server_value
 
 - import_tasks: restart.yml
-  when: users_digest|changed or dynamic_settings|changed or server_value|changed
+  when: users_digest is changed or dynamic_settings is changed or server_value is changed
 
 - name: Update settings
   command: cobbler setting edit --name={{ item.name }} --value={{ item.value}}

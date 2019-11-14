@@ -1,6 +1,5 @@
 ---
 - name: Install pip packages
   pip:
-    name: "{{ item }}"
+    name: "{{ pip_packages|list }}"
     state: latest
-  with_items: "{{ pip_packages }}"

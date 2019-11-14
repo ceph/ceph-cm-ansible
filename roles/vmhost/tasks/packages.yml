@@ -1,10 +1,9 @@
 ---
 - name: Install packages via apt
   apt:
-    name: "{{ item }}"
+    name: "{{ vmhost_apt_packages|list }}"
     state: latest
     update_cache: yes
     cache_valid_time: 600
-  with_items: "{{ vmhost_apt_packages }}"
   tags:
     - packages

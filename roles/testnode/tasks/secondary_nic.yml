@@ -51,7 +51,7 @@
 - name: "Bounce {{ nic_to_configure }}"
   shell: "ifdown {{ nic_to_configure }} && ifup {{ nic_to_configure }}"
   when:
-    - wrote_network_config|changed
+    - wrote_network_config is changed
     - ansible_os_family == 'Debian'
 
 - name: "Write RHEL/CentOS network config for {{ nic_to_configure }}"
@@ -76,5 +76,5 @@
 - name: "Bounce {{ nic_to_configure }}"
   shell: "ifdown {{ nic_to_configure }} && ifup {{ nic_to_configure }}"
   when:
-    - wrote_network_config|changed
+    - wrote_network_config is changed
     - ansible_os_family == 'RedHat'

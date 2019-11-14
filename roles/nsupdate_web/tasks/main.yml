@@ -67,7 +67,7 @@
     daemon_reload: true
     enabled: true
     state: restarted
-  when: ship_service|changed
+  when: ship_service is changed
 
 - name: Ship nginx configuration
   template:

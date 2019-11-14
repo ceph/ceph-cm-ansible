@@ -4,7 +4,6 @@
 
 - name: Install and update packages
   yum:
-    name: "{{ item }}"
+    name: "{{ packages|list }}"
     state: latest
     enablerepo: epel
-  with_items: "{{ packages }}"

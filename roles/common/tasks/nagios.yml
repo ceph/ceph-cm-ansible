@@ -33,19 +33,17 @@
 
 - name: Install nrpe package and dependencies (RHEL/CentOS)
   package:
-    name: "{{ item }}"
+    name: "{{ nrpe_packages|list }}"
     state: latest
     enablerepo: epel
-  with_items: "{{ nrpe_packages }}"
   when:
     - ansible_os_family == "RedHat"
     - have_epel.rc == 0
 
 - name: Install nrpe package and dependencies (Ubuntu)
   package:
-    name: "{{ item }}"
+    name: "{{ nrpe_packages|list }}"
     state: latest
-  with_items: "{{ nrpe_packages }}"
   when: ansible_pkg_mgr == "apt"
 
 - name: Upload nagios sudoers.d for raid utilities.

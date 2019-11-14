@@ -28,19 +28,19 @@
     opts: "loop"
     fstype: "iso9660"
     state: mounted
-  when: download|changed or (iso_stat.stat.exists and
+  when: download is changed or (iso_stat.stat.exists and
         profile is defined and profile.stdout == '')
   register: mount
 
 - name: Set arch
   set_fact:
       arch: "{{ distro.arch|default('x86_64') }}"
-  when: mount is defined and mount|changed
+  when: mount is defined and mount is changed
 
 - name: Import the distro (also creates the profile)
   command: cobbler import --path={{ iso_mount }} --name={{ distro_name }} --arch={{ arch }}
   register: import
-  when: mount is defined and mount|changed
+  when: mount is defined and mount is changed
 
 - name: Unmount ISO
   mount:
@@ -48,4 +48,4 @@
     src: "{{ iso_path }}"
     fstype: "iso9660"
     state: unmounted
-  when: mount is defined and mount|changed
+  when: mount is defined and mount is changed
