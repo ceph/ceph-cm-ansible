@@ -1,6 +1,8 @@
 # {{ ansible_managed }}
 
 # local yum mirrorlist for epel-testing-{{ ansible_distribution_major_version }}
+http://download-ib01.fedoraproject.org/pub/epel/testing/{{ ansible_distribution_major_version }}/$basearch
+http://download-cc-rdu01.fedoraproject.org/pub/epel/testing/{{ ansible_distribution_major_version }}/$basearch
 http://mirrors.cat.pdx.edu/epel/testing/{{ ansible_distribution_major_version }}/$basearch
 http://mirror.pnl.gov/epel/testing/{{ ansible_distribution_major_version }}/$basearch
 http://fedora-epel.mirror.lstn.net/testing/{{ ansible_distribution_major_version }}/$basearch
