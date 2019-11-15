@@ -27,6 +27,21 @@
     - epel-mirrorlist
     - epel-testing-mirrorlist
 
-- name: Clean yum cache
-  shell: yum clean all
-  when: epel_repo is defined and epel_repo is changed
+# A few times a year, we'd see a bunch of 404 errors during yum transactions that involved epel mirrors.
+# It has to do with upstream EPEL being updated and mirrors lagging behind.
+- name: Temporarily comment mirrorlist so we can update yum cache
+  replace:
+    path: "/etc/yum.repos.d/{{ item.key }}.repo"
+    regexp: '^(.*mirror.*)'
+    replace: '#\1'
+  with_dict: "{{ epel_repos }}"
+
+- name: Update yum cache
+  shell: yum clean all; yum makecache
+
+- name: Uncomment mirrorlist
+  replace:
+    path: "/etc/yum.repos.d/{{ item.key }}.repo"
+    regexp: '^#(.*mirror.*)'
+    replace: '\1'
+  with_dict: "{{ epel_repos }}"
