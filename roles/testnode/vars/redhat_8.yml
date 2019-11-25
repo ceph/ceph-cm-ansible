@@ -6,6 +6,7 @@ common_yum_repos: {}
 packages:
   - '@core'
   - '@base'
+  - git-all
   - sysstat
   - libedit
   - boost-thread
