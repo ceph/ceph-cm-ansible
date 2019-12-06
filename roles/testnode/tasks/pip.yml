@@ -13,6 +13,14 @@
     state: present
   when: ansible_pkg_mgr == "apt"
 
+- name: Install python-pip on zypper based systems.
+  zypper:
+    name:
+      - python2-pip
+      - python3-pip
+    state: present
+  when: ansible_pkg_mgr == "zypper"
+
 - name: Create the .pip directory for the teuthology user.
   file:
     path: "/home/{{ teuthology_user }}/.pip"
