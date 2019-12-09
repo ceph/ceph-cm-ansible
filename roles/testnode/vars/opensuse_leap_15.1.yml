@@ -75,3 +75,12 @@ packages:
   # for xfstests
   - ncurses-devel
   - lvm2
+  # missing packages in openSUSE minimal image
+  #- chrony
+  #- make
+  #- gcc
+  #- gcc-c++
+  - lsb-release
+  - rsyslog
+  - git
+  - wget
