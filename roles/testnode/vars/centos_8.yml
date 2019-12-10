@@ -6,6 +6,8 @@ common_yum_repos: {}
 packages:
   - '@core'
   - '@base'
+  # for package-cleanup
+  - dnf-utils
   - sysstat
   - libedit
   - boost-thread
