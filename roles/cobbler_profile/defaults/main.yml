@@ -72,6 +72,10 @@ distros:
       iso: http://ftp.linux.ncsu.edu/pub/CentOS/7.6.1810/isos/x86_64/CentOS-7-x86_64-DVD-1810.iso
       sha256: 6d44331cc4f6c506c7bbe9feb8468fad6c51a88ca1393ca6b8b486ea04bec3c1
       kickstart: cephlab_rhel.ks
+  "CentOS-7.7-x86_64":
+      iso: http://ftp.linux.ncsu.edu/pub/CentOS/7.7.1908/isos/x86_64/CentOS-7-x86_64-DVD-1908.iso
+      sha256: 9bba3da2876cb9fcf6c28fb636bcbd01832fe6d84cd7445fa58e44e569b3b4fe
+      kickstart: cephlab_rhel.ks
   "CentOS-8.0-x86_64":
       iso: http://mirror.linux.duke.edu/pub/centos/8.0.1905/isos/x86_64/CentOS-8-x86_64-1905-dvd1.iso
       sha256: ea17ef71e0df3f6bf1d4bf1fc25bec1a76d1f211c115d39618fe688be34503e8
