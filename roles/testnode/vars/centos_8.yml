@@ -1,5 +1,5 @@
 ---
-# vars specific to any rhel 8.x version
+# vars specific to any centos 8.x version
 
 common_yum_repos:
   lab-extras:
@@ -7,6 +7,9 @@ common_yum_repos:
     baseurl: "http://{{ mirror_host }}/lab-extras/8/"
     enabled: 1
     gpgcheck: 0
+
+copr_repos:
+  - ktdreyer/ceph-el8
 
 packages:
   - '@core'

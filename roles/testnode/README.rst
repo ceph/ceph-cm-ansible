@@ -85,6 +85,14 @@ will be used as the properties for the repo file::
         gpgcheck: 0
         priority: 0
 
+A list of copr repos to enable using ``dnf copr enable``::
+
+    copr_repos: []
+
+    # An example:
+    copr_repos:
+      - ktdreyer/ceph-el8
+
 A list defining apt repos that would be common across a major version or distro. Each item in the list represents
 an apt repo to be added to sources.list::
 

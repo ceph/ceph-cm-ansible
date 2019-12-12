@@ -11,6 +11,9 @@ common_yum_repos: {}
 # version-specific yum repos, defined in the version specific var file
 yum_repos: {}
 
+# list of copr repo *names* to enable (e.g., user/repo)
+copr_repos: []
+
 # apt repos common to a major version or distro
 common_apt_repos: []
 
