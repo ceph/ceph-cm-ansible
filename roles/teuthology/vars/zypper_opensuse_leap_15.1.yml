@@ -8,13 +8,17 @@ teuthology_extra_packages:
   - libmysqlclient-devel
   - libopenssl-devel
   - libvirt-devel
-  - libvirt-python
   - libyaml-devel
   - lsb-release
   - nginx
-  - python-devel
-  - python-pip
-  - python-virtualenv
+  - python2-devel
+  - python3-devel
+  - python2-pip
+  - python3-pip
+  - python2-virtualenv
+  - python3-virtualenv
+  - python2-libvirt-python
+  - python3-libvirt-python
   - qemu-tools
 
 #apache_service: apache2
