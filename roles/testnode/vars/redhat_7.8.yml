@@ -73,6 +73,7 @@ packages:
   - python-devel
   - python-virtualenv
   - perl-CPAN
+  - python3
 
 epel_packages:
   - cryptopp-devel

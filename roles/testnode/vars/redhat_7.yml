@@ -75,6 +75,7 @@ packages:
   - python-virtualenv
   - perl-CPAN
   - podman
+  - python3
 
 epel_packages:
   - cryptopp-devel
