@@ -40,6 +40,9 @@ packages:
   # for xfstests
   - ncurses-devel
   # for s3 tests
+  # for workunits,
+  - gcc
+  - git
 
 epel_packages: []
 
