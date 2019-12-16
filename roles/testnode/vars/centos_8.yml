@@ -42,6 +42,8 @@ packages:
   # for workunits,
   - gcc
   - git
+  # until python3-tempora is fixed,
+  - python3-pytz
 
 epel_packages: []
 
