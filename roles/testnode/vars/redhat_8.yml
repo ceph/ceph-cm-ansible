@@ -49,7 +49,8 @@ packages:
   - python3-nose
   # for cram tests
   - python3-virtualenv
-
+  # for rbd qemu tests
+  - genisoimage
 
 epel_packages: []
 
