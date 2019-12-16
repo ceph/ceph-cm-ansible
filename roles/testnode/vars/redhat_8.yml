@@ -51,6 +51,7 @@ packages:
   - python3-virtualenv
   # for rbd qemu tests
   - genisoimage
+  - qemu-img
 
 epel_packages: []
 
