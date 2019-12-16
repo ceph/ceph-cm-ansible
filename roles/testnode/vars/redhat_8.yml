@@ -47,6 +47,9 @@ packages:
   - python3-pytz
   # qa/workunits/rados/test_python.sh
   - python3-nose
+  # for cram tests
+  - python3-virtualenv
+
 
 epel_packages: []
 
