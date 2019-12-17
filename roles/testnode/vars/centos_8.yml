@@ -42,8 +42,6 @@ packages:
   # for workunits,
   - gcc
   - git
-  # until python3-tempora is fixed,
-  - python3-pytz
   # qa/workunits/rados/test_python.sh
   - python3-nose
   # for cram tests
