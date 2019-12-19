@@ -52,6 +52,9 @@ packages:
   - qemu-img
   # for pjd tests
   - libacl-devel
+  # for fs tests,
+  - dbench
+  - autoconf
 
 epel_packages: []
 
