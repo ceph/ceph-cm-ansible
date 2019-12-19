@@ -50,6 +50,8 @@ packages:
   # for rbd qemu tests
   - genisoimage
   - qemu-img
+  # for pjd tests
+  - libacl-devel
 
 epel_packages: []
 
