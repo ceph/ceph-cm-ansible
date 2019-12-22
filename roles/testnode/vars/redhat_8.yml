@@ -37,6 +37,7 @@ packages:
   - usbredir
   - podman
   - libev-devel
+  - valgrind
   # for xfstests
   - ncurses-devel
   # for s3 tests

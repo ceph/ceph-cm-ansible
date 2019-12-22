@@ -36,6 +36,7 @@ packages:
   - blktrace
   - usbredir
   - libev-devel
+  - centos
   # for xfstests
   - ncurses-devel
   # for s3 tests
