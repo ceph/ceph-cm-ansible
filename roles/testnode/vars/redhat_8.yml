@@ -36,6 +36,8 @@ packages:
   - blktrace
   - usbredir
   - podman
+  # for cephadmunit.py to uniformly run 'docker kill -p ...'
+  - podman-docker
   - libev-devel
   - valgrind
   # for xfstests
