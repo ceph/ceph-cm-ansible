@@ -47,6 +47,8 @@ packages:
   - python-nose
   - mpich
   - podman
+  # for cephadmunit.py's kill,
+  - podman-docker
   - ant
   - iozone
   ###
