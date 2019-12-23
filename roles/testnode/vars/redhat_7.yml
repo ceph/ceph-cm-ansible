@@ -75,6 +75,8 @@ packages:
   - python-virtualenv
   - perl-CPAN
   - podman
+  # for cephadmunit.py's kill,
+  - podman-docker
   - python3
 
 epel_packages:
