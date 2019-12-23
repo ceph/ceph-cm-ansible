@@ -53,6 +53,8 @@ packages:
   # for rbd qemu tests
   - genisoimage
   - qemu-img
+  - qemu-kvm-core
+  - qemu-kvm-block-rbd
   # for pjd tests
   - libacl-devel
   # for fs tests,
