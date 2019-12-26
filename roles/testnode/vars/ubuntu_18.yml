@@ -8,6 +8,8 @@ packages:
   - libtool-bin
   # for ceph-daemon (no podman on ubuntu/debian, yet)
   - docker.io
+  # qa/workunits/rbd/test_librbd_python.sh
+  - python3-nose
 
 non_aarch64_packages:
   - libgoogle-perftools4
