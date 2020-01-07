@@ -40,6 +40,7 @@ packages:
   - podman-docker
   - libev-devel
   - valgrind
+  - nfs-utils
   # for xfstests
   - ncurses-devel
   # for s3 tests
