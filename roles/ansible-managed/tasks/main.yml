@@ -49,8 +49,8 @@
 - name: Add authorized keys for the ansible user.
   authorized_key: 
     user: "{{ cm_user }}"
-    key: "{{ item }}"
-  with_items: "{{ cm_user_ssh_keys }}"
+    key: "{{ cm_user_ssh_keys|join('\n') }}"
+    exclusive: True
   when: cm_user_ssh_keys is defined and
         cm_user is defined
   tags:
