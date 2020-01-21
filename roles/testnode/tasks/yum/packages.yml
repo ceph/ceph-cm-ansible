@@ -44,6 +44,12 @@
   tags:
     - remove-ceph-dependency
 
+# https://bugzilla.redhat.com/show_bug.cgi?id=1782899
+- name: Base group workaround for BZ1782899
+  shell: "dnf -y groupinstall base --nobest && dnf -y group upgrade base"
+  when:
+    - ansible_os_family == "RedHat"
+    - ansible_distribution_major_version|int >= 7
 
 - name: Install packages
   package:
