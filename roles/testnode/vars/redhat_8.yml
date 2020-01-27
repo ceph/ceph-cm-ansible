@@ -58,6 +58,8 @@ packages:
   # for fs tests,
   - dbench
   - autoconf
+  # for test-crash.sh
+  - gdb
 
 epel_packages: []
 
