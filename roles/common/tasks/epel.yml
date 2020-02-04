@@ -37,7 +37,7 @@
   with_dict: "{{ epel_repos }}"
 
 - name: Update yum cache
-  shell: rm -rf /var/cache/yum/*; yum clean all; yum makecache
+  shell: yum clean all; yum makecache
 
 - name: Uncomment mirrorlist
   replace:
