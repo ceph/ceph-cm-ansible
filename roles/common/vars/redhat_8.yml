@@ -3,16 +3,6 @@ rhsm_repos:
   - rhel-8-for-x86_64-baseos-rpms
   - rhel-8-for-x86_64-appstream-rpms
 
-epel_repos:
-  epel:
-    name: "Extra Packages for Enterprise Linux $releasever - $basearch"
-    metalink: https://mirrors.fedoraproject.org/metalink?repo=epel-$releasever&arch=$basearch&infra=$infra&content=$contentdir
-    baseurl: "{{ epel_mirror_baseurl }}/{{ ansible_distribution_major_version }}/{% if ansible_distribution_major_version == '8' %}Everything/{% endif %}$basearch"
-    failovermethod: priority
-    # ternary requires ansible >= 1.9
-    enabled: "{{ enable_epel | ternary(1, 0) }}"
-    gpgcheck: 0
-
 nrpe_selinux_packages:
   - python3-libsemanage
   - python3-policycoreutils
