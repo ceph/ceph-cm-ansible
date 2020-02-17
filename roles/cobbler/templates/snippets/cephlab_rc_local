@@ -37,7 +37,7 @@ if [ ! -f /.cephlab_net_configured ]; then
     sleep 5
     if ethtool $nic | grep -q "Link detected: yes"; then
       if command -v zypper &>/dev/null; then
-        echo -e "DEVICE=$nic\nBOOTPROTO=dhcp\nONBOOT=yes" > /etc/sysconfig/network/ifcfg-$nic
+        echo -e "BOOTPROTO='dhcp'\nSTARTMODE='auto'" > /etc/sysconfig/network/ifcfg-$nic
       elif command -v apt-get &>/dev/null; then
         echo -e "auto lo\niface lo inet loopback\n\nauto $nic\niface $nic inet dhcp" > /etc/network/interfaces
       else
