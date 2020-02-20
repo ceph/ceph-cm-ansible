@@ -40,6 +40,10 @@ distros:
       iso: http://ftp.linux.ncsu.edu/mirror/ftp.redhat.com/pub/fedora/linux/releases/22/Server/x86_64/iso/Fedora-Server-DVD-x86_64-22.iso
       sha256: b2acfa7c7c6b5d2f51d3337600c2e52eeaa1a1084991181c28ca30343e52e0df
       kickstart: cephlab_rhel.ks
+  "Fedora-31-Server-x86_64":
+      iso: https://dl.fedoraproject.org/pub/fedora/linux/releases/31/Server/x86_64/iso/Fedora-Server-dvd-x86_64-31-1.9.iso
+      sha256: 225ebc160e40bb43c5de28bad9680e3a78a9db40c9e3f4f42f3ee3f10f95dbeb
+      kickstart: cephlab_rhel.ks
   "CentOS-6.7-x86_64":
       iso: http://ftp.linux.ncsu.edu/pub/CentOS/6.7/isos/x86_64/CentOS-6.7-x86_64-bin-DVD1.iso
       sha256: c0c1a05d3d74fb093c6232003da4b22b0680f59d3b2fa2cb7da736bc40b3f2c5
