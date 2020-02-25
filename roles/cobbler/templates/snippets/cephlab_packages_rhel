@@ -2,29 +2,37 @@
 ## @base group no longer exists in >=Fedora-22
 #set distro = $getVar('distro','').split("-")[0]
 #set distro_ver = $getVar('distro','').split("-")[1]
-#if $distro == 'Fedora' and int($distro_ver) >= 22
+#if $distro == 'Fedora' and int($distro_ver) >= 22 and int($distro_ver) < 31
 @^infrastructure-server-environment
+#else if $distro == 'Fedora' and int($distro_ver) >= 31
+## We can't figure out what the new server group name is in F31 but we do need python3 so...
+python3
 #else
 @base
 #end if
 #if $distro == 'RHEL' or $distro == 'CentOS'
 #set distro_ver_major = $distro_ver.split(".")[0]
 #set distro_ver_minor = $distro_ver.split(".")[1]
-#end if
+## These packages are available in all RHEL/CentOS versions but not Fedora
+perl
+redhat-lsb-core
 #if not int($distro_ver_major) == 8
+## These packages should be installed on RHEL/CentOS 7
 libselinux-python
 libsemanage-python
 policycoreutils-python
 ntp
-#if int($distro_ver_minor) >= 5
+#if int($distro_ver_major) == 7 and int($distro_ver_minor) >= 5
+## These packages are only available in RHEL7.5 and later
 python-jwt
 #end if
 #else
+## These packages should be installed on RHEL/CentOS 8
 python3
 #end if
-perl
+#end if
+## These packages should be installed on all distros and versions
 wget
-redhat-lsb-core
 smartmontools
 selinux-policy-targeted
 gdisk
