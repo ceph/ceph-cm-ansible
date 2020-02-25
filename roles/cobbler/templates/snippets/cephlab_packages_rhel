@@ -32,6 +32,7 @@ python3
 #end if
 #end if
 ## These packages should be installed on all distros and versions
+ethtool
 wget
 smartmontools
 selinux-policy-targeted
