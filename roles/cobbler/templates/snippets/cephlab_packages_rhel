@@ -5,7 +5,7 @@
 #if $distro == 'Fedora' and int($distro_ver) >= 22 and int($distro_ver) < 31
 @^infrastructure-server-environment
 #else if $distro == 'Fedora' and int($distro_ver) >= 31
-@^infrastructure-server
+## We can't figure out what the new server group name is in F31 but we do need python3 so...
 python3
 #else
 @base
