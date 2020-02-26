@@ -1,0 +1,4 @@
+---
+nrpe_selinux_packages:
+  - python-libsemanage
+  - policycoreutils-python-utils
