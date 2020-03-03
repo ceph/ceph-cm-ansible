@@ -2,18 +2,20 @@
 # vars specific to OpenSuse Leap 15.2
 packages_to_remove:
   - gettext-runtime-mini
+  - python
+  - python-base
 
 packages:
+  - python3-base
   - lsb-release
   - sysstat
   - gdb
   - make
+  - zypper
   - git
-#  - python-configobj
+  - python3-configobj
   # for running ceph
   - libedit0
-#  - libboost_thread1_54_0
-  - libboost_thread1_66_0
   - xfsprogs
   - podman
   - gptfdisk
@@ -29,7 +31,7 @@ packages:
   # used by workunits
   - attr
   - valgrind
-  - python-nose
+  - python3-nose
   - ant
 #  - iozone
   ###
@@ -45,8 +47,8 @@ packages:
   ###
   # for blktrace and seekwatcher
   - blktrace
-#  - python-numpy
-#  - python-matplotlib
+  - python3-numpy
+  - python3-matplotlib
   ###
   # for qemu
   - qemu-kvm
