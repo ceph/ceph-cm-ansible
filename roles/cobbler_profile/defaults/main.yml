@@ -88,6 +88,11 @@ distros:
       iso: http://mirror.linux.duke.edu/pub/centos/8.1.1911/isos/x86_64/CentOS-8.1.1911-x86_64-dvd1.iso
       sha256: 3ee3f4ea1538e026fff763e2b284a6f20b259d91d1ad5688f5783a67d279423b
       kickstart: cephlab_rhel.ks
+  "CentOS-8.1-aarch64":
+      iso: http://mirror.linux.duke.edu/pub/centos/8/isos/aarch64/CentOS-8.1.1911-aarch64-dvd1.iso
+      sha256: 357f34e86a28c86aaf1661462ef41ec4cf5f58c120f46e66e1985a9f71c246e3
+      kickstart: cephlab_rhel.ks
+      arch: aarch64
   "Ubuntu-12.04-server-x86_64":
       iso: "http://releases.ubuntu.com/12.04/ubuntu-12.04.5-server-amd64.iso"
       sha256: af224223de99e2a730b67d7785b657f549be0d63221188e105445f75fb8305c9
