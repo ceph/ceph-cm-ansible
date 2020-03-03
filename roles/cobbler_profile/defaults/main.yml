@@ -128,3 +128,8 @@ distros:
       sha256: c6d3ed19fe5cc25c4667bf0b46cc86aebcfbca3b0073aed0a288834600cb8b97
       kickstart: cephlab_opensuse_leap.xml
       kernel_options: "install=http://@@http_server@@/cblr/links/{{ distro_name }}/"
+  "openSUSE-15.2-x86_64":
+      iso: "https://download.opensuse.org/distribution/leap/15.2/iso/openSUSE-Leap-15.2-DVD-x86_64-Current.iso"
+      sha256: 8bc7d3e1ad515c86a285098b98a4def14e43d19e7a393cf66e980b849d2a1ddf
+      kickstart: cephlab_opensuse_leap.xml
+      kernel_options: "install=http://@@http_server@@/cblr/links/{{ distro_name }}/"
