@@ -32,6 +32,7 @@
     - { role: cobbler_profile, distro_name: CentOS-7.7-x86_64, tags: ['centos7.7'] }
     - { role: cobbler_profile, distro_name: CentOS-8.0-x86_64, tags: ['centos8.0'] }
     - { role: cobbler_profile, distro_name: CentOS-8.1-x86_64, tags: ['centos8.1'] }
+    - { role: cobbler_profile, distro_name: CentOS-7.6-aarch64, tags: ['centos7.6-aarch64'] }
     - { role: cobbler_profile, distro_name: CentOS-8.1-aarch64, tags: ['centos8.1-aarch64'] }
     - { role: cobbler_profile, distro_name: Ubuntu-12.04-server-x86_64, tags: ['ubuntu-precise'] }
     - { role: cobbler_profile, distro_name: Ubuntu-14.04-server-x86_64, tags: ['ubuntu-trusty'] }
