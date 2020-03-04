@@ -88,6 +88,11 @@ distros:
       iso: http://mirror.linux.duke.edu/pub/centos/8.1.1911/isos/x86_64/CentOS-8.1.1911-x86_64-dvd1.iso
       sha256: 3ee3f4ea1538e026fff763e2b284a6f20b259d91d1ad5688f5783a67d279423b
       kickstart: cephlab_rhel.ks
+  "CentOS-7.7-aarch64":
+      iso: https://mirrors.huaweicloud.com/centos-altarch/7.7.1908/isos/aarch64/CentOS-7-aarch64-Everything-1908.iso
+      sha256: 2b0c79d5fec09bf1b88782ac58c9c048cc988ffd884bcd59b6f7ba22c69203cb 
+      kickstart: cephlab_rhel.ks
+      arch: aarch64
   "CentOS-8.1-aarch64":
       iso: http://mirror.linux.duke.edu/pub/centos/8/isos/aarch64/CentOS-8.1.1911-aarch64-dvd1.iso
       sha256: 357f34e86a28c86aaf1661462ef41ec4cf5f58c120f46e66e1985a9f71c246e3
