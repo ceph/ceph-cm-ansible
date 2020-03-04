@@ -123,6 +123,12 @@ distros:
       kickstart: cephlab_ubuntu.preseed
       kernel_options: "netcfg/choose_interface=auto console=tty0 console=ttyS1,115200 GRUB_DISABLE_OS_PROBER=true"
       kernel_options_post: "pci=realloc=off console=tty0 console=ttyS1,115200"
+  "Ubuntu-18.04-server-aarch64":
+      iso: "https://mirrors.huaweicloud.com/ubuntu-cdimage/ubuntu/releases/18.04/release/ubuntu-18.04.4-server-arm64.iso"
+      sha256: 8eb3c1866ca3b68e4cd22ec9d7c02f97f4d2b3713447370f3c252a4189116824
+      kickstart: cephlab_ubuntu.preseed
+      kernel_options: "netcfg/choose_interface=auto console=tty0 console=ttyS1,115200 GRUB_DISABLE_OS_PROBER=true"
+      kernel_options_post: "pci=realloc=off console=tty0 console=ttyS1,115200"
   "openSUSE-15.0-x86_64":
       iso: "https://download.opensuse.org/distribution/leap/15.0/iso/openSUSE-Leap-15.0-DVD-x86_64.iso"
       sha256: c477428c7830ca76762d2f78603e13067c33952b936ff100189523e1fabe5a77

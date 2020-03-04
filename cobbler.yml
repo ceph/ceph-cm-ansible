@@ -38,6 +38,7 @@
     - { role: cobbler_profile, distro_name: Ubuntu-15.04-server-x86_64, tags: ['ubuntu-vivid'] }
     - { role: cobbler_profile, distro_name: Ubuntu-16.04-server-x86_64, tags: ['ubuntu-xenial'] }
     - { role: cobbler_profile, distro_name: Ubuntu-18.04-server-x86_64, tags: ['ubuntu-bionic'] }
+    - { role: cobbler_profile, distro_name: Ubuntu-18.04-server-aarch64, tags: ['ubuntu-bionic-aarch64'] }
     - { role: cobbler_profile, distro_name: openSUSE-15.0-x86_64, tags: ['opensuse-15.0'] }
     - { role: cobbler_profile, distro_name: openSUSE-15.1-x86_64, tags: ['opensuse-15.1'] }
     - { role: cobbler_profile, distro_name: openSUSE-15.2-x86_64, tags: ['opensuse-15.2'] }
