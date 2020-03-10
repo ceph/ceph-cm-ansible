@@ -93,6 +93,22 @@ A list of copr repos to enable using ``dnf copr enable``::
     copr_repos:
       - ktdreyer/ceph-el8
 
+A list of mirrorlist template **filenames** to upload to ``/etc/yum.repos.d/``.
+Mirrorlist templates should live in ``roles/testnode/vars/mirrorlists/{{ ansible_distribution_major_version }}/``
+We were already doing this with epel mirrorlists in the ``common`` role but started seeing metalink issues with CentOS repos::
+
+    yum_mirrorlists: []
+
+    # Example:
+    yum_mirrorlists:
+      - CentOS-AppStream-mirrorlist
+
+    $ cat roles/testnode/templates/mirrorlists/8/CentOS-AppStream-mirrorlist
+    # {{ ansible_managed }}
+    https://download-cc-rdu01.fedoraproject.org/pub/centos/{{ ansible_lsb.release }}/AppStream/x86_64/os/
+    https://path/to/another/mirror
+
+
 A list defining apt repos that would be common across a major version or distro. Each item in the list represents
 an apt repo to be added to sources.list::
 

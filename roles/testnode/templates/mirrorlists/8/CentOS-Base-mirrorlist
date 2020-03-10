@@ -1,0 +1,7 @@
+# {{ ansible_managed }}
+
+# local yum mirrorlist for CentOS-8 - Base repo
+https://download-cc-rdu01.fedoraproject.org/pub/centos/{{ ansible_lsb.release }}/BaseOS/x86_64/os/
+http://mirror.linux.duke.edu/pub/centos/{{ ansible_lsb.release }}/BaseOS/x86_64/os/
+http://packages.oit.ncsu.edu/centos/{{ ansible_lsb.release }}/BaseOS/x86_64/os/
+http://distro.ibiblio.org/centos/{{ ansible_lsb.release }}/BaseOS/x86_64/os/
