@@ -17,7 +17,6 @@ epel_mirror_baseurl: "http://dl.fedoraproject.org/pub/epel"
 epel_repos:
   epel:
     name: "Extra Packages for Enterprise Linux"
-    baseurl: "{{ epel_mirror_baseurl }}/{{ ansible_distribution_major_version }}/{% if ansible_distribution_major_version == '8' %}Everything/{% endif %}$basearch"
     mirrorlist: file:///etc/yum.repos.d/epel-mirrorlist
     failovermethod: priority
     # ternary requires ansible >= 1.9
@@ -25,7 +24,6 @@ epel_repos:
     gpgcheck: 0
   epel-testing:
     name: "Extra Packages for Enterprise Linux - Testing"
-    baseurl: "{{ epel_mirror_baseurl }}/testing/{{ ansible_distribution_major_version }}/{% if ansible_distribution_major_version == '8' %}Everything/{% endif %}$basearch"
     mirrorlist: file:///etc/yum.repos.d/epel-testing-mirrorlist
     failovermethod: priority
     enabled: 0
