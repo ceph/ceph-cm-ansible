@@ -88,6 +88,13 @@
       state: absent
     when: ansible_distribution == "RedHat"
 
+  # Hopefully fixes https://github.com/ceph/ceph-cm-ansible/pull/544#issuecomment-599076564
+  - name: Clean DNF cache
+    shell: "dnf clean all && rm -rf /var/cache/dnf/*"
+    when:
+      - ansible_os_family == "RedHat"
+      - ansible_distribution_major_version|int >= 8
+
   - set_fact:
       ntp_service: ntp
     when: ansible_os_family == "Debian"
