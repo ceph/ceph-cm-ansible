@@ -13,6 +13,10 @@
   tags:
     - remove-ceph-dependency
 
+# https://tracker.ceph.com/issues/44501
+- set_fact:
+    ansible_python_interpreter: /usr/bin/python3
+
 - name: Remove packages
   zypper:
     name: "{{ packages_to_remove|list }}"
