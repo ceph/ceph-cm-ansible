@@ -1,7 +1,10 @@
 ---
 - name: Include secrets
-  include_vars: "{{ secrets_path | mandatory }}/nameserver.yml"
+  include_vars: "{{ item }}"
   no_log: true
+  with_first_found:
+    - "{{ secrets_path | mandatory }}/nameserver.yml"
+    - empty.yml
   tags:
     - always
 

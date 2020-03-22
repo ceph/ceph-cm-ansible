@@ -1,0 +1,7 @@
+---
+# This is empty on purpose.  Used as the last line
+# when using include_vars with with_first_found when
+# the var file might not exist.
+#
+# Maybe related issue:
+# https://github.com/ansible/ansible/issues/10000
