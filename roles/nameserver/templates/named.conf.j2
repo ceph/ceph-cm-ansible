@@ -77,7 +77,11 @@ zone "{{ key }}" {
 {% for key, zone in named_domains.items() %}
 {% if zone.reverse is defined and zone.reverse.0 is defined %}
 {% for reverse in zone.reverse %}
+{% if ansible_env._ == "/usr/bin/python3" %}
 {% set octet1,octet2,octet3,_ = reverse.split('.') %}
+{% else %}
+{% set octet1,octet2,octet3 = reverse.split('.') %}
+{% endif %}
 zone "{{ octet3 }}.{{ octet2 }}.{{ octet1 }}.in-addr.arpa" {
 {% if named_conf_slave is defined and named_conf_slave == true %}
 	type	slave;
