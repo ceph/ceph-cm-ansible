@@ -27,6 +27,9 @@
     name: named_write_master_zones
     state: yes
     persistent: yes
+  when:
+    - ansible_selinux.status is defined
+    - ansible_selinux.status == "enabled"
 
 # Helps prevent accidental DoS
 - name: Double maximum configured connections
