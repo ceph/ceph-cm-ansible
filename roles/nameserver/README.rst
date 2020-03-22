@@ -71,6 +71,13 @@ Most variables are defined in ``roles/nameserver/defaults/main.yml`` and values 
 |                                                        |                                                                                                                           |
 |                                                        |**NOTE:** Setting to "yes" will add ``allow-recursion { any; }``. See To-Do.                                               |
 +--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+
+|::                                                      |A list of nameservers BIND should forward external DNS queries to.  This is not required but should be defined in          |
+|                                                        |``ansible/inventory/group_vars/nameserver.yml`` if desired.                                                                |
+|  named_forwarders:                                     |                                                                                                                           |
+|    - 8.8.8.8                                           |                                                                                                                           |
+|    - 1.1.1.1                                           |                                                                                                                           |
+|                                                        |                                                                                                                           |
++--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+
 |``named_conf_slave: true``                              |Will configure the server as a DNS slave if true.  This variable is not required but should be set to true in the hostvars |
 |                                                        |if desired.                                                                                                                |
 |                                                        |                                                                                                                           |
