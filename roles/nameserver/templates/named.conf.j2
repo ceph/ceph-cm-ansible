@@ -15,6 +15,9 @@ options {
 {% if named_conf_recursion == "yes" %}
 	allow-recursion		{ any; };
 {% endif %}
+{% if named_forwarders is defined %}
+	forwarders { {% for forwarder in named_forwarders -%}{{ forwarder }}; {% endfor -%} };
+{% endif %}
 {% if named_conf_allow_axfr is defined %}
 	allow-transfer		{ {% for ip in named_conf_allow_axfr -%}{{ ip }}; {% endfor -%} };
 {% endif %}
