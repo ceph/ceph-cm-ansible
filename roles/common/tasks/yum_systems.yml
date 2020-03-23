@@ -21,7 +21,7 @@
   shell: "sleep 5 && reboot"
   async: 1
   poll: 0
-  when: '"Connection timed out" in current_tz.stderr'
+  when: ansible_distribution_major_version|int == "7" and '"Connection timed out" in current_tz.stderr'
   tags:
     - timezone
 
@@ -29,7 +29,7 @@
   wait_for_connection:
     delay: 40
     timeout: 300
-  when: '"Connection timed out" in current_tz.stderr'
+  when: ansible_distribution_major_version|int == "7" and '"Connection timed out" in current_tz.stderr'
   tags:
     - timezone
 
