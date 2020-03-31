@@ -88,6 +88,16 @@
       state: absent
     when: ansible_distribution == "RedHat"
 
+  # https://bugzilla.redhat.com/show_bug.cgi?id=1814337
+  - name: Disable dnf-makecache service
+    service:
+      name: dnf-makecache.timer
+      state: stopped
+      enabled: no
+    when:
+      - ansible_os_family == "RedHat"
+      - ansible_distribution_major_version|int >= 8
+
   # Hopefully fixes https://github.com/ceph/ceph-cm-ansible/pull/544#issuecomment-599076564
   - name: Clean DNF cache
     shell: "dnf clean all && rm -rf /var/cache/dnf/*"
