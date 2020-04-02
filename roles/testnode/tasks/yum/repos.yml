@@ -28,8 +28,8 @@
     group: root
     mode: 0644
   register: version_repo_file
-  with_dict: "{{ yum_repos }}"
-  when: yum_repos.keys() | length > 0
+  with_dict: "{{ yum_repos|default({}) | combine(additional_yum_repos|default({}), recursive=True) }}"
+  when: (yum_repos.keys() | length > 0) or (additional_yum_repos.keys() | length > 0)
 
 - name: Enable copr repos
   command: "dnf -y copr enable {{ item }}"
