@@ -85,6 +85,19 @@ will be used as the properties for the repo file::
         gpgcheck: 0
         priority: 0
 
+Another dictionary of yum repos to put in place.  We have this dictionary defined in the Octo lab secrets repo.  We have devel
+repos with baseurls we don't want to expose the URLs of.  This dict gets combined with ``yum_repos`` in ``roles/testnode/tasks/yum/repos.yml``::
+
+    additional_yum_repos: {}
+    
+    # An example:
+    additional_yum_repos:
+      devel-ceph-repo:
+        name: This is a repo with devel packages
+        baseurl: http://some/private/repo/
+        enabled: 0
+        gpgcheck: 0
+
 A list of copr repos to enable using ``dnf copr enable``::
 
     copr_repos: []
