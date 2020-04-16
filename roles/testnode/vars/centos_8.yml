@@ -89,6 +89,7 @@ packages:
   - autoconf
   # for test-crash.sh
   - gdb
+  - iozone
 
 epel_packages: []
 
