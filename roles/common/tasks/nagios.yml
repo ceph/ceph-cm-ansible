@@ -66,9 +66,14 @@
 - name: Configure nagios nrpe settings (Ubuntu)
   lineinfile:
     dest: /etc/default/{{ nrpe_service_name }}
-    regexp: "^DAEMON_OPTS"
-    line: "DAEMON_OPTS=\"--no-ssl\""
+    regexp: "^{{ item }}"
+    line: "{{ item }}=\"--no-ssl\""
   when: ansible_pkg_mgr == "apt"
+  with_items:
+    - DAEMON_OPTS
+    - NRPE_OPTS
+  notify:
+    - restart nagios-nrpe-server
 
 - name: Configure nagios nrpe settings (RHEL/CentOS)
   lineinfile:
