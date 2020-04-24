@@ -1,15 +1,32 @@
 ---
+# Default to python2 version
+- set_fact:
+    pip_version: python-pip
+    pip_executable: pip
+
+# Start using python3-pip on Ubuntu 20.04 and later
+# Add appropriate `or` statements for other python3-only distros
+- set_fact:
+    pip_version: python3-pip
+    pip_executable: pip3
+    # You would think this ansible_python_interpreter=/usr/bin/python3 is already the default
+    # (hint: it is) but the pip module at the bottom insisted on using the python2 version of
+    # setuptools despite this default *and* giving you the option to set the executable to pip3.
+    # For some reason, reminding ansible this is a python3 host here makes the pip module work.
+    ansible_python_interpreter: /usr/bin/python3
+  when: (ansible_distribution == 'Ubuntu' and ansible_distribution_major_version|int >= 20)
+
 # python-pip installed during packages task on Fedora since epel doesn't exist
 - name: Install python-pip on rpm based systems.
   yum:
-    name: python-pip
+    name: "{{ pip_version }}"
     state: present
     enablerepo: epel
   when: ansible_pkg_mgr == "yum" and ansible_distribution != 'Fedora'
 
 - name: Install python-pip on apt based systems.
   apt:
-    name: python-pip
+    name: "{{ pip_version }}"
     state: present
   when: ansible_pkg_mgr == "apt"
 
@@ -40,3 +57,4 @@
 - name: Install packages via pip
   pip:
     name: "{{ pip_packages_to_install|list }}"
+    executable: "{{ pip_executable }}"

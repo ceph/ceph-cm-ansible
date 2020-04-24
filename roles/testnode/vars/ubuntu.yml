@@ -4,7 +4,6 @@ common_packages:
   - libfcgi0ldbl
   ###
   # for s3 tests
-  - python-virtualenv
   - python-dev
   - libev-dev
   ###
@@ -16,8 +15,6 @@ common_packages:
   - build-essential
   - sysstat
   - gdb
-  - python-configobj
-  - python-gevent
   # for running ceph
   - libedit2
   - cryptsetup-bin
@@ -28,7 +25,6 @@ common_packages:
   # for setting BIOS settings
   ###
   - libuuid1
-  - btrfs-tools
   # for compiling helpers and such
   - libatomic-ops-dev
   ###
@@ -38,7 +34,6 @@ common_packages:
   - dbench
   - bonnie++
   - valgrind
-  - python-nose
   - ant
   ###
   # used by the xfstests tasks
@@ -61,8 +56,6 @@ common_packages:
   - collectl
   # for blktrace and seekwatcher
   - blktrace
-  - python-numpy
-  - python-matplotlib
   ###
   # qemu
   - genisoimage
