@@ -104,6 +104,8 @@ d-i pkgsel/include string wget ntpdate bash sudo openssh-server
 d-i pkgsel/include string u-boot-tools pastebinit initramfs-tools wget linux-firmware ntpdate bash devmem2 fbset sudo openssh-server udev-discover gawk gdisk ethtool curl
 #else if int($distro_ver_major) == 18
 d-i pkgsel/include string u-boot-tools pastebinit initramfs-tools wget linux-firmware ntpdate bash devmem2 fbset sudo openssh-server gawk gdisk ethtool net-tools ifupdown python ntp curl
+#else if int($distro_ver_major) >= 20
+d-i pkgsel/include string u-boot-tools pastebinit initramfs-tools wget linux-firmware ntpdate bash devmem2 fbset sudo openssh-server gawk gdisk ethtool net-tools ifupdown ntp curl gpg
 #else
 d-i pkgsel/include string u-boot-tools pastebinit initramfs-tools wget linux-firmware linux-firmware-nonfree ntpdate bash devmem2 fbset sudo openssh-server udev-discover gawk gdisk ethtool curl
 #end if
