@@ -14,7 +14,8 @@
     # setuptools despite this default *and* giving you the option to set the executable to pip3.
     # For some reason, reminding ansible this is a python3 host here makes the pip module work.
     ansible_python_interpreter: /usr/bin/python3
-  when: (ansible_distribution == 'Ubuntu' and ansible_distribution_major_version|int >= 20)
+  when: (ansible_distribution == 'Ubuntu' and ansible_distribution_major_version|int >= 20) or
+        (ansible_os_family == 'RedHat' and ansible_distribution_major_version|int >= 8)
 
 # python-pip installed during packages task on Fedora since epel doesn't exist
 - name: Install python-pip on rpm based systems.
