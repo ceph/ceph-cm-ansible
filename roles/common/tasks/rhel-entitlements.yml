@@ -96,6 +96,8 @@
 - name: Set release number
   command: "subscription-manager release --set={{ ansible_distribution_version }}"
   when: rhsm_registered == true
+  retries: 5
+  delay: 10
 
 - name: Get list of enabled RHSM repos
   shell: subscription-manager repos --list | grep -B4 'Enabled:.*1' | grep 'Repo ID:' | sed -e 's/Repo ID:\s*\(.*\)/\1/' | sort
