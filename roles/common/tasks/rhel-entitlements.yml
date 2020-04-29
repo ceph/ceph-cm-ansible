@@ -96,6 +96,8 @@
 - name: Set release number
   command: "subscription-manager release --set={{ ansible_distribution_version }}"
   when: rhsm_registered == true
+  register: release_set
+  until: release_set is success
   retries: 5
   delay: 10
 
