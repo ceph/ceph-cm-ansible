@@ -44,11 +44,24 @@
   tags:
     - remove-ceph-dependency
 
+# We need the individual package manager ansible modules here because stuff like 'allow_downgrade' can't be passed via the package module.
 - name: Install packages
-  package:
+  yum:
     name: "{{ packages|list }}"
-    state: present 
-  when: packages|length > 0
+    state: present
+    allow_downgrade: yes
+  when:
+    - packages|length > 0
+    - (ansible_os_family == 'RedHat' and ansible_distribution_major_version|int <= 7)
+
+- name: Install packages
+  dnf:
+    name: "{{ packages|list }}"
+    state: present
+    allow_downgrade: yes
+  when:
+    - packages|length > 0
+    - (ansible_os_family == 'RedHat' and ansible_distribution_major_version|int >= 8)
 
 - name: Install epel packages
   package:
