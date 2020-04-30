@@ -39,8 +39,6 @@ copr_repos:
   - ktdreyer/ceph-el8
 
 packages:
-  - '@core'
-  - '@base'
   # for package-cleanup
   - dnf-utils
   - sysstat
