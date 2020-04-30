@@ -98,7 +98,7 @@
   when: rhsm_registered == true
   register: release_set
   until: release_set is success
-  retries: 12
+  retries: 18
   delay: 10
 
 - name: Get list of enabled RHSM repos
