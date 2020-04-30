@@ -36,10 +36,14 @@
   set_fact:
     rhsm_registered: "{{ subscription.rc == 0 }}"
 
+# A `dnf group upgrade base` which happens later in the testnodes role will
+# update a 8.X system to 8.Y.  We don't want that to happen because we
+# expect to test on a specific version.  set_rhsm_release=true locks a 8.X install to 8.X packages.
 - name: Register with subscription-manager.
   command: subscription-manager register
            --activationkey={{ subscription_manager_activationkey }}
            --org={{ subscription_manager_org }}
+           {% if set_rhsm_release|default(false)|bool == true %}--release={{ ansible_distribution_version }}{% endif %}
            --force
   no_log: true
   when: rhsm_registered == false and have_entitlements == true
@@ -90,17 +94,6 @@
   import_tasks: beta_repos.yml
   when: ansible_distribution_version not in rhsm_release_list.stdout_lines
 
-# A `dnf group upgrade base` which happens later in the testnodes role will
-# update a 8.X system to 8.Y.  We don't want that to happen because we
-# expect to test on a specific version.  This locks a 8.X install to 8.X packages.
-- name: Set release number
-  command: "subscription-manager release --set={{ ansible_distribution_version }}"
-  when: rhsm_registered == true
-  register: release_set
-  until: release_set is success
-  retries: 12
-  delay: 10
-
 - name: Get list of enabled RHSM repos
   shell: subscription-manager repos --list | grep -B4 'Enabled:.*1' | grep 'Repo ID:' | sed -e 's/Repo ID:\s*\(.*\)/\1/' | sort
   register: repo_list_cmd
@@ -136,8 +129,7 @@
   no_log: true
 
 - name: Enable necessary rhsm repos
-  command: subscription-manager repos --enable {{ item }}
-  with_items: "{{ rhsm_repos }}"
+  command: subscription-manager repos {% for repo in rhsm_repos|list %}--enable={{ repo }} {% endfor %}
   when: rhsm_registered == true and
         replace_repos|bool == true
   retries: 5
