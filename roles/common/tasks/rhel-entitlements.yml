@@ -129,8 +129,7 @@
   no_log: true
 
 - name: Enable necessary rhsm repos
-  command: subscription-manager repos --enable {{ item }}
-  with_items: "{{ rhsm_repos }}"
+  command: subscription-manager repos {% for repo in rhsm_repos|list %}--enable={{ repo }} {% endfor %}
   when: rhsm_registered == true and
         replace_repos|bool == true
   retries: 5
