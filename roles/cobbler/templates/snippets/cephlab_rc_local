@@ -21,6 +21,18 @@ exec 2> /dev/ttyS1
 exec 1>&2
 set -ex
 
+# This function will print the date to console in a clean way.
+# In other words, it'll just print the date without it looking like this:
+#   + date -u +%FT%T.%N
+#   + cut -c1-23
+#   2020-05-15T14:15:33.087
+TheTimeIs ()
+{
+  { set +x; } 2>/dev/null
+  date -u +%FT%T.%N | cut -c1-23
+  { set -x; } 2>/dev/null
+}
+
 {% if rclocal_nameserver is defined %}
 if [ ! -f /.cephlab_net_configured ]; then
 #if $distro == 'openSUSE'
@@ -31,6 +43,7 @@ if [ ! -f /.cephlab_net_configured ]; then
   nics=$(ls -1 /sys/class/net | grep -v lo)
 
   for nic in $nics; do
+    TheTimeIs
     # Bring the NIC up so we can detect if a link is present
     ifconfig $nic up || ip link set $nic up
     # Sleep for a bit to let the NIC come up
@@ -44,7 +57,8 @@ if [ ! -f /.cephlab_net_configured ]; then
         echo -e "DEVICE=$nic\nBOOTPROTO=dhcp\nONBOOT=yes" > /etc/sysconfig/network-scripts/ifcfg-$nic
       fi
       # Don't bail if NIC fails to go down or come up
-      set +e
+      { set +e; } 2>/dev/null
+      TheTimeIs
       # Bounce the NIC so it gets a DHCP address
       ifdown $nic
       ifup $nic
@@ -67,6 +81,7 @@ if [ ! -f /.cephlab_net_configured ]; then
       else
         # We found our routable NIC!
         # Write our lockfile so this only gets run on firstboot
+        TheTimeIs
         touch /.cephlab_net_configured
         # Break out of the loop once we've found our routable NIC
         break
@@ -145,9 +160,11 @@ done
 # Output message to console indicating Ansible is being run
 set +x
 echo -e "==================================\nInstructing Cobbler to run Ansible\n      Waiting for completion\n==================================" > /dev/console
+TheTimeIs
 set -x
 # Run the post-install trigger a second time
 curl --max-time 1800 --silent "http://$http_server:$http_port/cblr/svc/op/trig/mode/post/system/$system_name" -o /dev/null || true
+TheTimeIs
 touch $lockfile
 EOF
 
