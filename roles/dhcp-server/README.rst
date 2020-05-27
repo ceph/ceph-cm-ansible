@@ -8,7 +8,7 @@ Notes
 
 This role is heavily modified to be primarily useful for our test labs that only have two or three subnets.  See https://wiki.sepia.ceph.com/doku.php?id=services:networking.
 
-This role checks for firewalld and iptables.  It will configure firewalld unless iptables is running.  It **does not** configure iptables.  At the time the role was created, our DHCP server was running other services and its iptables was already heavily modified and configured.  This reason, along with firewalld being the default in CentOS 7, is why iptables configuration is skipped.
+This role checks for firewalld and iptables.  It will configure firewalld unless iptables is running.  It **does not** configure iptables and will not install or configure firewalld if it's not installed.   At the time the role was created, our DHCP server was running other services and its iptables was already heavily modified and configured.  This reason, along with firewalld being the default in CentOS 7, is why iptables configuration is skipped.
 
 Variables
 +++++++++
