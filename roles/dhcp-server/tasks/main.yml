@@ -22,7 +22,7 @@
     enabled: yes
   when:
     - iptables_state.rc != 0
-    - "'No such file or directory' not in firewalld_state.msg"
+    - not (firewalld_state.msg is defined and "'No such file or directory' in firewalld_state.msg")
 
 - name: Configure firewalld
   firewalld:
@@ -32,7 +32,7 @@
     immediate: yes
   when:
     - iptables_state.rc != 0
-    - "'No such file or directory' not in firewalld_state.msg"
+    - not (firewalld_state.msg is defined and "'No such file or directory' in firewalld_state.msg")
 
 - name: Write global dhcpd.conf
   template:
