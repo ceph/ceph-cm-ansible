@@ -70,3 +70,6 @@ check_for_nvme: false
 
 # packages to install via pip
 pip_packages_to_install: []
+
+# Configure ABRT (probably only for downstream use)
+configure_abrt: false

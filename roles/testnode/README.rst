@@ -272,6 +272,10 @@ Define ``check_for_nvme: true`` in Ansible inventory group_vars (by machine type
 
     check_for_nvme: false
 
+Downstream QE requested ABRT be configured in a certain way.  Overridden in Octo secrets::
+
+    configure_abrt: false
+
 Tags
 ++++
 

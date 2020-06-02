@@ -1,0 +1,25 @@
+---
+- name: Install abrt
+  yum:
+    name: abrt
+    state: installed
+
+- name: Enable abrt-auto-reporting
+  command: abrt-auto-reporting enabled
+
+- name: Set OpenGPGCheck in abrt-action-save-package-data.conf
+  lineinfile:
+    path: /etc/abrt/abrt-action-save-package-data.conf
+    regexp: '^OpenGPGCheck'
+    line: 'OpenGPGCheck no'
+
+- name: Set ProcessUnpackaged in abrt-action-save-package-data.conf
+  lineinfile:
+    path: /etc/abrt/abrt-action-save-package-data.conf
+    regexp: '^ProcessUnpackaged'
+    line: 'ProcessUnpackaged no'
+
+- name: Restart abrtd
+  service:
+    name: abrtd
+    state: restarted

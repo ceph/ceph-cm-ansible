@@ -80,3 +80,8 @@
   selinux: state=permissive policy=targeted
   tags:
     - selinux
+
+- name: Configure ABRT
+  import_tasks: yum/abrt.yml
+  when: configure_abrt|bool
+  tags: abrt
