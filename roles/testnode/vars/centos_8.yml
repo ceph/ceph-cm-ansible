@@ -35,9 +35,6 @@ yum_mirrorlists:
   - CentOS-Base-mirrorlist
   - CentOS-Extras-mirrorlist
 
-copr_repos:
-  - ktdreyer/ceph-el8
-
 packages:
   # for package-cleanup
   - dnf-utils
