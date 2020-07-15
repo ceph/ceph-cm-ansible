@@ -1,13 +1,17 @@
 ---
 - name: restart ntp
   service:
-    name: "{{ ntp_service_name }}" 
+    name: "{{ ntp_service_name }}"
     state: restarted
+  # There's an issue with ansible<=2.9 and our custom built kernels (5.8 as of this commit) where the service and systemd modules don't have backwards compatibility with init scripts
+  ignore_errors: "{{ 'ceph' in ansible_kernel }}"
 
 - name: restart ssh
   service:
     name: "{{ ssh_service_name }}"
-    state: restarted
+    state: restarted 
+  # There's an issue with ansible<=2.9 and our custom built kernels (5.8 as of this commit) where the service and systemd modules don't have backwards compatibility with init scripts
+  ignore_errors: "{{ 'ceph' in ansible_kernel }}"
 
 - name: start rpcbind
   service:
@@ -15,13 +19,19 @@
     state: started
     enabled: yes
   when: start_rpcbind
+  # There's an issue with ansible<=2.9 and our custom built kernels (5.8 as of this commit) where the service and systemd modules don't have backwards compatibility with init scripts
+  ignore_errors: "{{ 'ceph' in ansible_kernel }}"
 
 - name: restart nfs-server
   service:
     name: "{{ nfs_service }}"
     state: restarted
+  # There's an issue with ansible<=2.9 and our custom built kernels (5.8 as of this commit) where the service and systemd modules don't have backwards compatibility with init scripts
+  ignore_errors: "{{ 'ceph' in ansible_kernel }}"
 
 - name: restart cron
   service:
     name: cron
     state: restarted
+  # There's an issue with ansible<=2.9 and our custom built kernels (5.8 as of this commit) where the service and systemd modules don't have backwards compatibility with init scripts
+  ignore_errors: "{{ 'ceph' in ansible_kernel }}"
