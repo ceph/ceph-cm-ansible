@@ -8,9 +8,6 @@ common_yum_repos:
     enabled: 1
     gpgcheck: 0
 
-copr_repos:
-  - ktdreyer/ceph-el8
-
 packages:
   # for package-cleanup
   - dnf-utils
