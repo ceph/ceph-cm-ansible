@@ -66,6 +66,9 @@ subnet {{ subnet_item.cidr | ipaddr('network') }} netmask {{ subnet_item.cidr | 
     {% endif -%}
     hardware ethernet {{ hostvars[host][subnet_item.macvar] }};
     fixed-address {{ hostvars[host][subnet_item.ipvar] }};
+  {% if hostvars[host]['dhcp_option_hostname'] is defined and hostvars[host]['dhcp_option_hostname'] == true %}
+  option host-name "{{ host.split('.')[0] }}";
+  {% endif -%}
   }
   {% endif -%}
   {% endif -%}
