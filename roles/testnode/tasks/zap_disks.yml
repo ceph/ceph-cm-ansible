@@ -57,6 +57,7 @@
     - item.key not in root_disk
     - '"loop" not in item.key'
     - '"ram" not in item.key'
+    - '"sr" not in item.key'
 
 ## See https://tracker.ceph.com/issues/22354 and
 ## https://github.com/ceph/ceph/pull/20400
@@ -67,6 +68,7 @@
     - item.key not in root_disk
     - '"loop" not in item.key'
     - '"ram" not in item.key'
+    - '"sr" not in item.key'
 
 - name: Remove all LVM data
   shell: "dmsetup remove_all --force"
