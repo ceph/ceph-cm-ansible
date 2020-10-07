@@ -42,6 +42,19 @@
   register: import
   when: mount is defined and mount is changed
 
+# In the next two step we need to
+# rename the distro and profile only when the arch is arm
+# because cobbler is adding the arm word twice to the name instead of once
+- name: Rename the distro if the arch is arm
+  command: cobbler distro rename --name={{ distro_name }}-arm --newname={{ distro_name }}
+  when: mount is defined and mount is changed and
+        arch == "arm"
+
+- name: Rename the profile if the arch is arm
+  command: cobbler profile rename --name={{ distro_name }}-arm --newname={{ distro_name }}
+  when: mount is defined and mount is changed and
+        arch == "arm"
+
 - name: Unmount ISO
   mount:
     name: "{{ iso_mount }}"
