@@ -58,6 +58,8 @@ packages:
   # for test-crash.sh
   - gdb
   - iozone
+  # cephadm
+  - lvm2
 
 epel_packages:
   - dbench
