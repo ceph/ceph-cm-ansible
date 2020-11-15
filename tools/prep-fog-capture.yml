@@ -122,20 +122,25 @@
     service:
       name: "{{ ntp_service }}"
       state: stopped
+    when: '"ntp" in ntp_service'
 
   # The theory here is although we do have the ntp service running on boot,
   # if the time is off, it slowly drifts back in sync.  Since our testnodes
   # are ephemeral, they don't ever have enough time to correctly drift
   # back to the correct time.  So we'll force it in the captured OS images.
-  - name: Force time synchronization using stepping
+  - name: Force time synchronization using stepping | ntp
     command: "ntpdate -b {{ ntp_servers|join(' ') }}"
-    # Fix after RHEL8 GAs!
-    ignore_errors: true
+    when: '"ntp" in ntp_service'
 
-  - name: "Start {{ ntp_service }} again"
+  - name: "Start {{ ntp_service }}"
     service:
       name: "{{ ntp_service }}"
       state: started
+
+  # chronyd needs to be started in order to force time sync. This differs from ntpd.
+  - name: Force time synchronization using stepping | chrony
+    command: chronyc -a makestep
+    when: '"chrony" in ntp_service'
 
   - name: Sync the hardware clock
     command: "hwclock --systohc"
