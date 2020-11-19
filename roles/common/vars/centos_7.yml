@@ -1,0 +1,2 @@
+---
+container_mirror_cert_path: "/etc/docker/certs.d/{{ container_mirror }}"
