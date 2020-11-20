@@ -13,6 +13,7 @@
     - vars
     # We need these vars for the entitlements tag to work
     - entitlements
+    - container-mirror
 
 # configure things specific to yum systems
 - import_tasks: yum_systems.yml
@@ -60,3 +61,56 @@
         (selinux_status is defined and selinux_status.stdout != "Disabled")
   tags:
     - nagios
+
+# We check for podman first because it was released after docker.
+# If we find podman, we should use its certs path.
+# Just because `docker` exists doesn't mean we're not using podman.
+- name: Check for podman
+  command: podman --version
+  register: check_for_podman
+  ignore_errors: true
+  when:
+    - container_mirror_cert_path is not defined
+    - container_mirror is defined
+    - container_mirror_cert is defined
+  tags:
+    - container-mirror
+
+- set_fact:
+    container_mirror_cert_path: "/etc/containers/certs.d/{{ container_mirror }}"
+  when:
+    - check_for_podman is success
+    - container_mirror is defined
+    - container_mirror_cert is defined
+  tags:
+    - container-mirror
+
+- name: Check for docker
+  command: docker --version
+  register: check_for_docker
+  ignore_errors: true
+  when:
+    - container_mirror_cert_path is not defined
+    - check_for_podman is not success
+    - container_mirror is defined
+    - container_mirror_cert is defined
+  tags:
+    - container-mirror
+
+- set_fact:
+    container_mirror_cert_path: "/etc/docker/certs.d/{{ container_mirror }}"
+  when:
+    - check_for_docker is success
+    - check_for_podman is not success
+    - container_mirror is defined
+    - container_mirror_cert is defined
+  tags:
+    - container-mirror
+
+- import_tasks: container_mirror.yml
+  when:
+    - container_mirror is defined
+    - container_mirror_cert is defined
+    - container_mirror_cert_path is defined
+  tags:
+    - container-mirror

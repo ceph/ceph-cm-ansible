@@ -1,0 +1,25 @@
+---
+# Note that these tasks only put the CA certificate in place.
+# podman/docker installation is still handled in the testnodes repo because
+# we don't want podman/docker installed everywhere but we do want this cert
+# everywhere just in case.
+# For example we might not want docker/podman installed on infrahost01 but
+# we definitely need this cert installed on testnodes and infrahost0{2..5}.
+- name: Include encrypted variables
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ secrets_path }}/all.yml"
+    - empty.yml
+  no_log: true
+  tags:
+    - vars
+
+- name: "Create {{ container_mirror_cert_path }}"
+  file:
+    path: "{{ container_mirror_cert_path }}"
+    state: directory
+
+- name: "Copy {{ container_mirror }} self-signed cert"
+  copy:
+    dest: "{{ container_mirror_cert_path }}/docker-mirror.crt"
+    content: "{{ container_mirror_cert }}"

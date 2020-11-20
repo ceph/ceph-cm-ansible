@@ -2,3 +2,5 @@
 nrpe_selinux_packages:
   - python3-libsemanage
   - python3-policycoreutils
+
+container_mirror_cert_path: "/etc/containers/certs.d/{{ container_mirror }}"
