@@ -262,6 +262,11 @@ normal_smart ()
         failed=true
         rc=2
         fi
+      # The SSDs in the bruuni just straight up say failed with no additional detail
+      elif sudo smartctl -a /dev/$l | grep -q "FAILED!"; then
+        messages+=("Drive $l has completely failed")
+        failed=true
+        rc=2
       else
         messages+=("No SMART data found for drive $l")
         failed=true
