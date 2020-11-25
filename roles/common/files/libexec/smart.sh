@@ -70,8 +70,8 @@ main ()
   # Nagios reads and displays the first line of output on the Services page.
   # All individual messages about failed/failing disk statistics can be viewed
   # on the individual system's SMART detail page in nagios.
-  for msg in "${messages[@]}"
-  do
+  readarray -t sorted < <(for msg in "${messages[@]}"; do echo "$msg"; done | sort)
+  for msg in "${sorted[@]}"; do
     echo "$msg"
   done
   
