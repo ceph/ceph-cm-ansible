@@ -70,8 +70,8 @@ main ()
   # Nagios reads and displays the first line of output on the Services page.
   # All individual messages about failed/failing disk statistics can be viewed
   # on the individual system's SMART detail page in nagios.
-  for msg in "${messages[@]}"
-  do
+  readarray -t sorted < <(for msg in "${messages[@]}"; do echo "$msg"; done | sort)
+  for msg in "${sorted[@]}"; do
     echo "$msg"
   done
   
@@ -262,6 +262,11 @@ normal_smart ()
         failed=true
         rc=2
         fi
+      # The SSDs in the bruuni just straight up say failed with no additional detail
+      elif sudo smartctl -a /dev/$l | grep -q "FAILED!"; then
+        messages+=("Drive $l ($(get_serial $l)) has completely failed")
+        failed=true
+        rc=2
       else
         messages+=("No SMART data found for drive $l")
         failed=true
@@ -272,7 +277,7 @@ normal_smart ()
     if echo "$output" | grep -q '^0x05'; then
       reallocated=$(echo "$output" | grep '^0x05' | awk '{print $NF}')
       if [ "$reallocated" != "0" ] && [ $is_ssd = false ]; then
-        messages+=("Drive $l has $reallocated reallocated sectors")
+        messages+=("Drive $l ($(get_serial $l)) has $reallocated reallocated sectors")
         failed=true
         # A small number of reallocated sectors is OK
 	# Don't set rc to WARN if we were already CRIT from previous drive
@@ -288,7 +293,7 @@ normal_smart ()
     if echo "$output" | grep -q '^0xbb'; then
       uncorrect=$(echo "$output" | grep '^0xbb' | awk '{print $NF}')
       if [ "$uncorrect" != "0" ]; then
-        messages+=("Drive $l has $uncorrect reported uncorrect sectors")
+        messages+=("Drive $l ($(get_serial $l)) had $uncorrect reported uncorrect sectors")
         failed=true
         rc=2
       fi
@@ -297,7 +302,7 @@ normal_smart ()
     if echo "$output" | grep -q '^0xc4'; then
       reallocatedevents=$(echo "$output" | grep '^0xc4' | awk '{print $NF}')
       if [ "$reallocatedevents" != "0" ]; then
-        messages+=("Drive $l has $reallocatedevents reallocated events")
+        messages+=("Drive $l ($(get_serial $l)) has $reallocatedevents reallocated events")
         failed=true
         rc=2
       fi
@@ -306,7 +311,7 @@ normal_smart ()
     if echo "$output" | grep -q '^0xc5'; then
       pending=$(echo "$output" | grep '^0xc5' | awk '{print $NF}')
       if [ "$pending" != "0" ]; then
-        messages+=("Drive $l has $pending pending sectors")
+        messages+=("Drive $l ($(get_serial $l)) has $pending pending sectors")
         failed=true
         rc=2
       fi
@@ -315,7 +320,7 @@ normal_smart ()
     if echo "$output" | grep -q '^0xc6'; then
       uncorrect=$(echo "$output" | grep '^0xc6' | awk '{print $NF}')
       if [ "$uncorrect" != "0" ]; then
-        messages+=("Drive $l has $uncorrect uncorrect sectors")
+        messages+=("Drive $l ($(get_serial $l)) has $uncorrect uncorrect sectors")
         failed=true
         rc=2
       fi
@@ -324,7 +329,7 @@ normal_smart ()
     if echo -e "$output" | grep -q '^0xe9'; then
       wearout=$(echo "$output" | grep '^0xe9' | awk '{print $NF}')
       if [ "$wearout" == "1" ]; then
-        messages+=("Drive $l has exhausted its Media_Wearout_Indicator")
+        messages+=("Drive $l ($(get_serial $l)) has exhausted its Media_Wearout_Indicator")
         failed=true
 	# Don't set rc to WARN if we were already CRIT from previous drive
         if [ "$rc" != 2 ]
@@ -413,6 +418,15 @@ nvme_smart ()
       let "failingdrives+=1"
     fi
   done
+}
+
+get_serial() {
+  serial=$(sudo smartctl -i /dev/$1 | grep "Serial Number:" | awk '{ print $3 }')
+  if [ "$serial" == "" ]; then
+    echo "S/N unknown"
+  else
+    echo $serial
+  fi
 }
 
 ## Call main() function
