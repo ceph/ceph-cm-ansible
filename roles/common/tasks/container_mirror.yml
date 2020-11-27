@@ -23,3 +23,10 @@
   copy:
     dest: "{{ container_mirror_cert_path }}/docker-mirror.crt"
     content: "{{ container_mirror_cert }}"
+
+- name: Install registries-conf-ctl 
+  pip:
+    name: git+https://github.com/sebastian-philipp/registries-conf-ctl 
+
+- name: Add local docker.io registry mirror
+  command: registries-conf-ctl add-mirror docker.io docker-mirror.front.sepia.ceph.com
