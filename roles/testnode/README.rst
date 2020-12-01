@@ -276,10 +276,29 @@ Downstream QE requested ABRT be configured in a certain way.  Overridden in Octo
 
     configure_abrt: false
 
+Configure ``cachefilesd``.  See https://tracker.ceph.com/issues/6373.  Defaults to ``false``::
+
+    configure_cachefilesd: true
+
+    # Optionally override any of the following variables to change their
+    # corresponding values in /etc/cachefilesd.conf
+    cachefilesd_dir
+    cachefilesd_tag
+    cachefilesd_brun
+    cachefilesd_bcull
+    cachefilesd_bstop
+    cachefilesd_frun
+    cachefilesd_fcull
+    cachefilesd_fstop
+    cachefilesd_secctx
+
 Tags
 ++++
 
 Available tags are listed below:
+
+cachefilesd
+    Install and configure cachefilesd.
 
 cpan
     Install and configure cpan and Amazon::S3.
