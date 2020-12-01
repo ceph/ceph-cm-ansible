@@ -73,3 +73,6 @@ pip_packages_to_install: []
 
 # Configure ABRT (probably only for downstream use)
 configure_abrt: false
+
+# Configure cachefilesd (https://tracker.ceph.com/issues/6373)
+configure_cachefilesd: false

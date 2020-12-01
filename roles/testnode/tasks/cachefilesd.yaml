@@ -1,0 +1,15 @@
+---
+- name: Install cachefilesd
+  package:
+    name: cachefilesd
+    state: latest
+
+- name: Install cachefilesd conf file
+  template:
+    src: cachefilesd.j2
+    dest: /etc/cachefilesd.conf
+
+- name: Restart cachefilesd
+  service:
+    name: cachefilesd
+    state: restarted

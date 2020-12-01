@@ -101,6 +101,11 @@
   tags:
     - varlib
 
+- import_tasks: cachefilesd.yaml
+  when: configure_cachefilesd|bool == true
+  tags:
+    - cachefilesd
+
 # Install and configure cpan and Amazon::S3
 - import_tasks: cpan.yml
   tags:
