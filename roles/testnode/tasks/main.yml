@@ -89,6 +89,12 @@
   tags:
     - lvm
 
+- name: set up filesystems
+  import_tasks: filesystems.yml
+  tags:
+    - filesystems
+  when: filesystems is defined
+
 - name: mount /var/lib/ceph to specified partition
   import_tasks: var_lib.yml
   when: var_lib_partition is defined

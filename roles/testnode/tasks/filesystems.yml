@@ -1,0 +1,14 @@
+---
+- name: Create filesystems
+  filesystem:
+    dev: "{{ item.value.device }}"
+    fstype: "{{ item.value.fstype }}"
+  with_dict: "{{ filesystems }}"
+
+- name: Mount filesystems
+  mount:
+    path: "{{ item.value.mountpoint }}"
+    src: "{{ item.value.device }}"
+    fstype: "{{ item.value.fstype }}"
+    state: mounted
+  with_dict: "{{ filesystems }}"

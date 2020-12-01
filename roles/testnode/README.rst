@@ -235,6 +235,18 @@ A dictionary of drives/devices you want to partition.  ``scratch_devs`` is not r
         scratch_devs:
           - 2
 
+An optional dictionary of filesystems you want created and where to mount them.  (You must use a ``drives_to_partition`` or ``logical_volumes`` dictionary to carve up drives first.)  Example::
+
+    filesystems:
+      varfoo:
+        device: "/dev/nvme0n1p5"
+        fstype: ext4
+        mountpoint: "/var/lib/foo"
+      fscache:
+        device: "/dev/nvme0n1p6"
+        fstype: xfs
+        mountpoint: "/var/cache/fscache"
+
 A dictionary of volume groups you want created.  ``pvs`` should be a comma-delimited list.  Example::
 
     volume_groups:
@@ -283,6 +295,9 @@ Available tags are listed below:
 
 cpan
     Install and configure cpan and Amazon::S3.
+
+filesystems
+    Create and mount filesystems.
 
 gpg-keys
     Install gpg keys on Fedora.    
