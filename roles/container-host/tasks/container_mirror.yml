@@ -1,0 +1,54 @@
+---
+- name: "Create {{ container_mirror_cert_path }}"
+  file:
+    path: "{{ container_mirror_cert_path }}"
+    state: directory
+
+- name: "Copy {{ container_mirror }} self-signed cert"
+  copy:
+    dest: "{{ container_mirror_cert_path }}/docker-mirror.crt"
+    content: "{{ container_mirror_cert }}"
+
+- name: Install registries-conf-ctl 
+  pip:
+    name: git+https://github.com/sebastian-philipp/registries-conf-ctl
+    state: latest
+
+# Why is this even necessary?  I couldn't figure this out.  I'd pip install but the command was not found in the next task.  Tried '--user', umask: 0022, shell and command modules.
+- name: Find registries-conf-ctl
+  stat:
+    path: /usr/bin/registries-conf-ctl
+  register: usr_bin_rcc
+
+- name: Find registries-conf-ctl again
+  stat:
+    path: /usr/local/bin/registries-conf-ctl
+  register: usr_local_bin_rcc
+
+- set_fact:
+    rcc_path: /usr/bin/registries-conf-ctl
+  when: usr_bin_rcc.stat.exists
+
+- set_fact:
+    rcc_path: /usr/local/bin/registries-conf-ctl
+  when: usr_local_bin_rcc.stat.exists
+
+- name: "Check for docker's daemon.json"
+  stat:
+    path: "{{ container_service_conf }}"
+  when:
+    - "'docker.io' in container_packages"
+    - "'podman' not in container_packages"
+  register: container_conf
+
+- name: "Create {{ container_service_conf }} if necessary"
+  copy:
+    dest: "{{ container_service_conf }}"
+    content: "{}"
+  when:
+    - "'docker.io' in container_packages"
+    - "'podman' not in container_packages"
+    - container_conf.stat.exists == False
+
+- name: Add local docker.io registry mirror
+  command: "{{ rcc_path }} add-mirror docker.io {{ container_mirror }}"
