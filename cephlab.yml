@@ -10,6 +10,9 @@
 # if this node is in the testnode group, configure it
 - import_playbook: testnodes.yml
 
+# a number of different groups get docker/podman installed and configured
+- import_playbook: container-host.yml
+
 # if this node is in the pcp group, configure it
 #- import_playbook: pcp.yml
 

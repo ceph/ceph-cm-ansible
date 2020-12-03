@@ -1,0 +1,46 @@
+---
+- set_fact:
+    package_manager: apt
+  when: ansible_os_family == "Debian"
+
+- set_fact:
+    package_manager: yum
+  when: ansible_os_family == "RedHat"
+
+- name: Including distro specific variables
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution | lower }}_{{ ansible_distribution_major_version }}.yml"
+    - "{{ package_manager }}_systems.yml"
+    - empty.yml
+
+- name: Install container packages
+  package:
+    name: "{{ container_packages }}"
+    state: latest
+  when: container_packages|length > 0
+
+- set_fact:
+    container_mirror_cert_path: "/etc/containers/certs.d/{{ container_mirror }}"
+    container_service_conf: "/etc/containers/registries.conf"
+  when:
+    - "'podman' in container_packages"
+  tags:
+    - container-mirror
+
+- set_fact:
+    container_mirror_cert_path: "/etc/docker/certs.d/{{ container_mirror }}"
+    container_service_conf: "/etc/docker/daemon.json"
+  when:
+    - "'docker.io' in container_packages"
+    - "'podman' not in container_packages"
+  tags:
+    - container-mirror
+
+- import_tasks: container_mirror.yml
+  when:
+    - container_mirror is defined
+    - container_mirror_cert is defined
+    - container_mirror_cert_path is defined
+  tags:
+    - container-mirror

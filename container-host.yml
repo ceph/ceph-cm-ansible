@@ -1,0 +1,13 @@
+---
+- hosts:
+    - testnodes
+    - senta
+    - vossi
+  roles:
+    - secrets
+    - container-host
+  tags:
+    - container
+    - container-mirror
+  strategy: free
+  become: true

@@ -4,5 +4,3 @@ rhsm_repos:
   - rhel-7-server-optional-rpms
   - rhel-7-server-extras-rpms
   - rhel-ha-for-rhel-7-server-rpms
-
-container_mirror_cert_path: "/etc/docker/certs.d/{{ container_mirror }}"

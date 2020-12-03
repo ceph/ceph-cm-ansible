@@ -79,22 +79,6 @@ tasks OS-agnostic.  They variables are mostly self-explanatory and defined in
       - nagios-nrpe-server
       - nagios-plugins-basic
 
-The following variables are used to optionally configure a dockerhub mirror CA
-certificate. The role will use `/etc/containers/certs.d` if it detects `podman`
-and `/etc/docker/certs.d` if it does not detect `podman` but detects `docker`::
-
-    # Defined in all.yml in secrets repo
-    container_mirror: docker-mirror.front.sepia.ceph.com:5000
-
-    # Defined in all.yml in secrets repo
-    container_mirror_cert: |
-      -----BEGIN CERTIFICATE-----
-      ...
-      -----END CERTIFICATE-----
-
-    # Defined in roles/common/vars/$distro_$version.yml or determined in roles/common/tasks/main.yml
-    container_mirror_cert_path: "/etc/docker/certs.d/{{ container_mirror }}"
-
 Tags
 ++++
 
@@ -116,9 +100,6 @@ nagios
     Installs and configures nrpe service (including firewalld and SELinux if
     applicable).  ``monitoring-scripts`` is also always run with this tag since
     NRPE isn't very useful without them.
-
-container-mirror
-    Put a (probably self-signed) certificate in place for an internal dockerhub mirror.
 
 To Do
 +++++
