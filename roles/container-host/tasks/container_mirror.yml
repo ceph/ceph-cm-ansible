@@ -14,25 +14,6 @@
     name: git+https://github.com/sebastian-philipp/registries-conf-ctl
     state: latest
 
-# Why is this even necessary?  I couldn't figure this out.  I'd pip install but the command was not found in the next task.  Tried '--user', umask: 0022, shell and command modules.
-- name: Find registries-conf-ctl
-  stat:
-    path: /usr/bin/registries-conf-ctl
-  register: usr_bin_rcc
-
-- name: Find registries-conf-ctl again
-  stat:
-    path: /usr/local/bin/registries-conf-ctl
-  register: usr_local_bin_rcc
-
-- set_fact:
-    rcc_path: /usr/bin/registries-conf-ctl
-  when: usr_bin_rcc.stat.exists
-
-- set_fact:
-    rcc_path: /usr/local/bin/registries-conf-ctl
-  when: usr_local_bin_rcc.stat.exists
-
 - name: "Check for docker's daemon.json"
   stat:
     path: "{{ container_service_conf }}"
@@ -51,4 +32,6 @@
     - container_conf.stat.exists == False
 
 - name: Add local docker.io registry mirror
-  command: "{{ rcc_path }} add-mirror docker.io {{ container_mirror }}"
+  command: registries-conf-ctl add-mirror docker.io "{{ container_mirror }}"
+  environment:
+    PATH: /usr/local/bin:/usr/bin
