@@ -35,3 +35,9 @@
   command: registries-conf-ctl add-mirror docker.io "{{ container_mirror }}"
   environment:
     PATH: /usr/local/bin:/usr/bin
+
+# not very elegant but it's a workaround for now
+- name: Restart docker service
+  service: docker
+    state: restarted
+  when: "'docker.io' in container_packages"
