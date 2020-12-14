@@ -3,6 +3,7 @@
     - testnodes
     - senta
     - vossi
+    - jenkins_slaves
   roles:
     - secrets
     - container-host
