@@ -24,3 +24,11 @@ The following variables are used to optionally configure a docker.io mirror CA c
 
     # Automatically determined in roles/container-host/tasks/main.yml
     container_mirror_cert_path: "/etc/docker/certs.d/{{ container_mirror }}"
+
+Tags
+++++
+
+registries-conf-ctl
+    Add ``--skip-tags registries-conf-ctl`` to your ``ansible-playbook`` command if you don't want to use registries-conf-ctl_ to configure the container service's conf file.
+
+.. _registries-conf-ctl: https://github.com/sebastian-philipp/registries-conf-ctl

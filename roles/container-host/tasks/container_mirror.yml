@@ -13,6 +13,8 @@
   pip:
     name: git+https://github.com/sebastian-philipp/registries-conf-ctl
     state: latest
+  tags:
+    - registries-conf-ctl
 
 - name: "Check for docker's daemon.json"
   stat:
@@ -35,6 +37,8 @@
   command: registries-conf-ctl add-mirror docker.io "{{ container_mirror }}"
   environment:
     PATH: /usr/local/bin:/usr/bin
+  tags:
+    - registries-conf-ctl
 
 # not very elegant but it's a workaround for now
 - name: Restart docker service
