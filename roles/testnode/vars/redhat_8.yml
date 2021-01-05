@@ -42,6 +42,7 @@ packages:
   # for workunits,
   - gcc
   - git
+  - make
   # qa/workunits/rados/test_python.sh
   - python3-nose
   # for cram tests
