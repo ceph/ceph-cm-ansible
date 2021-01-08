@@ -11,7 +11,7 @@ Variables
 
 ``container_packages: []`` is the list of container packages to install.  We default to podman on RedHat based distros and docker.io on Debian-based distros.
 
-The following variables are used to optionally configure a docker.io mirror CA certificate. The role will use ``/etc/containers/certs.d`` if ``podman`` is installed and ``/etc/docker/certs.d`` if ``docker`` is installed.::
+The following variables are used to optionally configure a docker.io mirror CA certificate. The role will install the certificate in both ``/etc/containers/certs.d`` (for podman) and ``/etc/docker/certs.d`` (for docker).::
 
     # Defined in all.yml in secrets repo
     container_mirror: docker-mirror.front.sepia.ceph.com:5000
@@ -21,9 +21,6 @@ The following variables are used to optionally configure a docker.io mirror CA c
       -----BEGIN CERTIFICATE-----
       ...
       -----END CERTIFICATE-----
-
-    # Automatically determined in roles/container-host/tasks/main.yml
-    container_mirror_cert_path: "/etc/docker/certs.d/{{ container_mirror }}"
 
 Tags
 ++++

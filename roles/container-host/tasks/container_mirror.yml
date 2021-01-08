@@ -1,13 +1,15 @@
 ---
-- name: "Create {{ container_mirror_cert_path }}"
+- name: "Create container_mirror_cert_paths"
   file:
-    path: "{{ container_mirror_cert_path }}"
+    path: "{{ item }}"
     state: directory
+  with_items: "{{ container_mirror_cert_paths }}"
 
 - name: "Copy {{ container_mirror }} self-signed cert"
   copy:
-    dest: "{{ container_mirror_cert_path }}/docker-mirror.crt"
+    dest: "{{ item }}/docker-mirror.crt"
     content: "{{ container_mirror_cert }}"
+  with_items: "{{ container_mirror_cert_paths }}"
 
 - name: Install registries-conf-ctl 
   pip:
