@@ -5,9 +5,9 @@ paddles_extra_packages:
   # The following packages are requirements for running paddles
   - gcc
   - git
-  - python-devel
-  - python-pip
-  - python-virtualenv
+  - python3-devel
+  - python3-pip
+  - python3-virtualenv
   - postgresql
   - postgresql-contrib
   - postgresql-devel
