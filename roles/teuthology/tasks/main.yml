@@ -28,6 +28,16 @@
   tags:
     - config
 
+- name: Ensure scheduler user binary directory exists
+  file:
+    state: directory
+    owner: "{{ teuthology_scheduler_user }}"
+    group: "{{ teuthology_scheduler_user }}"
+    path: "/home/{{ teuthology_scheduler_user }}/bin"
+    mode: 0755
+  tags:
+    - crontab
+
 - name: Ship teuthology user's crontab update script
   template:
     src: update-crontab.sh
