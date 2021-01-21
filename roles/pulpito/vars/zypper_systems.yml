@@ -1,8 +1,8 @@
 ---
 pulpito_extra_packages:
   - git
-  - python-pip
-  - python-virtualenv
+  - python3-pip
+  - python3-virtualenv
   - supervisor
 
 supervisor_service: supervisord

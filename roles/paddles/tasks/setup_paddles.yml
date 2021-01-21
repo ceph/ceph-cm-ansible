@@ -13,6 +13,7 @@
     name: "pip"
     state: "latest"
     chdir: "{{ paddles_repo_path }}"
+    virtualenv_python: "python3"
     virtualenv: "{{ paddles_repo_path }}/virtualenv"
   become_user: "{{ paddles_user }}"
 - name: Install requirements via pip

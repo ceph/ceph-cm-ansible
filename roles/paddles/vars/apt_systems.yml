@@ -1,12 +1,13 @@
 ---
 paddles_extra_packages:
   # The following is a requirement of ansible's postgresql module
-  - python-psycopg2
+  - python3-psycopg2
   # The following packages are requirements for running paddles
   - git-all
-  - python-dev
-  - python-pip
-  - python-virtualenv
+  - python3-dev
+  - python3-pip
+  - python3-virtualenv
+  - virtualenv
   - postgresql
   - postgresql-contrib
   - postgresql-server-dev-all

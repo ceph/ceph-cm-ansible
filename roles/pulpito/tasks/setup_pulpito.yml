@@ -16,7 +16,7 @@
   register: virtualenv
 
 - name: Create the virtualenv
-  shell: virtualenv ./virtualenv chdir={{ pulpito_repo_path }}
+  shell: virtualenv -p python3 ./virtualenv chdir={{ pulpito_repo_path }}
   become_user: "{{ pulpito_user }}"
   when: virtualenv.stat.exists == false
 

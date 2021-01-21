@@ -2,11 +2,12 @@
 teuthology_extra_packages:
   # The following packages are requirements for bootstrapping teuthology
   - git-all
-  - python-dev
-  - python-pip
-  - python-virtualenv
+  - virtualenv
+  - python3-dev
+  - python3-pip
+  - python3-virtualenv
   - libev-dev
-  - python-libvirt
+  - python3-libvirt
   - beanstalkd
   - qemu-utils
   - libev-dev
