@@ -5,17 +5,21 @@
     tags:
       - always
 
+  - import_tasks: master-update.yml
+    tags:
+      - master-update
+
   - name: Launch instance
     ec2:
       aws_access_key: "{{ aws_access_key }}"
       aws_secret_key: "{{ aws_secret_key }}"
       key_name: "{{ keypair }}"
       group: "{{ security_group }}"
-      instance_type: "{{ instance_type }}"
+      instance_type: "{{ master_instance_type }}"
       image: "{{ image }}"
       wait: true
       region: "{{ region }}"
-      vpc_subnet_id: "{{ vpc_subnet_id }}" 
+      vpc_subnet_id: "{{ vpc_subnet_id }}"
       assign_public_ip: yes
       instance_tags: "{{ aws_tags }}"
       wait: yes
@@ -44,21 +48,21 @@
       label: "{{ item.id }} - {{ item.public_ip }}"
 
   - name: Remove jenkins docker old container
-    command: ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ubuntu@"{{ item.public_ip }}" sudo docker rm jenkins
+    command: ssh -i "{{ rook_key }}" ubuntu@"{{ item.public_ip }}" sudo docker rm jenkins
     with_items: '{{ ec2_instances.instances }}'
     loop_control:
       label: "{{ item.id }} - {{ item.public_ip }}"
 
   - name: Start jenkins container
-    command: ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ubuntu@"{{ item.public_ip }}" sudo docker run -d --name jenkins -p 8080:8080 -p 50000:50000 -v /mnt/jenkins/jenkins:/var/jenkins_home "{{ jenkins_image }}" 
+    command: ssh -i "{{ rook_key }}" ubuntu@"{{ item.public_ip }}" sudo docker run -d --name jenkins -p 8080:8080 -p 50000:50000 -v /mnt/jenkins/jenkins:/var/jenkins_home "{{ jenkins_master_image }}"
     with_items: '{{ ec2_instances.instances }}'
     loop_control:
       label: "{{ item.id }} - {{ item.public_ip }}"
 
-  - name: The instance was succssfuly started  
+  - name: The instance was succssfuly started
     debug:
       msg:
-      - "The Rook Jenkins is up and running the instance is named: {{ aws_tags.Name }}-{{ '%02d' | format(item.0 + 1) }}" 
+      - "The Rook Jenkins is up and running the instance is named: {{ aws_tags.Name }}-{{ '%02d' | format(item.0 + 1) }}"
       - "In order to make him avalible to public network you will need to add him to the load balancing target group"
     with_indexed_items: "{{ ec2_instances.instances }}"
     loop_control:
