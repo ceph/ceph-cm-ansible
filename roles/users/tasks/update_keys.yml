@@ -7,7 +7,7 @@
   local_action:
     module: git
     repo: "{{ keys_repo }}"
-    version: master
+    version: "{{ keys_branch }}"
     # http://tracker.ceph.com/issues/16615
     # depth: 1
     force: yes
