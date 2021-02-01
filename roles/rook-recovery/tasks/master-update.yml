@@ -1,0 +1,56 @@
+---
+  - name: Gather facts
+    ec2_instance_facts:
+      filters:
+        "tag:Name": "{{ master_name }}"
+        instance-state-name: running
+    register: master_metadata
+
+  - name: create date
+    shell: "date +%d-%m-%y"
+    register: date
+
+  - name: Take a image of the master
+    ec2_ami:
+      aws_access_key: "{{ aws_access_key }}"
+      aws_secret_key: "{{ aws_secret_key }}"
+      instance_id: "{{ master_metadata.instances[0].instance_id }}"
+      no_reboot: yes
+      wait: yes
+      name: "{{ master_name }}-{{ date.stdout }}"
+      tags:
+        Name: "{{ master_name }}-{{ date.stdout }}"
+
+  - name: Update apt cache
+    command: ssh -i "{{ rook_key }}" ubuntu@"{{ master_metadata.instances[0].public_dns_name }}" sudo apt-get update
+ 
+  - name: Update packages
+    command: ssh -i "{{ rook_key }}" ubuntu@"{{ master_metadata.instances[0].public_dns_name }}" sudo apt-get upgrade -y
+
+  - name: Check if system requires reboot
+    command: ssh -i "{{ rook_key }}" ubuntu@"{{ master_metadata.instances[0].public_dns_name }}" [ -f /var/run/reboot-required ]; echo $?
+    register: reboot
+
+  - name: Reboot if required
+    command: ssh -i "{{ rook_key }}" ubuntu@"{{ master_metadata.instances[0].public_dns_name }}" sudo reboot
+    ignore_errors: yes
+    when: reboot.stdout == '0'
+
+  - name: Wait for SSH to come up
+    wait_for: host={{ master_metadata.instances[0].public_dns_name }} port=22 delay=60 timeout=320 state=started
+    when: reboot.stdout == '0'
+
+  - name: Check if old container exist
+    command: ssh -i "{{ rook_key }}" ubuntu@"{{ master_metadata.instances[0].public_dns_name }}" docker ps -a | grep -i jenkins | wc -l
+    register: container
+    when: reboot.stdout == '0'
+
+  - name: Remove jenkins old container if exist
+    command: ssh -i "{{ rook_key }}" ubuntu@"{{ master_metadata.instances[0].public_dns_name }}" sudo docker rm jenkins
+    when:
+      - container.stdout == '1'
+      - reboot.stdout == '0'
+
+  - name: Start jenkins container
+    command: ssh -i "{{ rook_key }}" ubuntu@"{{ master_metadata.instances[0].public_dns_name }}" sudo docker run -d --name jenkins -p 8080:8080 -p 50000:50000 -v /mnt/jenkins/jenkins:/var/jenkins_home "{{ jenkins_master_image }}"
+    when: reboot.stdout == '0'
