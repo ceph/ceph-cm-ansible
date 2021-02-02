@@ -25,6 +25,8 @@ revoked_users: []
 # A repo containing SSH pubkeys. Will be used for each user that has no key
 # specified.
 keys_repo: "https://github.com/ceph/keys"
+# Branch of above repo to use
+keys_branch: master
 # Where to clone keys_repo on the *local* disk
 keys_repo_path: "~/.cache/src/keys"
 
