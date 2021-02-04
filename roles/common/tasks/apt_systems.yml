@@ -24,3 +24,15 @@
   when: etc_timezone is changed
   tags:
     - timezone
+
+- name: Mask sleep units
+  systemd:
+    name: "{{ item }}"
+    state: stopped
+    masked: yes
+  with_items:
+    - sleep.target
+    - suspend.target
+    - hibernate.target
+    - hybrid-sleep.target
+  when: ansible_distribution_major_version|int >= 20
