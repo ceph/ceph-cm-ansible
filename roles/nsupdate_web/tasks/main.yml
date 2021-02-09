@@ -29,6 +29,24 @@
     system: true
     shell: "/bin/false"
 
+- name: Make sure keys_dir exists
+  file:
+    path: "{{ keys_dir }}"
+    state: directory
+    owner: "{{ nsupdate_web_user }}"
+    group: "{{ nsupdate_web_user }}"
+  when: "'{{ secrets_path }}/{{ pubkey_name }}' is file"
+
+- name: Copy .key and .private keys to keys_dir
+  copy:
+    src: "{{ item }}"
+    dest: "{{ keys_dir }}/"
+    owner: "{{ nsupdate_web_user }}"
+    group: "{{ nsupdate_web_user }}"
+  with_fileglob:
+    - "{{ secrets_path }}/{{ pubkey_name | regex_replace('\\.[^\\.]+$', '') }}.*"
+  when: "'{{ secrets_path }}/{{ pubkey_name }}' is file"
+
 - name: Clone nsupdate_web repo
   git:
     repo: "{{ nsupdate_web_repo }}"
@@ -71,7 +89,7 @@
 
 - name: Ship nginx configuration
   template:
-    src: nsupdate_web_nginx
+    src: "nsupdate_web_nginx_{{ ansible_distribution | lower | replace(' ', '_') }}_{{ ansible_distribution_major_version }}"
     dest: "{{ nginx_available }}/nsupdate_web"
     owner: root
     group: root
@@ -85,7 +103,7 @@
 - name: Enable our nginx configuration
   file:
     src: "{{ nginx_available }}/nsupdate_web"
-    dest: "{{ nginx_enabled }}/nsupdate_web"
+    dest: "{{ nginx_enabled }}/{{ nsupdate_web_conf }}"
     state: link
 
 - name: Enable and restart nginx

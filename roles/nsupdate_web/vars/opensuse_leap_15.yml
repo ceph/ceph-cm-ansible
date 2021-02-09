@@ -6,3 +6,4 @@ packages:
   - nginx
 nginx_available: "/etc/nginx"
 nginx_enabled: "/etc/nginx/vhosts.d"
+nsupdate_web_conf: "nsupdate_web.conf"
