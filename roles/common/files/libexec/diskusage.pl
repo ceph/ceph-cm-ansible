@@ -56,7 +56,7 @@ my $crit = 0;
 my @parts;
 my $hostname = `hostname`;
 chomp $hostname;
-@parts = `mount | grep -vi fuse`;
+@parts = `mount | grep -vi fuse\|/snap`;
 
 #if ( $hostname eq 'zartan' ) {
 #	@parts = `mount`;
