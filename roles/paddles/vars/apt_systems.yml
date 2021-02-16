@@ -14,6 +14,7 @@ paddles_extra_packages:
   - supervisor
   # We use nginx to reverse-proxy
   - nginx
+  - liblz4-tool
 
 # We need this so we can disable apache2 to get out of the way of nginx
 apache_service: 'apache2'
