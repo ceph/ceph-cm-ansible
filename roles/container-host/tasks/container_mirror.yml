@@ -4,19 +4,20 @@
     path: "{{ item }}"
     state: directory
   with_items: "{{ container_mirror_cert_paths }}"
+  tags: cert
 
 - name: "Copy {{ container_mirror }} self-signed cert"
   copy:
     dest: "{{ item }}/docker-mirror.crt"
     content: "{{ container_mirror_cert }}"
   with_items: "{{ container_mirror_cert_paths }}"
+  tags: cert
 
 - name: Install registries-conf-ctl 
   pip:
     name: git+https://github.com/sebastian-philipp/registries-conf-ctl
     state: latest
-  tags:
-    - registries-conf-ctl
+  tags: registries-conf-ctl
 
 - name: "Check for docker's daemon.json"
   stat:
@@ -39,8 +40,7 @@
   command: registries-conf-ctl add-mirror docker.io "{{ container_mirror }}"
   environment:
     PATH: /usr/local/bin:/usr/bin
-  tags:
-    - registries-conf-ctl
+  tags: registries-conf-ctl
 
 # not very elegant but it's a workaround for now
 - name: Restart docker service

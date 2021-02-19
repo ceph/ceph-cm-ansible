@@ -19,25 +19,23 @@
     name: "{{ container_packages }}"
     state: latest
   when: container_packages|length > 0
+  tags: packages
 
 - set_fact:
     container_service_conf: "/etc/containers/registries.conf"
   when:
     - "'podman' in container_packages"
-  tags:
-    - container-mirror
+  tags: container-mirror
 
 - set_fact:
     container_service_conf: "/etc/docker/daemon.json"
   when:
     - "'docker.io' in container_packages"
     - "'podman' not in container_packages"
-  tags:
-    - container-mirror
+  tags: container-mirror
 
 - import_tasks: container_mirror.yml
   when:
     - container_mirror is defined
     - container_mirror_cert is defined
-  tags:
-    - container-mirror
+  tags: container-mirror

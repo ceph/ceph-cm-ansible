@@ -28,4 +28,10 @@ Tags
 registries-conf-ctl
     Add ``--skip-tags registries-conf-ctl`` to your ``ansible-playbook`` command if you don't want to use registries-conf-ctl_ to configure the container service's conf file.
 
+packages
+    Just install the packages.
+
+cert
+    Just put the container mirror cert in place.  Does **not** restart ``docker`` daemon.  Intended to let the role be idempotent but not disruptive in case ``docker`` processes are running.
+
 .. _registries-conf-ctl: https://github.com/sebastian-philipp/registries-conf-ctl
