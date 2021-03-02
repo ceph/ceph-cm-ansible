@@ -108,6 +108,10 @@ distros:
       iso: http://ftp.linux.ncsu.edu/pub/CentOS/8.2.2004/isos/x86_64/CentOS-8.2.2004-x86_64-dvd1.iso
       sha256: c87a2d81d67bbaeaf646aea5bedd70990078ec252fc52f5a7d65ff609871e255
       kickstart: cephlab_rhel.ks
+  "CentOS-8.3-x86_64":
+      iso: http://mirror.linux.duke.edu/pub/centos/8.3.2011/isos/x86_64/CentOS-8.3.2011-x86_64-dvd1.iso
+      sha256: aaf9d4b3071c16dbbda01dfe06085e5d0fdac76df323e3bbe87cce4318052247
+      kickstart: cephlab_rhel.ks
   "Ubuntu-12.04-server-x86_64":
       iso: "http://releases.ubuntu.com/12.04/ubuntu-12.04.5-server-amd64.iso"
       sha256: af224223de99e2a730b67d7785b657f549be0d63221188e105445f75fb8305c9
