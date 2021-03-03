@@ -167,6 +167,10 @@ A list of packages to upgrade. These lists are defined in the vars files in ``va
 
     packages_to_upgrade: []
 
+A list of packages to install via ``apt install --no-install-recommends``::
+
+    no_recommended_packages: []
+
 A list of packages to install via pip. These lists are defined in the vars files in ``vars/``::
 
     pip_packages_to_install: []

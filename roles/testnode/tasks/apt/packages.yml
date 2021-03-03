@@ -37,3 +37,10 @@
     state: present
     force: yes
   when: ansible_architecture != "aarch64"
+
+- name: Install packages with --no-install-recommends
+  apt:
+    name: "{{ no_recommended_packages|list }}"
+    state: present
+    install_recommends: no
+  when: no_recommended_packages|length > 0

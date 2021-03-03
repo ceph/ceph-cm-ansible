@@ -53,7 +53,6 @@ common_packages:
   ###
   - vim
   - pdsh
-  - collectl
   # for blktrace and seekwatcher
   - blktrace
   ###
@@ -93,6 +92,9 @@ packages_to_upgrade:
 
 non_aarch64_packages_to_upgrade:
   - libapache2-mod-fastcgi
+
+no_recommended_packages:
+  - collectl
 
 packages_to_remove:
    # openmpi-common conflicts with mpitch stuff
