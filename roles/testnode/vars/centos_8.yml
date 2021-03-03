@@ -35,6 +35,9 @@ yum_mirrorlists:
   - CentOS-Base-mirrorlist
   - CentOS-Extras-mirrorlist
 
+packages_to_upgrade:
+  - libgcrypt # explicitly tied to qemu build
+
 packages:
   # for package-cleanup
   - dnf-utils
