@@ -39,7 +39,7 @@
 
 - name: Import the distro (also creates the profile)
   command: cobbler import --path={{ iso_mount }} --name={{ distro_name }} --arch={{ arch }}
-  register: import
+  register: imported
   when: mount is defined and mount is changed
 
 # In the next two step we need to

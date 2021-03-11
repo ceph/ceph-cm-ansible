@@ -53,7 +53,7 @@
   set_fact:
     profile_found:
         ((profile is defined and profile.stdout == distro_name) or
-         (import is defined and import.rc == 0))
+         (imported is defined and imported.rc == 0))
 
 - import_tasks: update_kickstart.yml
   when: distro.kickstart is defined and

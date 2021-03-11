@@ -31,9 +31,9 @@
   command: cobbler distro add --kernel {{ kernel_path }} --initrd {{ initrd_path }} --name {{ distro_name }}
   when: download is changed or (files_exist and
         profile is defined and profile.stdout == '')
-  register: import
+  register: imported
 
 - name: Add the profile to cobbler
   command: cobbler profile add --name {{ distro_name }} --distro {{ distro_name }}
   when: import is defined and import.stdout == ''
-  register: import
+  register: imported
