@@ -34,6 +34,7 @@
     - { role: cobbler_profile, distro_name: CentOS-7.6-x86_64, tags: ['centos7.6'] }
     - { role: cobbler_profile, distro_name: CentOS-7.7-x86_64, tags: ['centos7.7'] }
     - { role: cobbler_profile, distro_name: CentOS-7.8-arm, tags: ['centos7.8-arm'] }
+    - { role: cobbler_profile, distro_name: CentOS-7.9-x86_64, tags: ['centos7.9'] }
     - { role: cobbler_profile, distro_name: CentOS-8.0-x86_64, tags: ['centos8.0'] }
     - { role: cobbler_profile, distro_name: CentOS-8.1-x86_64, tags: ['centos8.1'] }
     - { role: cobbler_profile, distro_name: CentOS-8.1-aarch64, tags: ['centos8.1-aarch64'] }

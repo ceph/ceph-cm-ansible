@@ -91,6 +91,10 @@ distros:
       sha256: 386e85a0d49d457252fcdbfa23d2082fc3f132f8405622831b07fd27a6071c7e
       kickstart: cephlab_rhel.ks
       arch: arm
+  "CentOS-7.9-x86_64":
+      iso: http://mirror.linux.duke.edu/pub/centos/7.9.2009/isos/x86_64/CentOS-7-x86_64-DVD-2009.iso
+      sha256: e33d7b1ea7a9e2f38c8f693215dd85254c3a4fe446f93f563279715b68d07987
+      kickstart: cephlab_rhel.ks
   "CentOS-8.0-x86_64":
       iso: http://mirror.linux.duke.edu/pub/centos/8.0.1905/isos/x86_64/CentOS-8-x86_64-1905-dvd1.iso
       sha256: ea17ef71e0df3f6bf1d4bf1fc25bec1a76d1f211c115d39618fe688be34503e8
