@@ -48,3 +48,10 @@
   when: (repo_file is defined and repo_file is changed) or
         (gpg_keys is defined and gpg_keys is changed) or
         (version_repo_file is defined and version_repo_file is changed)
+
+# set the releasever cause without it rhel-7-server-rpms repo fails on rhel7.9 machines https://tracker.ceph.com/issues/49771
+- name: set the releasevar on rhel
+  copy:
+    content: "{{ ansible_lsb.release }}"
+    dest: /etc/yum/vars/releasever
+  when: ansible_distribution == "RedHat"
