@@ -25,6 +25,16 @@
     validate_certs: no
   when: use_satellite == true
 
+# set the releasever cause without it rhel-7-server-rpms repo fails on rhel7.9 machines
+# https://tracker.ceph.com/issues/49771
+# We have to do this here (instead of in testnodes role) because some package transactions fail during the common role.
+# However, we do not want to lock the release ver on all our systems; just testnodes.
+- name: Set the releasever
+  copy:
+    content: "{{ ansible_lsb.release }}"
+    dest: /etc/yum/vars/releasever
+  when: inventory_hostname in groups['testnodes']
+
 - name: Determine if node is registered with subscription-manager.
   command: subscription-manager identity
   register: subscription
