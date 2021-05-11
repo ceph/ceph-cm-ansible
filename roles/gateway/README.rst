@@ -78,8 +78,8 @@ VLAN in your lab.  The subelements ``peerdns`` and ``dns{1,2}`` are optional for
 all but one NIC.  These are what set your nameservers in
 ``/etc/resolv.conf``.
 ``dns1`` and ``dns2`` should be defined under a single NIC and ``peerdns``
-should be set to ``"yes"``.  Defined in the
-secrets repo::
+should be set to ``"yes"``.  ``routes`` is optional but must be formatted as documented in RHEL_ documentation.
+Defined in the secrets repo::
 
     # Example:
     gw_networks:
@@ -94,6 +94,13 @@ secrets repo::
         search "private.example.com"
         dns1: "192.168.1.1"
         dns2: "8.8.8.8"
+        routes: |
+          ADDRESS0=192.168.1.0
+          NETMASK0=255.255.240.0
+          GATEWAY0=192.168.1.1
+          ADDRESS1=172.21.64.0
+          NETMASK1=255.255.252.0
+          GATEWAY1=192.168.1.1
       public:
         ifname: "eth1"
         etc...
@@ -154,3 +161,4 @@ To Do
 - Generate and pull (to secrets?) CA, keys, and certificates
 
 .. _Sepia: https://ceph.github.io/sepia/
+.. _RHEL: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/networking_guide/sec-Configuring_Static_Routes_in_ifcfg_files#bh-Static_Routes_Using_the_Network-Netmask_Directives_Format
