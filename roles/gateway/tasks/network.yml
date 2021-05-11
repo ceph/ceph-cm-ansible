@@ -6,6 +6,13 @@
   with_dict: "{{ gw_networks }}"
   register: interfaces
 
+- name: Write additional routes
+  copy:
+    content: "{{ item.value.routes }}"
+    dest: "/etc/sysconfig/network-scripts/route-{{ item.value.ifname }}"
+  with_dict: "{{ gw_networks }}"
+  when: item.value.routes is defined
+
 # Restart networking right away if changes made.  This makes sure
 # the public interface is up and ready for OpenVPN to bind to.
 - name: Restart networking
