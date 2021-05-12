@@ -1,0 +1,17 @@
+---
+### This playbook simply converts a CentOS host to CentOS Stream.
+### It is primarily intended to be run during Cobbler's cephlab_ansible.sh post-install trigger.
+
+- hosts:
+    - all
+  become: true
+  gather_facts: true
+  tasks:
+
+  - name: Swap to Stream Repos
+    command: dnf -y swap centos-linux-repos centos-stream-repos
+    when: ansible_distribution == 'CentOS'
+
+  - name: Sync Stream Repos
+    command: dnf -y distro-sync
+    when: ansible_distribution == 'CentOS'
