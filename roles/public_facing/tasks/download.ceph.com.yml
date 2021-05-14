@@ -68,4 +68,15 @@
     minute: "0"
     job: "/usr/libexec/make_timestamp"
 
+# Occasionally rsync dot file get leftover either on the signer box or on d.c.c.
+# The dotfiles cause issues for d.c.c mirrors because the script just quits instead of skipping files it can't access.
+# https://www.spinics.net/lists/ceph-users/msg37976.html
+#
+# The -mmin +120 is so the cronjob doesn't delete files that are in the process of being rsynced (like during a release).
+- name: Cron entry for deleting rsync dotfiles
+  cron:
+    name: "Delete rsync dotfiles"
+    hour: "0"
+    job: 'find /data/download.ceph.com/www -type f -name ".[^.]*" -mmin +120 -delete'
+
 - import_tasks: letsencrypt_nginx.yml
