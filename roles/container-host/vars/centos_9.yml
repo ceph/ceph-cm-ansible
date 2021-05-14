@@ -1,0 +1,5 @@
+---
+container_packages:
+  - podman
+# Doesn't exist yet
+#  - podman-docker

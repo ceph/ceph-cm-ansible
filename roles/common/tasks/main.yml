@@ -41,9 +41,11 @@
     - monitoring-scripts
     - nagios
 
-# configure nagios (Except OpenSUSE and RHEL8)
+# configure nagios (Except OpenSUSE and CentOS 9 Stream)
 - import_tasks: nagios.yml
-  when: ansible_pkg_mgr != "zypper"
+  when:
+    - ansible_pkg_mgr != "zypper"
+    - not (ansible_distribution == "CentOS" and ansible_distribution_major_version == "9")
   tags:
     - nagios
 

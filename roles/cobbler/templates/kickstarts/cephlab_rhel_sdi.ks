@@ -3,10 +3,20 @@
 # kickstart template for Fedora 8 and later.
 # (includes %end blocks)
 # do not use with earlier distros
+#set distro = $getVar('distro','').split("-")[0]
+#set distro_ver = $getVar('distro','').split("-")[1]
+#if $distro == 'RHEL' or $distro == 'CentOS'
+#set distro_ver_major = $distro_ver.split(".")[0]
+#set distro_ver_minor = $distro_ver.split(".")[1]
+#end if
 
 #platform=x86, AMD64, or Intel EM64T
 # System authorization information
+#if int($distro_ver_major) < 9
 auth  --useshadow  --enablemd5
+#else
+authselect select minimal
+#end if
 #set os_version = $getVar('os_version','')
 # Partition clearing information
 clearpart --all --initlabel
@@ -48,8 +58,10 @@ selinux --enforcing
 skipx
 # System timezone
 timezone Etc/UTC --utc
+#if int($distro_ver_major) < 9
 # Install OS instead of upgrade
 install
+#end if
 
 %pre
 $SNIPPET('log_ks_pre')
