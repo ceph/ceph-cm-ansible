@@ -15,8 +15,11 @@ python3
 #set distro_ver_minor = $distro_ver.split(".")[1]
 ## These packages are available in all RHEL/CentOS versions but not Fedora
 perl
+## These packages are not available in CentOS 9 Stream
+#if int($distro_ver_major) < 9
 redhat-lsb-core
-#if not int($distro_ver_major) == 8
+#end if
+#if int($distro_ver_major) < 8
 ## These packages should be installed on RHEL/CentOS 7
 libselinux-python
 libsemanage-python

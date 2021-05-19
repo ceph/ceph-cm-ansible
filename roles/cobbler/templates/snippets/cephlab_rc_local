@@ -3,11 +3,14 @@
 # Set proper location for firstboot ansible post-install trigger
 #set distro = $getVar('distro','').split("-")[0]
 #set distro_ver = $getVar('distro','').split("-")[1]
-#if $distro == 'RHEL'
+#if ($distro == 'RHEL') or ($distro == 'CentOS')
 #set distro_ver = $distro_ver.split(".")[0]
 #end if
 #if ($distro == 'Fedora' and int($distro_ver) >= 22) or ($distro == 'RHEL' and int($distro_ver) >= 8)
 #set script = '/etc/rc.d/rc.local'
+#else if $distro == 'CentOS' and int($distro_ver) >= 9
+#set script = '/etc/rc.d/rc.local'
+systemctl enable rc-local.service
 #else if $distro == 'openSUSE'
 #set script = '/etc/init.d/boot.local'
 #else
