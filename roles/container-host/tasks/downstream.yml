@@ -1,0 +1,5 @@
+---
+- name: Uninstall packages requested by downstream QE
+  package:
+    state: absent
+    name: podman-docker

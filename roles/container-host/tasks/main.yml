@@ -41,3 +41,12 @@
     - container_mirror_cert is defined
   tags:
     - container-mirror
+
+# I hate this but there was no other elegant way to do it.  I considered:
+# 1) Copying {{ packages }} from roles/testnode/vars/redhat_8.yml to
+#    ceph-octo-secrets with podman-docker removed but I really don't want to
+#    keep two separate RHEL8 package lists based on the lab we're in.
+# 2) Removing during the tools/prep-fog-capture playbook but QE runs
+#    ceph-cm-ansible again sometimes which would reinstall podman-docker.
+- import_tasks: downstream.yml
+  when: lab_name is defined and lab_name == "octo"
