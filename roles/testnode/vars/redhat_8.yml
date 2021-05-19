@@ -34,8 +34,6 @@ packages:
   - redhat-lsb
   - firewalld
   - wget
-  # for cephadmunit.py to uniformly run 'docker kill -p ...'
-  - podman-docker
   - libev-devel
   - valgrind
   - nfs-utils
