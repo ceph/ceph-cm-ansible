@@ -1,0 +1,26 @@
+---
+- name: "Extract distro name and major version from {{ distro_name }}"
+  set_fact:
+    distro_and_version: "{{ distro_name.split('.')[0] }}"
+
+- name: "Extract distro name from {{ distro_name }}"
+  set_fact:
+    stream_distro_name: "{{ distro_name.split('-')[0] }}"
+
+- name: "Extract the major version number from {{ distro_and_version }}"
+  set_fact:
+    stream_distro_version: "{{ distro_and_version.split('-')[1] }}"
+
+- name: "Get the latest non-Stream profile that matches this {{ stream_distro_name }} Stream distro version (e.g., CentOS-8.3-x86_64)"
+  shell: "cobbler profile list | grep {{ distro_and_version }} | grep -v 'stream\\|arm\\|aarch\\|stock' | sort -V | tail -n 1 | xargs"
+  register: latest_non_stream_profile
+
+# See commit message for why we do it this way
+- name: "Add {{ distro_name }} to Cobbler as a sub-profile of {{ latest_non_stream_profile.stdout }}"
+  command: "cobbler profile add --name {{ distro_name }} --parent {{ latest_non_stream_profile.stdout }} --clobber"
+  register: imported
+  when: latest_non_stream_profile.stdout_lines|length != 0
+
+# Try importing as an ISO instead if we can't create a sub-profile
+- import_tasks: import_distro_iso.yml
+  when: latest_non_stream_profile.stdout_lines|length == 0
