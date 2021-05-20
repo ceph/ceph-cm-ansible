@@ -161,3 +161,4 @@
   file:
       path: /ceph-qa-ready
       state: touch
+  when: (ran_from_cephlab_playbook is undefined or not ran_from_cephlab_playbook|bool)
