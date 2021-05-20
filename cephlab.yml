@@ -7,6 +7,11 @@
 # if this node is in the teuthology group, configure it
 - import_playbook: teuthology.yml
 
+- hosts: testnodes
+  tasks:
+    - set_fact:
+        ran_from_cephlab_playbook: true
+
 # if this node is in the testnode group, configure it
 - import_playbook: testnodes.yml
 
@@ -24,3 +29,14 @@
 
 # if this node is in the pulpito group, configure it
 - import_playbook: pulpito.yml
+
+# Touch a file to indicate we are done. This is something chef did;
+# teuthology.task.internal.vm_setup() expects it.
+- hosts: testnodes
+  become: true
+  tasks:
+    - name: Touch /ceph-qa-ready
+      file:
+          path: /ceph-qa-ready
+          state: touch
+      when: ran_from_cephlab_playbook|bool
