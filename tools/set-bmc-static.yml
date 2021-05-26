@@ -7,7 +7,7 @@
 ### SSH access to the host or not
 
 - hosts:
-    - testnodes
+    - ipmi
   become: true
   gather_facts: false
   vars:
