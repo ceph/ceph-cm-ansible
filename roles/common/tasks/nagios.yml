@@ -30,6 +30,22 @@
     - ansible_os_family == "RedHat"
     - ansible_distribution_major_version|int <= 7
     - have_epel.rc == 1
+    - ansible_architecture == "x86_64"
+
+- name: Install nrpe without epel(aarch64)
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - https://mirrors.huaweicloud.com/epel/7/aarch64/Packages/n/nagios-common-4.4.3-1.el7.aarch64.rpm
+    - https://mirrors.huaweicloud.com/epel/7/aarch64/Packages/n/nrpe-3.2.1-8.el7.aarch64.rpm
+    - https://mirrors.huaweicloud.com/epel/7/aarch64/Packages/n/nagios-plugins-2.2.1-17.20190829gitfb792ff.el7.aarch64.rpm
+    - https://mirrors.huaweicloud.com/epel/7/aarch64/Packages/n/nagios-plugins-load-2.2.1-17.20190829gitfb792ff.el7.aarch64.rpm
+  when:
+    - ansible_os_family == "RedHat"
+    - ansible_distribution_major_version|int <= 7
+    - have_epel.rc == 1
+    - ansible_architecture == "aarch64"
 
 - name: Install nrpe package and dependencies (RHEL/CentOS)
   package:
