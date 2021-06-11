@@ -11,6 +11,13 @@
     content: "{{ container_mirror_cert }}"
   with_items: "{{ container_mirror_cert_paths }}"
 
+- name: Ensure git is installed
+  package:
+    name: git
+    state: present
+  tags:
+    - registries-conf-ctl
+
 - name: Install registries-conf-ctl 
   pip:
     name: git+https://github.com/sebastian-philipp/registries-conf-ctl
