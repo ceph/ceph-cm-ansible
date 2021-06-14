@@ -42,7 +42,7 @@
   changed_when: false
 
 - import_tasks: import_distro_iso.yml
-  when: profile_type|default('') == 'iso' and not '"stream" in distro_name'
+  when: profile_type|default('') == 'iso' and '"stream" not in distro_name'
 
 - import_tasks: import_distro_image.yml
   when: profile_type|default('') == 'image'
