@@ -54,12 +54,13 @@ host_vars
 ---------
 If required, define these in your ansible inventory ``host_vars`` file.
 
-``ufw_allowed_ports: []`` should be a list of ports you want UFW to allow traffic through.  Port numbers must be double-quoted due to the way the task processes stdout of ``ufw status``.  Example::
+``ufw_allowed_ports: []`` should be a list of ports you want UFW to allow traffic through.  You may optionally defined a ``source_ip`` by adding ``:1.2.3.4`` after the port.  List items must be double-quoted due to the way the task processes stdout of ``ufw status``.  Example::
 
     ufw_allowed_ports:
       - "22"
       - "80"
       - "443"
+      - "3306:1.2.3.4"
 
 ``f2b_filters: {}`` is a dictionary of additional filters fail2ban should use.  For example, our status portal running Cachet has an additional fail2ban service monitoring repeated login attempts to the admin portal.  ``maxlines`` is an optional variable.  See filter example::
 
