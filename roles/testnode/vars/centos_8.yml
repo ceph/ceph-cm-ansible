@@ -39,6 +39,7 @@ packages_to_upgrade:
   - libgcrypt # explicitly tied to qemu build
 
 packages:
+  - redhat-lsb-core
   # for package-cleanup
   - dnf-utils
   - sysstat
