@@ -24,7 +24,7 @@
 # Instead of deleting all rules and re-opening ports with each playbook run,
 # we'll compare a list of ports we specify should be open with a list of currently open ports.
 - name: Get list of currently allowed ports
-  shell: ufw status | grep 'ALLOW' | grep -v v6 | grep -o '[0-9]*'
+  shell: ufw status | grep 'ALLOW' | grep -v v6 | awk '{ print $1 }'
   register: ufw_current_allowed_raw
   # Don't fail if we don't get any output
   failed_when: false
@@ -47,7 +47,8 @@
 - name: Enable any ports we're missing
   ufw:
     rule: allow
-    port: "{{ item }}"
+    port: "{% if ':' in item %}{% set port_and_src = item.split(':') %}{{ port_and_src[0] }}{% else %}{{ item }}{% endif %}"
+    from_ip: "{% if ':' in item %}{% set port_and_src = item.split(':') %}{{ port_and_src[1] }}{% else %}any{% endif %}"
   with_items: "{{ ufw_ports_to_enable }}"
 
 # ufw_allowed_ports are excluded from the default policy
