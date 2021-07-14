@@ -1,9 +1,9 @@
 ---
-jenkins_master_image: jenkins/jenkins:2.235.5
+jenkins_master_image: jenkins/jenkins:2.289.1
 keypair: root-jenkins-new-key
 master_instance_type: m4.large
 security_group: rook-jenkins-group
-image: ami-09c003703cafa9056
+image: ami-0aaf5dbaa4cbe5771
 region: us-east-1
 vpc_subnet_id: subnet-c72b609b
 instance_name: Recovery-Rook-Jenkins
