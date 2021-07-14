@@ -59,6 +59,8 @@
   when:
     - ansible_lsb.description is defined
     - '"Stream" in ansible_lsb.description'
+  tags:
+    - repos
 
 - name: Setup local repo files.
   import_tasks: yum/repos.yml

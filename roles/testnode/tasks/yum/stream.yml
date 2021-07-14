@@ -15,3 +15,8 @@
     - ansible_lsb.description is defined
     - '"Stream" in ansible_lsb.description'
 
+- name: Include CentOS Stream specific variables
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution | lower | regex_replace(' ', '_') }}_{{ ansible_distribution_major_version }}_stream.yml"
+    - empty.yml
