@@ -54,6 +54,14 @@
   command:
     rpm --rebuilddb
 
+- name: Perform CentOS Stream related tasks
+  import_tasks: yum/stream.yml
+  when:
+    - ansible_lsb.description is defined
+    - '"Stream" in ansible_lsb.description'
+  tags:
+    - repos
+
 - name: Setup local repo files.
   import_tasks: yum/repos.yml
   tags:
