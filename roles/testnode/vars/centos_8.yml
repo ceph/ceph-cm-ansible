@@ -28,12 +28,19 @@ yum_repos:
     gpgcheck: 1
     enabled: 1
     gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+  CentOS-PowerTools:
+    name: "CentOS-$releasever - PowerTools"
+    mirrorlist: file:///etc/yum.repos.d/CentOS-PowerTools-mirrorlist
+    gpgcheck: 1
+    enabled: 1
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
 
 # These are files in roles/testnodes/templates/mirrorlists/8/
 yum_mirrorlists:
   - CentOS-AppStream-mirrorlist
   - CentOS-Base-mirrorlist
   - CentOS-Extras-mirrorlist
+  - CentOS-PowerTools-mirrorlist
 
 packages_to_upgrade:
   - libgcrypt # explicitly tied to qemu build
