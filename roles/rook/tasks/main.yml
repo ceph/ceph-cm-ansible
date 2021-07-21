@@ -1,0 +1,18 @@
+---
+- name: Include secrets
+  include_vars: "{{ secrets_path | mandatory }}/aws.yaml"
+  no_log: true
+  tags:
+    - always
+
+- import_tasks: rook-jenkins-update.yml
+  tags:
+    - rook-jenkins-update
+
+- import_tasks: rook-os-update.yml
+  tags:
+    - rook-os-update
+
+- import_tasks: rook-recovery.yml
+  tags:
+    - rook-recovery
