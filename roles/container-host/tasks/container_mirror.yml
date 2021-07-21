@@ -11,11 +11,9 @@
     content: "{{ container_mirror_cert }}"
   with_items: "{{ container_mirror_cert_paths }}"
 
-- name: Ensure installation dependencies are installed
+- name: Ensure git is installed
   package:
-    name:
-      - git
-      - python-pip
+    name: git
     state: present
   tags:
     - registries-conf-ctl
