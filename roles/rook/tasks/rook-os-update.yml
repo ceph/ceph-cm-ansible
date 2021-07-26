@@ -8,15 +8,15 @@
 
 - name: Take a image of the master
   ec2_ami:
-  aws_access_key: "{{ aws_access_key }}"
-  aws_secret_key: "{{ aws_secret_key }}"
-  instance_id: "{{ master_metadata.instances[0].instance_id }}"
-  no_reboot: yes
-  wait: yes
-  wait_timeout: 3000
-  name: "{{ master_name }}-{{ ansible_date_time.date }}"
-  tags:
-    Name: "{{ master_name }}-{{ ansible_date_time.date }}"
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    instance_id: "{{ master_metadata.instances[0].instance_id }}"
+    no_reboot: yes
+    wait: yes
+    wait_timeout: 3000
+    name: "{{ master_name }}-{{ ansible_date_time.date }}"
+    tags:
+      Name: "{{ master_name }}-{{ ansible_date_time.date }}"
 
 - name: Update apt cache
   command: ssh -i "{{ rook_key }}" ubuntu@"{{ master_metadata.instances[0].public_dns_name }}" sudo apt-get update
