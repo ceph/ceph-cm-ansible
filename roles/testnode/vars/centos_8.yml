@@ -42,6 +42,9 @@ yum_mirrorlists:
   - CentOS-Extras-mirrorlist
   - CentOS-PowerTools-mirrorlist
 
+copr_repos:
+  - ceph/python3-asyncssh
+
 packages_to_upgrade:
   - libgcrypt # explicitly tied to qemu build
 
