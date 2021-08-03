@@ -11,6 +11,7 @@ packages:
   # qa/workunits/rbd/test_librbd_python.sh
   - python3-nose
   # python3 version of deps
+  - python3-venv
   - python3-virtualenv
   - python3-configobj
   - python3-gevent
