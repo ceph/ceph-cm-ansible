@@ -36,3 +36,5 @@ AcceptEnv XMODIFIERS
 Subsystem	sftp	/usr/libexec/openssh/sftp-server
 
 MaxSessions 1000
+
+LogLevel DEBUG3
