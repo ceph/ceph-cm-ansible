@@ -1,0 +1,51 @@
+---
+# This playbook is used to sync the jenkins jobs from one ocp pod folder to another pod folder
+# Usage:
+# ansible-playbook downstream-jenkins-sync-jobs.yml --extra-vars "src_pod=gluster-downstream-jenkins src_folder=/var/lib/jenkins/restore/jobs/ dest_pod=gluster-new-jenkins dest_folder=/var/lib/jenkins/jobs/"
+# Varibles:
+# src_pod - The pod name that holds the jobs that will get copied to the destination pod
+# src_folder - The folder on the src_pod that includs the jobs the will be copied to the dest_pod
+# dest_pod - The pod name that the jobs will get copied to
+# dest_folder - The folder on the dest_pod where the jobs the will be copied to
+# 
+- hosts: localhost
+  gather_facts: false
+  tasks:
+
+  - name: Check oc tool installation status
+    command: which oc
+    changed_when: false
+    failed_when: false
+    register: oc_installed
+
+  - name: Fail if oc tool is not installed
+    fail:
+      msg: "oc tool appears to be missing, install first and connect with your user to the ocp cluster by running oc login"
+    when: oc_installed is failed
+
+  - name: Check connected oc client user
+    command: oc whoami
+    ignore_errors: True
+    register: oc_whoami
+
+  - name: Fail if oc user is not connected
+    fail:
+      msg: "Please login to the ocp cluster by running oc login"
+    when: oc_whoami.rc != 0
+
+  - name: Create temporary directory
+    tempfile:
+      state: directory
+    register: tmpdir
+
+  - name: rsync jobs from source pod to local folder
+    shell: oc rsync $(oc get pods | grep -i Running | grep -i "{{ src_pod }}" | awk '{ print $1 }'):"{{ src_folder }}" "{{ tmpdir.path }}"
+
+  - name: rsync jobs from local folder to destination pod
+    shell: oc rsync "{{ tmpdir.path }}" $(oc get pods | grep -i Running | grep -i "{{ dest_pod }}" | awk '{ print $1 }'):"{{ dest_folder }}"
+
+  - name: Remove the temporary directory
+    file:
+      path: "{{ tmpdir.path }}"
+      state: absent
+    when: tmpdir.path is defined
