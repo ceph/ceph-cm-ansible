@@ -18,8 +18,8 @@ PasswordAuthentication yes
 ChallengeResponseAuthentication no
 
 # GSSAPI options
-GSSAPIAuthentication yes
-GSSAPICleanupCredentials yes
+GSSAPIAuthentication no
+#GSSAPICleanupCredentials yes
 
 UsePAM yes
 
