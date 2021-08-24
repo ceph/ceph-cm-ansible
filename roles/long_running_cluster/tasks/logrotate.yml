@@ -7,12 +7,13 @@
 - name: "Write custom ceph logrotate config"
   template:
     src: ceph-common.logrotate
-    dest: /etc/logrotate.d/ceph-common
+    dest: /etc/logrotate.d/cm-ansible-ceph-common
+  when: lrc_fsid is not defined
 
 - name: "Create cronjob to logrotate every 6 hours"
   cron:
     name: "Logrotate ceph logs every 6 hours"
     minute: "25"
     hour: "0,6,12,18"
-    job: "/usr/sbin/logrotate -f /etc/logrotate.d/ceph-common"
+    job: "/usr/sbin/logrotate -f /etc/logrotate.d/{{ lrc_fsid|default('cm-ansible-ceph-common') }}"
     user: root
