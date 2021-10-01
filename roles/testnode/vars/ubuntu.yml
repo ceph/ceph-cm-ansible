@@ -80,6 +80,8 @@ common_packages:
   - nfs-kernel-server
   # for add-apt-repository
   - software-properties-common
+  # for https://twitter.com/letsencrypt/status/1443621997288767491
+  - libgnutls30
 
 non_aarch64_common_packages:
   - smbios-utils
