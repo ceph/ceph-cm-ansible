@@ -41,7 +41,9 @@ Variables
 
 ``paddles_repo``: Optionally override the paddles git repo - not relevant for containers
 
-``paddles_branch``: Optionally override the paddles repo branch
+``paddles_branch``: Optionally override the paddles repo branch.
+For GitHub pull requests it is also possible to use refs/pull/X/merge or refs/pull/X/head
+instead of branch.
 
 ``log_host``: The host where teuthology logs are stored
 
