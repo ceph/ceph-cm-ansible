@@ -1,4 +1,9 @@
 ---
+- name: Fail on zypper systems if paddles_containerized is set
+  fail:
+    msg: "'paddles_containerized' is not yet supported on zypper systems"
+  when: paddles_containerized
+
 - name: Include package type specific vars.
   include_vars: "zypper_systems.yml"
   tags:

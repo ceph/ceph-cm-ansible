@@ -18,9 +18,15 @@
   tags:
     - always
 
+- name: Set db_host
+  set_fact:
+    db_host: "{% if paddles_containerized %}{{ inventory_hostname }}{% else %}localhost{% endif %}"
+  tags:
+    - always
+
 - name: Set db_url
   set_fact:
-    db_url: "postgresql+psycopg2://{{ paddles_user }}:{{ db_pass }}@localhost/paddles"
+    db_url: "postgresql+psycopg2://{{ paddles_db_user }}:{{ db_pass }}@{{ db_host }}/paddles"
   no_log: true
   tags:
     - always
@@ -40,13 +46,26 @@
 
 # Set up the actual paddles project
 - import_tasks: setup_paddles.yml
+  when: not paddles_containerized
 
 # Set up the DB which paddles uses
 - import_tasks: setup_db.yml
+  tags:
+    - db
+
+# Set up docker if necessary
+- import_tasks: setup_docker.yml
+  when: paddles_containerized
+  tags:
+    - service
 
 # Configure the system to run paddles as a daemon
 - import_tasks: setup_service.yml
+  when: not paddles_containerized
+  tags:
+    - service
 
 # Configure nginx as a reverse proxy
 - import_tasks: nginx.yml
-  when: not ansible_distribution is search("openSUSE")
+  when:
+    - not ansible_distribution is search("openSUSE")

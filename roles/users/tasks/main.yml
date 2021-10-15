@@ -11,12 +11,16 @@
   delay: 10
   # perform_users_role is True by default so no need to fail the play if there's an error.
   ignore_errors: true
+  tags:
+    - pubkeys
 
 - name: Check host's /keys-repo-sha1 sentinel file
   command: cat /keys-repo-sha1
   register: sentinel_sha1
   # perform_users_role is True by default so no need to fail the play if there's an error.
   failed_when: false
+  tags:
+    - pubkeys
 
 - name: Determine if we can skip users and pubkeys updates
   set_fact:
@@ -52,3 +56,5 @@
     content: "{{ keys_repo_head.stdout }}"
     dest: /keys-repo-sha1
   when: keys_repo_head is defined
+  tags:
+    - pubkeys

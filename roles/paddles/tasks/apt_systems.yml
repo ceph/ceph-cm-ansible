@@ -12,3 +12,13 @@
     cache_valid_time: 600
   tags:
     - packages
+
+- name: Install docker packages
+  apt:
+    name: "{{ paddles_docker_packages|list }}"
+    state: latest
+    update_cache: yes
+    cache_valid_time: 600
+  when: paddles_containerized
+  tags:
+    - packages

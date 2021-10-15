@@ -1,0 +1,72 @@
+---
+- name: Add paddles_user to the docker group
+  user:
+    name: "{{ paddles_user }}"
+    append: yes
+    groups:
+      - docker
+
+- name: Install docker's python module
+  become_user: "{{ paddles_user }}"
+  pip:
+    name: docker
+    state: latest
+    executable: pip3
+    extra_args: --user
+
+- name: Init docker swarm
+  become_user: "{{ paddles_user }}"
+  docker_swarm:
+    state: present
+
+- name: Create secret for the database URL
+  become_user: "{{ paddles_user }}"
+  docker_secret:
+    name: paddles_sqlalchemy_url
+    data: "{{ db_url }}"
+
+- name: Pull the paddles container image
+  become_user: "{{ paddles_user }}"
+  docker_image:
+    name: "{{ paddles_container_image }}"
+    source: pull
+  register: image_pull
+
+- name: Create docker swarm service
+  become_user: "{{ paddles_user }}"
+  docker_swarm_service:
+    name: paddles
+    state: present
+    replicas: "{{ paddles_container_replicas }}"
+    update_config:
+      parallelism: 1
+      delay: 10s
+      monitor: 10s
+      failure_action: rollback
+    rollback_config:
+      order: start-first
+    image: "{{ paddles_container_image }}"
+    resolve_image: true
+    force_update: "{{ image_pull.changed }}"
+    publish:
+      - published_port: "{{ paddles_port }}"
+        target_port: 8080
+    logging:
+      driver: journald
+      options:
+        tag: paddles
+    env:
+      - "PADDLES_ADDRESS={{ paddles_address }}"
+      - "PADDLES_SERVER_HOST=0.0.0.0"
+      - "SENTRY_DSN={{ paddles_sentry_dsn }}"
+      - "PADDLES_STATSD_HOST={{ paddles_statsd_host }}"
+      - "PADDLES_STATSD_PREFIX={{ paddles_statsd_prefix }}"
+      - "GUNICORN_CMD_ARGS=--workers=2 --max-requests=10000"
+    secrets:
+      - secret_name: paddles_sqlalchemy_url
+        filename: "/run/secrets/paddles_sqlalchemy_url"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080"]
+      interval: 1m
+      timeout: 5s
+      start_period: 10s
