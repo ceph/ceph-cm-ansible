@@ -1,0 +1,21 @@
+---
+teuthology_extra_packages:
+  - beanstalkd
+  - git
+  - gcc
+  - libev-devel
+  - libffi-devel
+  - libmysqlclient-devel
+  - libopenssl-devel
+  - libvirt-devel
+  - libyaml-devel
+  - lsb-release
+  - nginx
+  - python3-devel
+  - python3-pip
+  - python3-virtualenv
+  - python3-libvirt-python
+  - qemu-tools
+
+nginx_available: "/etc/nginx"
+nginx_enabled: "/etc/nginx/vhosts.d"

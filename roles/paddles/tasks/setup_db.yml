@@ -39,7 +39,9 @@
   when: not paddles_containerized
 
 - name: Set the alembic revision
-  shell: ./virtualenv/bin/alembic stamp head
+  shell: |
+    source virtualenv/bin/activate
+    alembic stamp head
   args:
     chdir: "{{ paddles_repo_path }}"
   when:

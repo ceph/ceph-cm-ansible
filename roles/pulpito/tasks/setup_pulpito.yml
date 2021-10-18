@@ -1,4 +1,19 @@
 ---
+- name: Determine GitHub Pull Request
+  set_fact:
+    pulpito_pull: "{{ pulpito_branch | regex_replace( '^refs/pull/([^/]+)/.*$', '\\1') }}"
+
+- name: Clone the repo and checkout pull request branch
+  git:
+    repo: "{{ pulpito_repo }}"
+    dest: "{{ pulpito_repo_path }}"
+    version: "pull-{{ pulpito_pull }}"
+    refspec: '+{{ pulpito_branch }}:refs/remotes/origin/pull-{{ pulpito_pull }}'
+  become_user: "{{ pulpito_user }}"
+  tags:
+    - repos
+  when: pulpito_pull is defined and pulpito_pull != pulpito_branch
+
 - name: Checkout the repo
   git:
     repo: "{{ pulpito_repo }}"
@@ -7,6 +22,7 @@
   become_user: "{{ pulpito_user }}"
   tags:
     - repos
+  when: pulpito_pull is not defined or pulpito_pull == pulpito_branch
 
 - name: Look for the virtualenv
   stat: 

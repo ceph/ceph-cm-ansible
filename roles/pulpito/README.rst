@@ -17,3 +17,14 @@ Since pulpito_ is only useful as a frontend to paddles_, it requires a paddles_ 
 
 .. _pulpito: https://github.com/ceph/pulpito
 .. _paddles: https://github.com/ceph/paddles
+
+Variables
++++++++++
+
+``pulpito_repo``: Optionally override the pulpito git repo.
+
+``pulpito_branch``: Optionally override the pulpito repo branch.
+For GitHub pull requests the values refs/pull/X/merge or refs/pull/X/head
+can be used.
+
+``pulpito_user``: The system account to create and use (Default: pulpito)
