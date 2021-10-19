@@ -1,0 +1,5 @@
+---
+# vars specific to centos stream version 8.x
+
+packages_to_upgrade:
+  - systemd
