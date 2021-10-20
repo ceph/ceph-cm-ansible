@@ -1,6 +1,10 @@
 {% for subnet, subnet_item in dhcp_subnets.items() %}
 {% if subnet == item %}
+{% if subnet_item.version == "6" %}{% set is_six = "6" %}
+subnet6 {{ subnet_item.cidr }} {
+{% else %}{% set is_six = "" %}
 subnet {{ subnet_item.cidr | ipaddr('network') }} netmask {{ subnet_item.cidr | ipaddr('netmask') }} {
+{% endif %}
   {% if subnet_item.domain_name is defined -%}
   option domain-name           "{{ subnet_item.domain_name }}";
   {% endif -%}
@@ -10,13 +14,13 @@ subnet {{ subnet_item.cidr | ipaddr('network') }} netmask {{ subnet_item.cidr | 
   {% if subnet_item.domain_name_servers is defined -%}
   option domain-name-servers   {{ subnet_item.domain_name_servers|join(', ') }};
   {% endif -%}
-  {% if subnet_item.routers is defined -%}
+  {% if subnet_item.routers is defined and not subnet_item.version == "6" -%}
   option routers               {{ subnet_item.routers }};
   {% endif -%}
-  {% if subnet_item.next_server is defined -%}
+  {% if subnet_item.next_server is defined and not subnet_item.version == "6" -%}
   next-server                  {{ subnet_item.next_server }};
   {% endif -%}
-  {% if subnet_item.filename is defined -%}
+  {% if subnet_item.filename is defined and not subnet_item.version == "6" -%}
   filename                     "{{ subnet_item.filename }}";
   {% endif %}
 
@@ -54,7 +58,7 @@ subnet {{ subnet_item.cidr | ipaddr('network') }} netmask {{ subnet_item.cidr | 
   {%- endif -%}
 
   {% for host in groups['all'] | sort | unique -%}
-  {% if hostvars[host][subnet_item.macvar] is defined -%}
+  {% if hostvars[host][subnet_item.macvar] is defined and hostvars[host][subnet_item.ipvar] is defined -%}
   {% if hostvars[host][subnet_item.ipvar] | ipaddr(subnet_item.cidr) | ipaddr('bool') -%}
   host {{ host.split('.')[0] }}-{{ subnet }} {
     {% if hostvars[host]['dhcp_next_server'] is defined -%}
@@ -65,7 +69,7 @@ subnet {{ subnet_item.cidr | ipaddr('network') }} netmask {{ subnet_item.cidr | 
     option domain-name-servers {{ hostvars[host]['domain_name_servers']|join(', ') }};
     {% endif -%}
     hardware ethernet {{ hostvars[host][subnet_item.macvar] }};
-    fixed-address {{ hostvars[host][subnet_item.ipvar] }};
+    fixed-address{{ is_six }} {{ hostvars[host][subnet_item.ipvar] }};
   {% if hostvars[host]['dhcp_option_hostname'] is defined and hostvars[host]['dhcp_option_hostname'] == true %}
   option host-name "{{ host.split('.')[0] }}";
   {% endif -%}

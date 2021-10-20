@@ -5,7 +5,7 @@
 {% endfor %}
 
 {% for key, value in dhcp_subnets.items() %}
-{% if value.version == "4" %}
+{% if value.version == "6" %}
 include "/etc/dhcp/dhcpd.{{ key }}.conf";
 {% endif %}
 {% endfor %}

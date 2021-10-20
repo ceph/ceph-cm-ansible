@@ -1,0 +1,26 @@
+---
+- name: Write global dhcpd6.conf
+  template:
+    src: dhcpd6.conf.j2
+    dest: /etc/dhcp/dhcpd6.conf
+    backup: yes
+  register: dhcp6_global_config
+
+- name: Test new config
+  command: dhcpd -t -6 -cf /etc/dhcp/dhcpd6.conf
+  register: dhcpd6_config_test_result
+  when:
+    - not ansible_check_mode
+    - (dhcp6_global_config is changed or dhcp_subnet_config is changed)
+
+- name: Restart dhcpd6
+  service:
+    name: dhcpd6
+    state: restarted
+  when:
+    - not ansible_check_mode
+    - dhcp6_global_config is defined
+    - dhcp_subnet_config is defined
+    - (dhcp6_global_config is changed or dhcp_subnet_config is changed)
+    - dhcpd6_config_test_result is defined
+    - dhcpd6_config_test_result.rc == 0
