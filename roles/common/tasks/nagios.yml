@@ -1,11 +1,6 @@
 ---
-- name: Include apt_system vars
-  include_vars: apt_systems.yml
-  when: ansible_pkg_mgr == "apt"
-
-- name: Include yum_systems vars
-  include_vars: yum_systems.yml
-  when: ansible_os_family == "RedHat"
+- name: "Include {{ ansible_pkg_mgr }}_system vars"
+  include_vars: "{{ ansible_pkg_mgr }}_systems.yml"
 
 # Returns 0 if found and 1 if not found
 # Task fails if not found.  Hence ignore_errors: true
@@ -40,11 +35,11 @@
     - ansible_os_family == "RedHat"
     - have_epel.rc == 0
 
-- name: Install nrpe package and dependencies (Ubuntu/Fedora)
+- name: Install nrpe package and dependencies (non-RHEL/CentOS)
   package:
     name: "{{ nrpe_packages|list }}"
     state: latest
-  when: ansible_pkg_mgr == "apt" or ansible_distribution == "Fedora"
+  when: ansible_os_family != "RedHat"
 
 - name: Upload nagios sudoers.d for raid utilities.
   template:

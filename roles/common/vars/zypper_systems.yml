@@ -1,0 +1,9 @@
+---
+nrpe_service_name: nrpe
+nrpe_user: nrpe
+nrpe_group: nrpe
+nagios_plugins_directory: /usr/lib/nagios/plugins
+
+nrpe_packages:
+  - nrpe
+  - monitoring-plugins-nrpe
