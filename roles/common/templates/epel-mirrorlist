@@ -7,3 +7,4 @@ http://mirrors.cat.pdx.edu/epel/{{ ansible_distribution_major_version }}/{% if a
 http://mirror.pnl.gov/epel/{{ ansible_distribution_major_version }}/{% if ansible_distribution_major_version == '8' %}Everything/{% endif %}$basearch
 http://ftp.linux.ncsu.edu/pub/epel/{{ ansible_distribution_major_version }}/{% if ansible_distribution_major_version == '8' %}Everything/{% endif %}$basearch
 http://mirror.oss.ou.edu/epel/{{ ansible_distribution_major_version }}/{% if ansible_distribution_major_version == '8' %}Everything/{% endif %}$basearch
+https://mirrors.huaweicloud.com/epel/{{ ansible_distribution_major_version }}/{% if ansible_distribution_major_version == '8' %}Everything/{% endif %}$basearch
