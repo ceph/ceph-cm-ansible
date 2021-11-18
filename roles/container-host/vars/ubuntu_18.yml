@@ -1,0 +1,7 @@
+---
+container_packages:
+  - docker.io
+  - python-setuptools
+  - python-pip
+
+pip_executable: pip
