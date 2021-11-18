@@ -22,6 +22,7 @@
   pip:
     name: git+https://github.com/sebastian-philipp/registries-conf-ctl
     state: latest
+    executable: "{{ pip_executable|default('pip3') }}"
   tags:
     - registries-conf-ctl
 
