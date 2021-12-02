@@ -4,6 +4,7 @@
     name: dhcp
     state: latest
   register: dhcp_yum_transaction
+  tags: packages
 
 - name: Check for firewalld
   command: firewall-cmd --state
