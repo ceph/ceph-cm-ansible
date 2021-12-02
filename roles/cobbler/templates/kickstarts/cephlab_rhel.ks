@@ -86,8 +86,13 @@ $SNIPPET('cephlab_user')
 #if $distro == 'RHEL'
 $SNIPPET('cephlab_rhel_rhsm')
 #end if
+#if distro_ver_minor == 'stream'
+# We want the latest packages because it's Stream
+yum -y update
+#else
 # Update to latest kernel before rebooting
 yum -y update kernel
+#end if
 $SNIPPET('cephlab_rc_local')
 $SNIPPET('kickstart_done')
 # End final steps
