@@ -97,5 +97,13 @@ This role basically has two required and two optional variables:
 | ``dhcp_option_hostname: False``                                     | Should this host get ``option host-name "{{ ansible_host }}";`` defined in its host declaration?  Defaults to False.  Override in secrets repo per host/group.                                                                                                   |
 +---------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
+Tags
+++++
+
+Available tags are listed below:
+
+packages
+    Run (or skip) package install/update tasks
+
 .. _docs: https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.html#variable-precedence-where-should-i-put-a-variable
 .. _dhcpd: https://linux.die.net/man/8/dhcpd
