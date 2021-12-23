@@ -72,9 +72,7 @@
 
 # create and manage epel.repo
 - import_tasks: epel.yml
-  when:
-    - (ansible_distribution == "CentOS" or ansible_distribution == 'RedHat')
-    - ansible_distribution_major_version|int < 9
+  when: ansible_distribution == "CentOS" or ansible_distribution == 'RedHat'
   tags:
     - epel
     - repos
