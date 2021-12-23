@@ -10,7 +10,7 @@
 - name: Including distro specific variables
   include_vars: "{{ item }}"
   with_first_found:
-    - "{{ secrets_path }}/container-host.yml"
+    - "{{ secrets_path }}/container-host/{{ ansible_distribution | lower }}_{{ ansible_distribution_major_version }}.yml"
     - "{{ ansible_distribution | lower }}_{{ ansible_distribution_major_version }}.yml"
     - "{{ package_manager }}_systems.yml"
     - empty.yml
