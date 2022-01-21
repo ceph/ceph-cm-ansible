@@ -9,6 +9,8 @@
     group: root
     owner: root
     mode: 0644
+  when:
+    - not containerized_node
 
 - name: Set mode on /etc/fuse.conf
   file:
@@ -53,6 +55,9 @@
 - name: Rebuild rpmdb
   command:
     rpm --rebuilddb
+  # https://bugzilla.redhat.com/show_bug.cgi?id=1680124
+  when:
+    not containerized_node
 
 - name: Check /etc/os-release to see if this is CentOS Stream
   shell: "grep 'CentOS Stream' /etc/os-release || true"
