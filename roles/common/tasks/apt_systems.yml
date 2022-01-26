@@ -35,4 +35,6 @@
     - suspend.target
     - hibernate.target
     - hybrid-sleep.target
-  when: ansible_distribution_major_version|int >= 20
+  when:
+    - ansible_distribution_major_version|int >= 20
+    - not containerized_node
