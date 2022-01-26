@@ -48,3 +48,33 @@
     - records
   when: (named_conf_slave is undefined) or
         (named_conf_slave is defined and named_conf_slave == false)
+
+# The tasks below are last so the grep output is near the end of the play
+- set_fact:
+    have_collisions: true
+  when:
+    - (named_conf_slave is undefined) or (named_conf_slave is defined and named_conf_slave == false)
+    - nameserver_collisions_grep is defined and nameserver_collisions_grep.stdout | length > 0
+  tags:
+    - records
+
+- name: Print IP collisions
+  debug:
+    msg:
+      - "WARNING: The following IP addresses have multiple records in DNS.  Check for IP collisions!"
+      - "Either re-run this playbook with '-vvv' or `grep -r -w {{ inventory_dir }}/{{ lab_name }} {{ inventory_dir }}/group_vars/nameserver.yml` for the IPs below."
+      - "{{ nameserver_collisions_grep.stdout_lines }}"
+  when: have_collisions is defined and have_collisions|bool
+  tags:
+    - records
+
+- name: grep duplicated IPs in ansible inventory
+  local_action:
+    module: command
+    cmd: "grep -r -w {{ item }} {{ inventory_dir }}/{{ lab_name }} {{ inventory_dir }}/group_vars/nameserver.yml"
+  become: false
+  connection: local
+  with_items: "{{ nameserver_collisions_grep.stdout_lines }}"
+  when: have_collisions is defined and have_collisions|bool
+  tags:
+    - records

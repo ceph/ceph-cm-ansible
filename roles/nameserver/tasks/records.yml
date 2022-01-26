@@ -46,6 +46,12 @@
   when: (item.value.dynamic != true) or
         (item.value.dynamic == true and item.value.ddns_hostname_prefixes is defined)
 
+- name: grep temp zone files for IP collisions
+  shell: 'grep -E -o -h "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)" {{ named_tempdir.stdout }}/* | sort | uniq -d'
+  register: nameserver_collisions_grep
+  when: (named_conf_slave is undefined) or
+        (named_conf_slave is defined and named_conf_slave == false)
+
 - name: Write reverse zone files to tempdir
   template:
     src: reverse.j2
