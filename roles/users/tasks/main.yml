@@ -27,7 +27,7 @@
     perform_users_role: False
   # perform_users_role is True by default so no need to fail the play if there's an error.
   ignore_errors: true
-  when: (keys_repo_head.stdout == sentinel_sha1.stdout) and
+  when: (keys_repo_head is undefined) or (keys_repo_head.stdout == sentinel_sha1.stdout) and
         not force_users_update|bool
 
 - import_tasks: filter_users.yml
