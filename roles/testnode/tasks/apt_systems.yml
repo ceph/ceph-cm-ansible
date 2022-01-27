@@ -38,7 +38,9 @@
   args:
     creates: /etc/fstab.bak
   register: add_user_xattr
-  when: modify_fstab == true
+  when:
+    - modify_fstab == true
+    - not containerized_node
 
 - name: Enable xattr for this boot.
   command:
