@@ -70,7 +70,9 @@
     append: yes
 
 - import_tasks: static_ip.yml
-  when: "'vps' not in group_names"
+  when:
+    - "'vps' not in group_names"
+    - not containerized_node
 
 - name: Stop apache2
   service:
