@@ -27,6 +27,21 @@ flock --close ./.lock git pull
 export ANSIBLE_SSH_PIPELINING=1
 export ANSIBLE_HOST_KEY_CHECKING=False
 
+# Set up Stream repos
+# We have to do it this way because
+# 1) Stream ISOs don't work with Cobbler https://bugs.centos.org/view.php?id=18188
+# 2) Since we use a non-stream profile then convert it to stream, we can't run any package related tasks
+#    until the stream repo files are in place. e.g., The zap ansible tag has some package tasks that fail
+#    unless we get the repos in place first.
+if [[ $profile == *"8.stream"* ]]
+then
+    ansible-playbook tools/convert-to-centos-stream.yml -v --limit $name* 2>&1 >> /var/log/ansible/$name.log
+elif [[ $profile == *"9.stream"* ]]
+then
+    # For some reason, we end up with no repos on the first boot without doing this.
+    ansible-playbook testnodes.yml --tags repos -v --limit $name* 2>&1 >> /var/log/ansible/$name.log
+fi
+
 # Tell ansible to create users, populate authorized_keys, and zap non-root disks
 ansible-playbook testnodes.yml -v --limit $name* --tags user,pubkeys,zap 2>&1 > /var/log/ansible/$name.log
 # Now run the rest of the playbook. If it fails, at least we have access.
@@ -37,13 +52,6 @@ ansible-playbook testnodes.yml -v --limit $name* --tags user,pubkeys,zap 2>&1 > 
 if [[ $profile == *"-stock" ]]
 then
     exit 0
-elif [[ $profile == *"8.stream"* ]]
-then
-    ansible-playbook tools/convert-to-centos-stream.yml -v --limit $name* 2>&1 >> /var/log/ansible/$name.log
-elif [[ $profile == *"9.stream"* ]]
-then
-    # For some reason, we end up with no repos on the first boot without doing this.
-    ansible-playbook testnodes.yml --tags repos -v --limit $name* 2>&1 >> /var/log/ansible/$name.log
 fi
 ansible-playbook cephlab.yml -v --limit $name* --skip-tags user,pubkeys,zap 2>&1 >> /var/log/ansible/$name.log &
 popd

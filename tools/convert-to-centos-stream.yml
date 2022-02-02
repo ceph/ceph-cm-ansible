@@ -8,6 +8,39 @@
   gather_facts: true
   tasks:
 
+  - name: List repo files
+    find:
+      paths: /etc/yum.repos.d/
+      file_type: file
+      patterns: 'CentOS-Linux-*.repo'
+    register: pre_stream_repo_files
+    when: ansible_distribution == 'CentOS'
+
+  # From ansible docs: 'replace: If not set, matches are removed entirely.'
+  - name: Remove all mirrorlists
+    replace:
+      path: "{{ item.path }}"
+      regexp: '^mirrorlist=.*'
+    with_items: "{{ pre_stream_repo_files.files }}"
+    when: ansible_distribution == 'CentOS'
+
+  - name: Uncomment baseurls
+    replace:
+      path: "{{ item.path }}"
+      regexp: '^mirrorlist=.*'
+      regexp: '^\s*#*\s*(baseurl=.*)'
+      replace: '\1'
+    with_items: "{{ pre_stream_repo_files.files }}"
+    when: ansible_distribution == 'CentOS'
+
+  - name: Point baseurls to archive server
+    replace:
+      path: "{{ item.path }}"
+      regexp: 'mirror.centos.org/\$contentdir/\$releasever'
+      replace: 'vault.centos.org/8.5.2111'
+    with_items: "{{ pre_stream_repo_files.files }}"
+    when: ansible_distribution == 'CentOS'
+
   - name: Swap to Stream Repos
     command: dnf -y swap centos-linux-repos centos-stream-repos
     when: ansible_distribution == 'CentOS'
