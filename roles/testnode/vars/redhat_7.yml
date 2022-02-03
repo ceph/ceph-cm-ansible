@@ -12,11 +12,6 @@ common_yum_repos:
     baseurl: "http://{{ mirror_host }}/lab-extras/rhel7/"
     enabled: 1
     gpgcheck: 0
-  apache-arrow:
-    name: "Apache Arrow"
-    baseurl: "https://apache.jfrog.io/artifactory/arrow/centos/7/$basearch"
-    enabled: 1
-    gpgcheck: 1
 
 packages:
   - '@core'
