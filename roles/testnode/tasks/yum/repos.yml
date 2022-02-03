@@ -39,6 +39,7 @@
     - copr_repos|length > 0
 
 - import_tasks: gpg_keys.yml
+  when: ansible_distribution == "Fedora"
   tags:
     - gpg-keys
 

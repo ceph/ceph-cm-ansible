@@ -7,11 +7,6 @@ common_yum_repos:
     baseurl: "http://{{ mirror_host }}/lab-extras/8/"
     enabled: 1
     gpgcheck: 0
-  apache-arrow:
-    name: "Apache Arrow"
-    baseurl: "https://apache.jfrog.io/artifactory/arrow/centos/8/$basearch"
-    enabled: 1
-    gpgcheck: 1
 
 copr_repos:
   - ceph/python3-asyncssh

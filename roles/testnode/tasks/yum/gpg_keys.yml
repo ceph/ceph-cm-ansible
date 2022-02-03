@@ -15,5 +15,4 @@
   with_items:
     - 'https://{{ key_host }}/keys/release.asc'
     - 'https://{{ key_host }}/keys/autobuild.asc'
-    - 'https://dist.apache.org/repos/dist/dev/arrow/KEYS'
   register: gpg_keys
