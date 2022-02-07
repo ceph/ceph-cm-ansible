@@ -61,7 +61,8 @@
   import_tasks: setup-ubuntu-non-aarch64.yml
   when:
     ansible_distribution == "Ubuntu" and
-    ansible_architecture != "aarch64"
+    ansible_architecture != "aarch64" and
+    not containerized_node
 
 - name: configure debian specific things
   import_tasks: setup-debian.yml
