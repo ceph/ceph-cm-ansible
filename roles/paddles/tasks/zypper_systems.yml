@@ -29,6 +29,20 @@
     state: started
     enabled: yes
 
+- name: Disable ProtectHome=true for supervisor
+  lineinfile:
+    path: "/etc/systemd/system/multi-user.target.wants/supervisord.service"
+    state: present
+    regexp: "^(ProtectHome=true.*)"
+    line: '#\1'
+    backrefs: yes
+
+- name: Reload supervisor
+  service:
+    name: supervisord
+    state: restarted
+    daemon_reload: yes
+
 - name: Setup hba_conf
   lineinfile:
     path: "/var/lib/pgsql/data/pg_hba.conf"
