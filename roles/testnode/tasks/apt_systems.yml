@@ -48,10 +48,14 @@
   when: add_user_xattr is defined and
         add_user_xattr is changed
 
-- name: Ensure fuse group exists.
+- name: Ensure fuse, kvm and disk groups exist.
   group:
-    name: fuse
+    name: "{{ item }}"
     state: present
+  with_items:
+  - fuse
+  - kvm
+  - disk
 
 - name: Upload /etc/fuse.conf.
   template:
