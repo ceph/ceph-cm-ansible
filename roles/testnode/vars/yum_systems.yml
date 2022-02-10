@@ -44,6 +44,6 @@ ceph_dependency_packages_to_remove:
 pip_packages_to_install:
   - remoto>=0.0.35
 
-# This gets defined to "-stream" in roles/testnode/tasks/yum/repos.yml when CentOS Stream is the OS.
+# This gets defined to "-stream" in roles/testnode/tasks/yum_systems.yml when CentOS Stream is the OS.
 # It adds "-stream" to yum repo mirrorlist URLs.
 dash_stream: ""
