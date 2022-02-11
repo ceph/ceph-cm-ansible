@@ -3,3 +3,6 @@
 
 packages_to_upgrade:
   - systemd
+
+packages:
+  - lvm2

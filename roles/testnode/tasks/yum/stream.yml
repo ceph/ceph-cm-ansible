@@ -4,16 +4,6 @@
 # We just don't want to rely on CentOS' infra to provide our mirror lists.  It has bitten us in the past.
 - name: Clean up Stream distro-provided repos
   shell: "rm -rvf /etc/yum.repos.d/*-Stream-*"
-  when:
-    - ansible_lsb.description is defined
-    - '"Stream" in ansible_lsb.description'
-
-# Setting this var will add "-stream" to the mirrorlist/baseurl URLs in .repo files
-- set_fact:
-    dash_stream: "-stream"
-  when:
-    - ansible_lsb.description is defined
-    - '"Stream" in ansible_lsb.description'
 
 - name: Include CentOS Stream specific variables
   include_vars: "{{ item }}"
