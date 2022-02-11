@@ -14,11 +14,16 @@ import ansible
 ANSIBLE_MAJOR = int(ansible.__version__.split('.')[0])
 
 if ANSIBLE_MAJOR >= 2:
-    from ansible.parsing.yaml.objects import AnsibleUnicode
     from ansible.plugins.callback import CallbackBase as callback_base
 else:
     callback_base = object
 
+# Add a default representer so that we don't crash upon encountering
+# instances of AnsibleUnicode or AnsibleUnsafeText
+def default_representer(dumper, data):
+    return dumper.represent_scalar('tag:yaml.org,2002:str', str(data))
+
+yaml.SafeDumper.add_representer(None, default_representer)
 
 log = logging.getLogger(__name__)
 # We only want to log if this env var is populated with
@@ -38,30 +43,10 @@ def log_failure(host, result):
     if fail_log:
         failure = {"{0}".format(host): dict()}
         failure[host] = result
-        if ANSIBLE_MAJOR >= 2:
-            failure = sanitize_dict(failure)
         try:
             log.error(yaml.safe_dump(failure))
         except Exception:
             log.exception("Failure object was: %s", str(failure))
-
-
-def sanitize_dict(obj):
-    """
-    Replace AnsibleUnicode objects with strings to avoid RepresenterError when
-    dumping to yaml
-
-    Only needed in ansible >= 2.0
-    """
-    for key in obj.keys():
-        value = obj[key]
-        if isinstance(value, AnsibleUnicode):
-            value = str(value)
-            obj[key] = value
-        elif isinstance(value, dict):
-            value = sanitize_dict(value)
-            obj[key] = value
-    return obj
 
 
 class CallbackModule(callback_base):
