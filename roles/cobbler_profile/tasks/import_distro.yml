@@ -8,11 +8,8 @@
   debug: var=distro_name
 
 - name: Load extra_distros from secrets
-  # The jinja2 templating API allows you to update one dict with another,
-  # but it does so in-place without returning any dict. The first few
-  # blobs do the updating; the last actually returns the result.
   set_fact:
-    distros: "{% for distro in distros.keys() + extra_distros.keys() %}{{ distros[distro].update(extra_distros[distro]|default({})) }}{% endfor %}{{ distros }}"
+    distros: "{{ distros|combine(extra_distros, recursive=True) }}"
 
 - name: Find distro settings
   set_fact:
