@@ -207,11 +207,6 @@ The latter is only done if ``lab_domain`` is defined::
 
     lab_domain: ''
 
-Up until recently, testnodes only had one uplink.  Definining ``secondary_nic_mac`` as a hostvar will configure the corresponding NIC to use DHCP.  This 
-assumes you've configured a static IP definition on your DHCP server and only supports one additional NIC at this time::
-
-    secondary_nic_mac: ''
-
 A dictionary of drives/devices you want to partition.  ``scratch_devs`` is not required.  All other values are self-explanatory given this example::
 
     # Example:
@@ -354,9 +349,6 @@ remove-ceph
 
 repos
     Perform all repo related tasks. Creates and manages our custom repo files.     
-
-secondary-nic
-    Configure secondary NIC if ``secondary_nic_mac`` is defined.
 
 selinux
     Configure selinux on yum systems.    

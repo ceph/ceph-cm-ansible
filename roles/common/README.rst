@@ -79,6 +79,11 @@ tasks OS-agnostic.  They variables are mostly self-explanatory and defined in
       - nagios-nrpe-server
       - nagios-plugins-basic
 
+Definining ``secondary_nic_mac`` as a hostvar will configure the corresponding NIC to use DHCP.  This 
+assumes you've configured a static IP definition on your DHCP server and only supports one additional NIC at this time::
+
+    secondary_nic_mac: ''
+
 Tags
 ++++
 
@@ -100,6 +105,9 @@ nagios
     Installs and configures nrpe service (including firewalld and SELinux if
     applicable).  ``monitoring-scripts`` is also always run with this tag since
     NRPE isn't very useful without them.
+
+secondary-nic
+    Configure secondary NIC if ``secondary_nic_mac`` is defined.
 
 To Do
 +++++
