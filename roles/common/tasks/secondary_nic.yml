@@ -1,8 +1,18 @@
 ---
-- name: Make sure ethtool is installed
-  package:
+- name: Make sure ethtool is installed (Ubuntu)
+  apt:
     name: ethtool
-    state: latest
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Make sure ethtool is installed (CentOS/RHEL)
+  yum:
+    name: ethtool
+    state: present
+    enablerepo: epel
+  when:
+    - ansible_os_family == 'RedHat'
+    - enable_epel|bool == true
 
 - name: grep ethtool for secondary NIC MAC address
   shell: "ethtool -P {{ item }} | awk '{ print $3 }' | grep -q -i '{{ secondary_nic_mac }}'"
