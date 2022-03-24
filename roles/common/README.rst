@@ -80,9 +80,11 @@ tasks OS-agnostic.  They variables are mostly self-explanatory and defined in
       - nagios-plugins-basic
 
 Definining ``secondary_nic_mac`` as a hostvar will configure the corresponding NIC to use DHCP.  This 
-assumes you've configured a static IP definition on your DHCP server and only supports one additional NIC at this time::
+assumes you've configured a static IP definition on your DHCP server and the NIC is cabled.
+The tasks will automatically set the MTU to 9000 if the NIC is 10Gb or 25Gb. Override in ``groups_vars/group.yml`` as ``secondary_nic_mtu=1500``
+This taskset only supports one secondary NIC.::
 
-    secondary_nic_mac: ''
+    secondary_nic_mac: 'DE:AD:BE:EF:00:11'
 
 Tags
 ++++
