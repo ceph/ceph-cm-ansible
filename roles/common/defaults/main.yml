@@ -18,14 +18,12 @@ epel_repos:
   epel:
     name: "Extra Packages for Enterprise Linux"
     mirrorlist: file:///etc/yum.repos.d/epel-mirrorlist
-    failovermethod: priority
     # ternary requires ansible >= 1.9
     enabled: "{{ enable_epel | ternary(1, 0) }}"
     gpgcheck: 0
   epel-testing:
     name: "Extra Packages for Enterprise Linux - Testing"
     mirrorlist: file:///etc/yum.repos.d/epel-testing-mirrorlist
-    failovermethod: priority
     enabled: 0
     gpgcheck: 0
 
