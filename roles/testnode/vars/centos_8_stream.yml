@@ -1,12 +1,6 @@
 ---
 # vars specific to centos stream version 8.x
-
-common_yum_repos:
-  lab-extras:
-    name: "lab-extras"
-    baseurl: "http://{{ mirror_host }}/lab-extras/8/"
-    enabled: 1
-    gpgcheck: 0
+# these will override vars in centos_8.yml
 
 packages_to_upgrade:
   - systemd
