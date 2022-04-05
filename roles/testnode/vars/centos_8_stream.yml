@@ -1,8 +1,66 @@
 ---
 # vars specific to centos stream version 8.x
 
+common_yum_repos:
+  lab-extras:
+    name: "lab-extras"
+    baseurl: "http://{{ mirror_host }}/lab-extras/8/"
+    enabled: 1
+    gpgcheck: 0
+
 packages_to_upgrade:
   - systemd
+  - libgcrypt
 
 packages:
+  - redhat-lsb-core
+  # for package-cleanup
+  - dnf-utils
+  - sysstat
+  - libedit
+  - boost-thread
+  - xfsprogs
+  - gdisk
+  - parted
+  - libgcrypt
+  - fuse-libs
+  - openssl
+  - libuuid
+  - podman
+  # for cephadmunit.py to uniformly run 'docker kill -p ...'
+  - podman-docker
+  - attr
+  - ant
+  - lsof
+  - gettext
+  - bc
+  - xfsdump
+  - blktrace
+  - usbredir
+  - libev-devel
+  - valgrind
+  - nfs-utils
+  # for xfstests
+  - ncurses-devel
+  # for s3 tests
+  # for workunits,
+  - gcc
+  - git
+  # qa/workunits/rados/test_python.sh
+  - python3-nose
+  # for cram tests
+  - python3-virtualenv
+  # for rbd qemu tests
+  - genisoimage
+  - qemu-img
+  - qemu-kvm-core
+  - qemu-kvm-block-rbd
+  # for pjd tests
+  - libacl-devel
+  # for fs tests,
+  - dbench
+  - autoconf
+  # for test-crash.sh
+  - gdb
+  - iozone
   - lvm2
