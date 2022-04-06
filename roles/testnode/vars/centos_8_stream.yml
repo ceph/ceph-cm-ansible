@@ -3,8 +3,10 @@
 # these will override vars in centos_8.yml
 
 packages_to_upgrade:
+  - libgcrypt # explicitly tied to qemu build
+
+  # centos stream additions start here
   - systemd
-  - libgcrypt
 
 packages:
   - redhat-lsb-core
@@ -57,4 +59,6 @@ packages:
   # for test-crash.sh
   - gdb
   - iozone
+
+  # centos stream additions start here
   - lvm2
