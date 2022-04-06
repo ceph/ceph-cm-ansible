@@ -1,5 +1,6 @@
 ---
 # vars specific to any centos 8.x version
+# some of these will be overridden by vars in centos_8_stream.yml
 
 common_yum_repos:
   lab-extras:
