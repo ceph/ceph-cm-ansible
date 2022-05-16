@@ -17,9 +17,9 @@ yum_repos:
     gpgcheck: 1
     enabled: 1
     gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
-  CentOS-Base:
-    name: "CentOS-$releasever - Base"
-    mirrorlist: file:///etc/yum.repos.d/CentOS-Base-mirrorlist
+  CentOS-BaseOS:
+    name: "CentOS-$releasever - BaseOS"
+    mirrorlist: file:///etc/yum.repos.d/CentOS-BaseOS-mirrorlist
     gpgcheck: 1
     enabled: 1
     gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
@@ -39,7 +39,7 @@ yum_repos:
 # These are files in roles/testnodes/templates/mirrorlists/8/
 yum_mirrorlists:
   - CentOS-AppStream-mirrorlist
-  - CentOS-Base-mirrorlist
+  - CentOS-BaseOS-mirrorlist
   - CentOS-Extras-mirrorlist
   - CentOS-PowerTools-mirrorlist
 

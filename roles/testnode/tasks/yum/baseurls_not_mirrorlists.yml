@@ -1,0 +1,30 @@
+---
+- name: dnf check-update to see if mirrorlists are working
+  command: dnf check-update
+  register: mirrorlist_check
+  ignore_errors: true
+
+# Default to false
+- set_fact:
+    use_baseurls: false
+
+- set_fact:
+    use_baseurls: true
+  when: '"all mirrors were already tried" in mirrorlist_check.stderr'
+
+- name: Get list of repo files we need to use baseurls for
+  shell: "grep -l '^mirrorlist' *.repo | grep -v epel | cut -d '.' -f1"
+  args:
+    chdir: /etc/yum.repos.d
+  register: repo_files_with_mirrorlists
+  when: use_baseurls|bool is true
+
+- name: Comment mirrorlist parameter in each repo
+  shell: "sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/{{ item }}.repo"
+  with_items: "{{ repo_files_with_mirrorlists.stdout_lines }}"
+  when: use_baseurls|bool is true
+
+- name: Use a baseurl instead
+  shell: "echo 'baseurl=http://packages.oit.ncsu.edu/centos/{{ ansible_distribution_major_version }}{{ dash_stream }}/{% if item == \"CentOS-Extras\" %}extras{% else %}{{ item | regex_replace('CentOS-','') }}{% endif %}/{{ ansible_architecture }}/os/' >> /etc/yum.repos.d/{{ item }}.repo"
+  with_items: "{{ repo_files_with_mirrorlists.stdout_lines }}"
+  when: use_baseurls|bool is true

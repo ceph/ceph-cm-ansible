@@ -31,6 +31,11 @@
   with_dict: "{{ yum_repos|default({}) | combine(additional_yum_repos|default({}), recursive=True) }}"
   when: (yum_repos.keys() | length > 0) or (additional_yum_repos.keys() | length > 0)
 
+# Occasionally when the yum repo mirrors get updated, we get 404s when using mirrorlist
+# but not when using baseurls. No idea why.
+- include_tasks: yum/baseurls_not_mirrorlists.yml
+  when: ansible_distribution == "CentOS"
+
 - name: Enable copr repos
   command: "dnf -y copr enable {{ item }}"
   with_items: "{{ copr_repos }}"
