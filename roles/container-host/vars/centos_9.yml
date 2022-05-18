@@ -1,5 +1,6 @@
 ---
 container_packages:
   - podman
+  - python3-pip
 # Doesn't exist yet
 #  - podman-docker
