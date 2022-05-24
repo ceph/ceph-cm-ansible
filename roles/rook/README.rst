@@ -5,7 +5,7 @@ This role is used for updating and recovering the rook jenkins in the rook ci Vi
 
 The functions in this role are:
 
-**rook-jenkins-update:** For updating rook jenkins version to the version defined in the "jenkins_master_image" variable
+**rook-jenkins-update:** For updating rook jenkins version to the version defined in the "jenkins_controller_image" variable
 
 **rook-os-update:** For updating rook jenkins OS packages
 
@@ -33,7 +33,7 @@ Examples
 
 Updating the rook jenkins app to version 2.289.1::
 
-    ansible-playbook rook.yml --tags="rook-jenkins-update" --extra-vars="jenkins_master_image=jenkins/jenkins:2.289.1"
+    ansible-playbook rook.yml --tags="rook-jenkins-update" --extra-vars="jenkins_controller_image=jenkins/jenkins:2.289.1"
 
 Updating the rook jenkins OS packages::
 
@@ -46,7 +46,7 @@ Available variables are listed below These overrides are included by ``tasks/var
 
 The rook jenkins version::
 
-    jenkins_master_image: jenkins/jenkins:2.289.1
+    jenkins_controller_image: jenkins/jenkins:2.289.1
 
 The rook jenkins ssh keyi-pair defined in the aws dashboard::
 
@@ -54,7 +54,7 @@ The rook jenkins ssh keyi-pair defined in the aws dashboard::
 
 The rook jenkins instance type::
 
-    master_instance_type: m4.large
+    controller_instance_type: m4.large
 
 The rook jenkins instance aws security group::
 
@@ -84,7 +84,7 @@ A list of the rook jenkins aws instance tags, used by the rook-recovery play whe
 
 The rook jenkins running aws instance name::
 
-    master_name: Prod-Jenkins
+    controller_name: Prod-Jenkins
 
 The rook jenkins instance ssh key::
 
@@ -96,7 +96,7 @@ Tags
 Available tags are listed below:
 
 - rook-jenkins-update
-    Update the rook jenkins app to the version defined in the "jenkins_master_image" variable.
+    Update the rook jenkins app to the version defined in the "jenkins_controller_image" variable.
 
 - rook-os-update
     Update the rook jenkins OS packages.

@@ -1,7 +1,7 @@
 ---
-jenkins_master_image: jenkins/jenkins:2.289.1
+jenkins_controller_image: jenkins/jenkins:2.289.1
 keypair: root-jenkins-new-key
-master_instance_type: m4.large
+controller_instance_type: m4.large
 security_group: rook-jenkins-group
 image: ami-0aaf5dbaa4cbe5771
 region: us-east-1
@@ -10,5 +10,5 @@ instance_name: Recovery-Rook-Jenkins
 aws_tags:
   Name: "{{ instance_name }}"
   Application: "Jenkins"
-master_name: Prod-Jenkins
+controller_name: Prod-Jenkins
 rook_key: "{{ secrets_path | mandatory }}/rook_key.yml"

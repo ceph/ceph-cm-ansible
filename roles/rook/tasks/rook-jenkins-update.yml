@@ -2,33 +2,33 @@
 - name: Gather facts
   ec2_instance_facts:
     filters:
-      "tag:Name": "{{ master_name }}"
+      "tag:Name": "{{ controller_name }}"
       instance-state-name: running
-  register: master_metadata
+  register: controller_metadata
 
 - name: Take a backup image of the Prod-jenkins instance
   ec2_ami:
     aws_access_key: "{{ aws_access_key }}"
     aws_secret_key: "{{ aws_secret_key }}"
-    instance_id: "{{ master_metadata.instances[0].instance_id }}"
+    instance_id: "{{ controller_metadata.instances[0].instance_id }}"
     no_reboot: yes
     wait: yes
     wait_timeout: 3000
-    name: "{{ master_name }}-{{ ansible_date_time.date }}"
+    name: "{{ controller_name }}-{{ ansible_date_time.date }}"
     tags:
-      Name: "{{ master_name }}-{{ ansible_date_time.date }}"
+      Name: "{{ controller_name }}-{{ ansible_date_time.date }}"
 
 - name: Check if container is running
-  command: ssh -i "{{ rook_key }}" ubuntu@"{{ master_metadata.instances[0].public_dns_name }}" docker ps -a | grep -i jenkins | wc -l
+  command: ssh -i "{{ rook_key }}" ubuntu@"{{ controller_metadata.instances[0].public_dns_name }}" docker ps -a | grep -i jenkins | wc -l
   register: container
 
 - name: Kill the jenkins container
-  command: ssh -i "{{ rook_key }}" ubuntu@"{{ master_metadata.instances[0].public_dns_name }}" sudo docker kill jenkins
+  command: ssh -i "{{ rook_key }}" ubuntu@"{{ controller_metadata.instances[0].public_dns_name }}" sudo docker kill jenkins
   when: container.stdout == '1'
 
 - name: Remove the jenkins container
-  command: ssh -i "{{ rook_key }}" ubuntu@"{{ master_metadata.instances[0].public_dns_name }}" sudo docker rm jenkins
+  command: ssh -i "{{ rook_key }}" ubuntu@"{{ controller_metadata.instances[0].public_dns_name }}" sudo docker rm jenkins
   when: container.stdout == '1'
 
 - name: Start the new jenkins container with the new LTS version
-  command: ssh -i "{{ rook_key }}" ubuntu@"{{ master_metadata.instances[0].public_dns_name }}" sudo docker run -d --name jenkins -p 8080:8080 -p 50000:50000 -v /mnt/jenkins/jenkins:/var/jenkins_home "{{ jenkins_master_image }}"
+  command: ssh -i "{{ rook_key }}" ubuntu@"{{ controller_metadata.instances[0].public_dns_name }}" sudo docker run -d --name jenkins -p 8080:8080 -p 50000:50000 -v /mnt/jenkins/jenkins:/var/jenkins_home "{{ jenkins_controller_image }}"

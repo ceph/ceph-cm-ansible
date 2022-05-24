@@ -11,7 +11,7 @@ paddles_container_image: quay.io/ceph-infra/paddles:latest
 paddles_container_replicas: 10
 
 paddles_repo: https://github.com/ceph/paddles.git
-paddles_branch: master
+paddles_branch: main
 
 
 log_host: localhost

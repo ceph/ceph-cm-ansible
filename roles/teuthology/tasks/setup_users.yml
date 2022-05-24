@@ -51,7 +51,7 @@
 - name: Clone the teuthology repo for GitHub PR
   git:
     repo: "https://github.com/ceph/teuthology"
-    dest: /home/{{ item }}/src/teuthology_master
+    dest: /home/{{ item }}/src/teuthology_main
     version: "{{ teuthology_branch }}"
     refspec: '+refs/pull/{{ teuthology_ghpr }}/*:refs/origin/pr/{{ teuthology_ghpr }}/*'
   become_user: "{{ item }}"
@@ -63,7 +63,7 @@
 - name: Clone the teuthology repo
   git:
     repo: "{{ teuthology_repo }}"
-    dest: /home/{{ item }}/src/teuthology_master
+    dest: /home/{{ item }}/src/teuthology_main
     version: "{{ teuthology_branch }}"
   become_user: "{{ item }}"
   with_items: "{{ teuthology_users }}"
@@ -74,7 +74,7 @@
 - name: Run bootstrap
   shell: NO_CLOBBER=true ./bootstrap
   args:
-    chdir: /home/{{ item }}/src/teuthology_master/
+    chdir: /home/{{ item }}/src/teuthology_main/
   become_user: "{{ item }}"
   with_items: "{{ teuthology_users }}"
   register: bootstrap
@@ -85,15 +85,15 @@
 - name: Add teuthology scripts to PATH
   lineinfile:
     dest: /home/{{ item }}/.profile
-    regexp: teuthology_master
-    line: 'PATH="$HOME/src/teuthology_master/virtualenv/bin:$PATH"'
+    regexp: teuthology_main
+    line: 'PATH="$HOME/src/teuthology_main/virtualenv/bin:$PATH"'
   become_user: "{{ item }}"
   with_items: "{{ teuthology_users }}"
 
 - name: Ensure teuthology is usable
   shell: "./teuthology --version"
   args:
-    chdir: /home/{{ item }}/src/teuthology_master/virtualenv/bin/
+    chdir: /home/{{ item }}/src/teuthology_main/virtualenv/bin/
   become_user: "{{ item }}"
   with_items: "{{ teuthology_users }}"
   changed_when: false

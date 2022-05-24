@@ -5,7 +5,7 @@
     aws_secret_key: "{{ aws_secret_key }}"
     key_name: "{{ keypair }}"
     group: "{{ security_group }}"
-    instance_type: "{{ master_instance_type }}"
+    instance_type: "{{ controller_instance_type }}"
     image: "{{ image }}"
     wait: true
     region: "{{ region }}"
@@ -44,7 +44,7 @@
     label: "{{ item.id }} - {{ item.public_ip }}"
 
 - name: Start jenkins container
-  command: ssh -i "{{ rook_key }}" ubuntu@"{{ item.public_ip }}" sudo docker run -d --name jenkins -p 8080:8080 -p 50000:50000 -v /mnt/jenkins/jenkins:/var/jenkins_home "{{ jenkins_master_image }}"
+  command: ssh -i "{{ rook_key }}" ubuntu@"{{ item.public_ip }}" sudo docker run -d --name jenkins -p 8080:8080 -p 50000:50000 -v /mnt/jenkins/jenkins:/var/jenkins_home "{{ jenkins_controller_image }}"
   with_items: '{{ ec2_instances.instances }}'
   loop_control:
     label: "{{ item.id }} - {{ item.public_ip }}"

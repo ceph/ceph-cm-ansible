@@ -37,7 +37,7 @@ export NWORKERS=20
 
 user=${TEUTHOLOGY_USERNAME:-"{{ teuthology_execution_user }}"}
 export HOME=/home/$user
-export WORKER_HOME=$HOME/src/teuthology_master
+export WORKER_HOME=$HOME/src/teuthology_main
 #/usr/share/nginx/html
 export WORKER_ARCH=$HOME/archive
 

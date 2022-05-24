@@ -9,9 +9,9 @@ teuthology_users:
   - "{{ teuthology_execution_user }}"
 
 teuthology_repo: https://github.com/ceph/teuthology.git
-teuthology_branch: "master"
+teuthology_branch: "main"
 teuthology_yaml_extra: ""
 teuthology_ceph_git_base_url: "git://git.ceph.com/"
 archive_base: "/home/{{ teuthology_execution_user }}/archive"
 
-remote_crontab_url: "https://raw.githubusercontent.com/ceph/ceph/master/qa/crontab/teuthology-cronjobs"
+remote_crontab_url: "https://raw.githubusercontent.com/ceph/ceph/main/qa/crontab/teuthology-cronjobs"
