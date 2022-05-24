@@ -7,7 +7,7 @@ virtualenv_path: "~/venv"
 python_version: "python3"
 nsupdate_web_repo: "https://github.com/ceph/nsupdate-web.git"
 nsupdate_web_path: "/home/{{ nsupdate_web_user }}/nsupdate_web"
-nsupdate_web_branch: "master"
+nsupdate_web_branch: "main"
 # The public and private keys must be manually placed on the host; 
 # The pubkey name must be provided - most likely via group_vars
 pubkey_name: "your_pubkey.key"

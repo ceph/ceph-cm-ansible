@@ -11,7 +11,7 @@ It also does the following:
 - Install dependencies required for ``teuthology``
 - Create the ``teuthology`` and ``teuthworker`` users which are used for
   scheduling and executing tests, respectively
-- Clone ``teuthology`` repos into ``~/src/teuthology_master`` under those user accounts
+- Clone ``teuthology`` repos into ``~/src/teuthology_main`` under those user accounts
 - Run ``teuthology``'s ``bootstrap`` script
 - Manages user accounts and sudo privileges using the ``test_admins`` group_var in the secrets repo
 - Includes a script to keep the ``teuthology`` user's crontab up to date with remote version-controlled versions (``--tags="crontab")

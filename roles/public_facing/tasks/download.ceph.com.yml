@@ -5,7 +5,7 @@
     dest: /etc/logrotate.d/download.ceph.com
 
 # Used for pushing upstream builds
-# https://github.com/ceph/ceph-build/blob/master/scripts/sync-push
+# https://github.com/ceph/ceph-build/blob/main/scripts/sync-push
 - name: Add signer user
   user:
     name: signer
