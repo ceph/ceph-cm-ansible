@@ -17,14 +17,14 @@
   args:
     chdir: /etc/yum.repos.d
   register: repo_files_with_mirrorlists
-  when: use_baseurls|bool is true
+  when: use_baseurls|bool
 
 - name: Comment mirrorlist parameter in each repo
   shell: "sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/{{ item }}.repo"
   with_items: "{{ repo_files_with_mirrorlists.stdout_lines }}"
-  when: use_baseurls|bool is true
+  when: use_baseurls|bool
 
 - name: Use a baseurl instead
   shell: "echo 'baseurl=http://packages.oit.ncsu.edu/centos/{{ ansible_distribution_major_version }}{{ dash_stream }}/{% if item == \"CentOS-Extras\" %}extras{% else %}{{ item | regex_replace('CentOS-','') }}{% endif %}/{{ ansible_architecture }}/os/' >> /etc/yum.repos.d/{{ item }}.repo"
   with_items: "{{ repo_files_with_mirrorlists.stdout_lines }}"
-  when: use_baseurls|bool is true
+  when: use_baseurls|bool
