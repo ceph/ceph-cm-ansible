@@ -46,6 +46,8 @@ distros:
       iso: ""
   "RHEL-8.5-Server-x86_64":
       iso: ""
+  "RHEL-8.6-Server-x86_64":
+      iso: ""
   "RHEL-9.0-Server-x86_64":
       iso: ""
   "CentOS-8.stream-x86_64":
