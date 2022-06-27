@@ -53,6 +53,7 @@
   command: subscription-manager register
            --activationkey={{ subscription_manager_activationkey }}
            --org={{ subscription_manager_org }}
+           --name={{ ansible_fqdn }}
            {% if set_rhsm_release|default(false)|bool == true %}--release={{ ansible_distribution_version }}{% endif %}
            --force
   no_log: true
