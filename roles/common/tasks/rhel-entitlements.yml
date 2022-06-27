@@ -23,6 +23,7 @@
     name: "{{ satellite_cert_rpm }}"
     state: present
     validate_certs: no
+    disable_gpg_check: yes
   when: use_satellite == true
 
 # set the releasever cause without it rhel-7-server-rpms repo fails on rhel7.9 machines
