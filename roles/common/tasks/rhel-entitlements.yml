@@ -18,11 +18,16 @@
   set_fact:
     have_entitlements: "{{ subscription_manager_org != '' and subscription_manager_activationkey != ''}}"
 
+- name: Download CA Cert from Satellite Server
+  get_url:
+    url: "{{ satellite_cert_rpm }}"
+    dest: /tmp/katello-ca-consumer-latest.noarch.rpm
+  when: use_satellite == true
+
 - name: Install CA Cert from Satellite Server
-  yum:
-    name: "{{ satellite_cert_rpm }}"
-    state: present
-    validate_certs: no
+  command: rpm --reinstall -Uvh /tmp/katello-ca-consumer-latest.noarch.rpm
+  register: sat_rpm_install
+  failed_when: sat_rpm_install.rc != 0 and "is already installed" not in sat_rpm_install.stderr
   when: use_satellite == true
 
 # set the releasever cause without it rhel-7-server-rpms repo fails on rhel7.9 machines
