@@ -91,20 +91,22 @@ Step 2: Set up secrets repository
 Clone the secrets repository and symlink the ``hosts`` and ``secrets``
 directories into place::
 
-  cd $HOME/dev/
-  git clone git@..../ceph-ansible-secrets.git
+  cd $HOME/src/
+  git clone git@github.com:ceph/ceph-sepia-secrets.git
+
+  # If needed, get the path for ceph-octo-secrets from a downstream dev
 
   sudo mv /etc/ansible/hosts /etc/ansible/hosts.default
 
-  sudo ln -s /path/to/ceph-ansible-secrets/ansible/inventory /etc/ansible/hosts
-  sudo ln -s /path/to/ceph-ansible-secrets/ansible/secrets /etc/ansible/secrets
+  sudo ln -s ~/src/ceph-sepia-secrets/ansible/inventory /etc/ansible/hosts
+  sudo ln -s ~/src/ceph-sepia-secrets/ansible/secrets /etc/ansible/secrets
 
 Step 3: Clone the main Ceph ansible repo
 ----------------------------------------
 
 Clone the main Ceph ansible repository::
 
-  git clone git@..../ceph-cm-ansible.git
+  git clone git@github.com:ceph/ceph-cm-ansible.git
   cd ceph-cm-ansible
   
 Step 4 (Optional) Modify ``hosts`` files
