@@ -84,3 +84,5 @@
     state: stopped
   # There's an issue with ansible<=2.9 and our custom built kernels (5.8 as of this commit) where the service and systemd modules don't have backwards compatibility with init scripts
   ignore_errors: "{{ 'ceph' in ansible_kernel }}"
+  when:
+    - not containerized_node
