@@ -130,12 +130,6 @@
   tags:
     - resolvconf
 
-- name: include secondary NIC config tasks
-  import_tasks: secondary_nic.yml
-  when: secondary_nic_mac is defined
-  tags:
-    - secondary-nic
-
 # http://tracker.ceph.com/issues/20623
 - name: List any leftover Ceph artifacts from previous jobs
   shell: 'find {{ item }} -name "*ceph*"'

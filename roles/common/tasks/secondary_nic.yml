@@ -1,8 +1,18 @@
 ---
-- name: Make sure ethtool is installed
-  package:
+- name: Make sure ethtool is installed (Ubuntu)
+  apt:
     name: ethtool
-    state: latest
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Make sure ethtool is installed (CentOS/RHEL)
+  yum:
+    name: ethtool
+    state: present
+    enablerepo: epel
+  when:
+    - ansible_os_family == 'RedHat'
+    - enable_epel|bool == true
 
 - name: grep ethtool for secondary NIC MAC address
   shell: "ethtool -P {{ item }} | awk '{ print $3 }' | grep -q -i '{{ secondary_nic_mac }}'"
@@ -17,9 +27,6 @@
   with_items: "{{ ethtool_grep_output.results }}"
   when: item.rc == 0
 
-# Default to 1500
-- set_fact: mtu=1500
-
 - name: "Check if {{ nic_to_configure }} is 10Gb"
   shell: "ethtool {{ nic_to_configure }} | grep Speed | awk '{ print $2 }'"
   register: nic_to_configure_speed
@@ -29,6 +36,7 @@
 - name: Set MTU to 9000 if 10Gb
   set_fact: mtu=9000
   when:
+    - mtu is not defined
     - nic_to_configure_speed is defined
     - (nic_to_configure_speed.stdout == '10000Mb/s' or nic_to_configure_speed.stdout == '25000Mb/s')
 
@@ -45,7 +53,7 @@
 
 # Can't set MTU for DHCP interfaces on Ubuntu in /etc/network/interfaces
 - name: Set MTU on Ubuntu
-  shell: "ifconfig {{ nic_to_configure }} mtu {{ mtu }}"
+  shell: "ifconfig {{ nic_to_configure }} mtu {{ mtu|default('1500') }}"
   when: ansible_os_family == 'Debian'
 
 - name: "Bounce {{ nic_to_configure }}"
@@ -68,7 +76,7 @@
     - { regexp: '^DEVICE=', line: 'DEVICE={{ nic_to_configure }}' }
     - { regexp: '^BOOTPROTO=', line: 'BOOTPROTO=dhcp' }
     - { regexp: '^ONBOOT=', line: 'ONBOOT=yes' }
-    - { regexp: '^MTU=', line: 'MTU={{ mtu }}' }
+    - { regexp: '^MTU=', line: 'MTU={{ mtu|default("1500") }}' }
   when:
     - nic_to_configure is defined
     - ansible_os_family == 'RedHat'

@@ -60,3 +60,9 @@
         (selinux_status is defined and selinux_status.stdout != "Disabled")
   tags:
     - nagios
+
+- name: include secondary NIC config tasks
+  import_tasks: secondary_nic.yml
+  when: secondary_nic_mac is defined
+  tags:
+    - secondary-nic
