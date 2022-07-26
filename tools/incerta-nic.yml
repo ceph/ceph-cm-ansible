@@ -1,0 +1,116 @@
+# The incerta nodes in the Sepia lab are connected to a private (not uplinked) Mellanox 40Gb switch.
+# This playbook is used in conjunction with individual host_vars files for each host to configure
+# the second/back interface on each server.
+#
+# https://wiki.sepia.ceph.com/doku.php?id=hardware:incerta
+# https://wiki.sepia.ceph.com/doku.php?id=services:networking#hardware
+# mlx-sw01.ipmi.sepia.ceph.com
+
+- hosts: incerta
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Make sure ethtool is installed (Ubuntu)
+      apt:
+        name: ethtool
+        state: present
+      when: ansible_os_family == 'Debian'
+    
+    - name: Make sure ethtool is installed (CentOS/RHEL)
+      yum:
+        name: ethtool
+        state: present
+        enablerepo: epel
+      when: ansible_os_family == 'RedHat'
+    
+    - name: grep ethtool for secondary NIC MAC address
+      shell: "ethtool -P {{ item }} | awk '{ print $3 }' | grep -q -i '{{ incerta_back_mac }}'"
+      register: ethtool_grep_output
+      with_items: "{{ ansible_interfaces }}"
+      failed_when: false
+      changed_when: false
+    
+    - name: Define net_to_configure var
+      set_fact:
+        nic_to_configure: "{{ item.item }}"
+      with_items: "{{ ethtool_grep_output.results }}"
+      when: item.rc == 0
+
+    - name: Check for /etc/network/interfaces
+      stat:
+        path: /etc/network/interfaces
+      register: etc_network_interfaces
+      when: ansible_os_family == 'Debian'
+    
+    - name: "Write Ubuntu network config for {{ nic_to_configure }}"
+      blockinfile:
+        path: /etc/network/interfaces
+        block: |
+          auto {{ nic_to_configure }}
+          iface {{ nic_to_configure }} inet static
+            address {{ incerta_back_ip }}
+            network 10.0.10.0
+            netmask 255.255.255.0
+            broadcast 10.0.10.255
+          post-up /sbin/ifconfig {{ nic_to_configure }} mtu 9216 up
+      register: wrote_network_config
+      when:
+        - nic_to_configure is defined
+        - ansible_os_family == 'Debian'
+        - etc_network_interfaces.stat.exists
+    
+    - name: "Bounce {{ nic_to_configure }}"
+      shell: "ifdown {{ nic_to_configure }} && ifup {{ nic_to_configure }}"
+      when:
+        - wrote_network_config is changed
+        - ansible_os_family == 'Debian'
+        - etc_network_interfaces.stat.exists
+
+    - name: Check for /etc/netplan/01-netcfg.yaml
+      stat:
+        path: /etc/netplan/01-netcfg.yaml
+      register: netplan_conf
+      when: ansible_os_family == 'Debian'
+
+    - name: "Configure {{ nic_to_configure }} using ifconfig"
+      command: "ifconfig {{ nic_to_configure }} {{ incerta_back_ip }} netmask 255.255.255.0 mtu 9216"
+      when:
+        - ansible_os_family == 'Debian'
+        - not etc_network_interfaces.stat.exists
+        - netplan_conf.stat.exists
+    
+    - name: "Write RHEL/CentOS network config for {{ nic_to_configure }}"
+      lineinfile:
+        path: "/etc/sysconfig/network-scripts/ifcfg-{{ nic_to_configure }}"
+        create: yes
+        owner: root
+        group: root
+        mode: 0644
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      register: wrote_network_config
+      with_items:
+        - { regexp: '^DEVICE=', line: 'DEVICE={{ nic_to_configure }}' }
+        - { regexp: '^NAME=', line: 'NAME={{ nic_to_configure }}' }
+        - { regexp: '^BOOTPROTO=', line: 'BOOTPROTO=static' }
+        - { regexp: '^ONBOOT=', line: 'ONBOOT=yes' }
+        - { regexp: '^MTU=', line: 'MTU=9216' }
+        - { regexp: '^IPADDR=', line: 'IPADDR={{ incerta_back_ip }}' }
+        - { regexp: '^PREFIX=', line: 'PREFIX=24' }
+        - { regexp: '^DEFROUTE=', line: 'DEFROUTE=no' }
+      when:
+        - nic_to_configure is defined
+        - ansible_os_family == 'RedHat'
+    
+    - name: "Bounce {{ nic_to_configure }}"
+      shell: "ifdown {{ nic_to_configure }}; ifup {{ nic_to_configure }}"
+      when:
+        - wrote_network_config is changed
+        - ansible_os_family == 'RedHat'
+    
+    - fail:
+        msg: "WARNING: {{ ansible_hostname }} IS USING NETPLAN TO CONFIGURE ITS NICS. EDITING NETPLAN YAML FILES USING ANSIBLE IS NOT TRIVIAL. THEREFORE, THIS NETWORK SETTING WILL NOT SURVIVE A REBOOT! RECOMMEND MANUALLY EDITING /etc/netplan/01-netcfg.yaml"
+      when:
+        - ansible_os_family == 'Debian'
+        - not etc_network_interfaces.stat.exists
+        - netplan_conf.stat.exists
