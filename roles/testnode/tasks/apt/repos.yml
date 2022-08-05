@@ -48,7 +48,7 @@
 # required for apt_repository
 - name: Install python-apt
   apt:
-    name: python-apt
+    name: "{{ python_apt_package_name|default('python-apt') }}"
     state: present
 
 - name: Add local apt repos.
