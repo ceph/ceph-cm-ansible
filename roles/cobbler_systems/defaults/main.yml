@@ -2,4 +2,4 @@
 interface: eth0
 kernel_options: ''
 kernel_options_post: ''
-default_profile: "Ubuntu-14.04-server-x86_64"
+default_profile: "RHEL-8.6-Server-x86_64"
