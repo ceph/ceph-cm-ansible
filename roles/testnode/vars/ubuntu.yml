@@ -4,7 +4,6 @@ common_packages:
   - libfcgi0ldbl
   ###
   # for s3 tests
-  - python-dev
   - libev-dev
   ###
   # for cpan

@@ -18,6 +18,7 @@ packages:
   # used by workunits
   - mpich2
   - libmpich2-dev
+  - python-dev
 
 non_aarch64_packages:
   - iozone3
