@@ -47,7 +47,7 @@
 # However, we do not want to lock the release ver on all our systems; just testnodes.
 - name: Set the releasever
   copy:
-    content: "{{ ansible_lsb.release }}"
+    content: "{{ ansible_distribution_version }}"
     dest: /etc/yum/vars/releasever
   when: inventory_hostname in groups['testnodes']
 
