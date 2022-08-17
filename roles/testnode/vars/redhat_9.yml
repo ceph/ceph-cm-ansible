@@ -45,6 +45,14 @@ packages:
   - python3-pip
   - NetworkManager-initscripts-updown
 
+ceph_dependency_packages_to_remove:
+  - boost-random
+  - boost-program-options
+  - leveldb
+  - xmlstarlet
+  - boost-random
+  - hdparm
+
 epel_packages:
   - dbench
 
