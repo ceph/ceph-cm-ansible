@@ -1,0 +1,54 @@
+---
+# Packages that are in RHEL8 but not in RHEL9:
+# redhat-lsb libev-devel python3-nose python3-virtualenv iozone
+# Packages that needed to be added to this vars file:
+# python3-pip
+
+packages:
+  - dnf-utils
+  - git-all
+  - sysstat
+  - libedit
+  - boost-thread
+  - xfsprogs
+  - gdisk
+  - parted
+  - libgcrypt
+  - fuse-libs
+  - openssl
+  - libuuid
+  - attr
+  - ant
+  - lsof
+  - gettext
+  - bc
+  - xfsdump
+  - blktrace
+  - usbredir
+  - podman
+  - firewalld
+  - wget
+  - valgrind
+  - nfs-utils
+  - ncurses-devel
+  - gcc
+  - git
+  - make
+  - genisoimage
+  - qemu-img
+  - qemu-kvm-core
+  - qemu-kvm-block-rbd
+  - libacl-devel
+  - autoconf
+  - gdb
+  - lvm2
+  - python3-pip
+
+epel_packages:
+  - dbench
+
+nfs_service: nfs-server
+
+ntp_service_name: chronyd
+
+configure_abrt: false
