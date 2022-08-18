@@ -43,6 +43,7 @@ packages:
   - gdb
   - lvm2
   - python3-pip
+  - NetworkManager-initscripts-updown
 
 epel_packages:
   - dbench
