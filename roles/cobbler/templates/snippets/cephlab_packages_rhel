@@ -16,6 +16,9 @@ python3
 ## These packages are available in all RHEL/CentOS versions but not Fedora
 perl
 ## These packages are not available in CentOS 9 Stream
+#if int($distro_ver_major) >= 9
+NetworkManager-initscripts-updown
+#end if
 #if int($distro_ver_major) < 9
 redhat-lsb-core
 #end if
