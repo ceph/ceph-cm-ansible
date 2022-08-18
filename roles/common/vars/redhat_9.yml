@@ -1,0 +1,8 @@
+---
+rhsm_repos:
+  - rhel-9-for-x86_64-baseos-rpms
+  - rhel-9-for-x86_64-appstream-rpms
+
+nrpe_selinux_packages:
+  - python3-libsemanage
+  - python3-policycoreutils
