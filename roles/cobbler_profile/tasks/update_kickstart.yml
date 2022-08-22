@@ -10,6 +10,6 @@
   register: kickstart
 
 - name: "Set the profile's kickstart"
-  command: cobbler profile edit --name={{ distro_name }} --kickstart={{ kickstart_path }}
+  command: cobbler profile edit --name={{ distro_name }} "{{ autoinstall_flag }}"={{ kickstart_path }}
   when: kickstart is defined and
         kickstart.stdout != kickstart_path

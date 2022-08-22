@@ -27,3 +27,7 @@ settings:
 cobbler_settings_file: /etc/cobbler/settings.yaml
 
 kopts_flag: "--kernel-options"
+
+autoinstall_flag: "--autoinstall"
+
+autoinstall_meta_flag: "--autoinstall-meta"

@@ -80,3 +80,5 @@ pip_packages:
 cobbler_settings_file: /etc/cobbler/settings
 
 kopts_flag: "--kopts"
+
+autoinstall_flag: "--kickstart"
