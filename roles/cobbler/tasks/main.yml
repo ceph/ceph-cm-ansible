@@ -29,7 +29,7 @@
     - always
 
 - import_tasks: yum_systems.yml
-  when: ansible_pkg_mgr == "yum"
+  when: ansible_os_family == "RedHat"
 
 - import_tasks: apt_systems.yml
   when: ansible_pkg_mgr == "apt"
