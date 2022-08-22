@@ -23,3 +23,5 @@ settings:
     value: "{{ ip }}"
   - name: pxe_just_once
     value: 1
+
+cobbler_settings_file: /etc/cobbler/settings.yaml

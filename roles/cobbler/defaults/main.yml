@@ -76,3 +76,5 @@ power_pass: powerpass
 pip_packages:
   - pip
   - ansible
+
+cobbler_settings_file: /etc/cobbler/settings
