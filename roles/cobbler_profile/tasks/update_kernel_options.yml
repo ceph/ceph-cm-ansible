@@ -11,5 +11,5 @@
 
 # This task is not idempotent because of the reason mentioned above.
 - name: "Set the profile's kernel_options"
-  command: cobbler profile edit --name={{ distro_name }} --kopts='{{ distro.kernel_options }}'
+  command: cobbler profile edit --name={{ distro_name }} "{{ kopts_flag }}"='{{ distro.kernel_options }}'
   when: kernel_options.stdout.strip() != distro.kernel_options

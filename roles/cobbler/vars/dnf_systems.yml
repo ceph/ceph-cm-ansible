@@ -25,3 +25,5 @@ settings:
     value: 1
 
 cobbler_settings_file: /etc/cobbler/settings.yaml
+
+kopts_flag: "--kernel-options"

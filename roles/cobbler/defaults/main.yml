@@ -78,3 +78,5 @@ pip_packages:
   - ansible
 
 cobbler_settings_file: /etc/cobbler/settings
+
+kopts_flag: "--kopts"
