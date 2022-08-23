@@ -28,7 +28,7 @@
     opts: "loop"
     fstype: "iso9660"
     state: mounted
-  when: download is changed or (iso_stat.stat.exists and
+  when: download is changed or (iso_stat.stat is defined and iso_stat.stat.exists and
         profile is defined and profile.stdout == '')
   register: mount
 
