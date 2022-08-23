@@ -9,6 +9,7 @@ cobbler_extra_packages:
   - pykickstart
   - fence-agents-all
   - nmap
+  - ansible
 
 pip_packages: []
 
