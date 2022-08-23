@@ -13,8 +13,11 @@
 # System authorization information
 #if int($distro_ver_major) < 9
 auth  --useshadow  --enablemd5
+# Use network installation
+url --url=$tree
 #else
 authselect select minimal
+url --url=http://@@http_server@@/cblr/distro_mirror/@@distro@@
 #end if
 $SNIPPET('cephlab_rhel_disks')
 # Use text mode install
@@ -27,8 +30,6 @@ firstboot --disable
 keyboard us
 # System language
 lang en_US
-# Use network installation
-url --url=$tree
 # If any cobbler repo definitions were referenced in the kickstart profile, include them here.
 $yum_repo_stanza
 # Network information
@@ -75,7 +76,9 @@ $SNIPPET('post_install_kernel_options')
 $SNIPPET('func_register_if_enabled')
 $SNIPPET('download_config_files')
 $SNIPPET('koan_environment')
+#if int($distro_ver_major) < 9
 $SNIPPET('redhat_register')
+#end if
 $SNIPPET('cobbler_register')
 # Enable post-install boot notification
 $SNIPPET('post_anamon')
