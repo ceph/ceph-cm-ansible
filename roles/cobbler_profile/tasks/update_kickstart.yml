@@ -1,7 +1,7 @@
 ---
 - name: Set kickstart path
   set_fact:
-    kickstart_path: /var/lib/cobbler/kickstarts/{{ distro.kickstart }}
+    kickstart_path: "{{ ks_dir }}/{{ distro.kickstart }}"
 
 - name: Check to see if the kickstart needs updating
   shell: cobbler profile dumpvars --name={{ distro_name }} | grep '^kickstart :' | awk '{ print $3 }'

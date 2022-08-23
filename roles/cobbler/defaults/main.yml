@@ -82,3 +82,5 @@ cobbler_settings_file: /etc/cobbler/settings
 kopts_flag: "--kopts"
 
 autoinstall_flag: "--kickstart"
+
+ks_dir: /var/lib/cobbler/kickstarts

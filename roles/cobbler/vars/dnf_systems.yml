@@ -31,3 +31,5 @@ kopts_flag: "--kernel-options"
 autoinstall_flag: "--autoinstall"
 
 autoinstall_meta_flag: "--autoinstall-meta"
+
+ks_dir: /var/lib/cobbler/templates
