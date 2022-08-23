@@ -14,4 +14,4 @@
   changed_when: false
 
 - name: Wait for cobbler to start
-  wait_for: port={{ cobbler_port }}
+  wait_for: port={{ cobbler_port|int }}

@@ -1,0 +1,36 @@
+---
+# cobbler-web pulls in cobbler
+cobbler_package: cobbler-web
+cobbler_service: cobblerd
+httpd_service: httpd
+cobbler_extra_packages:
+  - git
+  - syslinux
+  - pykickstart
+  - fence-agents-all
+  - nmap
+  - ansible
+
+pip_packages: []
+
+settings:
+  - name: yum_post_install_mirror
+    value: 0
+  - name: signature_url
+    value: https://raw.githubusercontent.com/cobbler/cobbler/master/config/cobbler/distro_signatures.json
+  - name: server
+    value: "{{ ip }}"
+  - name: next_server
+    value: "{{ ip }}"
+  - name: pxe_just_once
+    value: 1
+
+cobbler_settings_file: /etc/cobbler/settings.yaml
+
+kopts_flag: "--kernel-options"
+
+autoinstall_flag: "--autoinstall"
+
+autoinstall_meta_flag: "--autoinstall-meta"
+
+ks_dir: /var/lib/cobbler/templates

@@ -14,7 +14,7 @@
       "{{ groups.cobbler_managed | difference(cobbler_systems_current) }}"
 
 - name: Add missing systems to cobbler
-  command: cobbler system add --name={{ item.split('.')[0] }} --profile={{ default_profile }} --mac={{ hostvars[item].mac }} --ip-address={{ hostvars[item].ip }} --interface={{ hostvars[item].interface|default(interface) }} --hostname={{ item.split('.')[0] }}.{{ lab_domain }} --kopts="{{ hostvars[item].kernel_options|default(kernel_options) }}" --ksmeta="{{ hostvars[item].kickstart_metadata|default(kickstart_metadata) }}" --power-type={{ hostvars[item].power_type|default(power_type) }} --power-address={{ item.split('.')[0] }}.{{ ipmi_domain }} --power-user={{ hostvars[item].power_user|default(power_user) }} --power-pass={{ hostvars[item].power_pass|default(power_pass) }} --netboot-enabled false
+  command: cobbler system add --name={{ item.split('.')[0] }} --profile={{ default_profile }} --mac={{ hostvars[item].mac }} --ip-address={{ hostvars[item].ip }} --interface={{ hostvars[item].interface|default(interface) }} --hostname={{ item.split('.')[0] }}.{{ lab_domain }} "{{ kopts_flag }}"="{{ hostvars[item].kernel_options|default(kernel_options) }}" "{{ autoinstall_meta_flag|default('--ksmeta') }}"="{{ hostvars[item].kickstart_metadata|default(kickstart_metadata) }}" --power-type={{ hostvars[item].power_type|default(power_type) }} --power-address={{ item.split('.')[0] }}.{{ ipmi_domain }} --power-user={{ hostvars[item].power_user|default(power_user) }} --power-pass={{ hostvars[item].power_pass|default(power_pass) }} --netboot-enabled false
   with_items: "{{ cobbler_systems_add }}"
   when:
     - hostvars[item].mac is defined
@@ -26,7 +26,7 @@
       "{{ groups.cobbler_managed | intersect(cobbler_systems_current) }}"
 
 - name: Update existing systems in cobbler
-  command: cobbler system edit --name={{ item.split('.')[0] }} --mac={{ hostvars[item].mac }} --ip-address={{ hostvars[item].ip }} --interface={{ hostvars[item].interface|default(interface) }} --hostname={{ item.split('.')[0] }}.{{ lab_domain }} --kopts="{{ hostvars[item].kernel_options|default(kernel_options) }}" --kopts-post="{{ hostvars[item].kernel_options_post|default(kernel_options_post) }}" --ksmeta="{{ hostvars[item].kickstart_metadata|default(kickstart_metadata) }}" --power-type={{ hostvars[item].power_type|default(power_type) }} --power-address={{ item.split('.')[0] }}.{{ ipmi_domain }} --power-user={{ hostvars[item].power_user|default(power_user) }} --power-pass={{ hostvars[item].power_pass|default(power_pass) }}
+  command: cobbler system edit --name={{ item.split('.')[0] }} --mac={{ hostvars[item].mac }} --ip-address={{ hostvars[item].ip }} --interface={{ hostvars[item].interface|default(interface) }} --hostname={{ item.split('.')[0] }}.{{ lab_domain }} "{{ kopts_flag }}"="{{ hostvars[item].kernel_options|default(kernel_options) }}" "{{ kopts_flag }}"-post="{{ hostvars[item].kernel_options_post|default(kernel_options_post) }}" "{{ autoinstall_meta_flag|default('--ksmeta') }}"="{{ hostvars[item].kickstart_metadata|default(kickstart_metadata) }}" --power-type={{ hostvars[item].power_type|default(power_type) }} --power-address={{ item.split('.')[0] }}.{{ ipmi_domain }} --power-user={{ hostvars[item].power_user|default(power_user) }} --power-pass={{ hostvars[item].power_pass|default(power_pass) }}
   with_items: "{{ cobbler_systems_update }}"
   when:
     - hostvars[item].mac is defined

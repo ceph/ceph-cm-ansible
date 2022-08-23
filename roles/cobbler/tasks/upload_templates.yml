@@ -23,7 +23,7 @@
 - name: Upload kickstarts and preseeds.
   template:
     src: "kickstarts/{{ item }}"
-    dest: "/var/lib/cobbler/kickstarts/{{ item }}"
+    dest: "{{ ks_dir }}/{{ item }}"
     owner: root
     group: root
     mode: 0644 

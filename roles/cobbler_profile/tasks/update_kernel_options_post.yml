@@ -5,5 +5,5 @@
   register: kernel_options_post
 
 - name: "Set the profile's kernel_options_post if needed."
-  command: cobbler profile edit --name={{ distro_name }} --kopts-post='{{ distro.kernel_options_post }}'
+  command: cobbler profile edit --name={{ distro_name }} "{{ kopts_flag }}"-post='{{ distro.kernel_options_post }}'
   when: kernel_options_post.stdout.strip() != distro.kernel_options_post
