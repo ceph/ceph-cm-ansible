@@ -13,6 +13,9 @@ python3
 #if $distro == 'RHEL' or $distro == 'CentOS'
 #set distro_ver_major = $distro_ver.split(".")[0]
 #set distro_ver_minor = $distro_ver.split(".")[1]
+#if $distro == 'RHEL'
+subscription-manager
+#end if
 ## These packages are available in all RHEL/CentOS versions but not Fedora
 perl
 ## These packages are not available in CentOS 9 Stream
