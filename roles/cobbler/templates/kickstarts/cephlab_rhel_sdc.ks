@@ -101,6 +101,10 @@ $SNIPPET('cephlab_user')
 $SNIPPET('cephlab_rhel_rhsm')
 #end if
 #if distro_ver_minor == 'stream'
+# Put CentOS 9 Stream repos in place
+#if int($distro_ver_major) == 9
+$SNIPPET('cephlab_centos9_repos')
+#end if
 # We want the latest packages because it's Stream
 yum -y update
 #else

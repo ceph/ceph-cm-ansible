@@ -36,10 +36,6 @@ export ANSIBLE_HOST_KEY_CHECKING=False
 if [[ $profile == *"8.stream"* ]]
 then
     ansible-playbook tools/convert-to-centos-stream.yml -v --limit $name* 2>&1 >> /var/log/ansible/$name.log
-elif [[ $profile == *"9.stream"* ]]
-then
-    # For some reason, we end up with no repos on the first boot without doing this.
-    ansible-playbook testnodes.yml --tags repos -v --limit $name* 2>&1 >> /var/log/ansible/$name.log
 fi
 
 # Tell ansible to create users, populate authorized_keys, and zap non-root disks
