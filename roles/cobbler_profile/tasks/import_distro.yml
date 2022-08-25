@@ -45,7 +45,7 @@
   when: profile_type|default('') == 'image'
 
 - import_tasks: import_stream_profile.yml
-  when: '"stream" in distro_name'
+  when: '"8.stream" in distro_name'
 
 # If either the profile already existed or we successfully imported the
 # distro, we might want to update other options in the profile. i.e. kickstarts
