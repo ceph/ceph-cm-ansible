@@ -26,7 +26,8 @@ zerombr
     #set bootloader_args = "--location=mbr --boot-drive=sda"
 ignoredisk --only-use=$disk
 #else if 'braggi' in $hostname
-    #set bootloader_args = "--location=mbr --boot-drive=sdb"
+    #set bootloader_args = "--location=mbr --driveorder=sda,sdb"
+ignoredisk --only-use=sdb
 #else
     #set bootloader_args = "--location=mbr --driveorder=sda"
 #end if
