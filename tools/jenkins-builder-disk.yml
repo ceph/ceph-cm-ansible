@@ -1,0 +1,91 @@
+### This playbook configures a braggi host to be a Jenkins slave.
+
+- hosts:
+    - braggi
+    - incerta
+    - irvingi
+    - adami
+  become: true
+  tasks:
+
+# CentOS 9 on the braggi nodes likes to flip around which disk is sda and which is sdb.  Sometimes it comes up as sdb and sometimes sda.
+  - name: Check if /dev/sda is the 400GB disk on a braggi
+    parted:
+      device: "/dev/sda"
+      unit: GiB
+    register: "sda_parted"
+    when: '"braggi" in ansible_hostname'
+
+  - name: Check if /dev/sdb is the 400GB disk on a braggi
+    parted:
+      device: "/dev/sdb"
+      unit: GiB
+    register: "sdb_parted"
+    when: '"braggi" in ansible_hostname'
+
+  - set_fact:
+      mount_point: /home/jenkins-build
+    when: '"braggi" in ansible_hostname'
+
+  - set_fact:
+      disk: /dev/sda
+    when:
+      - '"braggi" in ansible_hostname'
+      - "sda_parted.disk.size < 500"
+
+  - set_fact:
+      disk: /dev/sdb
+    when:
+      - '"braggi" in ansible_hostname'
+      - "sdb_parted.disk.size < 500"
+
+  - set_fact:
+      disk: /dev/sdb
+      mount_point: /home/jenkins-build
+    when: '"adami" in ansible_hostname'
+
+  - set_fact:
+      disk: /dev/nvme0n1
+      mount_point: /home/jenkins-build
+    when: '"incerta" in ansible_hostname'
+
+# Setting the mountpoint to libvirt/images on irvinigi because I'm adding two
+# right now as CentOS7 Vagrant builders.
+  - set_fact:
+      disk: /dev/sdc
+      mount_point: /var/lib/libvirt/images
+    when: '"irvingi" in ansible_hostname'
+
+  - name: "Create {{ mount_point }} home dir"
+    file:
+      path: "{{ mount_point }}"
+      state: directory
+
+  - name: Install xfsprogs (Ubuntu)
+    package:
+      name: xfsprogs
+      state: latest
+    when: ansible_os_family == "Debian"
+
+  - name: Unmount
+    mount:
+      path: "{{ mount_point }}"
+      src: "{{ disk }}"
+      state: unmounted
+      fstype: xfs
+    ignore_errors: true
+
+  - name: Zap disk
+    command: "sgdisk -Z {{ disk }}"
+
+  - name: Configure disk
+    filesystem:
+      fstype: xfs
+      dev: "{{ disk }}"
+
+  - name: Mount disk
+    mount:
+      path: "{{ mount_point }}"
+      src: "{{ disk }}"
+      state: mounted
+      fstype: xfs
