@@ -20,6 +20,10 @@ perl
 # Needed in RHEL9 but not CentOS9
 NetworkManager-initscripts-updown
 #end if
+# CentOS 9 Stream only packages
+centos-gpg-keys
+-subscription-manager
+python3-pip
 #end if
 ## These packages are not available in CentOS 9 Stream
 #if int($distro_ver_major) < 9
