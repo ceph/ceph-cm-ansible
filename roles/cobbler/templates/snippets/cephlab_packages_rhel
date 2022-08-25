@@ -15,10 +15,13 @@ python3
 #set distro_ver_minor = $distro_ver.split(".")[1]
 ## These packages are available in all RHEL/CentOS versions but not Fedora
 perl
-## These packages are not available in CentOS 9 Stream
 #if int($distro_ver_major) >= 9
+#if $distro == 'RHEL'
+# Needed in RHEL9 but not CentOS9
 NetworkManager-initscripts-updown
 #end if
+#end if
+## These packages are not available in CentOS 9 Stream
 #if int($distro_ver_major) < 9
 redhat-lsb-core
 #end if
