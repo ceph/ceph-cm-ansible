@@ -53,9 +53,10 @@ distros:
   "CentOS-8.stream-x86_64":
       iso: ""
   "CentOS-9.stream-x86_64":
-      iso: https://composes.stream.centos.org/test/latest-CentOS-Stream/compose/BaseOS/x86_64/iso/CentOS-Stream-9-20210512.t.3-x86_64-dvd1.iso
-      sha256: 9b05f2ec63c8c24050b23ed2db19ea9bdfe567f50d3c10423824be91f40fbd85
+      iso: https://composes.stream.centos.org/production/latest-CentOS-Stream/compose/BaseOS/x86_64/iso/CentOS-Stream-9-20220822.0-x86_64-dvd1.iso
+      sha256: fe93c5b66c2ae7eaf11bf52ccd753282961c0da427511ca8d112b48f5d89d863
       kickstart: cephlab_rhel.ks
+      kernel_options: "inst.stage2=http://@@http_server@@/cblr/links/{{ distro_name }}/ inst.ks=http://@@http_server@@/cblr/svc/op/ks/system/@@name@@"
   "Fedora-22-Server-x86_64":
       iso: http://ftp.linux.ncsu.edu/mirror/ftp.redhat.com/pub/fedora/linux/releases/22/Server/x86_64/iso/Fedora-Server-DVD-x86_64-22.iso
       sha256: b2acfa7c7c6b5d2f51d3337600c2e52eeaa1a1084991181c28ca30343e52e0df

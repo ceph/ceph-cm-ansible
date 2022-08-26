@@ -43,7 +43,6 @@ snippets:
   - cephlab_rhel_disks
   - cephlab_post_install_kernel_options
   - cephlab_rhel_rhsm
-  - cephlab_centos9_repos
 
 scripts:
   - cephlab_preseed_late

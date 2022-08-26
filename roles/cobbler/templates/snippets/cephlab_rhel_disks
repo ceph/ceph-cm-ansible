@@ -1,5 +1,12 @@
 ## {{ ansible_managed }}
 #set os_version = $getVar('os_version','')
+# #set hostname = $getVar('name','')
+#set distro = $getVar('distro','').split("-")[0]
+#set distro_ver = $getVar('distro','').split("-")[1]
+#if $distro == 'RHEL' or $distro == 'CentOS'
+#set distro_ver_major = $distro_ver.split(".")[0]
+#set distro_ver_minor = $distro_ver.split(".")[1]
+#end if
 # Partition clearing information
 clearpart --all --initlabel
 # Use all of /dev/sda for the root partition (20G minimum)
@@ -9,8 +16,12 @@ zerombr
 # System bootloader configuration
 #if $os_version == 'rhel7'
     #set bootloader_args = "--location=mbr --boot-drive=sda"
-#else if $os_version == 'rhel8'
+#else if int($distro_ver_major) >= 8 and 'braggi' not in $hostname
     #set bootloader_args = "--location=mbr --boot-drive=sda"
+ignoredisk --only-use=sda
+# On CentOS9 on braggi, the smaller "root" drive is sdb during kickstart and sda after booting into the OS.
+#else if int($distro_ver_major) == 9 and 'braggi' in $hostname
+    #set bootloader_args = "--location=mbr --driveorder=sdb,sda"
 ignoredisk --only-use=sda
 #else
     #set bootloader_args = "--location=mbr --driveorder=sda"
