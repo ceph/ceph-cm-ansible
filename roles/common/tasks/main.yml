@@ -43,7 +43,6 @@
 
 # configure nagios (Except CentOS 9 Stream)
 - import_tasks: nagios.yml
-  when: not (ansible_distribution == "CentOS" and ansible_distribution_major_version == "9")
   tags:
     - nagios
 
