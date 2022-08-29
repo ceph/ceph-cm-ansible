@@ -15,10 +15,14 @@ fi
 
 cat << EOF
 
------- String for cobbler.yml ------
+======== String for cobbler.yml ========
+--- Cobbler v2 ---
 $(echo -n "$username:Cobbler:" && echo -n "$username:Cobbler:$password" | md5sum | awk '{ print $1 }')
 
------- E-mail to $username ------
+--- Cobbler v3 ---
+$username:Cobbler:$(printf "$password" | openssl dgst -sha3-512 | awk '{ print $2 }')
+
+======== E-mail to $username ========
 Hi FIRSTNAME,
 
 Here are your Cobbler user credentials.
