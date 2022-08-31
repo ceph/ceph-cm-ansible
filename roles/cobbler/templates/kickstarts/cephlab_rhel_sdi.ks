@@ -89,7 +89,6 @@ $SNIPPET('post_install_kernel_options')
 $SNIPPET('func_register_if_enabled')
 $SNIPPET('download_config_files')
 $SNIPPET('koan_environment')
-$SNIPPET('redhat_register')
 $SNIPPET('cobbler_register')
 # Enable post-install boot notification
 $SNIPPET('post_anamon')
