@@ -29,6 +29,15 @@
     immediate: yes
   when: gw_allow_http == "true"
 
+- name: firewalld | Allow http traffic on port 8080
+  firewalld:
+    port: 8080
+    zone: public
+    state: enabled
+    permanent: true
+    immediate: yes
+  when: gw_allow_http == "true"
+
 - name: firewalld | Allow https traffic
   firewalld:
     service: https
