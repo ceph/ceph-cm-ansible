@@ -47,7 +47,7 @@ logging {
 {% for domain, values in ddns_keys.items() %}
 {% if key == domain %}
 key "{{ key }}" {
-	algorithm hmac-md5;
+	algorithm {{ values.algorithm|default('hmac-md5') }};
 	secret "{{ values.secret }}";
 };
 {% endif %}
