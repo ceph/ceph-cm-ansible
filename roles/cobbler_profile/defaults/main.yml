@@ -160,14 +160,20 @@ distros:
       kernel_options: "netcfg/choose_interface=auto console=tty0 console=ttyS1,115200"
       kernel_options_post: "pci=realloc=off console=tty0 console=ttyS1,115200"
   "Ubuntu-18.04-server-x86_64":
-      iso: "http://cdimage.ubuntu.com/releases/18.04/release/ubuntu-18.04-server-amd64.iso"
-      sha256: a7f5c7b0cdd0e9560d78f1e47660e066353bb8a79eb78d1fc3f4ea62a07e6cbc
+      iso: "http://cdimage.ubuntu.com/releases/18.04/release/ubuntu-18.04.6-server-amd64.iso"
+      sha256: f5cbb8104348f0097a8e513b10173a07dbc6684595e331cb06f93f385d0aecf6
       kickstart: cephlab_ubuntu.preseed
       kernel_options: "netcfg/choose_interface=auto console=tty0 console=ttyS1,115200 GRUB_DISABLE_OS_PROBER=true"
       kernel_options_post: "pci=realloc=off console=tty0 console=ttyS1,115200"
   "Ubuntu-20.04-server-x86_64":
       iso: "http://cdimage.ubuntu.com/ubuntu-legacy-server/releases/20.04/release/ubuntu-20.04.1-legacy-server-amd64.iso"
       sha256: f11bda2f2caed8f420802b59f382c25160b114ccc665dbac9c5046e7fceaced2
+      kickstart: cephlab_ubuntu.preseed
+      kernel_options: "netcfg/choose_interface=auto console=tty0 console=ttyS1,115200 GRUB_DISABLE_OS_PROBER=true"
+      kernel_options_post: "pci=realloc=off console=tty0 console=ttyS1,115200"
+  "Ubuntu-22.04-server-x86_64":
+      iso: ""
+      sha256: 10f19c5b2b8d6db711582e0e27f5116296c34fe4b313ba45f9b201a5007056cb
       kickstart: cephlab_ubuntu.preseed
       kernel_options: "netcfg/choose_interface=auto console=tty0 console=ttyS1,115200 GRUB_DISABLE_OS_PROBER=true"
       kernel_options_post: "pci=realloc=off console=tty0 console=ttyS1,115200"
