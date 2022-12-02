@@ -78,9 +78,11 @@
 # and move our new zone files into place without them getting overwritten.
 - name: Freeze Dynamic DNS zones to prevent updates
   command: "rndc freeze {{ item.key }}"
+  register: freeze_output
   with_dict: "{{ named_domains }}"
   when: item.value.dynamic == true and
         item.value.ddns_hostname_prefixes is defined
+  failed_when: (freeze_output.rc != 0) and ("no matching zone" not in freeze_output.stderr)
 
 - name: Spit existing dynamic A records into new/temp forward zone file
   shell: "grep -E '^({% for prefix in item.value.ddns_hostname_prefixes %}{{ prefix }}{% if not loop.last %}|{% endif %}{% endfor %})[0-9]+\\s+A' {{ named_conf_zones_path }}/{{ item.key }} >> {{ named_tempdir.stdout }}/{{ item.key }}"
