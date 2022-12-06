@@ -33,7 +33,7 @@
   with_items: "{{ ansible_mounts }}"
   when:
     - item.mount != '/' and
-      not item is match("/(boot|home|opt|root|srv|tmp|usr/local|var|.snapshots)")
+      not item.mount is match("/(boot|home|opt|root|srv|tmp|usr/local|var|.snapshots)")
 
 ## http://tracker.ceph.com/issues/20533
 ## Trusty version of wipefs lacks --force option
