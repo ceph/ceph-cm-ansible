@@ -1,0 +1,9 @@
+---
+- name: Configure systemd monitoring
+  template:
+    src: systemd.yaml.j2
+    dest: "{{ agent_extra_monitor_path }}/systemd.yaml"
+    owner: "{{ signalfx_service_user }}"
+    group: "{{ signalfx_service_group }}"
+    mode: 0600
+  notify: agent_restart

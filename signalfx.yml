@@ -1,0 +1,10 @@
+---
+- name: The signalfx-configurarion for systemd monitoring
+  hosts: all
+  gather_facts: yes
+
+  vars_files:
+    - "{{ var_file_name }}"
+
+  roles:
+    - signalfx_splunk_agent_configuration

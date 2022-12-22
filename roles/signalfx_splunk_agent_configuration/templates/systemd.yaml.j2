@@ -1,0 +1,20 @@
+- type: collectd/systemd
+  services:
+{% for service in systemd_services %}
+  - {{ service }}
+{% endfor %}
+{% if systemd_sendactivestate is defined %}
+  sendActiveState: {{ systemd_sendactivestate }}
+{% endif %}
+{% if systemd_sendsubstate is defined %}
+  sendSubState: {{ systemd_sendsubstate }}
+{% endif %}
+{% if systemd_sendloadstate is defined %}
+  sendLoadState: {{ systemd_sendloadstate }}
+{% endif %}
+{% if systemd_extrametrics is defined and systemd_extrametrics | length > 0 %}
+  extraMetrics:
+{% for metric in systemd_extrametrics %}
+    - {{ metric }}
+{% endfor %}
+{% endif %}

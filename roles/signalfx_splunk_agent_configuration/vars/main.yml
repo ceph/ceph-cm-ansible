@@ -1,0 +1,22 @@
+---
+agent_systemd_config: /etc/systemd/system/signalfx-agent.service.d/service-owner.conf
+access_token_path: /etc/signalfx/token
+agent_extra_monitor_path: /etc/signalfx/monitors
+default_monitors:
+  - type: cpu
+    extraMetrics:
+      - cpu.user
+      - cpu.wait
+      - cpu.system
+      - cpu.steal
+  - type: filesystems
+  - type: disk-io
+  - type: net-io
+  - type: load
+  - type: memory
+  - type: vmem
+  - type: host-metadata
+  - type: processlist
+agent_bin_path: '/usr/lib/signalfx-agent/bin(/.*)'
+agent_bin_restore: '/usr/lib/signalfx-agent/bin'
+agent_bin_setype: bin_t

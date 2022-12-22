@@ -1,0 +1,42 @@
+{% for http_monitor in http_monitors %}
+- type: http
+  host: {{ http_monitor.host | default(ansible_fqdn) }}
+  port: {{ http_monitor.port | default(443) }}
+  path: {{ http_monitor.path | default('/')}}
+  httpTimeout: {{ http_monitor.http_timeout | default('5s') }}
+  useHTTPS: {{ http_monitor.use_https | default(true) }}
+  skipVerify: {{ http_monitor.skip_verify | default(false) }}
+  noRedirects: {{ http_monitor.no_redirects | default(false)  }}
+  method: {{ http_monitor.method | default('GET') }}
+  desiredCode: {{ http_monitor.desired_code | default(200)}}
+  addRedirectURL: {{ http_monitor.add_redirect_url | default(false) }}
+{% if http_monitor.username is defined %}
+  username: {{ http_monitor.username }}
+{% endif %}
+{% if http_monitor.password is defined %}
+  password: {{ http_monitor.password }}
+{% endif %}
+{% if http_monitor.http_headers is defined %}
+  httpHeaders: {{ http_monitor.http_headers }}
+{% endif %}
+{% if http_monitor.ca_cert_path is defined %}
+  caCertPath: {{ http_monitor.ca_cert_path }}
+{% endif %}
+{% if http_monitor.client_cert_path is defined %}
+  clientCertPath: {{ http_monitor.client_cert_path }}
+{% endif %}
+{% if http_monitor.client_key_path is defined %}
+  clientKeyPath: {{ http_monitor.client_key_path }}
+{% endif %}
+{% if http_monitor.request_body is defined %}
+  requestBody: {{ http_monitor.request_body }}
+{% endif %}
+{% if http_monitor.regex is defined %}
+  regex: {{ http_monitor.regex }}
+{% endif %}
+{% if http_monitor.extra_dimensions is defined %}
+  extraDimensions:
+{{ http_monitor.extra_dimensions | to_nice_yaml | indent(4, True) }}
+{% endif %}
+
+{% endfor %}

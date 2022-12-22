@@ -1,0 +1,23 @@
+---
+agent_interval_seconds: 20
+agent_realm: us1
+agent_restorecon_map:
+  RedHat6: /sbin/restorecon
+  RedHat7: /usr/sbin/restorecon
+  RedHat8: /sbin/restorecon
+agent_restorecon_path: "{{ agent_restorecon_map[ ansible_distribution + ansible_distribution_major_version ] }}"
+signalfx_skip_repo: true
+
+http_enabled: false
+http_monitors: []
+
+systemd_enabled: false
+systemd_services: []
+
+signalfx_repo_base_url: https://splunk.jfrog.io/splunk
+signalfx_package_stage: release
+signalfx_version: latest
+signalfx_conf_file_path: /etc/signalfx/agent.yaml
+signalfx_service_user: signalfx-agent
+signalfx_service_group: signalfx-agent
+signalfx_service_state: started

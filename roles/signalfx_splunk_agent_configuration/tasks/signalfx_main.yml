@@ -1,0 +1,26 @@
+---
+- name: Accepted distros
+  set_fact:
+    ubuntu_distro: ['Ubuntu']
+    rhel_distro: ['RedHat', 'Red Hat Enterprise Linux', 'CentOS', 'Amazon']
+    cacheable: true
+
+- name: Confirm if agent configuration is provided!
+  fail: msg='Please provide a populated signalfx_agent_config'
+  when: not (signalfx_agent_config| default(false))
+
+- name: Confirm if SignalFx Access Token is defined!
+  fail: msg='Please specify a signalFxAccessToken in your signalfx_agent_config'
+  when: not (signalfx_agent_config.signalFxAccessToken | default('') | trim) or not signalfx_agent_config.signalFxAccessToken
+
+- name: Acceptable distribution check
+  fail:
+    msg: >
+         Failed! The target is {{ ansible_os_family }} and this role only supports {{ ubuntu_distro }} and {{ rhel_distro }}.
+  when: (ansible_os_family not in ubuntu_distro)
+          and
+        (ansible_os_family not in rhel_distro)
+
+- name: Linux installation
+  include_tasks: linux_installation.yml
+  when: ( ansible_os_family in ubuntu_distro ) or ( ansible_os_family in rhel_distro )

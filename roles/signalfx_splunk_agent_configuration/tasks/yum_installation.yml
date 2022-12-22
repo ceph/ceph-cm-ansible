@@ -1,0 +1,22 @@
+---
+- name: Delete old signing key for SignalFx Agent
+  rpm_key:
+    key: 098acf3b
+    state: absent
+
+- name: Add Signalfx Agent repo into source list
+  yum_repository:
+    name: signalfx-agent
+    description: SignalFx Agent Repository
+    baseurl: "{{ signalfx_repo_base_url }}/signalfx-agent-rpm/{{ signalfx_package_stage }}"
+    gpgkey: "{{ signalfx_repo_base_url }}/signalfx-agent-rpm/splunk-B3CD4420.pub"
+    gpgcheck: yes
+    enabled: yes
+  when: not (signalfx_skip_repo | bool)
+
+- name: Install signalfx-agent via yum package manager
+  yum:
+    name: signalfx-agent{% if signalfx_version is defined and signalfx_version != "latest" %}-{{ signalfx_version }}{% endif %}
+    state: "{% if signalfx_version is defined and signalfx_version != 'latest' %}present{% else %}{{ signalfx_version }}{% endif %}"
+    allow_downgrade: yes
+    update_cache: yes

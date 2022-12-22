@@ -1,0 +1,9 @@
+---
+- name: agent_systemd_reload
+  systemd:
+    daemon_reload: yes
+
+- name: agent_restart
+  service:
+    name: signalfx-agent
+    state: restarted
