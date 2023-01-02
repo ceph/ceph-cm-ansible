@@ -33,10 +33,11 @@
     group: root
     mode: 0755
 
-- name: Ensure perl-doc is installed on apt systems.
-  apt:
-    name: perl-doc
-    state: present
+- name: Ensure perl-doc and cpanminus is installed on apt systems.
+  apt: name={{item}} state=present
+  with_items:
+    - cpanminus
+    - perl-doc
   when: ansible_pkg_mgr == "apt"
 
 - name: "Check to see if Amazon::S3 is installed."
