@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import hashlib
 import logging
@@ -15,13 +15,13 @@ def authenticate():
     time.sleep(1)
 
     path = sys.argv[1]
-    with file(path, 'rb') as f:
+    with open(path, 'rb') as f:
         user = f.readline(8192)
-        assert user.endswith('\n')
+        assert user.endswith(b'\n')
         user = user[:-1]
         assert user
         secret = f.readline(8192)
-        assert secret.endswith('\n')
+        assert secret.endswith(b'\n')
         secret = secret[:-1]
         assert secret
 
@@ -36,23 +36,23 @@ def authenticate():
     #
     # We'll just redo that quickly for usernames, to ensure they are safe.
 
-    user = re.sub(r'[^a-zA-Z0-9_.@-]', '_', user)
+    user = re.sub(rb'[^a-zA-Z0-9_.@-]', '_', user)
 
     def find_user(wanted):
-        with file('{{ openvpn_data_dir }}/users') as f:
+        with open('{{ openvpn_data_dir }}/users', 'rb') as f:
             for line in f:
-                assert line.endswith('\n')
+                assert line.endswith(b'\n')
                 line = line[:-1]
-                if line.startswith("#") or len(line) == 0:
+                if line.startswith(b'#') or len(line) == 0:
                     continue
-                (username, salt, correct) = line.split(' ', 2)
+                (username, salt, correct) = line.split(b' ', 2)
                 if username == wanted:
                     return (salt, correct)
 
         # these will never match
         log.error('User not found: %r', wanted)
-        salt = 'not-found'
-        correct = 64*'x'
+        salt = b'not-found'
+        correct = 64*b'x'
         return (salt, correct)
 
     (salt, correct) = find_user(user)
@@ -63,7 +63,7 @@ def authenticate():
     outer = hashlib.new('sha256')
     outer.update(inner.digest())
     outer.update(salt)
-    attempt = outer.hexdigest()
+    attempt = outer.hexdigest().encode()
 
     if attempt != correct:
         log.error('{prog}: invalid auth for user {user!r}.'.format(prog=os.path.basename(sys.argv[0]), user=user))
