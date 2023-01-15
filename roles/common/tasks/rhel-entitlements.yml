@@ -33,6 +33,45 @@
   command: subscription-manager clean
   when: use_satellite == true
 
+- name: remove host UUID files
+  file:
+    state: absent
+    path: "{{ item }}"
+  with_items:
+    - /var/lib/dbus/machine-id
+    - /etc/machine-id
+    - /etc/rhsm/facts/dmi_system_uuid.facts
+    - /etc/rhsm/facts/katello.facts
+    - /etc/insights-client/machine-id
+  when: use_satellite == true
+
+- name: Generate new UUID
+  shell: uuidgen
+  register: new_uuid
+  when: use_satellite == true
+
+- name: Add new UUID to dmi_system_uuid.facts
+  ansible.builtin.lineinfile:
+    path: /etc/rhsm/facts/dmi_system_uuid.facts
+    create: yes
+    line: |
+      WA{"dmi.system.uuid": "{{ new_uuid.stdout }}"}WA
+  when: use_satellite == true
+
+- name: remove 'WA' PREFIX from dmi_system_uuid.facts
+  replace: dest="/etc/rhsm/facts/dmi_system_uuid.facts" regexp="WA" replace=""
+
+- name: Add fqdn to katello.facts
+  ansible.builtin.lineinfile:
+    path: /etc/rhsm/facts/katello.facts
+    create: yes
+    line: |
+      WA{"network.hostname-override": "{{ ansible_fqdn }}"}WA
+  when: use_satellite == true
+
+- name: remove 'WA' PREFIX from katello.facts
+  replace: dest="/etc/rhsm/facts/katello.facts" regexp="WA" replace=""
+
 - name: Install CA Cert from Satellite Server
   yum:
     name: "{{ satellite_cert_rpm }}"
