@@ -60,6 +60,7 @@
 
 - name: remove 'WA' PREFIX from dmi_system_uuid.facts
   replace: dest="/etc/rhsm/facts/dmi_system_uuid.facts" regexp="WA" replace=""
+  when: use_satellite == true
 
 - name: Add fqdn to katello.facts
   ansible.builtin.lineinfile:
@@ -71,6 +72,7 @@
 
 - name: remove 'WA' PREFIX from katello.facts
   replace: dest="/etc/rhsm/facts/katello.facts" regexp="WA" replace=""
+  when: use_satellite == true
 
 - name: Install CA Cert from Satellite Server
   yum:
