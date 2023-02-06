@@ -1,0 +1,17 @@
+---
+- name: Configure HTTP monitoring
+  template:
+    src: http.yaml.j2
+    dest: "{{ agent_extra_monitor_path }}/http.yaml"
+    owner: "{{ signalfx_service_user }}"
+    group: "{{ signalfx_service_group }}"
+    mode: 0600
+  notify: agent_restart
+
+- name: Ensure OCSP cache can be created
+  file:
+    state: directory
+    path: '/usr/lib/signalfx-agent/.cache/'
+    owner: 'signalfx-agent'
+    group: 'signalfx-agent'
+    mode: '0700'

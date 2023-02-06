@@ -1,0 +1,89 @@
+---
+- name: Validate the variable definitions 
+  assert:
+    that:
+      - basic_attributes is defined
+      - basic_attributes['appcode'] is defined
+      - access_token is defined
+    quiet: true
+
+- name: Default monitors
+  set_fact:
+    _agent_monitors: "{{ default_monitors }}"
+  when: agent_monitors is not defined
+
+- name: Configure SELinux for SignalFX Smart Agent
+  seboolean:
+    name: nis_enabled
+    state: yes
+    persistent: yes
+  when: ansible_distribution_major_version | int > 6
+
+- name: Create the SignalFX Smart Agent configuration directory
+  file:
+    path: "{{ access_token_path | dirname }}"
+    state: directory
+    mode: 0700
+
+- name: Store SignalFX access token in a separate file
+  copy:
+    dest: "{{ access_token_path }}"
+    content: "{{ access_token }}"
+    mode: 0600
+  no_log: true
+
+- name: Import the SignalFX Smart Agent role
+  import_tasks: signalfx_main.yml 
+  vars:
+    signalfx_agent_config:
+      signalFxAccessToken: "{'#from': '{{ access_token_path }}'}"
+      signalFxRealm: "{{ agent_realm }}"
+      intervalSeconds: "{{ agent_interval_seconds }}"
+      globalDimensions: "{{ basic_attributes }}"
+      monitors: "{{ _agent_monitors }}"
+
+- name: Include extra monitors in agent configuration
+  blockinfile:
+    path: "{{ signalfx_conf_file_path }}"
+    insertafter: 'monitors:'
+    block: |
+      -   '#from': /etc/signalfx/monitors/*
+          flatten: true
+          optional: true
+
+- name: Create directory for SignalFX extra monitors
+  file:
+    path: "{{ agent_extra_monitor_path }}"
+    state: directory
+    owner: "{{ signalfx_service_user }}"
+    group: "{{ signalfx_service_group }}"
+    mode: 0700
+
+- name: Correct bundled binaries SELinux context types to work around an upstream bug
+  sefcontext:
+    target: "{{ agent_bin_path }}"
+    setype: "{{ agent_bin_setype }}"
+    state: present
+
+- name: Apply the SELinux context type to collectd
+  command: "{{ agent_restorecon_path }} -RvF {{ agent_bin_restore }}"
+
+- name: Fix the SignalFX Smart Agent service startup
+  blockinfile:
+    path: "{{ agent_systemd_config }}"
+    backup: yes
+    insertbefore: BOF
+    block: |
+      [Unit]
+      Description=SignalFX Smart Agent
+      After=network.target nss-lookup.target multi-user.target
+  notify: agent_systemd_reload
+  when: ansible_distribution_major_version | int > 6
+
+- name: Configure HTTP monitoring
+  import_tasks: http.yml
+  when: http_enabled
+
+- name: Configure Systemd services monitoring
+  import_tasks: systemd.yml
+  when: systemd_enabled

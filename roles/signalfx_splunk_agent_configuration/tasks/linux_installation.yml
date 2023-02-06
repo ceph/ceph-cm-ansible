@@ -1,0 +1,25 @@
+---
+- name: Import signalfx-agent deploy for CentOS or RHEL
+  import_tasks: yum_installation.yml
+  when: ansible_os_family in rhel_distro
+
+- name: Import signalfx-agent deploy for Debian or Ubuntu
+  import_tasks: ubuntu_installation.yml
+  when: ansible_os_family in ubuntu_distro
+
+- name: Set signalfx-agent service owner
+  import_tasks: service_owner.yml
+
+- name: Write signalfx config
+  copy:
+    content: "{{ signalfx_agent_config | to_nice_yaml }}"
+    dest: "{{ signalfx_conf_file_path }}"
+    owner: "{{ signalfx_service_user }}"
+    group: "{{ signalfx_service_group }}"
+    mode: 0600
+
+- name: Start signalfx-agent
+  service:
+    name: signalfx-agent
+    state: "{{ signalfx_service_state }}"
+    enabled: yes
