@@ -1,0 +1,42 @@
+---
+- name: Add postgres user to the docker group
+  user:
+    name: "postgres"
+    append: yes
+    groups:
+      - docker
+
+- name: Create secret for the database password
+  become_user: "{{ paddles_user }}"
+  docker_secret:
+    name: postgres_exporter_password
+    data: "{{ db_pass }}"
+
+- name: Create docker swarm service for postgres exporter
+  become_user: postgres
+  docker_swarm_service:
+    name: postgres-exporter
+    state: present
+    replicas: 1
+    update_config:
+      parallelism: 1
+      delay: 10s
+      monitor: 10s
+      failure_action: rollback
+    rollback_config:
+      order: start-first
+    image: "quay.io/prometheuscommunity/postgres-exporter:latest"
+    resolve_image: true
+    publish:
+      - published_port: 9187
+        target_port: 9187
+    logging:
+      driver: journald
+      options:
+        tag: prometheus-exporter
+    env:
+      - "DATA_SOURCE_URI={{ db_host }}"
+      - "DATA_SOURCE_USER={{ paddles_db_user }}"
+      - "DATA_SOURCE_PASS_FILE=/run/secrets/postgres_exporter_password"
+    secrets:
+      - secret_name: postgres_exporter_password
