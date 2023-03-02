@@ -32,6 +32,22 @@
     source: pull
   register: image_pull
 
+- name: Get postgres hba conf file location
+  postgresql_info:
+    db: paddles
+    filter: settings
+  become_user: postgres
+  register: pg_info
+
+- name: Tell postgres to trust the Docker network
+  postgresql_pg_hba:
+    dest: "{{ pg_info.settings.hba_file.setting }}"
+    contype: host
+    users: all
+    databases: all
+    method: md5
+    source: "{{ ansible_docker_gwbridge.ipv4.address }}/{{ ansible_docker_gwbridge.ipv4.prefix }}"
+
 - name: Create docker swarm service
   become_user: "{{ paddles_user }}"
   docker_swarm_service:

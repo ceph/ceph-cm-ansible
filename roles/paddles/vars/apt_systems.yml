@@ -18,9 +18,7 @@ paddles_extra_packages:
 
 paddles_docker_packages:
   - docker.io
-  # docker swarm needs the requests module
-  - python-requests
-  - python-docker
+  - python3-docker
 
 # We need this so we can disable apache2 to get out of the way of nginx
 apache_service: 'apache2'

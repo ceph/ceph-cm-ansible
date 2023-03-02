@@ -1,4 +1,17 @@
 ---
+- name: Listen on all interfaces
+  postgresql_set:
+    name: listen_addresses
+    value: "*"
+  become_user: postgres
+  register: pg_listen
+
+- name: Restart postgres to listen on all interfaces
+  service:
+    name: postgresql
+    state: restarted
+  when: pg_listen is changed
+
 - name: Create the postgresql database
   postgresql_db:
     name: paddles
