@@ -59,6 +59,12 @@
   tags:
     - service
 
+- import_tasks: setup_postgres_exporter.yml
+  when: paddles_containerized
+  tags:
+    - service
+    - prometheus
+
 # Configure the system to run paddles as a daemon
 - import_tasks: setup_service.yml
   when: not paddles_containerized
