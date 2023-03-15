@@ -31,6 +31,7 @@ DEFAULT_DOMAINS = [
     'pad.ceph.com',
     'pulpito.ceph.com',
     'quay.ceph.io',
+    'sentry.ceph.com',
     'shaman.ceph.com',
     'status.sepia.ceph.com',
     'telemetry-public.ceph.com',
@@ -81,6 +82,7 @@ def main():
     args = parse_args()
     domains = args.domains
 
+    warned = False
     for domain in domains:
         warn = datetime.timedelta(days=DAYS_BEFORE_WARN)
         try:
@@ -104,6 +106,8 @@ def main():
             if email == []:
                 email = DEFAULT_EMAIL
             sendmail(email, subject, body)
+            warned = True
+    return int(warned)
 
 if __name__ == '__main__':
     sys.exit(main())
