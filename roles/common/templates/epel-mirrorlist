@@ -1,6 +1,7 @@
 # {{ ansible_managed }}
 
 # local yum mirrorlist for epel-{{ ansible_distribution_major_version }}
+https://dl.fedoraproject.org/pub/epel/{{ ansible_distribution_major_version }}/{% if ansible_distribution_major_version|int >= 8 %}Everything/{% endif %}$basearch
 http://download-ib01.fedoraproject.org/pub/epel/{{ ansible_distribution_major_version }}/{% if ansible_distribution_major_version|int >= 8 %}Everything/{% endif %}$basearch
 http://download-cc-rdu01.fedoraproject.org/pub/epel/{{ ansible_distribution_major_version }}/{% if ansible_distribution_major_version|int >= 8 %}Everything/{% endif %}$basearch
 http://mirrors.cat.pdx.edu/epel/{{ ansible_distribution_major_version }}/{% if ansible_distribution_major_version|int >= 8 %}Everything/{% endif %}$basearch
