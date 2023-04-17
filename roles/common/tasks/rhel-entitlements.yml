@@ -120,7 +120,6 @@
   delay: 10
   failed_when:
     - entitled.rc != 0
-    - '"Beta" not in ansible_lsb.description'
 
 - name: Set rhsm_registered if we just registered
   set_fact:
@@ -137,29 +136,6 @@
   changed_when: false
   failed_when:
     - rhsm_release_list.rc != 0
-    - ansible_lsb.description is defined
-    - '"Beta" not in ansible_lsb.description'
-
-# We don't need to be registered to CDN since there's no packages available
-# for this Beta/Alpha/RC installation
-- name: Unregister Beta/Alpha/RC system with subscription-manager
-  command: subscription-manager unregister
-  when: ansible_distribution_version not in rhsm_release_list.stdout_lines
-  register: unregistered_beta_distro
-  until: unregistered_beta_distro is success
-  retries: 5
-  delay: 10
-
-# Setting rhsm_registered back to false allows the rest of the playbook
-# (except beta_repos.yml) to be skipped
-- name: Set rhsm_registered to false if Beta/Alpha/RC release
-  set_fact:
-    rhsm_registered: false
-  when: unregistered_beta_distro is not skipped
-
-- name: Run beta_repos.yml playbook for Beta/Alpha/RC release
-  import_tasks: beta_repos.yml
-  when: ansible_distribution_version not in rhsm_release_list.stdout_lines
 
 - name: Get list of enabled RHSM repos
   shell: subscription-manager repos --list | grep -B4 'Enabled:.*1' | grep 'Repo ID:' | sed -e 's/Repo ID:\s*\(.*\)/\1/' | sort
@@ -172,10 +148,10 @@
     repo_list: "{{ repo_list_cmd.stdout.split('\n') }}"
   when: repo_list_cmd is defined and repo_list_cmd is not skipped
 
-- name: Set replace_repos false if entitlements are missing or if we unregistered
+- name: Set replace_repos false if entitlements are missing
   set_fact:
     replace_repos: false
-  when: have_entitlements == false or unregistered_beta_distro is changed
+  when: have_entitlements == false
 
 - name: Set replace_repos true if rhsm_repos differs from repo_list
   set_fact:
