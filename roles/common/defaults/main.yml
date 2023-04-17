@@ -17,13 +17,13 @@ epel_mirror_baseurl: "http://dl.fedoraproject.org/pub/epel"
 epel_repos:
   epel:
     name: "Extra Packages for Enterprise Linux"
-    metalink: "https://mirrors.fedoraproject.org/metalink?repo=epel-$releasever&arch=$basearch&infra=$infra&content=$contentdir"
+    metalink: "https://mirrors.fedoraproject.org/metalink?repo=epel-{{ ansible_distribution_major_version }}&arch=$basearch&infra=$infra&content=$contentdir"
     # ternary requires ansible >= 1.9
     enabled: "{{ enable_epel | ternary(1, 0) }}"
     gpgcheck: 0
   epel-testing:
     name: "Extra Packages for Enterprise Linux - Testing"
-    metalink: "https://mirrors.fedoraproject.org/metalink?repo=testing-epel$releasever&arch=$basearch&infra=$infra&content=$contentdir"
+    metalink: "https://mirrors.fedoraproject.org/metalink?repo=testing-epel{{ ansible_distribution_major_version }}&arch=$basearch&infra=$infra&content=$contentdir"
     enabled: 0
     gpgcheck: 0
 
