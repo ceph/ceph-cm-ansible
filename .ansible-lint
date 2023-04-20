@@ -1,0 +1,26 @@
+---
+skip_list:
+  - command-instead-of-module
+  - command-instead-of-shell
+  - deprecated-command-syntax
+  - deprecated-local-action
+  - empty-string-compare
+  - experimental
+  - fqcn[action-core]
+  - fqcn[action]
+  - git-latest
+  - jinja
+  - literal-compare
+  - load-failure
+  - meta-no-info
+  - name[casing]
+  - no-changed-when
+  - no-handler
+  - no-jinja-when
+  - no-relative-paths
+  - no-tabs
+  - package-latest
+  - risky-file-permissions
+  - risky-shell-pipe
+  - role-name
+  - unnamed-task
