@@ -27,13 +27,6 @@ epel_repos:
     enabled: 0
     gpgcheck: 0
 
-# Override in secrets repo
-beta_repos: {}
-
-# Default to false.  A task in roles/common/tasks/yum_systems.yml
-# will set this to true if lsb_release indicates the distro is an Alpha/Beta release
-beta_distro: false
-
 enable_epel: true
 yum_timeout: 300
 

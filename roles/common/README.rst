@@ -49,8 +49,6 @@ your own local epel mirror.
 ``enable_epel`` is a boolean that sets whether epel repos should be enabled.
 Defined in ``roles/common/defaults/main.yml``.
 
-``beta_repos`` is a dict of internal Red Hat beta repos used to create repo files in /etc/yum.repos.d.  We have these defined in the secrets repo.  See ``epel_repos`` for dict syntax.
-
 ``yum_timeout`` is an integer used to set the yum timeout.  Defined in
 ``roles/common/defaults/main.yml``.
 

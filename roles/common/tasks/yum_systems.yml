@@ -65,7 +65,6 @@
 - import_tasks: rhel-entitlements.yml
   when:
     ansible_distribution == 'RedHat' and
-    beta_distro == false and
     skip_entitlements|default(false)|bool != true
   tags:
     - entitlements
