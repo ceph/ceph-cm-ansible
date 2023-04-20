@@ -7,7 +7,6 @@
     group: "{{ security_group }}"
     instance_type: "{{ controller_instance_type }}"
     image: "{{ image }}"
-    wait: true
     region: "{{ region }}"
     vpc_subnet_id: "{{ vpc_subnet_id }}"
     assign_public_ip: yes
