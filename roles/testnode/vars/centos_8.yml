@@ -9,40 +9,6 @@ common_yum_repos:
     enabled: 1
     gpgcheck: 0
 
-# These will overwrite the repo files that come with a CentOS installation
-yum_repos:
-  CentOS-AppStream:
-    name: "CentOS-$releasever - AppStream"
-    mirrorlist: file:///etc/yum.repos.d/CentOS-AppStream-mirrorlist
-    gpgcheck: 1
-    enabled: 1
-    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
-  CentOS-BaseOS:
-    name: "CentOS-$releasever - BaseOS"
-    mirrorlist: file:///etc/yum.repos.d/CentOS-BaseOS-mirrorlist
-    gpgcheck: 1
-    enabled: 1
-    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
-  CentOS-Extras:
-    name: "CentOS-$releasever - Extras"
-    mirrorlist: file:///etc/yum.repos.d/CentOS-Extras-mirrorlist
-    gpgcheck: 1
-    enabled: 1
-    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
-  CentOS-PowerTools:
-    name: "CentOS-$releasever - PowerTools"
-    mirrorlist: file:///etc/yum.repos.d/CentOS-PowerTools-mirrorlist
-    gpgcheck: 1
-    enabled: 1
-    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
-
-# These are files in roles/testnodes/templates/mirrorlists/8/
-yum_mirrorlists:
-  - CentOS-AppStream-mirrorlist
-  - CentOS-BaseOS-mirrorlist
-  - CentOS-Extras-mirrorlist
-  - CentOS-PowerTools-mirrorlist
-
 copr_repos:
   - ceph/python3-asyncssh
 
