@@ -10,5 +10,5 @@
   when: current_bios_version.stdout != latest_bios_version
 
 - name: Include BIOS update logic
-  import_tasks: roles/firmware/tasks/mira/bios-update.yml
+  import_tasks: mira/bios-update.yml
   when: need_bios_update is defined and need_bios_update == true
