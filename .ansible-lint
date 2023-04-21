@@ -18,7 +18,6 @@ skip_list:
   - no-handler
   - no-jinja-when
   - no-relative-paths
-  - no-tabs
   - package-latest
   - risky-file-permissions
   - risky-shell-pipe
