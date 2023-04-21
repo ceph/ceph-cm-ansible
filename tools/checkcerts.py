@@ -89,7 +89,7 @@ def main():
             with socket.create_connection((domain, 443)) as sock:
                 with context.wrap_socket(sock, server_hostname=domain) as ssock:
                     cert = ssock.getpeercert()
-        except ssl.CertificateError as e:
+        except (ssl.CertificateError, ssl.SSLError) as e:
             print(f'{domain} cert error: {e}', file=sys.stderr)
             continue
         expire = datetime.datetime.strptime(cert['notAfter'], 
