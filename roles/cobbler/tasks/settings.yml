@@ -28,5 +28,5 @@
   when: users_digest is changed or dynamic_settings is changed or server_value is changed
 
 - name: Update settings
-  command: cobbler setting edit --name={{ item.name }} --value={{ item.value}}
+  command: cobbler setting edit --name={{ item.name }} --value={{ item.value }}
   with_items: "{{ settings }}"

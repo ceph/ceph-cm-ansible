@@ -18,7 +18,7 @@
     # in managed_admin_users
     managed_users:
       "[{% for lab_user in managed_users -%}
-      {% if not managed_admin_users|selectattr('name', 'equalto', lab_user.name)|list|length %}{{ lab_user}},{% endif %}
+      {% if not managed_admin_users|selectattr('name', 'equalto', lab_user.name)|list|length %}{{ lab_user }},{% endif %}
       {%- endfor %}]"
   when: extra_admin_users is defined and extra_admin_users|length > 0
 

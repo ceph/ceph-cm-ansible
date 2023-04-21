@@ -9,7 +9,7 @@
 
 - name: Ensure a path for FOG
   file:
-    path: "/home/{{ fog_user}}/fog"
+    path: "/home/{{ fog_user }}/fog"
     owner: "{{ fog_user }}"
     state: directory
 
