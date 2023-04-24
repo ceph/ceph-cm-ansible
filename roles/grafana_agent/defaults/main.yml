@@ -1,0 +1,11 @@
+---
+# Mimir URL and creds
+agent_mimir_url: "http://sepia-grafana.front.sepia.ceph.com:9009/api/v1/push"
+agent_mimir_username: "admin"
+grafana_apt_repo_url: "https://apt.grafana.com"
+grafana_apt_repo_key_url: "https://apt.grafana.com/gpg.key"
+grafana_rpm_repo_url: "https://rpm.grafana.com"
+grafana_rpm_repo_key_url: "https://rpm.grafana.com/gpg.key"
+
+scrape_interval_global: "60s"
+scrape_interval_node: "30s"
