@@ -74,12 +74,6 @@
   tags:
     - repos
 
-- name: Perform CentOS Stream related tasks
-  import_tasks: yum/stream.yml
-  when: is_stream|default('false')|bool
-  tags:
-    - repos
-
 - name: Setup local repo files.
   import_tasks: yum/repos.yml
   tags:
