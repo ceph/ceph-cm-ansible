@@ -45,6 +45,7 @@
     - { role: cobbler_profile, distro_name: CentOS-8.2-x86_64, tags: ['centos8.2'] }
     - { role: cobbler_profile, distro_name: CentOS-8.3-x86_64, tags: ['centos8.3'] }
     - { role: cobbler_profile, distro_name: CentOS-8.4-x86_64, tags: ['centos8.4'] }
+    - { role: cobbler_profile, distro_name: CentOS-8.5-x86_64, tags: ['centos8.5'] }
     - { role: cobbler_profile, distro_name: CentOS-8.stream-x86_64, tags: ['centos8.stream'] }
     - { role: cobbler_profile, distro_name: CentOS-9.stream-x86_64, tags: ['centos9.stream'] }
     - { role: cobbler_profile, distro_name: Ubuntu-12.04-server-x86_64, tags: ['ubuntu-precise'] }
