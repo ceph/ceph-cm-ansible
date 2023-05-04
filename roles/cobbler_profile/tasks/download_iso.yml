@@ -7,6 +7,6 @@
   get_url:
       url={{ distro.iso }}
       dest={{ iso_path }}
-      sha256sum={{ distro.sha256 }}
+      checksum=sha256:{{ distro.sha256 }}
   when: profile is defined and profile.stdout == ''
   register: download
