@@ -1,6 +1,14 @@
 #!/bin/bash
 ## {{ ansible_managed }}
 set -ex
+
+# Cobbler on CentOS 7 in May 2023 needed a later python than the default 3.6
+# check for SCL 3.8 and enable if so.  scl enable starts a child shell; the undocumented
+# scl_source sets the environment variables (PATH, LD_LIBRARY_PATH, MANPATH, PKG_CONFIG_PATH,
+# and XDG_DATA_DIRS) in the current shell.
+
+if scl -l | grep -s rh-python38 >/dev/null 2>&1 ; then source scl_source enable rh-python38; fi
+
 name=$2
 profile=$(cobbler system dumpvars --name $2 | grep profile_name | cut -d ':' -f2)
 export USER=root
