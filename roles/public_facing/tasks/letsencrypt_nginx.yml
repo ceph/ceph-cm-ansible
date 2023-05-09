@@ -16,7 +16,7 @@
     state: present
 
 # 'letsencrypt renew' fails because it can't reach the letsencrypt authority server using IPv6
-- name: Create cron entry to force IPv4 connectivity to letsencrypt authority server
+- name: Create cron entry to force IPv4 connectivity to letsencrypt authority server  # noqa no-tabs
   cron:
     name: "Forces letsencrypt to use IPv4 when accessing acme-v01.api.letsencrypt.org"
     hour: "0"
