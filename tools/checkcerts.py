@@ -29,6 +29,7 @@ DEFAULT_DOMAINS = [
     'jenkins.rook.io',
     'lists.ceph.io',
     'pad.ceph.com',
+    'paddles.front.sepia.ceph.com',
     'pulpito.ceph.com',
     'quay.ceph.io',
     'sentry.ceph.com',
