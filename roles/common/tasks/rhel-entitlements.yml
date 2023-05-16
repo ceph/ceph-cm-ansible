@@ -50,6 +50,12 @@
   register: new_uuid
   when: use_satellite == true
 
+- name: Run dbus-uuidgen to create /var/lib/dbus/machine-id
+  shell: dbus-uuidgen --ensure
+
+- name: Run systemd-machine-id-setup to set /etc/machine-id
+  shell: systemd-machine-id-setup
+
 - name: Add new UUID to dmi_system_uuid.facts
   ansible.builtin.lineinfile:
     path: /etc/rhsm/facts/dmi_system_uuid.facts
@@ -177,6 +183,15 @@
         replace_repos|bool == true
   retries: 5
   delay: 10
+
+# recreate the removed machine-id files to avoid breaking
+# other parts of the system, /bin/install-kernel for instance
+
+- name: Run dbus-uuidgen to create /var/lib/dbus/machine-id
+  shell: dbus-uuidgen --ensure
+
+- name: Run systemd-machine-id-setup to set /etc/machine-id
+  shell: systemd-machine-id-setup
 
 - name: Remove old apt-mirror repository definition.
   file:
