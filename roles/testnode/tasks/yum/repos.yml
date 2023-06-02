@@ -38,6 +38,11 @@
     - (ansible_os_family == "RedHat" and ansible_distribution_major_version|int >= 8)
     - copr_repos|length > 0
 
+- name: Enable PowerTools on CentOS
+  command: "dnf -y config-manager --set-enabled powertools"
+  when:
+    - ansible_distribution == 'CentOS'
+
 - import_tasks: gpg_keys.yml
   when: ansible_distribution == "Fedora"
   tags:
