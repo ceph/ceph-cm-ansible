@@ -98,11 +98,12 @@ def main():
         now = datetime.datetime.utcnow()
         left = expire - now
 
+        leftstr = f'{domain:30s} cert: {str(left).rsplit(".",1)[0]} left until it expires'
         if not args.quiet:
-            print(f'{domain}\'s cert has {left} left', file=sys.stderr)
+            print(leftstr, file=sys.stderr)
         if left < warn and args.email:
             subject = f'{domain}\'s SSL Cert is expiring soon.'
-            body = f'{domain}\'s SSL cert has {left} left until it expires'
+            body = leftstr
             email = args.email
             if email == []:
                 email = DEFAULT_EMAIL
