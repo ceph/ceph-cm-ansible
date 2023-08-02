@@ -69,13 +69,13 @@ packages:
   # for pjd tests
   - libacl-devel
   # for fs tests,
-#  - dbench
   - autoconf
   # for test-crash.sh
   - gdb
 #  - iozone
 
-epel_packages: []
+epel_packages:
+  - dbench
 
 nfs_service: nfs-server
 
