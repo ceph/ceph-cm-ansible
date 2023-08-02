@@ -54,7 +54,6 @@ packages:
   # for pjd tests
   - libacl-devel
   # for fs tests,
-  - dbench
   - autoconf
   # for test-crash.sh
   - gdb
@@ -62,3 +61,6 @@ packages:
 
   # centos stream additions start here
   - lvm2
+
+epel_packages:
+  - dbench
