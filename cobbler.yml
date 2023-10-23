@@ -57,5 +57,6 @@
     - { role: cobbler_profile, distro_name: openSUSE-15.0-x86_64, tags: ['opensuse-15.0'] }
     - { role: cobbler_profile, distro_name: openSUSE-15.1-x86_64, tags: ['opensuse-15.1'] }
     - { role: cobbler_profile, distro_name: openSUSE-15.2-x86_64, tags: ['opensuse-15.2'] }
+    - { role: cobbler_profile, distro_name: VMware-ESXi-7.0-x86_64, tags: ['esxi-7.0'] }
     - cobbler_systems
   become: true
