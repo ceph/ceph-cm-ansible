@@ -2,6 +2,7 @@
 rhsm_repos:
   - rhel-9-for-x86_64-baseos-rpms
   - rhel-9-for-x86_64-appstream-rpms
+  - codeready-builder-for-rhel-9-x86_64-rpms
 
 nrpe_selinux_packages:
   - python3-libsemanage
