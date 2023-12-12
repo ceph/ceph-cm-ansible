@@ -96,7 +96,7 @@
   copy:
     content: "{{ ansible_distribution_version }}"
     dest: /etc/yum/vars/releasever
-  when: inventory_hostname in groups['testnodes']
+  when: inventory_hostname in groups['testnodes'] and ansible_distribution_version.startswith("7")
 
 - name: Determine if node is registered with subscription-manager.
   command: subscription-manager identity
