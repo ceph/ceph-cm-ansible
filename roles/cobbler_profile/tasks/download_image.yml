@@ -11,7 +11,7 @@
   get_url:
       url={{ distro.kernel }}
       dest={{ kernel_path }}
-      sha256sum={{ distro.kernel_sha256 }}
+      checksum=sha256:{{ distro.kernel_sha256 }}
   when: profile is defined and profile.stdout == ''
   register: download_kernel
 
@@ -19,7 +19,7 @@
   get_url:
       url={{ distro.initrd }}
       dest={{ initrd_path }}
-      sha256sum={{ distro.initrd_sha256 }}
+      checksum=sha256:{{ distro.initrd_sha256 }}
   when: profile is defined and profile.stdout == ''
   register: download_initrd
 
