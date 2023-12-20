@@ -35,5 +35,5 @@
 
 - name: Add the profile to cobbler
   command: cobbler profile add --name {{ distro_name }} --distro {{ distro_name }}
-  when: import is defined and import.stdout == ''
+  when: imported is defined and imported.stdout == ''
   register: imported
