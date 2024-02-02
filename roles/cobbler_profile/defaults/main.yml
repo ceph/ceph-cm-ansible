@@ -50,6 +50,8 @@ distros:
       iso: ""
   "RHEL-9.0-Server-x86_64":
       iso: ""
+  "RHEL-9.3-Server-x86_64":
+      iso: ""
   "CentOS-8.stream-x86_64":
       iso: ""
   "CentOS-9.stream-x86_64":
