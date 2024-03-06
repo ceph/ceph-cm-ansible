@@ -11,13 +11,13 @@ common_yum_repos:
 yum_repos:
   CentOS-AppStream:
     name: "CentOS-$releasever - AppStream"
-    baseurl: https://composes.stream.centos.org/test/latest-CentOS-Stream/compose/AppStream/x86_64/os/
+    baseurl: https://composes.stream.centos.org/development/latest-CentOS-Stream/compose/AppStream/x86_64/os/
     gpgcheck: 0
     enabled: 1
     gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
   CentOS-BaseOS:
     name: "CentOS-$releasever - BaseOS"
-    baseurl: https://composes.stream.centos.org/test/latest-CentOS-Stream/compose/BaseOS/x86_64/os/
+    baseurl: https://composes.stream.centos.org/development/latest-CentOS-Stream/compose/BaseOS/x86_64/os/
     gpgcheck: 0
     enabled: 1
     gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
