@@ -57,7 +57,7 @@ def parse_args():
     return ap.parse_args()
 
 def sendmail(emailto, subject, body):
-    FROM = 'gitbuilder@ceph.com'
+    FROM = 'ceph-infra-admins@redhat.com'
     TO = emailto # must be a list
     SUBJECT = subject
     TEXT = body
