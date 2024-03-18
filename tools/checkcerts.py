@@ -57,7 +57,7 @@ def parse_args():
     return ap.parse_args()
 
 def sendmail(emailto, subject, body):
-    FROM = 'gitbuilder@ceph.com'
+    FROM = 'ceph-infra-admins@redhat.com'
     TO = emailto # must be a list
     SUBJECT = subject
     TEXT = body
@@ -85,25 +85,29 @@ def main():
 
     warned = False
     for domain in domains:
+        errstr = None
+        certerr = False
         warn = datetime.timedelta(days=DAYS_BEFORE_WARN)
         try:
             with socket.create_connection((domain, 443)) as sock:
                 with context.wrap_socket(sock, server_hostname=domain) as ssock:
                     cert = ssock.getpeercert()
         except (ssl.CertificateError, ssl.SSLError) as e:
-            print(f'{domain} cert error: {e}', file=sys.stderr)
-            continue
-        expire = datetime.datetime.strptime(cert['notAfter'], 
-            '%b %d %H:%M:%S %Y %Z')
-        now = datetime.datetime.utcnow()
-        left = expire - now
+            certerr = True
+            errstr = f'{domain} cert error: {e}'
 
-        leftstr = f'{domain:30s} cert: {str(left).rsplit(".",1)[0]} left until it expires'
+        if not certerr:
+            expire = datetime.datetime.strptime(cert['notAfter'], 
+                '%b %d %H:%M:%S %Y %Z')
+            now = datetime.datetime.utcnow()
+            left = expire - now
+
+            errstr = f'{domain:30s} cert: {str(left).rsplit(".",1)[0]} left until it expires'
         if not args.quiet:
-            print(leftstr, file=sys.stderr)
-        if left < warn and args.email:
-            subject = f'{domain}\'s SSL Cert is expiring soon.'
-            body = leftstr
+            print(errstr, file=sys.stderr)
+        if (certerr or (left < warn)) and args.email:
+            subject = f'Certificate problem with {domain}'
+            body = errstr
             email = args.email
             if email == []:
                 email = DEFAULT_EMAIL
