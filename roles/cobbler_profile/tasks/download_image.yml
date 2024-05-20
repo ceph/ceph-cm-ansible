@@ -1,10 +1,10 @@
 ---
 - name: Check to see if the kernel exists
-  stat: path={{ kernel_path }} get_checksum=no get_md5=no
+  stat: path={{ kernel_path }} get_checksum=no
   register: kernel_stat
 
 - name: Check to see if the initrd exists
-  stat: path={{ initrd_path }} get_checksum=no get_md5=no
+  stat: path={{ initrd_path }} get_checksum=no
   register: initrd_stat
 
 - name: Download kernel

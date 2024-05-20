@@ -28,7 +28,6 @@
   stat: 
     path: "{{ pulpito_repo_path }}/virtualenv"
     get_checksum: no
-    get_md5: no
   register: virtualenv
 
 - name: Create the virtualenv
@@ -56,7 +55,6 @@
   stat:
     path: "{{ pulpito_repo_path }}/prod.py"
     get_checksum: no
-    get_md5: no
   register: pulpito_config
 
 - name: Copy pulpito config
