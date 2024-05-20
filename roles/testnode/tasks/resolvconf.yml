@@ -14,7 +14,6 @@
   stat:
     path: /etc/network/interfaces
     get_checksum: no
-    get_md5: no
   register: etc_network_interfaces
 
 - name: Rewrite /etc/network/interfaces to use dhcp

@@ -1,6 +1,6 @@
 ---
 - name: Check to see if the ISO exists
-  stat: path={{ iso_path }} get_checksum=no get_md5=no
+  stat: path={{ iso_path }} get_checksum=no
   register: iso_stat
 
 - name: Download ISO

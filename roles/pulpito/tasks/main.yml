@@ -43,7 +43,6 @@
   stat:
     path: "{{ supervisor_conf_path }}"
     get_checksum: no
-    get_md5: no
   register: supervisor_conf
 
 - name: Copy supervisord config
