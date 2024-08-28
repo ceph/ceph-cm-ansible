@@ -57,7 +57,7 @@
     shell: sed -i '/\/var\/lib\/ceph/d' /etc/fstab
 
   - name: Unmount /var/lib/ceph
-    mount:
+    ansible.posix.mount:
       path: /var/lib/ceph
       state: unmounted
 
