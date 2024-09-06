@@ -50,8 +50,14 @@
   register: new_uuid
   when: use_satellite == true
 
+- name: Check for existence of /var/lib/dbus
+  stat:
+    path: /var/lib/dbus
+  register: var_lib_dbus
+
 - name: Run dbus-uuidgen to create /var/lib/dbus/machine-id
   shell: dbus-uuidgen --ensure
+  when: var_lib_dbus.stat.exists
 
 - name: Run systemd-machine-id-setup to set /etc/machine-id
   shell: systemd-machine-id-setup
@@ -187,8 +193,14 @@
 # recreate the removed machine-id files to avoid breaking
 # other parts of the system, /bin/install-kernel for instance
 
+- name: Check for existence of /var/lib/dbus
+  stat:
+    path: /var/lib/dbus
+  register: var_lib_dbus
+
 - name: Run dbus-uuidgen to create /var/lib/dbus/machine-id
   shell: dbus-uuidgen --ensure
+  when: var_lib_dbus.stat.exists
 
 - name: Run systemd-machine-id-setup to set /etc/machine-id
   shell: systemd-machine-id-setup
