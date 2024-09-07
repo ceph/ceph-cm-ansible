@@ -19,6 +19,8 @@ perl
 #if $distro == 'RHEL'
 # Needed in RHEL9 but not CentOS9
 NetworkManager-initscripts-updown
+dbus-tools
+dbus-daemon
 #end if
 #if $distro == 'CentOS'
 # CentOS 9 Stream only packages
