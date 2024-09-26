@@ -83,10 +83,6 @@ packages:
   ###
   # DistCC for arm
   - distcc
-  ###
-  # tgt
-  - tgt
-  - open-iscsi
 
 #NOTE: these packages were not found for debian 8, but are present for debian 7
 #- mencoder
