@@ -5,6 +5,8 @@ ssh_service_name: sshd
 packages_to_remove:
   # multipath interferes with krbd tests
   - device-mapper-multipath
+  # tgt interferes with ceph-iscsi tests
+  - scsi-target-utils
 
 # ceph packages that we ensure do not exist
 ceph_packages_to_remove:
