@@ -66,10 +66,6 @@ common_packages:
   - default-jdk
   - junit4
   ###
-  # tgt
-  - tgt
-  - open-iscsi
-  ###
   # for samba testing
   - cifs-utils
   # for Static IP
