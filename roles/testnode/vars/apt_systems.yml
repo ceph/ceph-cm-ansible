@@ -6,6 +6,8 @@ nfs_service: nfs-kernel-server
 packages_to_remove:
   # multipath interferes with krbd tests
   - multipath-tools
+  # openmpi-common conflicts with mpich stuff
+  - openmpi-common
   # tgt interferes with ceph-iscsi tests
   - tgt
 
