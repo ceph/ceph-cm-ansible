@@ -12,10 +12,12 @@
 # sudo service openvpn start sepia
 
 import base64
+import datetime
 import hashlib
 import os
 import re
 import sys
+import tarfile
 
 path = os.path.dirname(sys.argv[0])
 os.chdir(path)
@@ -63,3 +65,18 @@ sys.stdout.write("{user} {salt} {hashed}\n\n".format(
     salt=salt.decode('utf-8'),
     hashed=hashed,
 ))
+
+with open('secret.hash', 'w') as f:
+    f.write(f"{user} {salt.decode('utf-8')} {hashed}")
+
+datestr = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+tarfilename = f'secrets.{datestr}.tar.gz'
+tarfile = tarfile.open(tarfilename, 'w:gz')
+for f in ['secret', 'secret.hash']:
+    tarfile.add(f)
+tarfile.close()
+
+sys.stdout.write(f"""
+The secret file (private to you) and secret.hash (the above hashed secret
+information, to be placed on the OpenVPN server) are a matched pair.
+They've been placed into {tarfilename} for safekeeping.""")
