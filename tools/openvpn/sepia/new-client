@@ -1,0 +1,82 @@
+#!/usr/bin/python3
+
+# How to set up a client (on Ubuntu/Debian):
+#
+# sudo apt-get install openvpn
+# cd /etc/openvpn
+# sudo tar xvzf ~/sepia-vpn-client.tar.gz
+# sudo ./sepia/new-client MYUSERNAME@MYHOST
+#
+# ... submit the secret to admin and wait for acknowledgment ...
+#
+# sudo service openvpn start sepia
+
+import base64
+import datetime
+import hashlib
+import os
+import re
+import sys
+import tarfile
+
+path = os.path.dirname(sys.argv[0])
+os.chdir(path)
+
+try:
+    (user,) = sys.argv[1:]
+except ValueError:
+    raise SystemExit('Usage: new-client USERNAME@HOST')
+
+# From openvpn(8):
+#
+# To protect against a client passing a maliciously formed username or
+# password string, the username string must consist only of these
+# characters: alphanumeric, underbar ('_'), dash ('-'), dot ('.'), or
+# at ('@'). The password string can consist of any printable
+# characters except for CR or LF. Any illegal characters in either the
+# username or password string will be converted to underbar ('_').
+#
+# Verifying this here to avoid confusion down the road.
+if not re.match(r'^[a-zA-Z0-9_.@-]+$', user):
+    raise SystemExit('new-client: Invalid characters in username')
+
+salt = base64.b64encode(os.urandom(16)).rstrip(b'=')
+secret = base64.b64encode(os.urandom(64)).rstrip(b'=')
+
+inner = hashlib.new('sha256')
+inner.update(salt)
+inner.update(secret)
+outer = hashlib.new('sha256')
+outer.update(inner.digest())
+outer.update(salt)
+hashed = outer.hexdigest()
+
+with open('secret', 'wb') as f:
+    os.fchmod(f.fileno(), 0o600)
+    f.write('{user}\n{secret}\n'.format(user=user, secret=secret.decode()).encode('utf-8'))
+
+base = os.path.basename(path)
+os.symlink(os.path.join(base, 'client.conf'), '../sepia.conf')
+
+sys.stdout.write(
+    "\n!!!!! DO NOT RUN THIS SCRIPT MORE THAN ONCE !!!!!\n\nPlease paste the following line in your Sepia Lab Access Request tracker ticket:\n\n")
+sys.stdout.write("{user} {salt} {hashed}\n\n".format(
+    user=user,
+    salt=salt.decode('utf-8'),
+    hashed=hashed,
+))
+
+with open('secret.hash', 'w') as f:
+    f.write(f"{user} {salt.decode('utf-8')} {hashed}")
+
+datestr = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+tarfilename = f'secrets.{datestr}.tar.gz'
+tarfile = tarfile.open(tarfilename, 'w:gz')
+for f in ['secret', 'secret.hash']:
+    tarfile.add(f)
+tarfile.close()
+
+sys.stdout.write(f"""
+The secret file (private to you) and secret.hash (the above hashed secret
+information, to be placed on the OpenVPN server) are a matched pair.
+They've been placed into {tarfilename} for safekeeping.""")
