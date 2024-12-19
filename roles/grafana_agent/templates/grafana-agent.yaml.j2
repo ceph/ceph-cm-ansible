@@ -1,0 +1,33 @@
+server:
+  log_level: info
+
+metrics:
+  global:
+    remote_write:
+      - url: {{ agent_mimir_url }}
+        basic_auth:
+          username: {{ agent_mimir_username }}
+          password: {{ agent_mimir_password }}
+        queue_config:
+          max_backoff: 5m
+    external_labels:
+      nodetype: unknown_nodetype
+      ingest_instance: {{ inventory_hostname }}
+    scrape_interval: {{ scrape_interval_global }}
+  configs:
+    - name: {{ inventory_hostname }}
+      scrape_configs:
+        - job_name: 'grafana-agent-exporter'
+          relabel_configs:
+            - source_labels: [__address__]
+              target_label: instance
+              replacement: {{ inventory_hostname }}
+
+integrations:
+  node_exporter:
+    enabled: true
+    scrape_interval: {{ scrape_interval_node }}
+    instance: {{ inventory_hostname }}
+    rootfs_path: /
+    sysfs_path: /sys
+    procfs_path: /proc
