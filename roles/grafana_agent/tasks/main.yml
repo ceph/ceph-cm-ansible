@@ -1,0 +1,74 @@
+---
+- name: Include secrets
+  include_vars: "{{ secrets_path | mandatory }}/mimir_password.yml"
+  no_log: true
+  tags:
+    - always
+
+- name: Gather facts on listening ports
+  community.general.listen_ports_facts:
+
+- name: Check if prometheus is listening on port 9090
+  ansible.builtin.debug:
+    msg: The {{ item.name }} service - pid {{ item.pid }} is running on same port as grafana-agent please set {{ item.name }} to listen on a diffrent port than {{ item.port }}
+  vars:
+    tcp_listen_violations: "{{ ansible_facts.tcp_listen | selectattr('name', 'in', tcp_whitelist) | list }}"
+    tcp_whitelist:
+      - prometheus
+  loop: "{{ tcp_listen_violations }}"
+  failed_when: true
+
+- name: "Import Grafana GPG key"
+  become: true
+  ansible.builtin.get_url:
+    url: "{{ grafana_apt_repo_key_url }}"
+    dest: /etc/apt/keyrings/grafana.gpg
+    mode: '0644'
+    force: true
+  when: ansible_pkg_mgr == "apt"
+
+- name: Ensure downloaded file for key is a binary keyring
+  shell: "cat /etc/apt/keyrings/grafana.gpg | gpg --dearmor | sudo tee /etc/apt/keyrings/grafana.gpg > /dev/null"
+  when: ansible_pkg_mgr == "apt"
+
+- name: "Add Grafana's repository to APT sources list"
+  become: true
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/grafana.gpg] {{ grafana_apt_repo_url }} stable main"
+    state: present
+  when: ansible_pkg_mgr == "apt"
+
+- name: "Add Grafana's repository to yum/dnf systems"
+  become: true
+  ansible.builtin.yum_repository:
+    baseurl: "{{ grafana_rpm_repo_url }}"
+    name: "grafana"
+    description: "grafana"
+    gpgcheck: true
+    gpgkey: "{{ grafana_rpm_repo_key_url }}"
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: "Install grafana-agent"
+  become: true
+  ansible.builtin.package:
+    name: "grafana-agent"
+    state: "present"
+
+- name: "Enable grafana-agent"
+  become: true
+  ansible.builtin.service:
+    name: "grafana-agent"
+    state: "started"
+    enabled: true
+
+# Deploy config file from template and restart the agent
+- name: "Configure agent"
+  become: true
+  ansible.builtin.template:
+    src: "templates/grafana-agent.yaml.j2"
+    dest: "/etc/grafana-agent.yaml"
+    mode: "0440"
+    owner: "root"
+    group: "grafana-agent"
+  notify: "Restart grafana agent instance"
