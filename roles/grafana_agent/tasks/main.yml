@@ -18,6 +18,16 @@
   loop: "{{ tcp_listen_violations }}"
   failed_when: true
 
+- name: "Ensure that path /etc/apt/keyrings exists"
+  become: true
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+    force: true
+  when: ansible_pkg_mgr == "apt"
+  register: keyrings_exists
+
 - name: "Import Grafana GPG key"
   become: true
   ansible.builtin.get_url:
@@ -25,7 +35,7 @@
     dest: /etc/apt/keyrings/grafana.gpg
     mode: '0644'
     force: true
-  when: ansible_pkg_mgr == "apt"
+  when: ansible_pkg_mgr == "apt" and keyrings_exists is defined
 
 - name: Ensure downloaded file for key is a binary keyring
   shell: "cat /etc/apt/keyrings/grafana.gpg | gpg --dearmor | sudo tee /etc/apt/keyrings/grafana.gpg > /dev/null"
