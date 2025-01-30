@@ -1,6 +1,6 @@
 /var/log/openvpn/*.log {
 	daily
-	rotate 90
+	rotate 366
 	compress
 	missingok
 	copytruncate
