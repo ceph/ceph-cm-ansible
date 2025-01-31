@@ -7,13 +7,13 @@
 - name: Set log dir SELinux context
   command: restorecon -R /var/log/openvpn
 
-- name: Write logrotate conf file
+- name: Write logrotate weekly conf file
   copy:
     src: files/openvpn.logrotate-weekly
     dest: /etc/logrotate.d/openvpn-weekly
   notify: restart rsyslog
 
-- name: Write logrotate conf file
+- name: Write logrotate daily conf file
   copy:
     src: files/openvpn.logrotate-daily
     dest: /etc/logrotate.d/openvpn-daily
