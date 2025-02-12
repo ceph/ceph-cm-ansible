@@ -8,6 +8,10 @@
 - name: Gather facts on listening ports
   community.general.listen_ports_facts:
 
+# Resolving selinux conflicts
+- import_tasks: useradd-selinux.yml
+  when: ansible_os_family == "RedHat"
+
 - name: Check if prometheus is listening on port 9090
   ansible.builtin.debug:
     msg: The {{ item.name }} service - pid {{ item.pid }} is running on same port as grafana-agent please set {{ item.name }} to listen on a diffrent port than {{ item.port }}

@@ -9,3 +9,8 @@ grafana_rpm_repo_key_url: "https://rpm.grafana.com/gpg.key"
 
 scrape_interval_global: "60s"
 scrape_interval_node: "30s"
+
+# Selinux packages
+useradd_selinux_packages:
+  - policycoreutils
+  - checkpolicy

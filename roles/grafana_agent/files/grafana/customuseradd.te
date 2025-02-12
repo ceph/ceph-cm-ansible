@@ -1,0 +1,12 @@
+module customuseradd 1.0;
+
+require {
+	type useradd_t;
+  type var_lib_t;
+	class file { execute read create write getattr setattr
+open };
+}
+
+#============= useradd_t ==============
+
+allow useradd_t var_lib_t:file { write create open setattr getattr };
