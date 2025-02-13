@@ -141,6 +141,10 @@ distros:
       iso: https://mirror.cs.pitt.edu/centos-vault/8.5.2111/isos/x86_64/CentOS-8.5.2111-x86_64-dvd1.iso
       sha256: 3b795863001461d4f670b0dedd02d25296b6d64683faceb8f2b60c53ac5ebb3e
       kickstart: cephlab_rhel.ks
+  "Rocky-9.5-x86_64":
+      iso: https://download.rockylinux.org/pub/rocky/9/isos/x86_64/Rocky-9.5-x86_64-dvd.iso
+      sha256: ba60c3653640b5747610ddfb4d09520529bef2d1d83c1feb86b0c84dff31e04e
+      kickstart: cephlab_rhel.ks
   "Ubuntu-12.04-server-x86_64":
       iso: "http://releases.ubuntu.com/12.04/ubuntu-12.04.5-server-amd64.iso"
       sha256: af224223de99e2a730b67d7785b657f549be0d63221188e105445f75fb8305c9
