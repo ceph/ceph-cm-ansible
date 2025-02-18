@@ -52,7 +52,8 @@ DEFAULT_EMAIL = [
 def parse_args():
     ap = argparse.ArgumentParser()
     ap.add_argument('-q', '--quiet', action='store_true')
-    ap.add_argument('-e', '--email', nargs='*')
+    ap.add_argument('-E', '--send-email', action='store_true', help="send email with warnings")
+    ap.add_argument('-e', '--email', nargs='*', default=DEFAULT_EMAIL, help=f'list of addresses to send to (default: {DEFAULT_EMAIL})')
     ap.add_argument('-d', '--domains', nargs='*', default=DEFAULT_DOMAINS)
     return ap.parse_args()
 
@@ -70,7 +71,9 @@ To: %s
 Subject: %s
 
 %s
-""" % (FROM, ", ".join(TO), SUBJECT, TEXT)
+
+Report from %s running on %s
+""" % (FROM, ", ".join(TO), SUBJECT, TEXT, os.path.realpath(sys.argv[0]), socket.gethostname())
 
     # send it 
     server = smtplib.SMTP('localhost')
@@ -97,7 +100,7 @@ def main():
             errstr = f'{domain} cert error: {e}'
 
         if not certerr:
-            expire = datetime.datetime.strptime(cert['notAfter'], 
+            expire = datetime.datetime.strptime(cert['notAfter'],
                 '%b %d %H:%M:%S %Y %Z')
             now = datetime.datetime.utcnow()
             left = expire - now
@@ -105,7 +108,7 @@ def main():
             errstr = f'{domain:30s} cert: {str(left).rsplit(".",1)[0]} left until it expires'
         if not args.quiet:
             print(errstr, file=sys.stderr)
-        if (certerr or (left < warn)) and args.email:
+        if (certerr or (left < warn)) and (args.send_email):
             subject = f'Certificate problem with {domain}'
             body = errstr
             email = args.email
