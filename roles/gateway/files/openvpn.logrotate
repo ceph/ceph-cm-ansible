@@ -1,9 +1,22 @@
 /var/log/openvpn/*.log {
 	daily
-	rotate 366
+	rotate 7
 	compress
 	missingok
-	copytruncate
+	copy
 	notifempty
-	create 644 nobody nobody
+	dateext
+	dateformat -%Y-%m-%d-daily
 }
+
+/var/log/openvpn/*.log {
+        weekly
+        rotate 52
+        compress
+        missingok
+        copytruncate
+        notifempty
+        dateext
+        dateformat -%Y-%m-%d-weekly
+}
+
