@@ -1,0 +1,38 @@
+---
+- name: useradd - Install SELinux dependencies
+  package:
+    name: "{{ useradd_selinux_packages|list }}"
+    state: present
+
+# ignore_errors in case we don't have any repos
+- name: useradd - Ensure SELinux policy is up to date
+  package:
+    name: selinux-policy-targeted
+    state: latest
+  ignore_errors: true
+
+- name: useradd - Copy SELinux type enforcement file
+  copy:
+    src: grafana/customuseradd.te
+    dest: /tmp/customuseradd.te
+
+- name: useradd - Compile SELinux module file
+  command: checkmodule -M -m -o /tmp/customuseradd.mod /tmp/customuseradd.te
+
+- name: useradd - Build SELinux policy package
+  command: semodule_package -o /tmp/customuseradd.pp -m /tmp/customuseradd.mod
+
+- name: useradd - Load SELinux policy package
+  command: semodule -i /tmp/customuseradd.pp
+
+- name: useradd - Remove temporary files
+  file:
+    path: /tmp/customuseradd.*
+    state: absent
+
+- name: Verify SELinux module is installed
+  command: semodule -l
+  register: semodule_list
+  changed_when: false
+  failed_when: "'customuseradd' not in semodule_list.stdout"
+
