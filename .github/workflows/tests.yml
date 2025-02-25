@@ -10,14 +10,12 @@ jobs:
     - name: Install ansible
       run: |
         sudo apt-get update
-        sudo apt-get purge ansible
-        sudo apt-get install python3-setuptools
-        pip3 install ansible --user
+        sudo apt-get purge -y ansible
+        sudo apt-get install -y python3-setuptools python3-pip
+        sudo pip3 install --break-system-packages ansible==2.10.7
     - name: ansible-playbook syntax check
-      run: |
-        export PATH=$PATH:$HOME/.local/bin
-        sed -i /^vault_password_file/d ansible.cfg
-        ansible-playbook -i localhost, cephlab.yml --syntax-check
+      run: ANSIBLE_VAULT_PASSWORD_FILE=/dev/null ansible-playbook -i localhost, cephlab.yml --syntax-check
+
   ansible-lint:
     runs-on: ubuntu-latest
     steps:
@@ -25,14 +23,12 @@ jobs:
     - name: Install ansible-lint
       run: |
         sudo apt-get update
-        sudo apt-get purge ansible
-        sudo apt-get install python3-setuptools
+        sudo apt-get purge -y ansible
+        sudo apt-get install -y python3-setuptools python3-pip
         # This pinned ansible version should match teuthology's
         # requirements.txt.
         # And we choose an ansible-lint version to be compatible with this
         # Ansible version.
-        pip3 install ansible==2.10.7 ansible-lint[core]==5.4.0 --user
+        sudo pip3 install --break-system-packages ansible==2.10.7 ansible-lint[core]==5.4.0
     - name: Run ansible-lint
-      run: |
-        export PATH=$PATH:$HOME/.local/bin
-        ansible-lint -v roles/*
+      run: ansible-lint -v roles/*
