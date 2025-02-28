@@ -24,11 +24,13 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get purge -y ansible
-        sudo apt-get install -y python3-setuptools python3-pip
+        sudo apt-get install -y python3-setuptools python3-pip python3-venv
+        sudo python3 -m venv lintenv
+        source lintenv/bin/activate && echo "Virtual environment activated"
         # This pinned ansible version should match teuthology's
         # requirements.txt.
         # And we choose an ansible-lint version to be compatible with this
         # Ansible version.
-        sudo pip3 install --break-system-packages ansible==2.10.7 ansible-lint[core]==5.4.0
+        sudo pip3 install --break-system-packages ansible-core==2.18.2 ansible-lint[core]==6.19.0
     - name: Run ansible-lint
       run: ansible-lint -v roles/*
