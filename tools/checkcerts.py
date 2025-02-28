@@ -9,6 +9,7 @@ import os
 import tempfile
 import datetime
 import smtplib
+import zoneinfo
 
 DAYS_BEFORE_WARN=7
 
@@ -100,9 +101,15 @@ def main():
             errstr = f'{domain} cert error: {e}'
 
         if not certerr:
-            expire = datetime.datetime.strptime(cert['notAfter'],
-                '%b %d %H:%M:%S %Y %Z')
-            now = datetime.datetime.utcnow()
+            exp=cert['notAfter'].split()
+            tzname=exp[-1]
+            exp = ' '.join(exp[:-1])
+
+            expire = datetime.datetime.strptime(exp,
+                '%b %d %H:%M:%S %Y')
+            tzinfo=zoneinfo.ZoneInfo(tzname)
+            expire = expire.replace(tzinfo=tzinfo)
+            now = datetime.datetime.now(datetime.UTC)
             left = expire - now
 
             errstr = f'{domain:30s} cert: {str(left).rsplit(".",1)[0]} left until it expires'
