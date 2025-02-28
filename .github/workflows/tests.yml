@@ -11,28 +11,58 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get purge ansible
-        sudo apt-get install python3-setuptools
-        pip3 install ansible --user
+        sudo apt-get install python3-setuptools python3-virtualenv
+        echo "Creating virtualenv"
+        virtualenv venv
+        echo "Activating virtualenv"
+        source ./venv/bin/activate
+        echo "Installing ansible dependencies in virtualenv"
+        pip3 install ansible==2.10.7
     - name: ansible-playbook syntax check
       run: |
-        export PATH=$PATH:$HOME/.local/bin
+        echo "Removing vault password file line from ansible.cfg"
         sed -i /^vault_password_file/d ansible.cfg
         ansible-playbook -i localhost, cephlab.yml --syntax-check
+
   ansible-lint:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Install ansible-lint
+  
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+  
+    - name: Install ansible-core and ansible-lint in virtual environment
       run: |
         sudo apt-get update
-        sudo apt-get purge ansible
-        sudo apt-get install python3-setuptools
-        # This pinned ansible version should match teuthology's
-        # requirements.txt.
-        # And we choose an ansible-lint version to be compatible with this
-        # Ansible version.
-        pip3 install ansible==2.10.7 ansible-lint[core]==5.4.0 --user
+        sudo apt-get remove -y ansible || true  # Ensure system Ansible is removed
+  
+        echo "Creating virtualenv"
+        python -m venv venv
+  
+        echo "Activating virtualenv"
+        source venv/bin/activate
+  
+        echo "Updating pip, setuptools, wheel"
+        pip install --upgrade pip setuptools wheel
+  
+        echo "Installing ansible-core 2.17.7 and ansible-lint"
+        pip install "ansible-core==2.17.7" ansible-lint six
+  
+        echo "Verifying installations"
+        pip list | grep ansible  # Should show ansible-core 2.17.7
+        which ansible-lint  # Ensure ansible-lint is installed
+  
     - name: Run ansible-lint
       run: |
-        export PATH=$PATH:$HOME/.local/bin
-        ansible-lint -v roles/*
+        echo "Activating virtualenv again"
+        source venv/bin/activate
+        python -c "import ansible; print(ansible.__version__)"
+        which ansible
+        which ansible-lint
+        echo "PATH: $PATH"
+        set -x
+        find roles -exec ansible-lint --offline --nocolor --parseable {} \;
+        #ansible-lint -vvvv roles/*/tasks/main.yml
