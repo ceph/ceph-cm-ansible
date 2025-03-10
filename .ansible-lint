@@ -11,7 +11,6 @@ skip_list:
   - git-latest
   - jinja
   - literal-compare
-  - load-failure
   - meta-no-info
   - name[casing]
   - no-changed-when

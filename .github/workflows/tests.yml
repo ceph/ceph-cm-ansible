@@ -65,4 +65,3 @@ jobs:
         echo "PATH: $PATH"
         set -x
         find roles -exec ansible-lint --offline --nocolor --parseable {} \;
-        #ansible-lint -vvvv roles/*/tasks/main.yml
