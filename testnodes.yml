@@ -4,5 +4,4 @@
   roles:
     - common
     - testnode
-    - grafana_agent
   become: true
