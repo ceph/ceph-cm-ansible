@@ -13,7 +13,7 @@
     dest: /etc/logrotate.d/openvpn
   notify: restart rsyslog
 
-- name: Write weekly rotation script on anacron
+- name: Create weekly log rotation script
   copy:
     src: files/openvpn_weekly_rotation
     dest: /etc/cron.weekly/openvpn_weekly_rotation
