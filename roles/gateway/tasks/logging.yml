@@ -13,6 +13,14 @@
     dest: /etc/logrotate.d/openvpn
   notify: restart rsyslog
 
+- name: Create weekly log rotation script
+  copy:
+    src: files/openvpn_weekly_rotation
+    dest: /etc/cron.weekly/openvpn_weekly_rotation
+    mode: '0755'
+    owner: root
+    group: root
+
 - name: Write rsyslog conf file
   copy:
     src: files/openvpn.rsyslog

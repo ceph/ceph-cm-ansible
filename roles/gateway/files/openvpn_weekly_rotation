@@ -1,0 +1,28 @@
+#!/bin/bash
+
+LOG_DIR="/var/log/openvpn"
+LOG_FILE="openvpn.log"
+ARCHIVE_DIR="/var/log/openvpn/weekly-logs"
+WEEKLY_ARCHIVE_NAME="openvpn-$(date +\%Y-\%m-\%d)_weekly_logs.tar.gz"
+RETENTION_DAYS=365  # Keep weekly archives for a year
+TEMP_DIR=$(mktemp -d)  # Temporary folder for decompressed logs
+
+# Clean the temporary folder in case of failure
+trap 'rm -rf "$TEMP_DIR"' ERR
+
+# Create archive directory if it doesn't exist
+mkdir -p "$ARCHIVE_DIR"
+
+# Decompress all rotated daily logs (mylogfile.log.1.gz, mylogfile.log.2.gz, etc.)
+for file in $(find "$LOG_DIR" -name "$LOG_FILE-*");
+	do gzip -d -c $file > "$TEMP_DIR/$(basename $file .gz)";
+done
+
+# Create a compressed archive with all daily logs from the past week
+tar -czf "$ARCHIVE_DIR/$WEEKLY_ARCHIVE_NAME" -C "$TEMP_DIR" .
+
+# Cleanup temporary files
+rm -rf "$TEMP_DIR"
+
+# Delete archives older than a year
+find "$ARCHIVE_DIR" -name "*.tar.gz" -mtime +$RETENTION_DAYS -delete

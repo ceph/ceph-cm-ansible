@@ -1,9 +1,11 @@
 /var/log/openvpn/*.log {
 	daily
-	rotate 90
+	rotate 7
 	compress
 	missingok
 	copytruncate
 	notifempty
-	create 644 nobody nobody
+	dateext
+	dateformat -%Y-%m-%d-daily
 }
+
