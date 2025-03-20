@@ -37,7 +37,7 @@ fogip="172.21.0.72"
 fogfilename="/undionly.kpxe"
 macaddr=$(sed -n "/host ${host}-front/,/}/p" $dhcpconfig | grep 'hardware ethernet' | awk '{ print $3 }' | tr -d ';')
 ipaddr=$(sed -n "/host ${host}-front/,/}/p" $dhcpconfig | grep 'fixed-address' | awk '{ print $2 }' | tr -d ';')
-linenum=$(grep -n $host $dhcpconfig | cut -d ':' -f1)
+linenum=$(grep -n $host $dhcpconfig | grep -v "host-name" | cut -d ':' -f1)
 
 if [ -z "$macaddr" ]; then
   echo "No MAC address found for $host"
