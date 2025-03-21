@@ -1,0 +1,29 @@
+---
+packages:
+  - mpich
+  - qemu-system-x86
+#  - blkin
+  - lttng-tools
+  # for building xfstests #18067
+  - libtool-bin
+  # for ceph-daemon (no podman on ubuntu/debian, yet)
+  - docker.io
+  # qa/workunits/rbd/test_librbd_python.sh
+  - python3-nose
+  # python3 version of deps
+  - python3-venv
+  - python3-virtualenv
+  - python3-configobj
+  - python3-gevent
+  - python3-numpy
+  - python3-matplotlib
+  - python3-setuptools
+  - python3-dev
+
+non_aarch64_packages:
+  - libgoogle-perftools4
+  - iozone3
+
+non_aarch64_packages_to_upgrade: []
+
+python_apt_package_name: python3-apt

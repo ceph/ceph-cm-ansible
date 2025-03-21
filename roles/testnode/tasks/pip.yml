@@ -59,3 +59,12 @@
   pip:
     name: "{{ pip_packages_to_install|list }}"
     executable: "{{ pip_executable }}"
+  when: ansible_distribution != 'Ubuntu' or
+        (ansible_distribution == 'Ubuntu' and ansible_distribution_major_version|int < 24)
+
+- name: Install packages via pip (Ubuntu >= 24)
+  pip:
+    name: "{{ pip_packages_to_install|list }}"
+    executable: "{{ pip_executable }}"
+    extra_args: --break-system-packages
+  when: ansible_distribution == 'Ubuntu' and ansible_distribution_major_version|int >= 24
