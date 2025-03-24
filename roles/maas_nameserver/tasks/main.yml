@@ -1,0 +1,108 @@
+---
+- name: Include secrets
+  ansible.builtin.include_vars: "{{ item }}"
+  no_log: true
+  with_first_found:
+    - "{{ secrets_path | mandatory }}/maas.yml"
+  tags:
+    - always
+
+- name: Ensure MAAS CLI is logged in
+  ansible.builtin.command: "maas login {{ maas_profile }} {{ maas_api_url }} {{ maas_api_key }}"
+  register: maas_login
+  changed_when: maas_login.rc == 0
+  failed_when: maas_login.rc != 0 and maas_login.stderr != "Profile already exists"
+
+- name: Get existing DNS resources
+  ansible.builtin.command: "maas {{ maas_profile }} dnsresources read"
+  register: existing_resources
+  changed_when: false
+
+- name: Initialize DNS records list
+  ansible.builtin.set_fact:
+    dns_records: []
+
+- name: Define target hosts for DNS records
+  ansible.builtin.set_fact:
+    target_hosts: "{{ groups | dict2items | rejectattr('key', 'equalto', 'maas') | map(attribute='value') | flatten | unique }}"
+  when: groups.keys() | length > 1
+
+- name: Build DNS records for primary interfaces
+  ansible.builtin.set_fact:
+    dns_records: "{{ dns_records + [{'name': host.split('.')[0], 'ip': hostvars[host]['ip'], 'type': 'A', 'domain': dns_domains.ceph}] }}"
+  loop: "{{ target_hosts }}"
+  loop_control:
+    loop_var: host
+
+- name: Build DNS records for IPMI interfaces
+  ansible.builtin.set_fact:
+    dns_records: "{{ dns_records + [{'name': host.split('.')[0], 'ip': hostvars[host]['ipmi'], 'type': 'A', 'domain': dns_domains.ipmi}] }}"
+  loop: "{{ target_hosts }}"
+  loop_control:
+    loop_var: host
+  when: "'ipmi' in hostvars[host]"
+
+- name: Parse desired FQDNs
+  ansible.builtin.set_fact:
+    desired_fqdns: "{{ dns_records | map(attribute='name') | zip(dns_records | map(attribute='domain')) | map('join', '.') | list }}"
+
+- name: Debug desired FQDNs
+  ansible.builtin.debug:
+    msg: "Desired FQDNs: {{ desired_fqdns }}"
+
+- name: Remove unwanted DNS records
+  ansible.builtin.command: "maas {{ maas_profile }} dnsresource delete {{ item.id }}"
+  loop: "{{ existing_resources.stdout | from_json }}"
+  when: >
+    item.fqdn not in desired_fqdns and
+    item.ip_addresses | map(attribute='ip') | first not in (dns_records | map(attribute='ip') | list)
+  register: dns_deletion
+  failed_when: dns_deletion.rc != 0 and "does not exist" not in dns_deletion.stderr
+
+- name: Get updated DNS resources after deletions
+  ansible.builtin.command: "maas {{ maas_profile }} dnsresources read"
+  register: updated_resources
+  changed_when: false
+
+- name: Get existing DNS domains
+  ansible.builtin.command: "maas {{ maas_profile }} domains read"
+  register: existing_domains
+  changed_when: false
+
+- name: Parse existing domains
+  ansible.builtin.set_fact:
+    current_domains: "{{ existing_domains.stdout | from_json | map(attribute='name') | list }}"
+
+- name: Remove unwanted domains
+  ansible.builtin.command: "maas {{ maas_profile }} domain delete {{ item.id }}"
+  loop: "{{ existing_domains.stdout | from_json }}"
+  when: >
+    item.name not in allowed_domains and
+    item.name not in dns_domains.values() and
+    item.resource_record_count == 0
+  register: domain_deletion
+  failed_when: domain_deletion.rc != 0 and "does not exist" not in domain_deletion.stderr and "protected foreign keys" not in domain_deletion.stderr
+
+- name: Ensure new DNS domains exist
+  ansible.builtin.command: "maas {{ maas_profile }} domains create name={{ item.value }}"
+  loop: "{{ dns_domains | dict2items }}"
+  when: item.value not in current_domains
+  register: domain_creation
+  failed_when: domain_creation.rc != 0 and "already exists" not in domain_creation.stderr
+
+- name: Ensure DNS records exist
+  ansible.builtin.command: >
+    maas {{ maas_profile }} dnsresources create
+    fqdn={{ item.name }}.{{ item.domain }}
+    ip_addresses={{ item.ip }}
+  loop: "{{ dns_records }}"
+  when: >
+    (item.name + '.' + item.domain) not in 
+    (updated_resources.stdout | from_json | map(attribute='fqdn') | list)
+  register: dns_creation
+  failed_when: dns_creation.rc != 0 and "already exists" not in dns_creation.stderr
+
+- name: Logout from MAAS
+  ansible.builtin.command: "maas logout {{ maas_profile }}"
+  when: maas_login is success
+  changed_when: true
