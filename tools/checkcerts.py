@@ -35,6 +35,7 @@ DEFAULT_DOMAINS = [
     'sentry.ceph.com',
     'shaman.ceph.com',
     'status.sepia.ceph.com',
+    'telemetry.ceph.com',
     'telemetry-public.ceph.com',
     'tracker.ceph.com',
     'wiki.sepia.ceph.com',
@@ -44,8 +45,8 @@ DEFAULT_EMAIL = [
     'dmick@redhat.com',
     'ceph-infra@redhat.com',
     'akraitman@redhat.com',
-    'aschoen@redhat.com',
     'zcerza@redhat.com',
+    'dgalloway@ibm.com',
     ]
 
 
