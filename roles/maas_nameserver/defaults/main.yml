@@ -1,0 +1,5 @@
+---
+maas_api_url: "http://localhost:5240/MAAS/api/2.0/"  # Default, overridden by secrets
+maas_profile: "admin"  # Default, overridden by secrets
+allowed_domains:
+  - "maas"

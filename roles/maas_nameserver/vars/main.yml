@@ -1,0 +1,4 @@
+---
+dns_domains:
+  ceph: "{{ (groups['ceph'] | first | split('.'))[-4:] | join('.') }}"  # internal.ceph.ibm.com
+  ipmi: "ipmi.ceph.ibm.com"  # New IPMI domain

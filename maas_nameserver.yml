@@ -1,0 +1,6 @@
+---
+- name: Configure MAAS DNS
+  hosts: maas
+  gather_facts: false
+  roles:
+    - maas_nameserver
