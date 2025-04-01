@@ -1,0 +1,53 @@
+---
+- name: Add all users from inventory variables to MAAS
+  when: inventory_hostname in groups['maas_region_rack_server']
+  tags: add_users
+  block:
+    - name: Get existing users in MAAS
+      command: "maas {{ maas_admin_username }} users read"
+      register: existing_users
+
+    - name: Extract existing usernames
+      set_fact:
+        existing_usernames: "{{ existing_users.stdout | from_json | map(attribute='username') | list }}"
+    
+    - name: Create all admin users.
+      command: "maas {{ maas_admin_username }} users create username={{ item.name }} email={{ item.email }} password={{ item.name}}temp is_superuser=1"
+      with_items: "{{ admin_users }}"
+      when: item.name not in existing_usernames
+
+    - name: Merge admin_users and lab_users
+      set_fact:
+        pubkey_users: "{{ admin_users|list }}" #+ lab_users|list }}"
+
+    - name: Clone the keys repo
+      local_action:
+        module: git
+        repo: "{{ keys_repo }}"
+        version: "{{ keys_branch }}"
+        force: yes
+        dest: "{{ keys_repo_path }}"
+      become: false
+      when: keys_repo is defined
+      connection: local
+      run_once: true
+      register: clone_keys
+      until: clone_keys is success
+      retries: 5
+      delay: 10
+    
+    - name: Update authorized_keys using the keys repo
+      vars:
+        user: "{{ item.name }}"
+        key: "{{ lookup('file', keys_repo_path + '/ssh/' + item.name + '.pub') }}"
+      command: "maas {{ maas_admin_username }} sshkeys create user={{ user }} key='{{ key }}'"
+      with_items: "{{ pubkey_users }}"
+      when: item.key is undefined and keys_repo is defined
+    
+    - name: Update authorized_keys for each user with literal keys
+      vars:
+        user: "{{ item.name }}"
+        key: "{{ item.key }}"
+      command: "maas {{ maas_admin_username }} sshkeys create user={{ user }} key='{{ key }}'"
+      with_items: "{{ pubkey_users }}"
+      when: item.key is defined

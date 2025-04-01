@@ -1,0 +1,109 @@
+---
+# Playbook to install and configure MAAS
+- name: Fail if not an Ubuntu system
+  fail:
+    msg: "This playbook only supports Ubuntu systems"
+  when: ansible_distribution != "Ubuntu"
+
+- name: Ensure system is up-to-date
+  apt:
+    update_cache: yes
+    upgrade: full
+
+# Install and configure the MAAS DB
+- import_tasks: install_maasdb.yml
+
+# Install MAAS
+- name: Install MAAS with Snap
+  snap:
+    name: maas
+    classic: yes
+    channel: "{{ maas_version }}/stable"
+    state: present
+  tags: install_maas
+  when: "maas_install_method == 'snap'"
+  register: maas_install_snap
+
+- name: Add MAAS apt repository
+  ansible.builtin.apt_repository:
+    repo: "ppa:maas/{{ maas_version }}"
+  tags: install_maas
+  when: "maas_install_method == 'apt'"
+
+- name: Install MAAS with Apt
+  ansible.builtin.apt:
+    name: maas
+    state: present
+  tags: install_maas
+  when: "maas_install_method == 'apt'"
+  register: maas_install_apt
+
+- name: Normalize install result
+  set_fact:
+    maas_install: "{{ maas_install_snap if maas_install_method == 'snap' else maas_install_apt }}"
+  changed_when: "(maas_install_method == 'apt' and maas_install_apt is defined and maas_install_apt.changed) or (maas_install_method == 'snap' and maas_install_snap is defined and maas_install_snap.changed)"
+  tags: install_maas
+
+# Initialize MAAS  
+- import_tasks: initialize_region_rack.yml
+
+- import_tasks: initialize_secondary_rack.yml
+
+# Configure MAAS
+- import_tasks: config_maas.yml
+
+# Logging into the MAAS API to use CLI
+- name: Get API key
+  command: maas apikey --username={{ maas_admin_username }}
+  when: inventory_hostname in groups['maas_region_rack_server']
+  tags:
+  - config_dhcp
+  - add_machines
+  - config_dns
+  - config_ntp
+  - add_users  
+  register: maas_api_key
+
+- name: Log into MAAS API
+  command: "maas login {{ maas_admin_username }} http://{{ hostvars[groups['maas_region_rack_server'].0]['ip'] }}:5240/MAAS/api/2.0/ {{ maas_api_key.stdout }}"
+  when: inventory_hostname in groups['maas_region_rack_server']
+  tags:
+  - config_dhcp
+  - add_machines
+  - config_dns
+  - config_ntp
+  - add_users  
+
+# Configure NTP Service
+- import_tasks: config_ntp.yml
+
+# Configure DNS Service
+- import_tasks: config_dns.yml
+
+# Configure DHCP Service
+- name: dhcp_configuration
+  include_tasks: config_dhcpd_subnet.yml
+  loop: "{{ dhcp_maas_subnets|dict2items }}"
+  loop_control:
+    loop_var: subnet
+  vars:
+    subnet_name: "{{ subnet.key }}"
+    subnet_data: "{{ subnet.value }}"
+  tags: config_dhcp
+
+# Add Machines into MAAS
+- import_tasks: add_machines.yml
+
+# Add Users into MAAS
+- import_tasks: add_users.yml
+
+# Logout from MAAS API  
+- name: Logout from MAAS
+  command: "maas logout {{ maas_admin_username }}"
+  tags:
+  - config_dhcp
+  - add_machines
+  - config_dns
+  - config_ntp
+  - add_users
+  when: inventory_hostname in groups['maas_region_rack_server']
