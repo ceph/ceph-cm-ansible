@@ -1,0 +1,27 @@
+---
+- name: Initialize MAAS Region + Rack Controller
+  when: inventory_hostname in groups['maas_region_rack_server'] and maas_install.failed == false and maas_install.changed == true
+  tags: install_maas
+  block:
+    - name: Removing conflicting NTP
+      apt:
+        name: ntp
+        state: absent
+
+    - name: Initialize MAAS Region Controller
+      expect:  
+        command: "maas init region+rack --database-uri postgres://{{ maas_db_user }}:{{ maas_db_password }}@localhost/{{ maas_db_name }}"
+        responses:
+          "MAAS URL*": ""
+          "Controller has already been initialized*": ""
+        timeout: 300
+    
+    - name: Perform database migrations
+      command: "maas migrate"
+
+    - name: Create MAAS admin user
+      command: "sudo maas createadmin --username={{ maas_admin_username }} --password={{ maas_admin_password }} --email={{ maas_admin_email }}"
+      register: admin_user_created
+
+    - name: Restart MAAS services
+      command: "snap restart maas"

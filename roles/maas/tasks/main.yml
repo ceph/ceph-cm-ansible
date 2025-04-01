@@ -1,0 +1,81 @@
+---
+# Playbook to install and configure MAAS
+- name: Fail if not an Ubuntu system
+  fail:
+    msg: "This playbook only supports Ubuntu systems"
+  when: ansible_distribution != "Ubuntu"
+
+- name: Ensure Snap is installed
+  apt:
+    name: snapd
+    state: present
+
+- name: Ensure system is up-to-date
+  apt:
+    update_cache: yes
+    upgrade: full
+
+# Install and configure the MAAS DB
+- import_tasks: install_maasdb.yml
+
+# Install MAAS
+- name: Install MAAS with Snap
+  snap:
+    name: maas
+    classic: yes
+    channel: "{{ maas_version }}/stable"
+    state: present
+  tags: install_maas
+  register: maas_install
+
+# Initialize MAAS  
+- import_tasks: initialize_region_rack.yml
+
+- import_tasks: initialize_secondary_rack.yml
+
+# Logging into the MAAS API to use CLI
+- name: Get API key
+  command: maas apikey --username={{ maas_admin_username }}
+  when: inventory_hostname in groups['maas_region_rack_server']
+  tags:
+  - config_dhcp
+  - add_machines
+  - config_dns
+  register: maas_api_key
+
+- name: Logging into MAAS API
+  command: "maas login {{ maas_admin_username }} http://{{ hostvars[groups['maas_region_rack_server'].0]['ip'] }}:5240/MAAS/api/2.0/ {{ maas_api_key.stdout }}"
+  when: inventory_hostname in groups['maas_region_rack_server']
+  tags:
+  - config_dhcp
+  - add_machines
+  - config_dns
+  register: logged_into_maas
+  failed_when: logged_into_maas.rc != 0
+
+# Configure DNS Service
+- import_tasks: config_dns.yml
+
+# Configure DHCP Service
+- name: dhcp_configuration
+  include_tasks: config_dhcpd_subnet.yml
+  loop: "{{ dhcp_maas_subnets|dict2items }}"
+  loop_control:
+    loop_var: subnet
+  vars:
+    subnet_name: "{{ subnet.key }}"
+    subnet_data: "{{ subnet.value }}"
+  tags: config_dhcp
+
+# Add Machines into MAAS
+- import_tasks: add_machines.yml
+
+# Logout from MAAS API  
+- name: Logout from MAAS
+  command: "maas logout {{ maas_admin_username }}"
+  tags:
+  - config_dhcp
+  - add_machines
+  - config_dns
+  when: inventory_hostname in groups['maas_region_rack_server'] and logged_into_maas.rc == 0
+
