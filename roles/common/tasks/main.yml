@@ -25,8 +25,15 @@
 - import_tasks: zypper_systems.yml
   when: ansible_pkg_mgr == "zypper"
 
+- name: Capture current_clocksource content
+  shell: "cat /sys/devices/system/clocksource/clocksource0/current_clocksource"
+  failed_when: false
+  register: current_clocksource
+
 - name: Set the hardware clock
   command: hwclock --systohc
+  # unless system clock is using kvm-clock
+  when: current_clocksource.stdout.find('kvm-clock') == -1
   tags:
     - timezone
 
