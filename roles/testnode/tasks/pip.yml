@@ -23,7 +23,8 @@
     name: "{{ pip_version }}"
     state: present
     enablerepo: epel
-  when: ansible_pkg_mgr == "yum" and ansible_distribution != 'Fedora'
+  when: (ansible_pkg_mgr == "yum" and ansible_distribution != 'Fedora') or
+        (ansible_pkg_mgr == "dnf" and ansible_distribution != 'Fedora')
 
 - name: Install python-pip on apt based systems.
   apt:
