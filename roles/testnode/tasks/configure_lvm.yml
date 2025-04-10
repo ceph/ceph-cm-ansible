@@ -59,7 +59,7 @@
     pvs: "{{ item.value.pvs }}"
     state: present
   with_dict: "{{ volume_groups }}"
-  when: volume_groups is defined
+  when: volume_groups is defined and item.key not in ansible_facts.lvm.vgs
 
 - name: "Create logical volume(s)"
   lvol:
@@ -67,7 +67,7 @@
     lv: "{{ item.key }}"
     size: "{{ item.value.size }}"
   with_dict: "{{ logical_volumes }}"
-  when: logical_volumes is defined
+  when: logical_volumes is defined and item.key not in ansible_facts.lvm.lvs
 
 - name: "Erase /scratch_devs so we know it's accurate"
   file:
