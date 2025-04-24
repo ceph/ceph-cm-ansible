@@ -1,0 +1,66 @@
+---
+# vars specific to centos stream version 8.x
+# these will override vars in centos_8.yml
+
+packages_to_upgrade:
+  - libgcrypt # explicitly tied to qemu build
+
+  # centos stream additions start here
+  - systemd
+
+packages:
+  - redhat-lsb-core
+  # for package-cleanup
+  - dnf-utils
+  - sysstat
+  - libedit
+  - boost-thread
+  - xfsprogs
+  - gdisk
+  - parted
+  - libgcrypt
+  - fuse-libs
+  - openssl
+  - libuuid
+  - podman
+  # for cephadmunit.py to uniformly run 'docker kill -p ...'
+  - podman-docker
+  - attr
+  - ant
+  - lsof
+  - gettext
+  - bc
+  - xfsdump
+  - blktrace
+  - usbredir
+  - libev-devel
+  - valgrind
+  - nfs-utils
+  # for xfstests
+  - ncurses-devel
+  # for s3 tests
+  # for workunits,
+  - gcc
+  - git
+  # qa/workunits/rados/test_python.sh
+  - python3-nose
+  # for cram tests
+  - python3-virtualenv
+  # for rbd qemu tests
+  - genisoimage
+  - qemu-img
+  - qemu-kvm-core
+  - qemu-kvm-block-rbd
+  # for pjd tests
+  - libacl-devel
+  # for fs tests,
+  - autoconf
+  # for test-crash.sh
+  - gdb
+  - iozone
+
+  # centos stream additions start here
+  - lvm2
+
+epel_packages:
+  - dbench
