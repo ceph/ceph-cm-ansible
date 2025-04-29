@@ -60,6 +60,8 @@ packages:
   - qemu-kvm-block-rbd
   # for pjd tests
   - libacl-devel
+  # for nvme-loop dependent tests
+  - lvm2
   # for fs tests,
   - autoconf
   # for test-crash.sh
