@@ -1,0 +1,17 @@
+---
+maas_api_url: "http://localhost:5240/MAAS/api/2.0/"  # Default, overridden by secrets
+maas_profile: "admin"  # Default, overridden by secrets
+default_domains:
+  - "maas"
+
+# List of target hosts for DNS records, excluding the 'maas' group by default.
+# Can be overridden in secrets/maas.yml (e.g., target_hosts: ['host1.example.com', 'host2.example.com'])
+# If not set, defaults to all hosts in inventory groups except those in exclude_groups.
+target_hosts: []
+
+# List of inventory groups to exclude from target_hosts.
+# Includes 'all' and 'ungrouped' to prevent automatic inclusion of all hosts or ungrouped hosts,
+# as 'all' contains every host in the inventory and 'ungrouped' includes hosts not assigned to any group.
+exclude_groups: ["maas", "all", "ungrouped"]
+
+# Note: dns_domains should be defined in the inventory's group_vars/all.yml
