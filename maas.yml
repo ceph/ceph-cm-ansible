@@ -1,0 +1,5 @@
+---
+- hosts: maas
+  roles:
+    - maas
+  become: true

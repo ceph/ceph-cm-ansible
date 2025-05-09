@@ -1,0 +1,8 @@
+  {% if subnet_data.classes is defined -%}
+  {% for class_name, class_string in subnet_data.classes.items() -%}
+  class "{{ class_name }}" {
+    {{ class_string }};
+  }
+
+  {% endfor -%}
+  {%- endif -%}
