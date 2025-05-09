@@ -28,7 +28,7 @@
        vlan_id: "{{ subnet_info.stdout | from_json | json_query('vlan.id') }}"
    
    - name: Enabling DHCP on {{ subnet_name }} subnet
-     command: "maas {{ maas_admin_username }} vlan update {{ fabric_name }} {{ vlan_vid }} dhcp_on=True primary_rack={{ groups['maas_region_rack_server'][0] }}"
+     command: "maas {{ maas_admin_username }} vlan update {{ fabric_name }} {{ vlan_vid }} dhcp_on=True primary_rack={{ groups['maas_region_rack_server'][0] }} secondary_rack={{ groups['maas_rack_server'][0] }}"
    
    # This task creates the directory where the snippets are going to be copied
    

@@ -93,7 +93,7 @@ dhcp_maas_subnets: #This is a list of dictionaries, you can list here all the su
 
 This is large dictionary that gets parsed out into individual snippet files. Each top-level key (front and back in the example) will get its own snippet file created.
 
-Under each subnet, cidr, ipvar, and macvar are required. ipvar and macvar tell the Jinja2 template which IP address and MAC address should be used for each host in each subnet snippet, the value of those variables should correspond with a variable for each host in the inventory, if the variable is not defined in the inventory then that host will not be included into the subnet configuration.
+Under each subnet, cidr, ipvar, and macvar are required. ipvar and macvar tell the Jinja2 template which IP address and MAC address should be used for each host in each subnet snippet, the value of these variables should be the name of the variable that holds the ip address and mac address, respectively (for hosts that have more than one interface). That is, you might have "ipfront=1.2.3.4 ipback=5.6.7.8", and for the front subnet, 'ipvar' would be set to 'ipfront', and for the back network, 'ipvar' would be set to 'ipback', if those variables are not defined in the inventory then that host will not be included into the subnet configuration.
 
 Here's a line from our Ansible inventory host file
 
@@ -101,7 +101,7 @@ smithi001.front.sepia.ceph.com mac=0C:C4:7A:BD:15:E8 ip=172.21.15.1 ipmi=172.21.
 
 This will result in a static IP entry for smithi001-front with IP 172.21.15.1 and MAC 0C:C4:7A:BD:15:E8 in front_hosts snippet and a smithi001-ipmi entry with IP 172.21.47.1 with MAC 0C:C4:7A:6E:21:A7 in ipmi_hosts snippet.
 
-start_ip, end_ip and ip_range are required too in order to create an IP range. MAAS needs a range in order to enable DHCP on the subnet. In this case the ip_range is configured as dynamic, it could be dynamic or static.
+start_ip, end_ip and ip_range_type are required too in order to create an IP range. MAAS needs a range in order to enable DHCP on the subnet. In this case the ip_range_type is configured as dynamic, it could be dynamic or static.
 
 The classes are optional, they are groups of DHCP clients defined by specific criteria, allowing the possibility to apply custom DHCP options or behaviors to those groups. This enables more granular control over how DHCP services are delivered to different client types, like assigning specific IP addresses or configuring other network parameters based on device type or other characteristics. In this case we have virtual and lxc but you can include here any group you want with any name. In our specific case we are including into these groups hosts that match with an specific mac address criteria.
 

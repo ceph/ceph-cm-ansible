@@ -1,7 +1,5 @@
 ---
 - hosts: maas
-  serial: 1
-  strategy: free
   roles:
     - maas
   become: true
