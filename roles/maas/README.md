@@ -7,7 +7,7 @@ This Ansible playbook automates the installation and initial configuration of [M
 - Installs MAAS packages
 - Initializes MAAS with a default user with High Availability
 - Configures networking (DHCP, DNS, etc.)
-- Adds Machines from invetory into MAAS
+- Adds Machines from inventory into MAAS
 
 ## Requirements
 
@@ -62,6 +62,7 @@ dhcp_maas_global:
   - one-lease-per-client: "true"
 
 This list will be used to populate the global DHCP snippet. You can add additional keys and values. Just make sure they follow the syntax required for dhcpd.conf.
+The global configuration is optional, so you can just remove the elements of the list if you do not need them.
 
 dhcp_maas_subnets: #This is a list of dictionaries, you can list here all the subnets you want to configure and use any name you want in this case we use front and back but you can include here any other or change the names.
   front:
@@ -99,7 +100,7 @@ Here's a line from our Ansible inventory host file
 
 smithi001.front.sepia.ceph.com mac=0C:C4:7A:BD:15:E8 ip=172.21.15.1 ipmi=172.21.47.1 bmc=0C:C4:7A:6E:21:A7
 
-This will result in a static IP entry for smithi001-front with IP 172.21.15.1 and MAC 0C:C4:7A:BD:15:E8 in front_hosts snippet and a smithi001-ipmi entry with IP 172.21.47.1 with MAC 0C:C4:7A:6E:21:A7 in ipmi_hosts snippet.
+This will result in a static lease for smithi001-front with IP 172.21.15.1 and MAC 0C:C4:7A:BD:15:E8 in front_hosts snippet and a smithi001-ipmi entry with IP 172.21.47.1 with MAC 0C:C4:7A:6E:21:A7 in ipmi_hosts snippet.
 
 start_ip, end_ip and ip_range_type are required too in order to create an IP range. MAAS needs a range in order to enable DHCP on the subnet. In this case the ip_range_type is configured as dynamic, it could be dynamic or static.
 
@@ -146,4 +147,4 @@ maas
 - install_maas #Install MAAS and postgreSQL only and initializes the region+rack server and the secondary rack.
 - add-machines #Add Machines to MAAS only if they are not already present.
 - config_dhcp #Configures DHCP options only if there are any change in the DHCP variables.
-- config_dns #Configure DNS domains and add the DNS Records that are not currenlty into a domain.
+- config_dns #Configure DNS domains and add the DNS Records that are not currently into a domain.

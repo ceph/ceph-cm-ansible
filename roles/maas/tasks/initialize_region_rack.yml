@@ -3,10 +3,11 @@
   when: inventory_hostname in groups['maas_region_rack_server'] and maas_install.failed == false and maas_install.changed == true
   tags: install_maas
   block:
-    - name: Removing conflicting NTP
-      apt:
-        name: ntp
-        state: absent
+    - name: Disable timesyncd service
+      systemd_service:
+        name: systemd-timesyncd
+        state: stopped
+        enabled: false
 
     - name: Initialize MAAS Region Controller
       expect:  

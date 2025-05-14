@@ -43,15 +43,13 @@
   - config_dns
   register: maas_api_key
 
-- name: Logging into MAAS API
+- name: Log into MAAS API
   command: "maas login {{ maas_admin_username }} http://{{ hostvars[groups['maas_region_rack_server'].0]['ip'] }}:5240/MAAS/api/2.0/ {{ maas_api_key.stdout }}"
   when: inventory_hostname in groups['maas_region_rack_server']
   tags:
   - config_dhcp
   - add_machines
   - config_dns
-  register: logged_into_maas
-  failed_when: logged_into_maas.rc != 0
 
 # Configure DNS Service
 - import_tasks: config_dns.yml
@@ -77,5 +75,4 @@
   - config_dhcp
   - add_machines
   - config_dns
-  when: inventory_hostname in groups['maas_region_rack_server'] and logged_into_maas.rc == 0
-
+  when: inventory_hostname in groups['maas_region_rack_server']

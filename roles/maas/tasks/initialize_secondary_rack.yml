@@ -1,5 +1,5 @@
 ---
-- name: Generate secret variable
+- name: Get secret for init-rack
   command: "cat /var/snap/maas/common/maas/secret"
   when: inventory_hostname in groups['maas_region_rack_server'] and maas_install.failed == false and maas_install.changed == true
   tags: install_maas
@@ -9,10 +9,11 @@
   when: inventory_hostname in groups['maas_rack_server'] and maas_install.failed == false and secret_var is defined and maas_install.changed == true
   tags: install_maas
   block:
-    - name: Removing conflicting NTP
-      apt:
-        name: ntp
-        state: absent
+    - name: Disable timesyncd service
+      systemd_service:
+        name: systemd-timesyncd
+        state: stopped
+        enabled: false
 
     - name: Register Rack Controller with Region Controller
       command: "maas init rack --maas-url http://{{ hostvars['test1']['ip'] }}:5240/MAAS/ --secret {{ hostvars['test1']['secret_var']['stdout'] }}"
