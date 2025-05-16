@@ -1,7 +1,5 @@
 ---
 - name: Add all machines from inventory to MAAS
-  vars:  
-    arch: "amd64"  # Change if needed
   when: inventory_hostname in groups['maas_region_rack_server']
   tags: add_machines
   block:
@@ -17,7 +15,8 @@
       vars:
         hostname: "{{ item.split('.')[0] }}"
         mac_address: "{{ hostvars[item]['mac'] }}"
-      when: hostname not in existing_hostnames and mac_address is defined
+        arch: "{{ hostvars[item]['arch'] }}"
+      when: hostname not in existing_hostnames and mac_address is defined and arch is defined
       loop: "{{ groups['testnodes'] }}"
       command: "maas {{ maas_admin_username }} machines create architecture={{ arch }} mac_addresses={{ mac_address }} hostname={{ item }} power_type=manual deployed=true"
       
