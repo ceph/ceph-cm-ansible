@@ -1,0 +1,10 @@
+---
+- name: Configure NTP service
+  when: inventory_hostname in groups['maas_region_rack_server']
+  tags: config_ntp
+  block:
+    - name: Configure NTP servers to sync MAAS
+      command: "maas {{ maas_admin_username }} maas set-config name=ntp_servers value={{ maas_ntp_servers }}"
+
+    - name: Configure the option to use NTP external only
+      command: "maas {{ maas_admin_username }} maas set-config name=ntp_external_only value={{ maas_ntp_external_only }}"

@@ -41,6 +41,7 @@
   - config_dhcp
   - add_machines
   - config_dns
+  - config_ntp  
   register: maas_api_key
 
 - name: Log into MAAS API
@@ -50,6 +51,10 @@
   - config_dhcp
   - add_machines
   - config_dns
+  - config_ntp  
+
+# Configure NTP Service
+- import_tasks: config_ntp.yml
 
 # Configure DNS Service
 - import_tasks: config_dns.yml
@@ -75,4 +80,5 @@
   - config_dhcp
   - add_machines
   - config_dns
+  - config_ntp
   when: inventory_hostname in groups['maas_region_rack_server']

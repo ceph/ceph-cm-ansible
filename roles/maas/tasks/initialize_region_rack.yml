@@ -5,9 +5,12 @@
   block:
     - name: Disable timesyncd service
       systemd_service:
-        name: systemd-timesyncd
+        name: "{{ item }}"
         state: stopped
         enabled: false
+      loop:
+        - systemd-timesyncd
+        - chronyd
 
     - name: Initialize MAAS Region Controller
       expect:  
