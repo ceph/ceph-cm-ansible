@@ -48,6 +48,10 @@ maas_db_user: "maas"
 maas_db_password: "maaspassword"
 maas_version: "3.5"
 
+NTP variables include:
+maas_ntp_servers: "ntp.ubuntu.com"  # NTP servers, specified as IP addresses or hostnames delimited by commas and/or spaces, to be used as time references for MAAS itself, the machines MAAS deploys, and devices that make use of MAAS's DHCP services. MAAS uses ntp.ubuntu.com by default. You can put a single server or multiple servers.
+maas_ntp_external_only: "false" # Configure all region controller hosts, rack controller hosts, and subsequently deployed machines to refer directly to the configured external NTP servers. Otherwise only region controller hosts will be configured to use those external NTP servers, rack contoller hosts will in turn refer to the regions' NTP servers, and deployed machines will refer to the racks' NTP servers. The value of this variable can be true or false.
+
 DNS variables include:
 dns_domains: # This is the list of domains you want to create, in this case we have 2 domains, but you can list here all the domains you need.
   - ceph: Static primary domain (e.g., `front.sepia.ceph.com`).
@@ -124,23 +128,25 @@ ansible-playbook maas.yml
 ## Role Structure
 
 maas
-   ├── defaults
-   │   └── main.yml
-   ├── meta
-   │   └── main.yml
-   ├── tasks
-   │   ├── add_machines.yml
-   │   ├── config_dhcpd.yml
-   │   ├── config_dns.yml
-   │   ├── initialize_region_rack.yml
-   │   ├── initialize_secondary_rack.yml
-   │   ├── install_maasdb.yml
-   │   └── main.yml
-   └── templates
-       ├── dhcpd.classes.conf.j2
-       ├── dhcpd.global.conf.j2
-       ├── dhcpd.hosts.conf.j2
-       └── dhcpd.pools.conf.j2
+  ├── defaults
+  │   └── main.yml
+  ├── meta
+  │   └── main.yml
+  ├── README.md
+  ├── tasks
+  │   ├── add_machines.yml
+  │   ├── config_dhcpd_subnet.yml
+  │   ├── config_dns.yml
+  │   ├── config_ntp.yml
+  │   ├── initialize_region_rack.yml
+  │   ├── initialize_secondary_rack.yml
+  │   ├── install_maasdb.yml
+  │   └── main.yml
+  └── templates
+      ├── dhcpd.classes.snippet.j2
+      ├── dhcpd.global.snippet.j2
+      ├── dhcpd.hosts.snippet.j2
+      └── dhcpd.pools.snippet.j2
 
 ## Tags
 
