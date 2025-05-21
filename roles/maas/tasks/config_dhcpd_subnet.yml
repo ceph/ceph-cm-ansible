@@ -28,7 +28,7 @@
        vlan_id: "{{ (subnet_info.stdout | from_json).vlan.id }}"
    
    - name: Enable DHCP on {{ subnet_name }} subnet
-     command: "maas {{ maas_admin_username }} vlan update {{ fabric_name }} {{ vlan_vid }} dhcp_on=True primary_rack={{ groups['maas_region_rack_server'][0] }} secondary_rack={{ groups['maas_rack_server'][0] }}"
+     command: "maas {{ maas_admin_username }} vlan update {{ fabric_name }} {{ vlan_vid }} dhcp_on=True primary_rack={{ groups['maas_region_rack_server'][0].split('.')[0] }} secondary_rack={{ groups['maas_rack_server'][0].split('.')[0] }}"
    
    # This task creates the directory where the snippets are going to be copied
    
@@ -148,18 +148,18 @@
    
    # This section adds snippets into MAAS
    
-   - name: Add global DHCP snippets into MAAS
+   - name: Add global DHCP snippet into MAAS
      command: "maas {{ maas_admin_username }} dhcpsnippets create name='{{ global_snippet }}' value='{{ global_content }}' description='This snippet configures the global DHCP options' global_snippet=true"
      when: dhcp_global_config.failed == false and dhcp_global_config.changed == true
    
-   - name: Add {{ subnet_name }} classes snippets into MAAS
+   - name: Add {{ subnet_name }} classes snippet into MAAS
      command: "maas {{ maas_admin_username }} dhcpsnippets create name='{{ classes_snippet }}' value='{{ classes_content }}' description='This snippet configures the classes in {{ subnet_name }} subnet' subnet='{{ vlan_id }}'"
-     when: dhcp_classes_config.failed == false and dhcp_classes_config.changed == true
+     when: subnet_data.classes is defined and dhcp_classes_config.failed == false and dhcp_classes_config.changed == true
    
-   - name: Add {{ subnet_name }} pools snippets into MAAS
+   - name: Add {{ subnet_name }} pools snippet into MAAS
      command: "maas {{ maas_admin_username }} dhcpsnippets create name='{{ pools_snippet }}' value='{{ pools_content }}' description='This snippet configures the pools in {{ subnet_name }} subnet' subnet='{{ vlan_id }}'"
-     when: dhcp_pools_config.failed == false and dhcp_pools_config.changed == true
+     when: subnet_data.pools is defined and dhcp_pools_config.failed == false and dhcp_pools_config.changed == true
    
-   - name: Add {{ subnet_name }} hosts snippets into MAAS
+   - name: Add {{ subnet_name }} hosts snippet into MAAS
      command: "maas {{ maas_admin_username }} dhcpsnippets create name='{{ hosts_snippet }}' value='{{ hosts_content }}' description='This snippet configures the hosts in {{ subnet_name }} subnet' subnet='{{ vlan_id }}'"
      when: dhcp_hosts_config.failed == false and dhcp_hosts_config.changed == true
