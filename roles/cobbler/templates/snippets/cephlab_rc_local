@@ -3,12 +3,12 @@
 # Set proper location for firstboot ansible post-install trigger
 #set distro = $getVar('distro','').split("-")[0]
 #set distro_ver = $getVar('distro','').split("-")[1]
-#if ($distro == 'RHEL') or ($distro == 'CentOS')
+#if $distro in ['RHEL', 'CentOS', 'Rocky']
 #set distro_ver = $distro_ver.split(".")[0]
 #end if
 #if ($distro == 'Fedora' and int($distro_ver) >= 22) or ($distro == 'RHEL' and int($distro_ver) >= 8)
 #set script = '/etc/rc.d/rc.local'
-#else if $distro == 'CentOS' and int($distro_ver) >= 9
+#else if ($distro in ['CentOS', 'Rocky']) and int($distro_ver) >= 9
 #set script = '/etc/rc.d/rc.local'
 systemctl enable rc-local.service
 #else if $distro == 'openSUSE'
@@ -57,7 +57,12 @@ if [ ! -f /.cephlab_net_configured ]; then
       elif command -v apt-get &>/dev/null; then
         echo -e "auto lo\niface lo inet loopback\n\nauto $nic\niface $nic inet dhcp" > /etc/network/interfaces
       else
-        echo -e "DEVICE=$nic\nBOOTPROTO=dhcp\nONBOOT=yes" > /etc/sysconfig/network-scripts/ifcfg-$nic
+        etcsysconfig=true
+        if ! echo -e "DEVICE=$nic\nBOOTPROTO=dhcp\nONBOOT=yes" > /etc/sysconfig/network-scripts/ifcfg-$nic; then
+          etcsysconfig=false
+          nmcli con add type ethernet ifname $nic con-name $nic ipv4.method auto
+          nmcli con up $nic
+        fi
       fi
       # Don't bail if NIC fails to go down or come up
       { set +e; } 2>/dev/null
@@ -77,7 +82,11 @@ if [ ! -f /.cephlab_net_configured ]; then
         # If we can't ping our Cobbler host, remove the DHCP config for this NIC.
         # It must either be on a non-routable network or has no reachable DHCP server.
         ifdown $nic
-        rm -f /etc/sysconfig/network-scripts/ifcfg-$nic
+        if [ "$etcsysconfig" ]; then
+          rm -f /etc/sysconfig/network-scripts/ifcfg-$nic
+        else
+          nmcli connection delete $nic
+        fi
         sed -i "/$nic/d" /etc/network/interfaces
         # Go back to bailing if anything fails bringing the next NIC up
         set -e
