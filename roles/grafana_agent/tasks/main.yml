@@ -32,6 +32,21 @@
   when: ansible_pkg_mgr == "apt"
   register: keyrings_exists
 
+- name: Remove conflicting Grafana key file if exists
+  ansible.builtin.file:
+    path: /etc/apt/keyrings/grafana.key
+    state: absent
+  when: ansible_pkg_mgr == "apt"
+
+- name: Remove old Grafana APT repository if exists
+  ansible.builtin.apt_repository:
+    repo: "{{ item }}"
+    state: absent
+  loop:
+    - "deb {{ grafana_apt_repo_url }} stable main"
+    - "deb [signed-by=/etc/apt/keyrings/grafana.key] {{ grafana_apt_repo_url }} stable main"
+  when: ansible_pkg_mgr == "apt"
+
 - name: "Import Grafana GPG key"
   become: true
   ansible.builtin.get_url:
