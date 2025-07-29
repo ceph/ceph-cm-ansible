@@ -36,4 +36,5 @@ jobs:
     - name: Run ansible-lint
       run: |
         export PATH=$PATH:$HOME/.local/bin
+        sed -i /^vault_password_file/d ansible.cfg
         ansible-lint -v roles/*
