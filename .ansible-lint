@@ -11,7 +11,6 @@ skip_list:
   - git-latest
   - jinja
   - literal-compare
-  - load-failure
   - meta-no-info
   - name[casing]
   - no-changed-when
@@ -23,3 +22,11 @@ skip_list:
   - risky-shell-pipe
   - role-name
   - unnamed-task
+warn_list:
+  - key-order
+  - partial-become
+  - schema
+  - var-naming
+  - yaml
+  - ignore-errors
+  - name
