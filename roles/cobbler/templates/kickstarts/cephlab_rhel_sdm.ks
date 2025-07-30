@@ -5,7 +5,7 @@
 # do not use with earlier distros
 #set distro = $getVar('distro','').split("-")[0]
 #set distro_ver = $getVar('distro','').split("-")[1]
-#if $distro == 'RHEL' or $distro == 'CentOS'
+#if $distro in ['RHEL', 'CentOS', 'Rocky']
 #set distro_ver_major = $distro_ver.split(".")[0]
 #set distro_ver_minor = $distro_ver.split(".")[1]
 #end if

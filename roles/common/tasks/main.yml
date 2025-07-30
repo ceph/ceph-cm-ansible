@@ -48,8 +48,9 @@
     - monitoring-scripts
     - nagios
 
-# configure nagios (Except CentOS 9 Stream)
+# configure nagios (Except Rocky)
 - import_tasks: nagios.yml
+  when: ansible_distribution != "Rocky"
   tags:
     - nagios
 
@@ -61,9 +62,12 @@
     - nagios
 
 # configure selinux for nagios
+# We don't use nagios anymore and none of the nrpe packages are available anyway so skip it on Rocky
 - import_tasks: nrpe-selinux.yml
-  when: ansible_os_family == "RedHat" and
-        (selinux_status is defined and selinux_status.stdout != "Disabled")
+  when:
+    - ansible_os_family == "RedHat"
+    - ansible_distribution != "Rocky"
+    - (selinux_status is defined and selinux_status.stdout != "Disabled")
   tags:
     - nagios
 

@@ -10,7 +10,7 @@ python3
 #else
 @base
 #end if
-#if $distro == 'RHEL' or $distro == 'CentOS'
+#if $distro in ['RHEL', 'CentOS', 'Rocky']
 #set distro_ver_major = $distro_ver.split(".")[0]
 #set distro_ver_minor = $distro_ver.split(".")[1]
 ## These packages are available in all RHEL/CentOS versions but not Fedora
@@ -53,4 +53,6 @@ ethtool
 wget
 smartmontools
 selinux-policy-targeted
+#if $distro != 'Rocky'
 gdisk
+#end if

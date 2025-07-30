@@ -1,0 +1,58 @@
+---
+# vars specific to any rocky 10.x version
+
+common_yum_repos:
+  lab-extras:
+    name: "lab-extras"
+    baseurl: "http://{{ mirror_host }}/lab-extras/10/"
+    enabled: 1
+    gpgcheck: 0
+
+# When mirrors become available, these will be filenames in roles/testnodes/templates/mirrorlists/10/
+yum_mirrorlists: []
+
+packages_to_upgrade:
+  - libgcrypt # explicitly tied to qemu build
+
+packages:
+  - libgcrypt
+  - sysstat
+  - libedit
+  - boost-thread
+  - xfsprogs
+  - parted
+  - fuse-libs
+  - openssl
+  - libuuid
+  - podman
+  - attr
+  - lsof
+  - gettext
+  - bc
+  - xfsdump
+  - blktrace
+  - usbredir
+  - valgrind
+  - nfs-utils
+  - ncurses-devel
+  - gcc
+  - git
+  - qemu-img
+  - qemu-kvm-core
+  - qemu-kvm-block-rbd
+  - libacl-devel
+  - autoconf
+  - gdb
+  - podman-docker
+  - lvm2
+  - python3-setuptools
+
+epel_packages:
+  - dbench
+  - gdisk
+
+nfs_service: nfs-server
+
+ntp_service_name: chronyd
+
+xfs_opts: "-m crc=1,finobt=0"

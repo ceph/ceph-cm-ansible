@@ -145,6 +145,11 @@ distros:
       iso: https://download.rockylinux.org/pub/rocky/9/isos/x86_64/Rocky-9.5-x86_64-dvd.iso
       sha256: ba60c3653640b5747610ddfb4d09520529bef2d1d83c1feb86b0c84dff31e04e
       kickstart: cephlab_rhel.ks
+  "Rocky-10.0-x86_64":
+      iso: https://download.rockylinux.org/pub/rocky/10/isos/x86_64/Rocky-10.0-x86_64-dvd1.iso
+      sha256: 678ea3e1eea6f5d6c220c46fab34f5e0add260e7b64f0139ee3b9f7b7ca7d2f3
+      kickstart: cephlab_rhel.ks
+      kernel_options: "inst.ks=http://@@http_server@@/cblr/svc/op/ks/system/@@name@@"
   "Ubuntu-12.04-server-x86_64":
       iso: "http://releases.ubuntu.com/12.04/ubuntu-12.04.5-server-amd64.iso"
       sha256: af224223de99e2a730b67d7785b657f549be0d63221188e105445f75fb8305c9

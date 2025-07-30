@@ -3,12 +3,16 @@
 # #set hostname = $getVar('name','')
 #set distro = $getVar('distro','').split("-")[0]
 #set distro_ver = $getVar('distro','').split("-")[1]
-#if $distro == 'RHEL' or $distro == 'CentOS'
+#if $distro in ['RHEL', 'CentOS', 'Rocky']
 #set distro_ver_major = $distro_ver.split(".")[0]
 #set distro_ver_minor = $distro_ver.split(".")[1]
 #end if
 # Partition clearing information
+#if $distro == 'Rocky' and int($distro_ver_major) >= 10
+clearpart --all --disklabel msdos
+#else
 clearpart --all --initlabel
+#end if
 # Use all of /dev/sda for the root partition (20G minimum)
 part / --fstype="ext4" --ondisk=sda --size=20000 --grow
 # Clear the Master Boot Record
