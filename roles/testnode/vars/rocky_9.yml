@@ -1,0 +1,76 @@
+---
+# vars specific to any centos 9.x version
+
+common_yum_repos:
+  lab-extras:
+    name: "lab-extras"
+    baseurl: "http://{{ mirror_host }}/lab-extras/9/"
+    enabled: 1
+    gpgcheck: 0
+
+
+# When mirrors become available, these will be filenames in roles/testnodes/templates/mirrorlists/9/
+yum_mirrorlists: []
+
+packages_to_upgrade:
+  - libgcrypt # explicitly tied to qemu build
+
+packages:
+  # for package-cleanup
+  - dnf-utils
+  - sysstat
+  - libedit
+  - boost-thread
+  - xfsprogs
+  - gdisk
+  - parted
+  - libgcrypt
+  - fuse-libs
+  - openssl
+  - libuuid
+  - podman
+  # for cephadmunit.py to uniformly run 'docker kill -p ...'
+# Doesn't exist yet
+#  - podman-docker
+  - attr
+#  - ant
+  - lsof
+  - gettext
+  - bc
+  - xfsdump
+  - blktrace
+  - usbredir
+#  - libev-devel
+  - valgrind
+  - nfs-utils
+  # for xfstests
+  - ncurses-devel
+  # for s3 tests
+  # for workunits,
+  - gcc
+  - git
+  # qa/workunits/rados/test_python.sh
+#  - python3-nose
+  # for cram tests
+#  - python3-virtualenv
+  # for rbd qemu tests
+  - genisoimage
+  - qemu-img
+  - qemu-kvm-core
+  - qemu-kvm-block-rbd
+  # for pjd tests
+  - libacl-devel
+  # for nvme-loop dependent tests
+  - lvm2
+  # for fs tests,
+  - autoconf
+  # for test-crash.sh
+  - gdb
+  - iozone
+
+epel_packages:
+  - dbench
+
+nfs_service: nfs-server
+
+ntp_service_name: chronyd
