@@ -71,7 +71,9 @@
 
 # create and manage epel.repo
 - import_tasks: epel.yml
-  when: ansible_distribution == "CentOS" or ansible_distribution == 'RedHat'
+  when: ansible_distribution == "CentOS" or
+        ansible_distribution == 'RedHat' or
+        ansible_distribution == 'Rocky'
   tags:
     - epel
     - repos
