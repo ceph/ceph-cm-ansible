@@ -20,6 +20,17 @@
     line: "PasswordAuthentication no"
     state: present
   notify: restart sshd
+  tags: ssh_config
+
+- name: Remove SHA1 MACs from ssh config
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "^MACs"
+    line: "MACs hmac-sha2-512,hmac-sha2-256"
+    insertafter: EOF
+    state: present
+  notify: restart sshd 
+  tags: ssh_config 
 
 ## Individual host tasks
 
