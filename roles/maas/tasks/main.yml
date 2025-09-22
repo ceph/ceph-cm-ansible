@@ -49,15 +49,13 @@
 
 - import_tasks: initialize_secondary_rack.yml
 
-# Configure MAAS
-- import_tasks: config_maas.yml
-
 # Logging into the MAAS API to use CLI
 - name: Get API key
   command: maas apikey --username={{ maas_admin_username }}
   when: inventory_hostname in groups['maas_region_rack_server']
   tags:
   - config_dhcp
+  - config_maas
   - add_machines
   - config_dns
   - config_ntp
@@ -69,10 +67,14 @@
   when: inventory_hostname in groups['maas_region_rack_server']
   tags:
   - config_dhcp
+  - config_maas
   - add_machines
   - config_dns
   - config_ntp
   - add_users  
+
+# Configure MAAS
+- import_tasks: config_maas.yml
 
 # Configure NTP Service
 - import_tasks: config_ntp.yml
@@ -102,6 +104,7 @@
   command: "maas logout {{ maas_admin_username }}"
   tags:
   - config_dhcp
+  - config_maas
   - add_machines
   - config_dns
   - config_ntp

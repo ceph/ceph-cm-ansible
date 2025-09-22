@@ -9,6 +9,7 @@ postgres_version: "16"
 maas_version: "3.6"
 maas_install_method: "apt"
 maas_home_dir: "/home/ubuntu/maas"
+global_kernel_opt: "console=tty0 console=ttyS1,115200"
 
 # DNS variables
 default_domains:
