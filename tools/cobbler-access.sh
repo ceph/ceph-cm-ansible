@@ -4,7 +4,11 @@
 tmpfile=$(mktemp)
 
 # Basically `mkpasswd` but uses a small subset of special characters
-password=$(head /dev/urandom | tr -dc 'A-Za-z0-9!@#$%&' | head -c 12 && echo)
+password="$(
+  { head -c 64 /dev/urandom | LC_ALL=C tr -dc '[:alnum:]' | head -c 1;
+    head -c 256 /dev/urandom | LC_ALL=C tr -dc '[:alnum:]!@#$%&-' | head -c 11;
+  } && echo
+)"
 
 if [ $# -eq 0 ]; then
   printf "Enter username: "
