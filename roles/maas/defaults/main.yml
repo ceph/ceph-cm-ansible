@@ -1,0 +1,29 @@
+---
+# MAAS user and database variables
+maas_admin_username: "admin"
+maas_db_name: "maasdb"
+maas_db_user: "maas"
+postgres_version: "16"
+
+#General variables
+maas_version: "3.6"
+maas_install_method: "apt"
+maas_home_dir: "/home/ubuntu/maas"
+global_kernel_opt: "console=tty0 console=ttyS1,115200"
+
+# DNS variables
+default_domains:
+  - "maas"
+
+maas_dns_domains:
+  ceph: "front.sepia.ceph.com"
+  ipmi: "ipmi.sepia.ceph.com"
+
+# NTP variables
+maas_ntp_servers: "ntp.ubuntu.com"
+maas_ntp_external_only: "false"
+
+# Users variables
+keys_repo: "https://github.com/ceph/keys"
+keys_branch: main
+keys_repo_path: "~/.cache/src/keys"
