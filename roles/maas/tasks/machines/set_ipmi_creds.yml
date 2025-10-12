@@ -1,0 +1,41 @@
+---
+- name: Build power configuration payload
+  set_fact:
+    maas_power_payload: >-
+      {{
+        {
+          "power_type": "ipmi",
+          "power_parameters_power_address": hostvars[inv_host].ipmi,
+          "power_parameters_power_user": hostvars[inv_host].power_user,
+          "power_parameters_power_pass": hostvars[inv_host].power_pass,
+        }
+      }}
+
+- include_tasks: ../_auth_header.yml
+
+#- name: Set power_type=ipmi
+#  uri:
+#    url: "{{ _maas_api }}/machines/{{ system_id }}/"
+#    method: PUT
+#    headers:
+#      Authorization: "{{ maas_auth_header }}"
+#      Accept: application/json
+#      Content-Type: application/x-www-form-urlencoded
+#    body:
+#      power_type: ipmi
+#    body_format: form-urlencoded
+#    status_code: 200
+
+- name: Set IPMI Credentiaals
+  uri:
+    url: "{{ _maas_api }}/machines/{{ system_id }}/"
+    method: PUT
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+      Content-Type: application/x-www-form-urlencoded
+    body: "{{ maas_power_payload }}"
+    body_format: form-urlencoded
+    status_code: 200
+  register: set_ipmi_creds_result
+  changed_when: set_ipmi_creds_result.status in [200, 201]

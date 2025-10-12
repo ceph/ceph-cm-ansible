@@ -1,0 +1,49 @@
+---
+# Ensure we can talk to MAAS
+- include_tasks: ../_auth_header.yml
+
+# Read current status so we can be idempotent
+- name: GET node details (status check)
+  uri:
+    url: "{{ _maas_api }}/nodes/{{ system_id }}/"
+    method: GET
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+    status_code: 200
+    return_content: true
+  register: _node_get
+
+- name: Cache current MAAS status name
+  set_fact:
+    _maas_status_name: "{{ (_node_get.json.status_name | default('')) | string }}"
+
+- include_tasks: ../_auth_header.yml
+
+- name: Build mark_broken comment body
+  set_fact:
+    _mark_broken_body: "comment={{ ('Temp: editing NIC at ' ~ broken_at) | urlencode }}"
+
+# Mark Broken only if not already Broken
+- name: POST op=mark_broken (with note)
+  when: _maas_status_name != 'Broken'
+  uri:
+    url: "{{ _maas_api }}/machines/{{ system_id }}/op-mark_broken"
+    method: POST
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+      Content-Type: application/x-www-form-urlencoded
+    body: "{{ _mark_broken_body }}"
+    body_format: form-urlencoded
+    status_code: 200
+  register: _mark_broken_resp
+  changed_when: true
+
+# Add to the shared un-break list only if we actually marked it
+- name: Remember that we marked this node Broken
+  when: _maas_status_name != 'Broken'
+  set_fact:
+    _marked_broken: "{{ (hostvars['localhost']._marked_broken | default([])) + [ system_id ] }}"
+  delegate_to: localhost
+  changed_when: false

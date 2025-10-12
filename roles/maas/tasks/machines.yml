@@ -1,0 +1,114 @@
+---
+################################################################################
+# API base
+################################################################################
+- name: Set MAAS API base URL
+  set_fact:
+    _maas_api: "{{ maas_api_url | trim('/') }}/MAAS/api/2.0"
+
+- include_tasks: _auth_header.yml
+
+- include_tasks: machines/_read_machines.yml
+
+- include_tasks: machines/_build_indexes.yml
+
+- name: Ensure short hostnames are unique in MAAS
+  fail:
+    msg: "Duplicate short hostnames found in MAAS: {{ (_short_names | difference(_short_names | unique)) | unique | join(', ') }}"
+  when: (_short_names | difference(_short_names | unique)) | length > 0
+
+# (Shared) initialize the list of nodes we will un-break later
+- name: Init shared _marked_broken list
+  set_fact:
+    _marked_broken: "{{ hostvars['localhost']._marked_broken | default([]) }}"
+  delegate_to: localhost
+  run_once: true
+
+- include_tasks: machines/_plan_sets.yml
+
+- name: Include create.yml for missing hosts
+  include_tasks: machines/create.yml
+  loop: "{{ _create_names }}"
+  loop_control:
+    label: "{{ item }}"
+  vars:
+    host: "{{ item }}"
+    system_id: "{{ maas_short_to_id[item] | default(omit) }}"
+    # If inventory uses FQDNs, this resolves to the inventory hostname; else returns the short
+    inv_host: "{{ (inventory_by_short | default({})).get(item, item) }}"
+
+#    desired_pool: "{{ hostvars[(inventory_by_short | default({})).get(item, item)].maas_machine_pool | default(_pool_from_groups) }}"
+    desired_arch: "{{ hostvars[(inventory_by_short | default({})).get(item, item)].maas_arch | default(maas_arch | default('amd64/generic')) }}"
+    desired_domain: "{{ hostvars[(inventory_by_short | default({})).get(item, item)].maas_domain | default(maas_domain | default(omit)) }}"
+    mac_addresses: >-
+      {{
+        (hostvars[(inventory_by_short | default({})).get(item, item)].maas_interfaces | default([]))
+        | map(attribute='prefix')
+        | map('regex_replace', '$', '_mac')
+        | map('extract', hostvars[(inventory_by_short | default({})).get(item, item)])
+        | select('defined')
+        | list
+      }}
+  tags: create_machines
+
+# Create machines just creates a skeleton machine entry.
+# We called a handler to re-read all the machines from MaaS and update
+# the _update_names list.
+- meta: flush_handlers
+
+- name: Set timestamp for when machines get marked broken
+  set_fact:
+    broken_at: "{{ lookup('pipe', 'date +%Y-%m-%d\\ %H:%M:%S') }}"
+
+- include_tasks: machines/_plan_sets.yml
+
+- name: Include update.yml for existing hosts
+  include_tasks: machines/update.yml
+  loop: "{{ _update_names }}"
+  loop_control:
+    label: "{{ item }}"
+  vars:
+    existing: "{{ maas_by_short[item] | default({}) }}"
+    system_id: "{{ maas_short_to_id[item] }}"
+    host: "{{ item }}"
+    # If inventory uses FQDNs, this resolves to the inventory hostname; else returns the short
+    inv_host: "{{ (inventory_by_short | default({})).get(item, item) }}"
+
+#    desired_pool: "{{ hostvars[(inventory_by_short | default({})).get(item, item)].maas_machine_pool | default(_pool_from_groups) }}"
+    desired_arch: "{{ hostvars[(inventory_by_short | default({})).get(item, item)].maas_arch | default(maas_arch | default('amd64/generic')) }}"
+    desired_domain: "{{ hostvars[(inventory_by_short | default({})).get(item, item)].maas_domain | default(maas_domain | default(omit)) }}"
+  tags: update_machines
+
+- name: Include set_ipmi_creds.yml
+  include_tasks: machines/set_ipmi_creds.yml
+  loop: "{{ _update_names }}"
+  loop_control:
+    label: "{{ item }}"
+  vars:
+    system_id: "{{ maas_short_to_id[item] }}"
+    host: "{{ item }}"
+    # If inventory uses FQDNs, this resolves to the inventory hostname; else returns the short
+    inv_host: "{{ (inventory_by_short | default({})).get(item, item) }}"
+  tags:
+    - ipmi
+#    - update_machines
+
+- name: Include delete.yml for extra hosts
+  include_tasks: machines/delete.yml
+  loop: "{{ _delete_names }}"
+  loop_control:
+    label: "{{ item }}"
+  vars:
+    host: "{{ item }}"
+    system_id: "{{ maas_short_to_id[item] }}"
+    # If inventory uses FQDNs, this resolves to the inventory hostname; else returns the short
+    inv_host: "{{ (inventory_by_short | default({})).get(item, item) }}"
+  when: (maas_delete_hosts | default(false)) | bool
+
+- debug: var=hostvars['localhost']._marked_broken
+- debug: var=_marked_broken
+
+- name: Include cleanup.yml when we marked nodes broken
+  include_tasks: machines/cleanup.yml
+  when: _marked_broken | default([]) | length > 0
+  run_once: true

@@ -1,0 +1,32 @@
+---
+# Expects: _maas_api, maas_api_key, pair, _fabric_by_name
+# pair.0 = fabric obj; pair.1 = vlan obj
+
+- include_tasks: ../_auth_header.yml
+  no_log: true
+
+- set_fact:
+    _fid: "{{ _fabric_by_name[pair.0.fabric] }}"
+    _vlan_create_body: >-
+      {{
+        {'vid': pair.1.vid}
+        | combine( (pair.1.name is defined)        | ternary({'name': pair.1.name}, {}), recursive=True )
+        | combine( (pair.1.description is defined) | ternary({'description': pair.1.description}, {}), recursive=True )
+        | combine( (pair.1.mtu is defined)         | ternary({'mtu': pair.1.mtu}, {}), recursive=True )
+        | combine( (pair.1.space is defined)       | ternary({'space': pair.1.space}, {}), recursive=True )
+      }}
+
+# NOTE: dhcp_on is not created here; we set it in the separate "vlan_update" task because
+# ipranges must be created first.
+- uri:
+    url: "{{ _maas_api }}/fabrics/{{ _fid }}/vlans/"
+    method: POST
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Content-Type: application/x-www-form-urlencoded
+      Accept: application/json
+    body_format: form-urlencoded
+    body: "{{ _vlan_create_body }}"
+    status_code: [200, 201, 409]
+    return_content: true
+    use_netrc: false 

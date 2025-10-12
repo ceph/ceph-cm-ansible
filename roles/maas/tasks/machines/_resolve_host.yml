@@ -1,0 +1,8 @@
+---
+# Requires: host (short name like "ceph26")
+- name: Resolve inventory host from short name
+  set_fact:
+    inv_host: >-
+      {{
+        (inventory_by_short | default({})).get(host, host)
+      }}

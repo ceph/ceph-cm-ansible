@@ -1,0 +1,22 @@
+---
+# Normalize hostnames (ignore domains)
+- name: Normalize hostnames (ignore domains)
+  set_fact:
+    _existing_names: "{{ maas_by_hostname.keys() | map('regex_replace', '\\..*$', '') | list }}"
+    testnode_names: "{{ groups['testnodes'] | map('regex_replace', '\\..*$', '') | list }}"
+    maas_excluded_hosts: >-
+      {{
+        (
+          (groups['maas_region_rack_server'] | default([])) +
+          (groups['maas_db_server'] | default([])) +
+          (groups['maas_dont_delete'] | default([]))
+        )
+        | map('regex_replace', '\\..*$', '') | unique | list
+      }}
+
+# Compute create/update/delete sets after facts are defined
+- name: Determine which hosts to create, update, and delete
+  set_fact:
+    _create_names: "{{ testnode_names | difference(_existing_names) }}"
+    _update_names: "{{ testnode_names | intersect(_existing_names) }}"
+    _delete_names: "{{ _existing_names | difference(testnode_names) | difference(maas_excluded_hosts) }}"

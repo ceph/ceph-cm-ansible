@@ -1,0 +1,52 @@
+---
+# roles/maas/tasks/machines/update.yml
+
+# 1) Fresh OAuth header (nonce/timestamp)
+- name: Build OAuth header
+  include_tasks: _auth_header.yml
+
+# 2) Record node system_id for downstream includes
+- name: Remember node system id
+  set_fact:
+    _node_system_id: "{{ system_id }}"
+
+# 3) Gather MAAS interface facts (raw)
+- name: Gather MAAS interface facts for this host
+  uri:
+    url: "{{ _maas_api }}/nodes/{{ system_id }}/interfaces/"
+    method: GET
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+    return_content: yes
+    status_code: 200
+  register: _iface_resp
+
+# 5) Initialize desired structures so later tasks never explode on undefined
+# Load desired bonds & interfaces from group_vars
+- name: Load desired bonds & interfaces from group_vars
+  set_fact:
+    _desired_bonds: "{{ hostvars[inv_host].maas_bonds | default([]) }}"
+    _desired_ifaces: "{{ hostvars[inv_host].maas_interfaces | default([]) }}"
+
+- include_tasks: machines/_refresh_iface_facts.yml
+
+- include_tasks: machines/_mark_broken.yml
+
+- name: Apply interfaces (native_vid + tagged_vids)
+  include_tasks: machines/_apply_one_iface.yml
+  loop: "{{ _desired_ifaces }}"
+  loop_control:
+    loop_var: desired_iface
+    label: "{{ desired_iface.prefix | default('(no prefix)') }}"
+  vars:
+    iface_obj: "{{ desired_iface }}"
+
+# 9) Ensure bonds (each include runs per bond; no block-looping)
+- name: Ensure each bond
+  when: (_desired_bonds | default([])) | length > 0
+  include_tasks: machines/_ensure_bond.yml
+  loop: "{{ _desired_bonds | default([]) }}"
+  loop_control:
+    loop_var: bond
+    label: "{{ bond.name | default('unnamed-bond') }}"

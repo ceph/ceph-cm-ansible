@@ -1,0 +1,11 @@
+---
+# Build inventory short->full host map once
+- name: Build inventory short->full host map
+  set_fact:
+    _inv_full_names: "{{ groups['all'] | default([]) | map('extract', hostvars, 'inventory_hostname') | list }}"
+
+- set_fact:
+    _inv_short_names: "{{ _inv_full_names | map('regex_replace', '\\..*$', '') | list }}"
+
+- set_fact:
+    inventory_by_short: "{{ dict(_inv_short_names | zip(_inv_full_names)) }}"

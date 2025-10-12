@@ -56,7 +56,7 @@
   tags:
   - config_dhcp
   - config_maas
-  - add_machines
+#  - machines
   - config_dns
   - config_ntp
   - add_users  
@@ -68,13 +68,23 @@
   tags:
   - config_dhcp
   - config_maas
-  - add_machines
+#  - machines
   - config_dns
   - config_ntp
   - add_users  
 
 # Configure MAAS
 - import_tasks: config_maas.yml
+
+- import_tasks: api_auth_pretasks.yml
+  tags:
+    - always
+    - api
+
+# Configure Networks
+- import_tasks: networking.yml
+  tags:
+    - networking
 
 # Configure NTP Service
 - import_tasks: config_ntp.yml
@@ -94,7 +104,8 @@
   tags: config_dhcp
 
 # Add Machines into MAAS
-- import_tasks: add_machines.yml
+- import_tasks: machines.yml
+  tags: machines
 
 # Add Users into MAAS
 - import_tasks: add_users.yml
@@ -105,7 +116,7 @@
   tags:
   - config_dhcp
   - config_maas
-  - add_machines
+#  - machines
   - config_dns
   - config_ntp
   - add_users

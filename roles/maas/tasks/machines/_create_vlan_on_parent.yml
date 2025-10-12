@@ -1,0 +1,43 @@
+---
+# Expected vars (passed by caller):
+# - parent_id        (int/string MAAS iface ID of the parent, e.g. bond id)
+# - vlan_id          (int/string MAAS VLAN object id, not VID)
+# - node_system_id   (MAAS node system_id, e.g. gseprg)
+# - vid_label        (optional, for nicer labels/logging)
+
+- name: Validate required vars
+  fail:
+    msg: >-
+      Missing var(s). parent_id={{ parent_id|default('UNSET') }},
+      vlan_id={{ vlan_id|default('UNSET') }},
+      node_system_id={{ node_system_id|default('UNSET') }}
+  when: parent_id is not defined or vlan_id is not defined or node_system_id is not defined
+
+# Optional: quick sanity that the parent exists in _ifaces (if _ifaces available)
+- name: Sanity-check parent exists on node (optional)
+  vars:
+    _parent_found: >-
+      {{
+        (_ifaces | selectattr('id','equalto', parent_id|int) | list | length) > 0
+      }}
+  when:
+    - _ifaces is defined
+    - not _parent_found | bool
+  fail:
+    msg: "Parent interface id {{ parent_id }} not found on node {{ node_system_id }}"
+
+- include_tasks: ../_auth_header.yml
+
+- name: POST op=create_vlan (parent={{ parent_id }}, vlan={{ vlan_id }})  # {{ vid_label | default('') }}
+  uri:
+    url: "{{ _maas_api }}/nodes/{{ node_system_id }}/interfaces/?op=create_vlan"
+    method: POST
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+      Content-Type: application/x-www-form-urlencoded
+    body: "parent={{ parent_id }}&vlan={{ vlan_id }}"
+    body_format: form-urlencoded
+    status_code: 200
+  register: _create_vlan_resp
+  changed_when: true

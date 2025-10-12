@@ -1,0 +1,133 @@
+---
+# Expects:
+# - _maas_api
+# - maas_auth_header
+# - _fabric_by_name
+# - _vlan_index
+# - trio (tuple: [fabric_obj, vlan_obj, subnet_obj])
+
+- name: Unpack current triple
+  set_fact:
+    _fname: "{{ trio.0.fabric }}"
+    vlan:   "{{ trio.1 }}"
+    subnet: "{{ trio.2 }}"
+    _vobj:  "{{ _vlan_index[_fname][vlan.vid] }}"
+    _vid:   "{{ _vobj.id }}"
+
+- name: Read existing subnets on VLAN
+  uri:
+    url: "{{ _maas_api }}/vlans/{{ _vid }}/subnets/"
+    method: GET
+    headers: { Authorization: "{{ maas_auth_header }}" }
+    return_content: true
+  register: _subnets_resp
+
+- name: Get existing subnet (by CIDR) if present
+  set_fact:
+    _existing_subnet: "{{ (_subnets_resp.json | default([])) | selectattr('cidr','equalto', subnet.cidr) | list | first | default(None) }}"
+
+- name: Build create body for subnet
+  set_fact:
+    _subnet_create_body: >-
+      {{
+        {'cidr': subnet.cidr, 'vlan': _vid}
+        | combine( (subnet.gateway is defined) | ternary({'gateway_ip': subnet.gateway}, {}), recursive=True )
+        | combine( (subnet.space   is defined) | ternary({'space': subnet.space}, {}),       recursive=True )
+        | combine( (subnet.managed is defined) | ternary({'managed': subnet.managed|bool}, {}), recursive=True )
+      }}
+
+- name: Create subnet if missing
+  when: _existing_subnet is none
+  uri:
+    url: "{{ _maas_api }}/subnets/"
+    method: POST
+    headers: { Authorization: "{{ maas_auth_header }}" }
+    body_format: form-urlencoded
+    body: "{{ _subnet_create_body }}"
+    status_code: [200, 201, 409]
+    return_content: true
+
+- name: Build update body for subnet
+  set_fact:
+    _subnet_update_body: >-
+      {{
+        {}
+        | combine( (subnet.gateway is defined) | ternary({'gateway_ip': subnet.gateway}, {}), recursive=True )
+        | combine( (subnet.space   is defined) | ternary({'space': subnet.space}, {}),       recursive=True )
+        | combine( (subnet.managed is defined) | ternary({'managed': subnet.managed|bool}, {}), recursive=True )
+      }}
+
+- name: Update subnet if exists
+  when: _existing_subnet is not none
+  uri:
+    url: "{{ _maas_api }}/subnets/{{ _existing_subnet.id }}/"
+    method: POST
+    headers: { Authorization: "{{ maas_auth_header }}" }
+    body_format: form-urlencoded
+    body: "{{ _subnet_update_body }}"
+    status_code: [200, 201]
+    return_content: true
+
+- name: Re-read subnets to get current subnet_id
+  uri:
+    url: "{{ _maas_api }}/vlans/{{ _vid }}/subnets/"
+    method: GET
+    headers: { Authorization: "{{ maas_auth_header }}" }
+    return_content: true
+  register: _subnets_after
+
+- name: Compute subnet id
+  set_fact:
+    _subnet_id: "{{ (_subnets_after.json | default([])) | selectattr('cidr','equalto', subnet.cidr) | map(attribute='id') | first }}"
+
+- name: Determine DNS servers for subnet (per-subnet or global)
+  set_fact:
+    _dns_list: "{{ subnet.dns_servers | default(maas_global_dns_servers | default([])) | list }}"
+
+- name: Set DNS servers on subnet when provided
+  when: _dns_list | length > 0
+  uri:
+    url: "{{ _maas_api }}/subnets/{{ _subnet_id }}/"
+    method: POST
+    headers: { Authorization: "{{ maas_auth_header }}" }
+    body_format: form-urlencoded
+    body: "{{ {'dns_servers': _dns_list | join(' ')} }}"
+    status_code: [200, 201]
+
+- name: Ensure IP ranges on subnet (if any)
+  when: subnet.ip_ranges is defined
+  block:
+    - name: Read existing ranges
+      uri:
+        url: "{{ _maas_api }}/subnets/{{ _subnet_id }}/ipranges/"
+        method: GET
+        headers: { Authorization: "{{ maas_auth_header }}" }
+        return_content: true
+      register: _ranges_resp
+
+    - name: Create/ensure each range (by type/start/end)
+      vars:
+        ipr_body: >-
+          {{
+            {'type': ipr.type | default('reserved'),
+             'start_ip': ipr.start_ip,
+             'end_ip': ipr.end_ip}
+          }}
+        exists: >-
+          {{
+            (_ranges_resp.json | default([]))
+            | selectattr('type','equalto', ipr.type | default('reserved'))
+            | selectattr('start_ip','equalto', ipr.start_ip)
+            | selectattr('end_ip','equalto', ipr.end_ip)
+            | list | first | default(None)
+          }}
+      when: exists is none
+      uri:
+        url: "{{ _maas_api }}/subnets/{{ _subnet_id }}/ipranges/"
+        method: POST
+        headers: { Authorization: "{{ maas_auth_header }}" }
+        body_format: form-urlencoded
+        body: "{{ ipr_body }}"
+        status_code: [200, 201, 409]
+      loop: "{{ subnet.ip_ranges }}"
+      loop_control: { loop_var: ipr }
