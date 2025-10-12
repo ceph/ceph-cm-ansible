@@ -1,39 +1,48 @@
----
-- name: Merge extra_admin_users into managed_admin_users
-  set_fact:
-    # The following adds items from extra_admin_users to managed_admin_users, while
-    # fetching keys from the latter if they are not present in the former. It's as pretty
-    # as it can get without whitespace breaking the parser.
-    managed_admin_users:
-      "{% for new_admin in extra_admin_users -%}
-         {% for lab_user in managed_users -%}
-           {% if new_admin.name == lab_user.name %}{{ new_admin.update(lab_user) }}{% endif %}
-         {%- endfor %}
-      {%- endfor %}{{ managed_admin_users|list + extra_admin_users|list }}"
-  when: extra_admin_users is defined and extra_admin_users|length > 0
+# 0) Safety defaults
+- set_fact:
+    managed_admin_users: "{{ managed_admin_users | default([]) }}"
+    users: "{{ users | default([]) }}"
 
-- name: Remove managed_admin_users from managed_users
+# 1) De-duplicate lab_users by name (keeps the first occurrence)
+- name: De-dup lab_users by name
   set_fact:
-    # The following rebuilds the managed_users list while omitting users already present
-    # in managed_admin_users
-    managed_users:
-      "[{% for lab_user in managed_users -%}
-      {% if not managed_admin_users|selectattr('name', 'equalto', lab_user.name)|list|length %}{{ lab_user }},{% endif %}
-      {%- endfor %}]"
-  when: extra_admin_users is defined and extra_admin_users|length > 0
+    _lab_users_unique: >-
+      {{
+        (lab_users | groupby('name'))
+        | map('last') | map('first') | list
+      }}
 
-- name: Filter the managed_users list
+# 2) Build admin names list (supports list-of-dicts OR list-of-strings)
+- name: Build _admin_names safely
   set_fact:
-    managed_users:
-        "[{% for user in managed_users %}
-            {% if user.name in users %}{{ user }},{%endif%}
-        {%endfor%}]"
-  when: users|length > 0
+    _admin_names: >-
+      {{
+        (
+          (managed_admin_users | length > 0) and ((managed_admin_users | first) is mapping)
+        )
+        | ternary(
+            managed_admin_users | map(attribute='name') | list,
+            managed_admin_users | list
+          )
+      }}
 
-- name: Filter the managed_admin_users list
+# 3) managed_users = lab_users_unique MINUS admins
+- name: Recompute managed_users
   set_fact:
-    managed_admin_users:
-        "[{% for user in managed_admin_users %}
-            {% if user.name in users %}{{ user }},{%endif%}
-        {%endfor%}]"
-  when: users|length > 0
+    managed_users: "{{ _lab_users_unique | rejectattr('name','in', _admin_names) | list }}"
+
+# 4) Optional allowlist (only if users provided)
+- name: Apply allowlist "users"
+  when: users | length > 0
+  set_fact:
+    managed_users: "{{ managed_users | selectattr('name','in', users) | list }}"
+    managed_admin_users: >-
+      {{
+        (
+          (managed_admin_users | length > 0) and ((managed_admin_users | first) is mapping)
+        )
+        | ternary(
+            managed_admin_users | selectattr('name','in', users) | list,
+            (managed_admin_users | select('in', users) | list)
+          )
+      }}

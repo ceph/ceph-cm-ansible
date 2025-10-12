@@ -7,14 +7,29 @@
     regexp: "^UID_MIN"
     line: "UID_MIN                  1001"
 
-- name: Create all admin users with sudo access.
-  user:
-    name: "{{ item.name }}"
-    groups: sudo
-    shell: /bin/bash
-    state: present
+- debug: var=managed_admin_users
+- debug: var=managed_users
+
+- name: Normalize managed_admin_users (only if it’s already a list)
+  set_fact:
+    managed_admin_users: "{{ managed_admin_users if (managed_admin_users is iterable and (managed_admin_users|type_debug) == 'list') else [] }}"
+
+- name: Sanity check
+  debug:
+    msg:
+      - "managed_admin_users type: {{ managed_admin_users | type_debug }}"
+      - "first admin: {{ (managed_admin_users | first) | default({}) }}"
+# Expect: list
+
+- name: Create admin users (Ubuntu/Debian)
+  become: yes
+  ansible.builtin.user:
+    name:  "{{ item.name }}"
+    groups: wheel
+    shell:  /bin/bash
+    state:  present
     append: yes
-  with_items: "{{ managed_admin_users }}"
+  loop: "{{ managed_admin_users }}"
 
 - name: Create all users without sudo access.
   user:

@@ -15,6 +15,10 @@
     update_password: on_create
   when: cm_user is defined and cm_user_uid is defined
   register: user_created
+  failed_when: >
+    user_created.rc is defined and
+    user_created.rc != 0 and
+    ('user cm is currently used' not in user_created.msg | default(''))
   tags:
    - user
 
@@ -53,5 +57,6 @@
     exclusive: True
   when: cm_user_ssh_keys is defined and
         cm_user is defined
+  become: true
   tags:
     - pubkeys

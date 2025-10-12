@@ -1,0 +1,18 @@
+---
+# Build a FRESH OAuth header using the pre-encoded pieces from the pretasks.
+# Requires: maas_ck_enc, maas_tk_enc, maas_sig_enc (set in api_auth_pretasks.yml)
+
+- name: Build OAuth header (fresh nonce/timestamp)
+  vars:
+    _nonce: "{{ lookup('community.general.random_string', length=24, upper=false, special=false) }}"
+    _ts: "{{ lookup('pipe', 'date +%s') }}"
+  set_fact:
+    maas_auth_header: >-
+      OAuth oauth_version="1.0",
+      oauth_signature_method="PLAINTEXT",
+      oauth_consumer_key="{{ maas_ck_enc }}",
+      oauth_token="{{ maas_tk_enc }}",
+      oauth_signature="{{ maas_sig_enc }}",
+      oauth_nonce="{{ _nonce | urlencode }}",
+      oauth_timestamp="{{ _ts }}"
+#  no_log: true

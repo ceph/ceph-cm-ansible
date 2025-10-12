@@ -1,0 +1,20 @@
+---
+# Expects: _maas_api, maas_api_key, _fabric_by_name, fab_obj (with .fabric)
+
+- include_tasks: ../_auth_header.yml
+  no_log: true
+
+- uri:
+    url: "{{ _maas_api }}/fabrics/{{ _fabric_by_name[fab_obj.fabric] }}/vlans/"
+    method: GET
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+    return_content: true
+    use_netrc: false
+  register: _vlans_resp
+  no_log: true
+
+- set_fact:
+    _vlans_raw_by_fabric: "{{ _vlans_raw_by_fabric | combine({ fab_obj.fabric: (_vlans_resp.json | default([])) }, recursive=True) }}"
+  no_log: true
