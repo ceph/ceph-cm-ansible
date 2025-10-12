@@ -13,9 +13,9 @@
        existing_start_ips: "{{ ip_ranges_raw.stdout | from_json | map(attribute='start_ip') | list }}"
        existing_end_ips: "{{ ip_ranges_raw.stdout | from_json | map(attribute='end_ip') | list }}"
    
-   - name: Create IP Range for {{ subnet_name }} subnet
-     command: "maas {{ maas_admin_username }} ipranges create type={{ subnet_data.ip_range_type }} start_ip={{ subnet_data.start_ip }} end_ip={{ subnet_data.end_ip }}"
-     when: subnet_data.start_ip not in existing_start_ips and subnet_data.end_ip not in existing_end_ips
+#   - name: Create IP Range for {{ subnet_name }} subnet
+#     command: "maas {{ maas_admin_username }} ipranges create type={{ subnet_data.ip_range_type }} start_ip={{ subnet_data.start_ip }} end_ip={{ subnet_data.end_ip }}"
+#     when: subnet_data.start_ip not in existing_start_ips and subnet_data.end_ip not in existing_end_ips
 
    - name: Read maas subnet information
      command: "maas {{ maas_admin_username }} subnet read {{ subnet_data.cidr }}"
@@ -28,7 +28,8 @@
        vlan_id: "{{ (subnet_info.stdout | from_json).id }}"
    
    - name: Enable DHCP on {{ subnet_name }} subnet
-     command: "maas {{ maas_admin_username }} vlan update {{ fabric_name }} {{ vlan_vid }} dhcp_on=True primary_rack={{ groups['maas_region_rack_server'][0].split('.')[0] }} secondary_rack={{ groups['maas_rack_server'][0].split('.')[0] }}"
+     #command: "maas {{ maas_admin_username }} vlan update {{ fabric_name }} {{ vlan_vid }} dhcp_on=True primary_rack={{ groups['maas_region_rack_server'][0].split('.')[0] }} secondary_rack={{ groups['maas_rack_server'][0].split('.')[0] }}"
+     command: "maas {{ maas_admin_username }} vlan update {{ fabric_name }} {{ vlan_vid }} dhcp_on=True"
    
    # This section creates the directory where the snippets are going to be copied
    
@@ -87,6 +88,9 @@
        src: dhcpd.hosts.snippet.j2
        dest: "{{ snippets_path }}/{{ subnet_name }}_hosts_snippet"
      register: dhcp_hosts_config
+
+   - pause:
+       minutes: 500
    
    # This section decodes the snippet files and creates the variables to add them into MAAS
    

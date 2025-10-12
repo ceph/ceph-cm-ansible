@@ -1,0 +1,63 @@
+---
+# Ensure we can talk to MAAS
+- include_tasks: ../_auth_header.yml
+
+## Read current status so we can be idempotent
+#- name: GET {{ inv_host }} details (status check)
+#  uri:
+#    url: "{{ _maas_api }}/nodes/{{ system_id }}/"
+#    method: GET
+#    headers:
+#      Authorization: "{{ maas_auth_header }}"
+#      Accept: application/json
+#    status_code: 200
+#    return_content: true
+#  register: _node_get
+
+- name: Cache current MAAS status name
+  set_fact:
+    _maas_status_name: "{{ (_node_get.json.status_name | default('')) | string }}"
+
+- block:
+    - name: Build mark_broken comment body
+      set_fact:
+        _mark_broken_body: "comment={{ ('Temp: editing NIC at ' ~ broken_at) | urlencode }}"
+    
+    - include_tasks: ../_auth_header.yml
+    
+    # Mark Broken only if not already Broken
+    - name: POST {{ inv_host }} op=mark_broken (with note)
+      when: _maas_status_name != 'Broken'
+      uri:
+        url: "{{ _maas_api }}/machines/{{ system_id }}/op-mark_broken"
+        method: POST
+        headers:
+          Authorization: "{{ maas_auth_header }}"
+          Accept: application/json
+          Content-Type: application/x-www-form-urlencoded
+        body: "{{ _mark_broken_body }}"
+        body_format: form-urlencoded
+        status_code: 200
+      register: _mark_broken_resp
+      changed_when: true
+      failed_when: _mark_broken_resp.status not in [200, 403]
+    
+    # Add to the shared un-break list only if we actually marked it
+    - name: Remember that we marked {{ inv_host }} Broken
+      when: _mark_broken_resp.status == 200
+      set_fact:
+        _marked_broken: "{{ (hostvars['localhost']._marked_broken | default([])) + [ system_id ] }}"
+      delegate_to: localhost
+      changed_when: false
+    
+    # Add to the shared "We skipped these" list.  A machine can not be marked broken, marked fixed, and mark broken again without being re-commissioned.
+    # The only way around this really is to delete the host entry and start over.
+    # For now, we'll just store the list of hostnames and print it at the end for human intervention.
+    - name: Remember that we failed to mark {{ inv_host }} broken
+      when: _mark_broken_resp.status == 403
+      set_fact:
+        _failed_to_mark_broken: "{{ (hostvars['localhost']._failed_to_mark_broken | default([])) + [ system_id ] }}"
+      delegate_to: localhost
+      changed_when: false
+  when: system_status not in ['Broken', 'Ready']
+#  when: _maas_status_name not in ['Broken', 'Ready']
