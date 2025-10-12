@@ -1,0 +1,30 @@
+---
+# 1) Refresh MAAS auth header (new nonce)
+- include_tasks: ../_auth_header.yml
+
+# 2) GET vlans for this fabric
+- name: Read VLANs for fabric {{ fab.id }}
+  uri:
+    url: "{{ _maas_api }}/fabrics/{{ fab.id }}/vlans/"
+    method: GET
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+    return_content: yes
+    status_code: 200
+  register: _vlans_this_fabric
+
+# 3) Merge into vid -> vlan-object map
+- name: Merge VLANs from fabric {{ fab.id }} into _vlan_by_vid
+  set_fact:
+    _vlan_by_vid: >-
+      {{
+        _vlan_by_vid
+        | combine(
+            dict(
+              (_vlans_this_fabric.json | map(attribute='vid') | list)
+              | zip(_vlans_this_fabric.json)
+            ),
+            recursive=True
+          )
+      }}

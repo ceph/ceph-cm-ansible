@@ -1,0 +1,19 @@
+---
+# Expects: _maas_api, maas_api_key, fabric_name
+
+- include_tasks: ../_auth_header.yml
+  no_log: true
+
+- uri:
+    url: "{{ _maas_api }}/fabrics/"
+    method: POST
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Content-Type: application/x-www-form-urlencoded
+      Accept: application/json
+    body_format: form-urlencoded
+    body:
+      name: "{{ fabric_name }}"
+    status_code: [200, 201, 409]
+    use_netrc: false
+  no_log: true

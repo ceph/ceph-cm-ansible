@@ -1,0 +1,6 @@
+---
+container_packages:
+  - docker.io
+  - python3-setuptools
+  - python3-pip
+  - pipx

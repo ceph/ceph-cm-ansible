@@ -1,0 +1,174 @@
+# roles/maas/tasks/machines/_apply_subnet.yml
+# Expects: iface (id, name, vlan_id[, type]), candidate_subnets (list), system_id, _maas_api, maas_auth_header
+# Optional: iface.desired_mode or maas_iface_mode_default (defaults to "DHCP")
+
+# Safety: only operate on bond/vlan interfaces if iface.type is provided
+- block:
+    - name: Choose subnet for {{ iface.name }}
+      set_fact:
+        _chosen_subnet: >-
+          {{
+            (
+              candidate_subnets
+              | selectattr('managed','defined')
+              | selectattr('managed','eq', true)
+              | list
+              | first
+            )
+            | default((candidate_subnets | first), true)
+          }}
+
+    - name: Skip if no candidate subnets for VLAN {{ iface.vlan_id }}
+      when: (candidate_subnets | length) == 0
+      debug:
+        msg: "No subnets on VLAN {{ iface.vlan_id }}; leaving {{ iface.name }} unchanged."
+
+    - block:
+        - include_tasks: _auth_header.yml
+
+        - name: Read current interface links
+          uri:
+            url: "{{ _maas_api }}/nodes/{{ system_id }}/interfaces/{{ iface.id }}/"
+            method: GET
+            headers:
+              Authorization: "{{ maas_auth_header }}"
+              Accept: application/json
+            return_content: yes
+            status_code: 200
+          register: _if_detail
+          no_log: true
+
+        # -------------------------
+        # Normalize / derive facts
+        # -------------------------
+        - name: Compute candidate subnet IDs and desired mode
+          set_fact:
+            _candidate_ids: "{{ candidate_subnets | map(attribute='id') | list }}"
+            _desired_mode: "{{ iface.desired_mode | default(maas_iface_mode_default | default('DHCP')) }}"
+
+        # Normalize links to a predictable shape
+        - name: Normalize current links on iface
+          set_fact:
+            _links_norm: []
+        - name: Append normalized link
+          set_fact:
+            _links_norm: >-
+              {{
+                _links_norm + [
+                  {
+                    'id': l.id | default(omit),
+                    'subnet_id': (
+                      l.subnet.id
+                      if (l.subnet is mapping and (l.subnet.id is defined))
+                      else (l.subnet if (l.subnet is defined) else omit)
+                    ),
+                    'mode': (l.mode | default('AUTO')),
+                    'ip_address': l.ip_address | default(omit),
+                    'default_gateway': l.default_gateway | default(false)
+                  }
+                ]
+              }}
+          loop: "{{ _if_detail.json.links | default([]) }}"
+          loop_control:
+            loop_var: l
+
+        - name: Collect existing links on this VLAN
+          set_fact:
+            _existing_on_vlan: >-
+              {{
+                _links_norm
+                | selectattr('subnet_id', 'defined')
+                | selectattr('subnet_id', 'in', _candidate_ids)
+                | list
+              }}
+
+        # Select first existing link (if any)
+        - name: Select first existing link (if any)
+          set_fact:
+            _existing_link: >-
+              {{
+                (_existing_on_vlan | list) | first | default(omit, true)
+              }}
+            _has_link_on_vlan: "{{ (_existing_on_vlan | length | int) > 0 }}"
+            _current_mode: "{{ (_existing_on_vlan | first).mode | default(None) if (_existing_on_vlan | length | int) > 0 else None }}"
+            _mode_mismatch: >-
+              {{
+                (_existing_on_vlan | length | int) > 0 and
+                (((_existing_on_vlan | first).mode | default('') | upper)
+                  != (_desired_mode | upper))
+              }}
+
+        # -------------------------
+        # Actions
+        # -------------------------
+        - include_tasks: _auth_header.yml
+
+        # Case 1: No link on this VLAN -> link with desired mode
+        - name: Link subnet with desired mode (no existing link)
+          when:
+            - not _has_link_on_vlan
+            - _chosen_subnet is defined
+          uri:
+            url: "{{ _maas_api }}/nodes/{{ system_id }}/interfaces/{{ iface.id }}/?op=link_subnet"
+            method: POST
+            headers:
+              Authorization: "{{ maas_auth_header }}"
+              Accept: application/json
+              Content-Type: application/x-www-form-urlencoded
+            body_format: form-urlencoded
+            body:
+              mode: "{{ _desired_mode }}"          # DHCP / STATIC / AUTO / LINK_UP
+              subnet: "{{ _chosen_subnet.id }}"    # integer id
+            status_code: [200, 201, 409]
+          no_log: true
+
+        # Case 2: Link exists but wrong mode -> unlink then relink with desired mode
+        - name: Unlink existing subnet (mode mismatch)
+          when:
+            - _mode_mismatch
+            - _existing_link is defined
+            - _existing_link.id is defined
+          uri:
+            url: "{{ _maas_api }}/nodes/{{ system_id }}/interfaces/{{ iface.id }}/?op=unlink_subnet"
+            method: POST
+            headers:
+              Authorization: "{{ maas_auth_header }}"
+              Accept: application/json
+              Content-Type: application/x-www-form-urlencoded
+            body_format: form-urlencoded
+            body:
+              id: "{{ _existing_link.id }}"
+            status_code: [200, 204, 409]
+          no_log: true
+
+        - include_tasks: _auth_header.yml
+          when: _mode_mismatch
+
+        - name: Relink subnet with desired mode (after unlink)
+          when:
+            - _mode_mismatch
+            - _chosen_subnet is defined
+          uri:
+            url: "{{ _maas_api }}/nodes/{{ system_id }}/interfaces/{{ iface.id }}/?op=link_subnet"
+            method: POST
+            headers:
+              Authorization: "{{ maas_auth_header }}"
+              Accept: application/json
+              Content-Type: application/x-www-form-urlencoded
+            body_format: form-urlencoded
+            body:
+              mode: "{{ _desired_mode }}"
+              subnet: "{{ _chosen_subnet.id }}"
+            status_code: [200, 201, 409]
+          no_log: true
+
+        # Case 3: Already correct -> noop
+        - name: Note existing correct link
+          when:
+            - _has_link_on_vlan
+            - not _mode_mismatch
+          debug:
+            msg: >-
+              "{{ iface.name }} already linked to VLAN {{ iface.vlan_id }} subnet with mode {{ _current_mode }}; skipping."
+      when: (candidate_subnets | length) > 0
+  when: (iface.type is not defined) or (iface.type in ['bond','vlan'])

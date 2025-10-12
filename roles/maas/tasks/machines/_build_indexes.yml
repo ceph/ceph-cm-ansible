@@ -1,0 +1,106 @@
+---
+- name: Init _nodes dict
+  set_fact:
+    _nodes: "{{ maas_nodes_list | selectattr('hostname','defined') | list }}"
+  no_log: true
+
+- debug: var=_nodes
+#- pause:
+
+- name: Build maps keyed by FQDN (single pass, no loop)
+  set_fact:
+    maas_by_hostname: >-
+      {{ dict(
+           _nodes | map(attribute='hostname') 
+           | zip(_nodes)
+         ) }}
+    maas_host_to_macs: >-
+      {{ dict(
+           _nodes | map(attribute='hostname')
+           | zip(
+               _nodes
+               | map(attribute='interface_set')
+               | map('default', [])
+               | map('map', attribute='mac_address')
+               | map('list')
+             )
+         ) }}
+    maas_host_to_ifaces: >-
+      {{ dict(
+           _nodes | map(attribute='hostname')
+           | zip(
+               _nodes | map(attribute='interface_set') | map('default', [])
+             )
+         ) }}
+    maas_host_to_status: >-
+      {{ dict(
+           _nodes | map(attribute='hostname')
+           | zip(_nodes | map(attribute='status_name'))
+         ) }}
+  no_log: true
+
+# Short names list (dedup check can use this)
+# Build short name list (from MAAS payload, no regex needed)
+- name: Build short name list
+  set_fact:
+    _short_names: >-
+      {{
+        (maas_by_hostname | default({}))
+        | dict2items
+        | map(attribute='value.hostname')
+        | reject('equalto', None)
+        | list
+      }}
+
+# short -> id
+- name: Build maas_short_to_id
+  set_fact:
+    maas_short_to_id: >-
+      {{
+        dict(
+          (
+            (maas_by_hostname | default({}))
+            | dict2items
+            | map(attribute='value.hostname')
+            | reject('equalto', None)
+          )
+          | zip(
+              (maas_by_hostname | default({}))
+              | dict2items
+              | map(attribute='value.system_id')
+            )
+        )
+      }}
+
+# short -> object
+- name: Build maas_by_short
+  set_fact:
+    maas_by_short: >-
+      {{
+        dict(
+          (
+            (maas_by_hostname | default({}))
+            | dict2items
+            | map(attribute='value.hostname')
+            | reject('equalto', None)
+          )
+          | zip(
+              (maas_by_hostname | default({}))
+              | dict2items
+              | map(attribute='value')
+            )
+        )
+      }}
+  no_log: true
+
+# short -> ansible inventory_host
+- name: Build inventory_by_short
+  set_fact:
+    inventory_by_short: >-
+      {{
+        (inventory_by_short | default({}))
+        | combine({ (inv_fqdn.split('.')[0]): inv_fqdn })
+      }}
+  loop: "{{ groups['testnodes'] }}"
+  loop_control:
+    loop_var: inv_fqdn

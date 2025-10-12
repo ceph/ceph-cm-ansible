@@ -1,0 +1,53 @@
+---
+# 1) Normalize everything to SHORT names (no regex needed for MAAS)
+- name: Normalize hostnames (ignore domains)
+  set_fact:
+    # Short names that exist in MAAS right now
+    _existing_names: >-
+      {{
+        (maas_by_hostname | default({}))
+        | dict2items
+        | map(attribute='value.hostname')
+        | reject('equalto', None)
+        | list
+      }}
+
+    # Short names from your inventory group
+    testnode_names: >-
+      {{
+        groups.get('testnodes', [])
+        | map('extract', hostvars, 'inventory_hostname_short')
+        | reject('equalto', None)
+        | list
+      }}
+
+    # Short names that must be excluded
+    maas_excluded_hosts: >-
+      {{
+        (
+          groups.get('maas_region_rack_server', []) +
+          groups.get('maas_db_server', []) +
+          groups.get('maas_dont_delete', [])
+        )
+        | map('extract', hostvars, 'inventory_hostname_short')
+        | reject('equalto', None)
+        | unique
+        | list
+      }}
+
+# 2) Plan using SHORT names only
+- name: Determine which hosts to create, update, and delete
+  set_fact:
+    _create_short: "{{ testnode_names | difference(_existing_names + maas_excluded_hosts) | list }}"
+    _delete_short: "{{ _existing_names | difference(testnode_names + maas_excluded_hosts) | list }}"
+    _update_short: "{{ (_existing_names | intersect(testnode_names)) | difference(maas_excluded_hosts) | list }}"
+
+# Plan: set IPMI creds for everything in create + update (short names)
+- name: Build combined IPMI plan list (create + update)
+  set_fact:
+    _plan_ipmi: >-
+      {{
+        ((_create_short | default([])) + (_update_short | default([])))
+        | unique
+        | list
+      }}
