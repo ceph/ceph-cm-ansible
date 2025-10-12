@@ -1,0 +1,102 @@
+---
+# Expects:
+# - desired_iface (from the loop item), with .prefix and boot:true
+# - inv_host, _nodes, _node_system_id available in scope
+# - hostvars[inv_host]["<prefix>_mac"] defined (e.g., 25Gb_1_mac)
+
+# 1) Resolve prefix and MAC
+- name: Resolve boot prefix from loop item
+  set_fact:
+    _boot_prefix: "{{ desired_iface.prefix }}"
+
+- name: Ensure <prefix>_mac exists for boot NIC
+  assert:
+    that:
+      - _boot_prefix is defined
+      - hostvars[inv_host][_boot_prefix ~ '_mac'] is defined
+    fail_msg: "Missing {{ _boot_prefix }}_mac for {{ inv_host }}"
+
+- name: Normalize boot MAC
+  set_fact:
+    _boot_mac: "{{ hostvars[inv_host][_boot_prefix ~ '_mac'] | string | lower }}"
+
+# 2) Resolve node object from local _nodes (mapping or list)
+- name: Resolve _node_obj from _nodes (no API call)
+  set_fact:
+    _node_obj: >-
+      {{
+        (_nodes if (_nodes is mapping)
+         else ((_nodes | selectattr('system_id','equalto', _node_system_id) | list | first) | default({}, true)))
+      }}
+
+# 3) Build MAC→id map from that node’s interface_set (physical/bond only)
+- name: Build MAC→id map from _nodes.interface_set
+  set_fact:
+    _node_mac_to_id: >-
+      {{
+        dict(
+          (
+            (_node_obj.interface_set | default([]))
+            | selectattr('type','in',['physical','bond'])
+            | map(attribute='mac_address')
+            | map('lower') | list
+          )
+          | zip(
+            (_node_obj.interface_set | default([]))
+            | selectattr('type','in',['physical','bond'])
+            | map(attribute='id') | list
+          )
+        )
+      }}
+
+- name: Resolve desired boot interface id from _nodes by MAC
+  set_fact:
+    _desired_boot_iface_id: "{{ _node_mac_to_id.get(_boot_mac, 0) | int }}"
+
+- name: Fail if desired boot MAC not found in _nodes.interface_set
+  when: _desired_boot_iface_id | int == 0
+  fail:
+    msg: >-
+      Could not map {{ _boot_prefix }}_mac={{ _boot_mac }} to an interface id in _nodes.interface_set
+      for {{ inv_host }} (system_id={{ _node_system_id }}). Refresh _nodes / re-commission the node.
+
+# 4) Read current boot interface id from the same _nodes payload
+- name: Extract current boot interface id from _nodes
+  set_fact:
+    _current_boot_iface_id: >-
+      {{
+        (_node_obj.boot_interface.id | int)
+          if (_node_obj is mapping
+              and _node_obj.boot_interface is defined
+              and _node_obj.boot_interface is mapping
+              and _node_obj.boot_interface.id is defined)
+          else 0
+      }}
+
+# 5) Only POST if different
+- include_tasks: ../_auth_header.yml
+
+- name: "Set boot interface to id={{ _desired_boot_iface_id }} (if different)"
+  when:
+    - _desired_boot_iface_id | int > 0
+    - _current_boot_iface_id | int != _desired_boot_iface_id | int
+  uri:
+    url: "{{ _maas_api }}/machines/{{ _node_system_id }}/?op=set-boot-interface"
+    method: POST
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+      Content-Type: application/x-www-form-urlencoded
+    body_format: form-urlencoded
+    body:
+      id: "{{ _desired_boot_iface_id }}"
+    status_code: [200]
+  register: _set_boot_iface
+#  no_log: true
+
+- name: Note boot-interface outcome
+  debug:
+    msg: >-
+      Boot interface {{ (_current_boot_iface_id|int) == (_desired_boot_iface_id|int)
+        | ternary('unchanged', 'updated') }}
+      previous={{ _current_boot_iface_id }}, desired={{ _desired_boot_iface_id }}

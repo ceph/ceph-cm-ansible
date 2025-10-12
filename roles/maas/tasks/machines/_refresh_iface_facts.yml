@@ -1,0 +1,108 @@
+---
+# Fresh auth (new nonce/timestamp) for every API call
+#- name: Build OAuth header (fresh nonce/timestamp)
+#  include_tasks: ../_auth_header.yml
+
+## 1) Fetch all interfaces for this node
+#- name: Read MAAS interfaces for this node
+#  uri:
+#    url: "{{ _maas_api }}/nodes/{{ _node_system_id }}/interfaces/"
+#    method: GET
+#    headers:
+#      Authorization: "{{ maas_auth_header }}"
+#      Accept: application/json
+#    return_content: true
+#    status_code: 200
+#  register: _ifaces_resp
+
+## TODO: I think this is needed
+- include_tasks: machines/_read_machines.yml
+
+#- pause:
+
+- include_tasks: machines/_build_indexes.yml
+
+#- pause:
+
+- name: Set raw interface list
+  set_fact:
+#    _ifaces: "{{ _ifaces_resp.json | default([]) }}"
+    _ifaces: "{{ maas_host_to_ifaces[host] }}"
+
+#- debug: var=_ifaces
+
+#- pause:
+
+# 2) Rebuild quick lookups
+- name: Build interface lookup maps (by name, by id, by mac)
+  set_fact:
+    _iface_by_name: >-
+      {{
+        dict(
+          (_ifaces | map(attribute='name') | list)
+          | zip(_ifaces | list)
+        )
+      }}
+    _iface_id_by_name: >-
+      {{
+        dict(
+          (_ifaces | map(attribute='name') | list)
+          | zip(_ifaces | map(attribute='id') | list)
+        )
+      }}
+    _iface_id_by_mac: >-
+      {{
+        dict(
+          (
+            _ifaces
+            | selectattr('mac_address','defined')
+            | map(attribute='mac_address')
+            | map('lower')
+            | list
+          )
+          | zip(
+              _ifaces
+              | selectattr('mac_address','defined')
+              | map(attribute='id')
+              | list
+            )
+        )
+      }}
+
+# 3) Index existing VLAN subinterfaces as (parent_id, vlan_id) pairs
+- name: Init existing VLAN pair index
+  set_fact:
+    _existing_vlan_pairs: []
+
+- name: Build existing VLAN pair index
+  set_fact:
+    _existing_vlan_pairs: >-
+      {{
+        _existing_vlan_pairs + [ {
+          'parent_id': (_iface_id_by_name.get(item.parents[0]) | int),
+          'vlan_id': item.vlan.id,
+          'iface_id': item.id,
+          'name': item.name
+        } ]
+      }}
+  loop: "{{ _ifaces | selectattr('type','equalto','vlan') | list }}"
+  when:
+    - item.parents is defined
+    - (item.parents | length) > 0
+    - item.vlan is defined
+    - item.vlan.id is defined
+  loop_control:
+    label: "{{ item.name | default(item.id) }}"
+
+# 4) Track current native VLAN per *parent* interface (physical/bond)
+- name: Init native VLAN map
+  set_fact:
+    _native_by_parent: {}
+
+- name: Build native VLAN map (parent_id -> vlan_id or None)
+  set_fact:
+    _native_by_parent: "{{ _native_by_parent | combine({ (iface_for_vlan_map.id | int): (iface_for_vlan_map.vlan.id if iface_for_vlan_map.vlan is mapping else None) }) }}"
+  loop: "{{ _ifaces | rejectattr('type','equalto','vlan') | list }}"
+  loop_control:
+    loop_var: iface_for_vlan_map
+    label: "{{ iface_for_vlan_map.name | default(iface_for_vlan_map.id) }}"

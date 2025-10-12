@@ -1,0 +1,570 @@
+---
+# Assumes incoming vars:
+# - system_id
+# - bond: { name, mode, mtu, link_speed?, interfaces[] or parents[], tagged_vids? }
+# - _ifaces: current MAAS interface list for node (from your refresh task)
+# - _vlan_lookup: { vid(str) -> vlan_obj with .id }
+# Uses ../_auth_header.yml to set maas_auth_header for MAAS API calls.
+
+- name: Reset per-bond scratch facts
+  set_fact:
+    _existing_bond_obj: {}
+    _existing_bond_id: 0
+    _desired_parent_tokens: []
+    _desired_parent_macs: []
+    _bond_parent_ids: []
+    _bond_parent_names: []
+    _bond_existing_tagged_vids: []
+    _bond_desired_tagged_vids: []
+
+- name: Build iface lookup maps (name→mac, mac→id, id→name)
+  set_fact:
+    _name_to_mac: "{{ dict(_ifaces | map(attribute='name') | zip(_ifaces | map(attribute='mac_address') | map('lower'))) }}"
+    _name_to_mac_ci: "{{ dict((_ifaces | map(attribute='name') | map('lower')) | zip(_ifaces | map(attribute='mac_address') | map('lower'))) }}"
+    _mac_to_id:   "{{ dict(_ifaces | map(attribute='mac_address') | map('lower') | zip(_ifaces | map(attribute='id'))) }}"
+    _id_to_name:  "{{ dict(_ifaces | map(attribute='id') | zip(_ifaces | map(attribute='name'))) }}"
+    _iface_by_name: "{{ dict(_ifaces | map(attribute='name') | zip(_ifaces)) }}"
+
+- name: Build id→name map with INT keys
+  set_fact:
+    _id_to_name_int: >-
+      {{
+        dict(
+          (_iface_by_name | dict2items | map(attribute='value.id') | list)
+          | zip(_iface_by_name | dict2items | map(attribute='key') | list)
+        )
+      }}
+
+- name: Build mac→id map for physical/virtual (exclude bonds)
+  set_fact:
+    _mac_to_id_phys: >-
+      {{
+        dict(
+          (_ifaces
+           | rejectattr('type', 'equalto', 'bond')
+           | map(attribute='mac_address')
+           | map('lower')
+           | list)
+          |
+          zip(
+            _ifaces
+            | rejectattr('type', 'equalto', 'bond')
+            | map(attribute='id')
+            | list
+          )
+        )
+      }}
+
+- name: Collect desired parent tokens (could be var names or MACs)
+  set_fact:
+    _desired_parent_tokens: "{{ (bond.interfaces | default(_bond_parent_names) | default([])) | map('string') | list }}"
+
+# init
+- name: Resolve inventory host for token lookup
+  set_fact:
+    _inv_host_resolved: "{{ inv_host | default(inventory_hostname) }}"
+  changed_when: false
+
+# init
+- set_fact:
+    _desired_parent_macs: []
+    _unresolved_tokens: []
+    _unresolved_parent_tokens: []
+  changed_when: false
+
+# Resolve each token to a MAC:
+# precedence: direct MAC token → iface name (CI) → inventory var value
+- name: Resolve desired parent tokens to MACs
+  vars:
+    mac_from_tok:  "{{ (parent_tok | lower) if (parent_tok | lower is match('^([0-9a-f]{2}:){5}[0-9a-f]{2}$')) else '' }}"
+    mac_from_name: "{{ _name_to_mac_ci.get(parent_tok | lower, '') }}"
+    mac_from_var:  "{{ (hostvars[_inv_host_resolved][parent_tok] | default('')) | string | lower }}"
+    mac_candidate: "{{ [mac_from_tok, mac_from_name, mac_from_var] | select('match','^([0-9a-f]{2}:){5}[0-9a-f]{2}$') | list | first | default('') }}"
+  set_fact:
+    _desired_parent_macs: "{{ _desired_parent_macs + [mac_candidate] if mac_candidate else _desired_parent_macs }}"
+    _unresolved_tokens:   "{{ _unresolved_tokens + [parent_tok] if not mac_candidate else _unresolved_tokens }}"
+  loop: "{{ _desired_parent_tokens }}"
+  loop_control:
+    loop_var: parent_tok
+
+- name: Fail if any desired parents didn’t normalize to a MAC
+  assert:
+    that:
+      - _unresolved_tokens | length == 0
+    fail_msg: "For bond {{ bond.name }}, could not resolve parent(s) to MACs: {{ _unresolved_tokens }}"
+
+- name: Find existing bond by name
+  set_fact:
+    _bond_by_name: >-
+      {{
+        (_ifaces | selectattr('type','equalto','bond')
+                 | selectattr('name','equalto', bond.name)
+                 | list | first) | default({})
+      }}
+
+# set from _bond_by_name (computed in the previous task)
+- name: Cache bond object/id from _bond_by_name
+  set_fact:
+    _existing_bond_obj: "{{ _bond_by_name | default({}) }}"
+    _existing_bond_id: "{{ (_bond_by_name.id | default(0)) | int }}"
+
+# (delete the “If not found by name…” task — it does nothing)
+
+# now, only scan by parent MACs if the id is still 0
+- name: Scan bonds to match desired parent MACs (order-insensitive)
+  when: (_existing_bond_id | int) == 0
+  set_fact:
+    _existing_bond_obj: >-
+      {{
+        bond_iface if (
+          ((bond_iface.parents | default([]))
+           | map('extract', _name_to_mac) | map('lower') | list | sort)
+          == _desired_parent_macs
+        )
+        else _existing_bond_obj | default({})
+      }}
+    _existing_bond_id: >-
+      {{
+        (
+          bond_iface.id if (
+            ((bond_iface.parents | default([]))
+             | map('extract', _name_to_mac) | map('lower') | list | sort)
+            == _desired_parent_macs
+          )
+          else _existing_bond_id | default(0)
+        ) | int
+      }}
+  loop: "{{ _ifaces | selectattr('type','equalto','bond') | list }}"
+  loop_control:
+    loop_var: bond_iface
+
+
+
+# 1) Compute observed parent MACs from the bond object
+- name: Compute observed parent MACs
+  set_fact:
+    _observed_parent_macs: >-
+      {{
+        (_existing_bond_obj.parents | default([]))
+        | map('extract', _name_to_mac)
+        | select('defined')
+        | map('lower') | list | sort
+      }}
+
+# 2) (Idempotent) normalize desired list just in case
+- name: Normalize desired parent MACs
+  set_fact:
+    _desired_parent_macs: "{{ (_desired_parent_macs | default([])) | map('lower') | list | sort }}"
+
+# 3) Compare using normalized types/lists
+- name: Compute MAC-based parent match flag
+  set_fact:
+    _bond_parents_match: "{{ (_existing_bond_id | int) > 0 and (_observed_parent_macs == _desired_parent_macs) }}"
+
+- name: Derive bond parent names from desired MACs (phys-only, robust to renames)
+  set_fact:
+    _bond_parent_names: >-
+      {{
+        _desired_parent_macs
+        | map('extract', _mac_to_id_phys)
+        | select('defined')
+        | list
+        | map('int')
+        | map('extract', _id_to_name_int)
+        | list
+      }}
+
+- name: Require bond parent names
+  assert:
+    that:
+      - _bond_parent_names | length > 0
+      - _bond_parent_names | length == (_desired_parent_macs | length)
+    fail_msg: >-
+      Could not derive parent names from desired MACs (got {{ _bond_parent_names | default([]) }}).
+      Check _mac_to_id_phys={{ _mac_to_id_phys }} and _id_to_name_int={{ _id_to_name_int }}.
+
+#- name: Compute desired parent IDs from MACs
+#  set_fact:
+#    _bond_parent_ids: >-
+#      {{
+#        _desired_parent_macs
+#        | map('lower')
+#        | map('extract', _mac_to_id)
+#        | list
+#      }}
+
+- name: Compute desired parent IDs from MACs (prefer non-bond ifaces)
+  set_fact:
+    _bond_parent_ids: >-
+      {{
+        _desired_parent_macs
+        | map('lower')
+        | map('extract', _mac_to_id_phys)
+        | list
+      }}
+
+- name: Assert we derived parent names
+  assert:
+    that:
+      - _bond_parent_names | length > 0
+    fail_msg: >-
+      Could not derive parent names from MACs={{ _desired_parent_macs }}.
+      Known MAC->ID map={{ _iface_id_by_mac | to_nice_json }} id->name={{ _id_to_name | to_nice_json }}
+
+- name: Fail if any desired MACs are unknown to MAAS (non-bond)
+  vars:
+    _missing: >-
+      {{
+        _desired_parent_macs
+        | map('lower')
+        | reject('in', _mac_to_id_phys.keys())
+        | list
+      }}
+  assert:
+    that:
+      - _missing | length == 0
+      - (_bond_parent_ids | select('gt', 0) | list | length) == (_bond_parent_ids | length)
+    fail_msg: >-
+      Unresolved parent MACs for {{ bond.name }}: {{ _missing }}
+
+- name: Temporarily set _bond_create_native_vid
+  set_fact:
+    _bond_create_native_vid: "{{ _vlan_lookup[bond.native_vid|string].id }}"
+  when:
+    - bond.native_vid is defined
+    - (bond.native_vid|string) in _vlan_lookup
+
+- name: Build create_bond payload (no link_speed on create)
+  when: not _bond_parents_match
+  set_fact:
+    _create_bond_qs: >-
+      {{
+        (
+          ['name=' ~ (bond.name | urlencode)]
+          + (_bond_parent_ids
+               | map('string')
+               | map('regex_replace','^(.*)$','parents=\1')
+               | list)
+          + (bond.mtu  is defined | ternary(['mtu=' ~ (bond.mtu|string)], []))
+          + (bond.mode is defined | ternary(['bond_mode=' ~ (bond.mode | urlencode)], []))
+          + (_bond_create_native_vid is defined
+               | ternary(['vlan=' ~ (_bond_create_native_vid|string)], []))
+        )
+        | join('&')
+      }}
+
+- include_tasks: ../_auth_header.yml
+  when: not _bond_parents_match
+
+- name: "POST ?op=create_bond (only if needed) for {{ _inv_host_resolved }}"
+  when: not _bond_parents_match
+  uri:
+    url: "{{ _maas_api }}/nodes/{{ system_id }}/interfaces/?op=create_bond"
+    method: POST
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+      Content-Type: application/x-www-form-urlencoded
+    body: "{{ _create_bond_qs }}"
+    body_format: form-urlencoded
+    status_code: 200
+  register: _bond_create_resp
+  changed_when: true
+#  no_log: true
+
+- name: Refresh interface facts (post create)
+  when: not _bond_parents_match
+  include_tasks: ../_refresh_iface_facts.yml
+
+- name: Re-resolve bond by name (after create)
+  set_fact:
+    _existing_bond_obj: "{{ _iface_by_name.get(bond.name, {}) }}"
+
+- name: Resolve bond by parents when name lookup fails
+  when:
+    - (_existing_bond_id | int) == 0
+    - _bond_parent_names | length > 0
+  set_fact:
+    _existing_bond_obj: >-
+      {{
+        (_ifaces | selectattr('type','equalto','bond') | list)
+        | selectattr('parents','equalto', _bond_parent_names)
+        | first | default({})
+      }}
+
+# 1) id + params first
+- name: Cache normalized bond id + params
+  set_fact:
+    _existing_bond_id: "{{ _existing_bond_obj.id | default(0) | int }}"
+    _existing_params: "{{ _existing_bond_obj.params | default({}) }}"
+
+# 2) then derive fields from those
+- name: Cache normalized bond fields
+  set_fact:
+    _existing_mtu: "{{ _existing_params.mtu | default(0) | int }}"
+    _existing_mode: "{{ _existing_params.bond_mode | default('') | string }}"
+    _existing_link_speed: "{{ _existing_bond_obj.link_speed | default(0) | int }}"
+    _existing_link_connected: "{{ _existing_bond_obj.link_connected | default(false) | bool }}"
+
+- name: Decide create/mtu/mode/speed update flags
+  set_fact:
+    _needs_bond_create: "{{ (_existing_bond_id | int) == 0 }}"
+    _needs_bond_mtu_update: "{{ (_existing_bond_id | int) > 0 and (_existing_mtu | int) != (bond.mtu | int) }}"
+    _needs_bond_mode_update: "{{ (_existing_bond_id | int) > 0 and (_existing_mode | string) != (bond.mode | default('') | string) }}"
+    _needs_bond_speed_update: >-
+      {{
+        (_existing_bond_id | int) > 0
+        and (_existing_link_connected | bool)
+        and ((_existing_link_speed | int) != (bond.link_speed | int | default(0)))
+      }}
+
+- name: Assemble bond update payload
+  set_fact:
+    _bond_update_payload: >-
+      {{
+        dict()
+        | combine( {'mtu': (bond.mtu | int)} if _needs_bond_mtu_update else {} )
+        | combine( {'bond_mode': bond.mode} if (_needs_bond_mode_update and (bond.mode | default('') | length > 0)) else {} )
+      }}
+
+- include_tasks: ../_auth_header.yml
+
+- name: "PUT /interfaces/{id} (bond_mode/mtu) for {{ _inv_host_resolved }}"
+  when:
+    - (_existing_bond_id | int) > 0
+    - (_bond_update_payload | length) > 0
+  uri:
+    url: "{{ _maas_api }}/nodes/{{ system_id }}/interfaces/{{ _existing_bond_id }}/"
+    method: PUT
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+      Content-Type: application/x-www-form-urlencoded
+    body: "{{ _bond_update_payload }}"
+    body_format: form-urlencoded
+    status_code: 200
+  register: _bond_base_update
+  changed_when: true
+
+# Optional: visibility when there's nothing to change
+- name: No bond base update needed
+  when:
+    - (_existing_bond_id | int) > 0
+    - (_bond_update_payload | length) == 0
+  debug:
+    msg: "Bond {{ _existing_bond_id }} already has requested mtu/mode. No update."
+
+- name: Refresh interface facts (post base update)
+  when:
+    - (_existing_bond_id | int) > 0
+    - (_bond_update_payload | length) > 0
+  include_tasks: ../_refresh_iface_facts.yml
+
+# Only re-resolve if we actually updated anything
+- name: Re-resolve bond after base update
+  when: (_bond_update_payload | length) > 0
+  set_fact:
+    _existing_bond_obj: >-
+      {{
+        (
+          _ifaces
+          | selectattr('type', 'equalto', 'bond')
+          | selectattr('name', 'equalto', bond.name)
+          | list
+        ) | first | default(_existing_bond_obj)
+      }}
+
+- name: Re-cache normalized bond facts (fresh after base update)
+  when:
+    - (_existing_bond_id | int) > 0
+  set_fact:
+    _existing_params: "{{ _existing_bond_obj.params | default({}) }}"
+    _existing_mtu: "{{ _existing_params.mtu | default(0) | int }}"
+    _existing_mode: "{{ _existing_params.bond_mode | default('') }}"
+    _existing_link_speed: "{{ _existing_bond_obj.link_speed | default(0) | int }}"
+    _existing_link_connected: "{{ _existing_bond_obj.link_connected | default(false) | bool }}"
+
+- name: Read link_connected for bond iface (normalized)
+  set_fact:
+    _bond_link_connected: "{{ _existing_link_connected | bool }}"
+
+- name: Decide if we need to update the link speed
+  set_fact:
+    _needs_bond_speed_update: >-
+      {{
+        (_existing_bond_id | int) > 0
+        and (_bond_link_connected | bool)
+        and ((_existing_link_speed | int) != (bond.link_speed | int | default(0)))
+      }}
+
+- include_tasks: ../_auth_header.yml
+
+- name: "PUT /interfaces/{id} (link_speed) for {{ _inv_host_resolved }}"
+  when:
+    - bond.link_speed is defined
+    - _bond_link_connected | bool
+    - (_existing_bond_id | int) > 0
+    - _needs_bond_speed_update
+  uri:
+    url: "{{ _maas_api }}/nodes/{{ system_id }}/interfaces/{{ _existing_bond_id }}/"
+    method: PUT
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+      Content-Type: application/x-www-form-urlencoded
+    body: "link_speed={{ bond.link_speed }}"
+    body_format: form-urlencoded
+    status_code: 200
+  register: _bond_speed_update
+  changed_when: true
+
+- name: Derive bond parent names (prefer explicit, else MAAS, else cache)
+  set_fact:
+    _bond_parent_names: >-
+      {{
+        (
+          bond.parents
+          | default(_existing_bond_obj.parents
+                    | default(_iface_by_name[bond.name].parents | default([])))
+        ) | sort
+      }}
+
+- name: Require bond parent names
+  assert:
+    that:
+      - _bond_parent_names | length > 0
+    fail_msg: >-
+      Need parent names for {{ bond.name }}. Checked:
+      bond.parents, _existing_bond_obj.parents, and _iface_by_name[{{ bond.name }}].parents.
+
+- name: Collect parent VLAN ids for bond parents
+  set_fact:
+    _parent_vlan_ids: >-
+      {{
+        _bond_parent_names
+        | map('extract', _iface_by_name)
+        | map(attribute='vlan')
+        | select('defined')
+        | map(attribute='id')
+        | list
+      }}
+
+- name: Unique-ify parent VLAN ids
+  set_fact:
+    _parent_vlan_ids_unique: "{{ _parent_vlan_ids | unique }}"
+
+- name: Decide target native VLAN id
+  set_fact:
+    _target_native_vlan_id: >-
+      {%- if bond is defined and bond.native_vlan_id is defined -%}
+        {{ bond.native_vlan_id | int }}
+      {%- elif bond is defined and bond.native_vid is defined and (bond.native_vid|string) in _vlan_lookup -%}
+        {{ _vlan_lookup[bond.native_vid|string].id | int }}
+      {%- elif (_parent_vlan_ids_unique | length) == 1 -%}
+        {{ (_parent_vlan_ids_unique | first) | int }}
+      {%- else -%}
+      {%- endif -%}
+
+- name: Compute need to change parent native VLANs
+  set_fact:
+    _need_parent_vlan_change: >-
+      {{
+        (_target_native_vlan_id is defined)
+        and (_parent_vlan_ids | select('ne', _target_native_vlan_id | int) | list | length > 0)
+      }}
+
+- name: Fail if parents disagree and no target VLAN provided
+  fail:
+    msg: >-
+      Parents {{ _bond_parent_names }} have different native VLANs {{ _parent_vlan_ids_unique }},
+      and no bond.native_vid/native_vlan_id was provided to reconcile them.
+  when:
+    - (_target_native_vlan_id is not defined)
+    - (_parent_vlan_ids_unique | length) > 1
+
+- name: Parent native VLAN already correct; skipping updates
+  debug:
+    msg: >-
+      Parents {{ _bond_parent_names }} already on VLAN {{ _target_native_vlan_id }}; no change.
+  when: not _need_parent_vlan_change
+
+- name: Ensure bond parents have native VLAN set (only when needed)
+  include_tasks: ../machines/_set_parent_native.yml
+  loop: "{{ _bond_parent_names | map('extract', _iface_by_name) | map(attribute='id') | list }}"
+  loop_control:
+    loop_var: parent_id
+    label: "{{ parent_id }} → vlan {{ _target_native_vlan_id }}"
+  when:
+    - _need_parent_vlan_change
+
+# Refresh facts to see the parents’ new native VLAN
+- name: Refresh interface facts (after setting parents’ native VLAN)
+  include_tasks: "_refresh_iface_facts.yml"
+  when:
+    - _need_parent_vlan_change
+
+# Re-resolve bond by name, else by parents (no item/loop)
+- name: Re-resolve bond by name
+  set_fact:
+    _existing_bond_obj: "{{ _iface_by_name.get(bond.name, {}) }}"
+
+- name: Resolve bond by parents when name lookup fails (order-insensitive)
+  set_fact:
+    _existing_bond_obj: >-
+      {{
+        (
+          _ifaces
+          | selectattr('type','equalto','bond')
+          | selectattr('parents','defined')
+          | list
+        )
+        | selectattr('parents', 'equalto', _bond_parent_names | sort)
+        | list
+        | first
+        | default({})
+      }}
+  when: _existing_bond_obj | length == 0
+
+- name: Re-cache normalized bond id (after final resolve)
+  set_fact:
+    _existing_bond_id: "{{ _existing_bond_obj.id | default(0) | int }}"
+
+- name: Gather VLAN vids already on {{ bond.name }}
+  set_fact:
+    _bond_existing_tagged_vids: >-
+      {{
+        (_ifaces
+         | selectattr('type','equalto','vlan')
+         | selectattr('parents','defined')
+         | selectattr('parents','contains', bond.name)
+         | map(attribute='vlan') | select('defined')
+         | map(attribute='vid') | map('string') | list)
+      }}
+
+# (2) Desired tagged vids (EXCLUDING native)
+- name: Compute desired vids
+  set_fact:
+    _bond_desired_tagged_vids: >-
+      {{
+        (bond.tagged_vids | default([]) | map('string') | unique | list)
+        | difference([ (bond.native_vid | default('') | string) ])
+      }}
+
+# (3) Missing tagged vids
+- name: Compute missing vids
+  set_fact:
+    _bond_missing_tagged_vids: "{{ _bond_desired_tagged_vids | difference(_bond_existing_tagged_vids | default([])) }}"
+
+# (4) Create missing VLAN subinterfaces on the bond
+- name: Create missing VLAN subinterfaces on {{ bond.name }}
+  include_tasks: ../_create_vlan_on_parent.yml
+  loop: "{{ _bond_missing_tagged_vids }}"
+  loop_control:
+    loop_var: vid
+    label: "{{ bond.name }} → VID {{ vid }}"
+  vars:
+    parent_id: "{{ _existing_bond_id | int }}"
+    vlan_id:   "{{ _vlan_lookup[vid|string].id }}"
+    vid_label: "{{ vid|string }}"
+    system_id: "{{ _existing_bond_obj.system_id }}"
+  when: (_existing_bond_id | int) > 0

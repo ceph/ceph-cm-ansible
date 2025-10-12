@@ -1,0 +1,79 @@
+---
+# Derive short hostname and base group (strip trailing digits)
+- name: Prep IPMI secrets lookup context
+  set_fact:
+    _inv_short: "{{ hostvars[inv_host].inventory_hostname_short | default(inventory_hostname_short) }}"
+    _base_group: "{{ (hostvars[inv_host].inventory_hostname_short | default(inventory_hostname_short)) | regex_replace('\\d+$', '') }}"
+
+# Build candidates in priority order
+- name: Build IPMI secrets candidate list
+  set_fact:
+    _ipmi_files:
+      - "{{ secrets_path }}/host_vars/{{ _inv_short }}.yml"
+      - "{{ secrets_path }}/group_vars/{{ _base_group }}.yml"
+      - "{{ secrets_path }}/ipmi.yml"
+
+# Load first found file (host_vars short -> group_vars/<base>.yml -> ipmi.yml)
+- name: Load IPMI secrets (first found)
+  include_vars:
+    file: "{{ lookup('first_found', {'files': _ipmi_files, 'skip': True}) }}"
+    name: ipmi_secrets
+  # add this if secrets live on the controller:
+  # delegate_to: localhost
+
+## Ensure required keys exist
+#- name: Ensure IPMI user/pass are present from secrets
+#  assert:
+#    that:
+#      - ipmi_secrets is defined
+#      - ipmi_secrets.power_user is defined
+#      - ipmi_secrets.power_pass is defined
+#    fail_msg: >-
+#      Missing IPMI secrets for {{ inv_host }}. Looked in: {{ _ipmi_files }}
+#
+## Build payload using inventory IPMI address + secrets user/pass
+#- name: Build power configuration payload
+#  set_fact:
+#    maas_power_payload:
+#      power_type: "ipmi"
+#      power_parameters_power_address: "{{ hostvars[inv_host].ipmi }}"
+#      power_parameters_power_user: "{{ ipmi_secrets.power_user }}"
+#      power_parameters_power_pass: "{{ ipmi_secrets.power_pass }}"
+#      power_parameters_power_boot_type: "{{ maas_power_boot_type|default('auto') }}"
+
+# Ensure creds exist
+- name: Ensure IPMI user/pass are present from secrets
+  assert:
+    that:
+      - ipmi_secrets is defined
+      - ipmi_secrets.power_user is defined
+      - ipmi_secrets.power_pass is defined
+    fail_msg: >-
+      Missing IPMI secrets for {{ inv_host }}. Searched: {{ _ipmi_files }}
+
+# Build payload using inventory IPMI address + secrets user/pass
+- name: Build power configuration payload
+  set_fact:
+    maas_power_payload:
+      power_type: "ipmi"
+      power_parameters_power_address: "{{ hostvars[inv_host].ipmi }}"
+      power_parameters_power_user: "{{ ipmi_secrets.power_user }}"
+      power_parameters_power_pass: "{{ ipmi_secrets.power_pass }}"
+      power_parameters_power_boot_type: "{{ maas_power_boot_type|default('efi') }}"
+
+- include_tasks: ../_auth_header.yml
+
+- name: "Set IPMI Credentials on {{ _inv_short }}"
+  uri:
+    url: "{{ _maas_api }}/machines/{{ system_id }}/"
+    method: PUT
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+      Content-Type: application/x-www-form-urlencoded
+    body: "{{ maas_power_payload }}"
+    body_format: form-urlencoded
+    status_code: 200
+  register: set_ipmi_creds_result
+  changed_when: set_ipmi_creds_result.status in [200, 201]
+#  no_log: true
