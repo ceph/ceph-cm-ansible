@@ -1,0 +1,445 @@
+---
+# TODOs:
+#  - REMOVE VLAN interfaces that should not exist
+
+# Fresh auth (nonce) for any API calls in this include
+- include_tasks: ../_auth_header.yml
+
+# Normalize incoming iface object; never use a loop var named "iface" anywhere.
+- name: Normalize iface object
+  set_fact:
+    iface: "{{ iface_obj }}"
+
+# Ensure we have a vlan map; if empty, fetch it from MAAS
+- name: Ensure vlan map exists
+  set_fact:
+    _vlan_by_vid: "{{ _vlan_by_vid | default({}) }}"
+
+- name: Read all fabrics (for VLAN lookup)
+  when: (_vlan_by_vid | length) == 0
+  uri:
+    url: "{{ _maas_api }}/fabrics/"
+    method: GET
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+    return_content: yes
+    status_code: 200
+  register: _fabrics_resp
+  no_log: true
+
+# Flatten all VLANs from every fabric into one list
+- name: Collect all VLANs from fabrics payload
+  when:
+    - (_vlan_by_vid | length) == 0
+    - _fabrics_resp.json is defined
+  set_fact:
+    _all_vlans: "{{ (_fabrics_resp.json | map(attribute='vlans') | list) | flatten }}"
+
+# Build { "<vid>": <vlan_obj>, ... } for fast lookup
+- name: Build _vlan_by_vid map (keyed by VID as string)
+  when:
+    - (_vlan_by_vid | length) == 0
+    - _all_vlans is defined
+  set_fact:
+    _vlan_by_vid: >-
+      {{
+        dict(
+          (_all_vlans | map(attribute='vid') | map('string') | list)
+          | zip(_all_vlans)
+        )
+      }}
+
+# Build quick lookups
+- name: Build interface lookups
+  set_fact:
+    _iface_id_by_mac: >-
+      {{
+        dict(
+          (_ifaces | selectattr('mac_address','defined')
+                   | map(attribute='mac_address')
+                   | map('lower') | list)
+          | zip(_ifaces | map(attribute='id'))
+        )
+      }}
+    _iface_name_by_id: >-
+      {{
+        dict(
+          (_ifaces | selectattr('id','defined')   | map(attribute='id')   | list)
+          | zip(_ifaces | selectattr('name','defined') | map(attribute='name') | list)
+        )
+      }}
+
+# Normalize VLAN lookup for int/string keys
+- name: Build VLAN lookup (int & string keys)
+  set_fact:
+    _vlan_lookup: >-
+      {{
+        (_vlan_by_vid | default({}))
+        | combine(
+            dict(((_vlan_by_vid | default({})).keys() | list | map('string') | list)
+                 | zip((_vlan_by_vid | default({})).values())),
+            recursive=True
+          )
+      }}
+
+# Resolve node system_id from interface facts (avoids mismatch)
+- name: Resolve node system_id for interface ops
+  set_fact:
+    _node_system_id: >-
+      {{
+        (_ifaces | length) > 0 and ((_ifaces | first).system_id) or system_id
+      }}
+
+# Validate prefix_mac exists
+- name: "Ensure {{ prefix }}_mac exists for {{ iface.prefix }}"
+  assert:
+    that:
+      - iface.prefix is defined
+      - hostvars[inv_host][iface.prefix ~ '_mac'] is defined
+    fail_msg: "Missing {{ iface.prefix }}_mac for {{ inv_host }}"
+
+# Resolve parent MAC from inventory (normalize to lower)
+- name: Set _parent_mac
+  set_fact:
+    _parent_mac: "{{ hostvars[inv_host][iface.prefix ~ '_mac'] | string | lower }}"
+
+# Try to resolve an interface id for this MAC
+- name: Resolve parent interface id
+  set_fact:
+    _parent_id: "{{ _iface_id_by_mac.get(_parent_mac) | default(None) }}"
+
+- include_tasks: ../_auth_header.yml
+
+# Optionally create missing PHYSICAL interface (when allowed)
+- name: "Create missing physical interface for {{ host }}"
+  when:
+    - (_parent_id is none) or (_parent_id | string) == ''
+    - (maas_allow_create_physical | default(true)) | bool
+  uri:
+    url: "{{ _maas_api }}/nodes/{{ _node_system_id }}/interfaces/?op=create_physical"
+    method: POST
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+      Content-Type: application/x-www-form-urlencoded
+    body_format: form-urlencoded
+    body:
+      type: "physical"
+      mac_address: "{{ _parent_mac }}"
+      # name: "{{ iface.prefix }}"         # optional; MAAS may auto-name (ethX)
+    status_code: [200, 201]
+    return_content: true
+  register: _create_phys
+  no_log: true
+
+- include_tasks: ../_auth_header.yml
+
+# Refresh interfaces + lookups after possible create
+- name: Refresh MAAS interface facts after create (if needed)
+  when:
+    - _create_phys is defined
+  uri:
+    url: "{{ _maas_api }}/nodes/{{ _node_system_id }}/interfaces/"
+    method: GET
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+    return_content: true
+    status_code: 200
+  register: _ifaces_after_create
+  no_log: true
+- name: Re-set _ifaces after create
+  when:
+    - _ifaces_after_create is defined
+  set_fact:
+    _ifaces: "{{ _ifaces_after_create.json | list }}"
+
+- name: Rebuild interface facts + maps after create
+  when:
+    - _ifaces_after_create is defined
+  set_fact:
+    _iface_id_by_mac: >-
+      {{
+        dict(
+          (_ifaces | selectattr('mac_address','defined') | map(attribute='mac_address')
+                   | map('lower') | list)
+          | zip(_ifaces | map(attribute='id'))
+        )
+      }}
+    _iface_id_by_name: >-
+      {{
+        dict(
+          (_ifaces | selectattr('name','defined') | map(attribute='name') | list)
+          | zip(_ifaces | map(attribute='id'))
+        )
+      }}
+    _iface_name_by_id: >-
+      {{
+        dict(
+          (_ifaces | selectattr('id','defined')   | map(attribute='id')   | list)
+          | zip(_ifaces | selectattr('name','defined') | map(attribute='name') | list)
+        )
+      }}
+
+# Resolve again now that we may have created it
+- name: Resolve parent interface id (post-create)
+  when: (_parent_id is none) or (_parent_id | string) == ''
+  set_fact:
+    _parent_id: "{{ _iface_id_by_mac.get(_parent_mac) | default(None) }}"
+
+# If still missing, fail cleanly (or switch to 'warn + skip' if you prefer)
+- name: Abort when parent interface is missing and auto-create disabled/failed
+  when: _parent_id is none
+  fail:
+    msg: >-
+      Could not find or create physical interface with MAC {{ _parent_mac }}
+      on {{ inv_host }} (system_id={{ _node_system_id }}).
+      Either re-commission the node or allow auto-create via
+      maas_allow_create_physical=true.
+
+# Load parent object (safe now)
+- name: Load parent interface object
+  set_fact:
+    _parent_obj: "{{ (_ifaces | selectattr('id','equalto', (_parent_id|int)) | list | first) | default({}) }}"
+
+- name: Ensure prerequisites for bond MAC match exist
+  set_fact:
+    _desired_bonds: "{{ _desired_bonds | default([]) }}"
+    _parent_mac: "{{ _parent_mac | string | lower }}"
+    _bond_match: {}
+
+- name: Collect matching bond (by MAC) for this parent
+  set_fact:
+    _bond_match: "{{ bond }}"
+  loop: "{{ _desired_bonds }}"
+  loop_control:
+    loop_var: bond
+    label: "{{ bond.name | default('∅') }}"
+  when:
+    - bond.interfaces is defined
+    - bond.native_vid is defined
+    - _parent_mac in (bond.interfaces | map('extract', hostvars[inv_host]) | map('string') | map('lower') | list)
+
+- name: Inherit native VLAN from matched bond
+  set_fact:
+    _effective_native_vid: "{{ _bond_match.native_vid }}"
+    _effective_native_vlan_id: "{{ _vlan_lookup[_bond_match.native_vid | string].id }}"
+  when:
+    - _bond_match is mapping
+    - _bond_match | length > 0
+    - _bond_match.native_vid is defined
+    - (_bond_match.native_vid | string) in _vlan_lookup
+
+# If the loaded parent is a VLAN (e.g. eth0.1300), use its physical parent (e.g. eth0)
+- name: Detect if loaded parent is a VLAN
+  set_fact:
+    _parent_is_vlan: "{{ _parent_obj is mapping and (_parent_obj.type | default('')) == 'vlan' }}"
+
+- name: Extract physical parent name from VLAN
+  when: _parent_is_vlan
+  set_fact:
+    _phys_parent_name: "{{ (_parent_obj.parents | default([])) | first | default('') }}"
+
+- name: Resolve physical parent object by name from _ifaces
+  when: _parent_is_vlan and (_phys_parent_name | length) > 0
+  set_fact:
+    _phys_parent_obj: >-
+      {{
+        (_ifaces | default([])
+         | selectattr('name','equalto', _phys_parent_name)
+         | list | first) | default({}, true)
+      }}
+
+- name: Set parent_id to the physical iface id (obj → name map → keep old)
+  when: _parent_is_vlan
+  set_fact:
+    _parent_id: >-
+      {{
+        _phys_parent_obj.id
+          | default(_iface_id_by_name.get(_phys_parent_name), true)
+          | default(_parent_id, true)
+      }}
+    _parent_obj: >-
+      {{
+        (_phys_parent_obj if (_phys_parent_obj | length > 0) else _parent_obj)
+      }}
+
+# Safety net so we never send parent=0 again
+- name: Assert parent interface id resolved before creating VLAN subinterface
+  assert:
+    that:
+      - _parent_id is defined
+      - (_parent_id | int) > 0
+    fail_msg: >-
+      Could not resolve physical parent for '{{ iface.prefix }}'.
+      parent_obj={{ _parent_obj | default({}) }} maps: by_name={{ _iface_id_by_name | default({}) }}.
+
+
+# Only check type if we actually have an object
+- name: Ensure parent is physical/bond before native VLAN update
+  when: _parent_obj is mapping and _parent_obj.type is defined
+  assert:
+    that:
+      - _parent_obj.type in ['physical','bond']
+    fail_msg: "Native VLAN can only be set on a physical/bond parent (id={{ _parent_id }})."
+
+- include_tasks: ../_auth_header.yml
+
+- name: Check current native on parent
+  set_fact:
+    _current_native: "{{ (_ifaces | selectattr('id','equalto', (_parent_id|int)) | map(attribute='vlan') | list | first) | default(None) }}"
+
+- name: Set _current_native_id from _current_native dict. Default to 0.
+  set_fact:
+    _current_native_id: >-
+      {{ (_current_native.id | int)
+         if (_current_native is mapping)
+         else 0 }}
+
+# If iface.native_vid is missing, and bond logic didn’t set anything, fallback to 'untagged'
+- name: Derive native VID from _vlan_lookup when native_vid is missing
+  when:
+    - iface.native_vid is not defined
+    - _effective_native_vlan_id is not defined
+  set_fact:
+    _effective_native_vid: >-
+      {{
+        (_vlan_lookup
+          | dict2items
+          | selectattr('value.name','equalto','untagged')
+          | map(attribute='value.vid')
+          | list
+          | first) | default(omit)
+      }}
+
+- name: Resolve native VLAN ID from VID
+  when: _effective_native_vid is defined
+  set_fact:
+    _effective_native_vlan_id: "{{ _vlan_lookup[_effective_native_vid|string].id }}"
+
+# Figure out what ID to send to MAAS
+- name: Choose final native VLAN id to apply
+  set_fact:
+    _native_vlan_id_to_apply: >-
+      {{
+        (iface.get('native_vid') is not none)
+        | ternary(
+            _vlan_lookup[iface.get('native_vid')|string].id,
+            _effective_native_vlan_id | default(omit)
+          )
+      }}
+
+# Only if we actually have an ID, and parent is physical/bond
+- name: "Set native VLAN on {{ host }}'s {{ _parent_obj.name }} (if different)"
+  when:
+    - _native_vlan_id_to_apply is defined
+    - _current_native is defined
+    - (_current_native_id | int) != (_native_vlan_id_to_apply | int)
+    - (_ifaces | selectattr('id','equalto', (_parent_id|int)) | map(attribute='type') | list | first) in ['physical','bond']
+  uri:
+    url: "{{ _maas_api }}/nodes/{{ _node_system_id }}/interfaces/{{ _parent_id }}/"
+    method: PUT
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+      Content-Type: application/x-www-form-urlencoded
+    body_format: form-urlencoded
+    body:
+      vlan: "{{ _native_vlan_id_to_apply }}"
+      link_connected: true
+    status_code: 200
+#  no_log: true
+
+- include_tasks: ../_auth_header.yml
+
+# --- Index existing VLAN subinterfaces (by parent_id + vlan_id) ----------------
+- name: Init list of existing VLAN subinterfaces
+  set_fact:
+    _existing_vlan_pairs: []
+
+# Optional (fast lookup): build name -> id map once
+- name: Build iface name→id map
+  set_fact:
+    _iface_name_to_id: "{{ dict(_ifaces | map(attribute='name') | zip(_ifaces | map(attribute='id'))) }}"
+
+# Collect existing VLAN subinterfaces (translate parent name -> id)
+- name: Collect existing VLAN subinterfaces (translate parent name -> id)
+  vars:
+    _parent_name: "{{ vlan_iface.parents | default([]) | first }}"
+    _parent_id: "{{ (_iface_name_to_id | default({})).get(_parent_name) | default(omit) }}"
+    _pair:
+      id: "{{ vlan_iface.id }}"
+      name: "{{ vlan_iface.name }}"
+      parent_name: "{{ _parent_name }}"
+      parent_id: "{{ _parent_id }}"
+      vlan_id: "{{ vlan_iface.vlan.id }}"
+  set_fact:
+    _existing_vlan_pairs: "{{ (_existing_vlan_pairs | default([])) + [_pair] }}"
+  loop: "{{ _ifaces | selectattr('type','equalto','vlan') | list }}"
+  loop_control:
+    loop_var: vlan_iface
+    label: "{{ vlan_iface.name }} ← {{ _parent_name }} (vlan_id={{ vlan_iface.vlan.id }})"
+
+- name: Ensure tagged VLAN subinterfaces exist (?op=create_vlan)  # guarded
+  when:
+    - iface.tagged_vids is defined
+    - vid in iface.tagged_vids
+    - _vlan_lookup[vid|string] is defined
+    - (
+        _existing_vlan_pairs
+        | selectattr('parent_id','equalto', (_parent_id|int))
+        | selectattr('vlan_id','equalto', _vlan_lookup[vid|string].id)
+        | list | length
+      ) == 0
+  uri:
+    url: "{{ _maas_api }}/nodes/{{ _node_system_id }}/interfaces/?op=create_vlan"
+    method: POST
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+      Content-Type: application/x-www-form-urlencoded
+    body_format: form-urlencoded
+    body:
+      parent: "{{ _parent_id }}"
+      vlan: "{{ _vlan_lookup[vid|string].id }}"
+    status_code: [200]
+    return_content: true
+  loop: "{{ iface.tagged_vids | default([]) }}"
+  loop_control:
+    loop_var: vid
+    label: "{{ iface.prefix }} → VID {{ vid }}"
+  register: _create_vlan_results
+  failed_when: >
+    (_create_vlan_results.status | default(0)) != 200 and
+    ('already has an interface named' not in
+      (
+        (_create_vlan_results.content | default('') | lower) ~ ' ' ~
+        (_create_vlan_results.msg | default('') | lower) ~ ' ' ~
+        ((_create_vlan_results.json.name | default([])) | join(' ') | lower)
+      )
+    )
+  #no_log: true
+
+- name: Skip note (VLAN subinterface already present)
+  debug:
+    msg: >-
+      Skipping create: parent_id={{ _parent_id }} already has vlan_id={{ _vlan_lookup[vid|string].id }}
+      ({{ iface.prefix }}.{{ vid }})
+  loop: "{{ iface.tagged_vids | default([]) }}"
+  loop_control:
+    loop_var: vid
+    label: "{{ iface.prefix }} → VID {{ vid }}"
+  when:
+    - iface.tagged_vids is defined
+    - >
+      (_existing_vlan_pairs
+       | selectattr('parent_id','equalto', (_parent_id|int))
+       | selectattr('vlan_id','equalto', _vlan_lookup[vid|string].id)
+       | list | length) > 0
+
+- name: Rebuild interface facts + maps after create (if any changed)
+  when:
+    - _create_vlan_results is defined
+    - (_create_vlan_results.results | selectattr('status','defined') | list | length) > 0
+  include_tasks: machines/_refresh_iface_facts.yml

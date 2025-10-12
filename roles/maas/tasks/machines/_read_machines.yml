@@ -1,0 +1,27 @@
+---
+- include_tasks: _auth_header.yml
+
+# Queries MAAS and builds maas_nodes_list + _with_names
+- name: Read all machines from MAAS
+  uri:
+    url: "{{ _maas_api }}/machines/"
+    method: GET
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+    return_content: yes
+    status_code: 200
+  register: _all_machines
+  no_log: true
+
+#- pause:
+
+- name: Parse MAAS machines JSON
+  set_fact:
+    maas_nodes_list: "{{ _all_machines.json | list }}"
+
+#- pause:
+
+- name: Keep only entries with hostname
+  set_fact:
+    _with_names: "{{ maas_nodes_list | selectattr('hostname', 'defined') | list }}"

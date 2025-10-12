@@ -1,0 +1,355 @@
+---
+# Expects: trio=[fabric_obj, vlan_obj, subnet_obj], _vlan_index, _maas_api, maas_auth_header
+
+# 0) Validate input triple
+- name: Verify triple input
+  assert:
+    that:
+      - trio is defined
+      - trio | length == 3
+    fail_msg: "subnet_apply.yml expects trio=[fabric, vlan, subnet], got: {{ trio | default('undefined') }}"
+
+# 1) Unpack triple
+- name: Extract fabric, vlan, and subnet
+  set_fact:
+    _fname: "{{ trio[0].fabric }}"
+    vlan:   "{{ trio[1] }}"
+    subnet: "{{ trio[2] }}"
+
+# 2) Ensure VLAN exists in index & resolve its numeric id
+- name: Ensure VLAN is present in index
+  assert:
+    that:
+      - _vlan_index[_fname] is defined
+      - _vlan_index[_fname][vlan.vid | string] is defined
+    fail_msg: >-
+      VLAN {{ vlan.vid }} not found in index for fabric {{ _fname }}.
+      Known vids here: {{ (_vlan_index.get(_fname, {}) | dict2items | map(attribute='key') | list) }}
+
+- name: Resolve VLAN object from index
+  set_fact:
+    _vobj: "{{ _vlan_index[_fname][vlan.vid | string] }}"
+
+- name: Extract VLAN numeric id
+  set_fact:
+    _vid: "{{ _vobj.id }}"
+
+# 3) Read subnets (global) and normalize to a list
+- include_tasks: ../_auth_header.yml
+  no_log: true
+
+- name: Read subnets (global list)
+  uri:
+    url: "{{ _maas_api }}/subnets/"
+    method: GET
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+    return_content: true
+    use_netrc: false
+  register: _subnets_resp
+  no_log: true
+
+- name: Normalize subnets list
+  set_fact:
+    _subnets_list: >-
+      {{
+        (_subnets_resp.json.subnets
+          if (_subnets_resp.json is mapping and 'subnets' in _subnets_resp.json)
+          else (_subnets_resp.json | default([])))
+      }}
+
+# Find the existing subnet id by CIDR (none if missing)
+- name: Extract existing subnet id by CIDR
+  set_fact:
+    _existing_subnet_id: >-
+      {{
+        (_subnets_list
+          | selectattr('cidr','equalto', subnet.cidr)
+          | map(attribute='id') | list | first)
+        | default(none)
+      }}
+
+- name: Decide if subnet already exists
+  set_fact:
+    _subnet_exists: "{{ _existing_subnet_id is not none and (_existing_subnet_id|string)|length > 0 }}"
+
+# Working subnet id variable (may be set later by create)
+- set_fact:
+    _subnet_id: "{{ _existing_subnet_id }}"
+
+# figure out the parent VLAN (we’re looping subelements('subnets'), so pair.0 is the VLAN)
+- name: Resolve VLAN id for this subnet
+  set_fact:
+    _vlan_id: >-
+      {{
+        (
+          _vlan_index[pair.0.fabric][(pair.0.vid | string)].id
+          if (pair is defined and pair.0 is defined and pair.0.vid is defined)
+          else _vlan_index[_fname][(vlan.vid | string)].id
+        ) | string
+      }}
+
+#- name: Locate existing subnet by CIDR
+#  set_fact:
+#    _existing_subnet: "{{ (_subnets_resp.json | default([])) | selectattr('cidr','equalto', subnet.cidr) | list | first | default(none) }}"
+
+# 4) CREATE if missing
+- name: Build subnet create body
+  set_fact:
+    _subnet_create_body: >-
+      {{
+        {'cidr': subnet.cidr, 'vlan': _vid}
+        | combine( (subnet.gateway is defined) | ternary({'gateway_ip': subnet.gateway}, {}), recursive=True )
+        | combine( (subnet.managed is defined) | ternary({'managed': subnet.managed|bool}, {}), recursive=True )
+      }}
+
+- include_tasks: ../_auth_header.yml
+  when: not _subnet_exists
+  no_log: true
+
+- name: Create subnet (if missing)
+  uri:
+    url: "{{ _maas_api }}/subnets/"
+    method: POST
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Content-Type: application/x-www-form-urlencoded
+      Accept: application/json
+    body_format: form-urlencoded
+    body: "{{ _subnet_create_body }}"
+    status_code: [200, 201, 409]
+    return_content: true
+    use_netrc: false
+  register: _subnet_create_resp
+  when: not _subnet_exists
+  no_log: true
+
+- name: Set final _subnet_id
+  set_fact:
+    _subnet_id: >-
+      {{
+        (
+          _existing_subnet_id
+          if _subnet_exists
+          else (
+            _subnet_create_resp.json.id
+            if (_subnet_create_resp is defined and _subnet_create_resp.json is defined and _subnet_create_resp.json.id is defined)
+            else none
+          )
+        )
+      }}
+
+- name: Ensure _subnet_id is set (fallback lookup)
+  set_fact:
+    _subnet_id: >-
+      {{
+        _subnet_id
+        if (_subnet_id is not none and (_subnet_id|string)|length > 0)
+        else (
+          (_subnets_list
+            | selectattr('cidr','equalto', subnet.cidr)
+            | map(attribute='id') | list | first) | default(none)
+        )
+      }}
+
+- include_tasks: ../_auth_header.yml
+  when: _subnet_id is none or (_subnet_id|string)|length == 0
+  no_log: true
+
+- name: Re-read subnets (only if _subnet_id still missing)
+  uri:
+    url: "{{ _maas_api }}/subnets/"
+    method: GET
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+    return_content: true
+    use_netrc: false
+  register: _subnets_resp_refetch
+  when: _subnet_id is none or (_subnet_id|string)|length == 0
+  no_log: true
+
+- name: Normalize subnets list (refetch)
+  set_fact:
+    _subnets_list: >-
+      {{
+        (_subnets_resp_refetch.json.subnets
+         if (_subnets_resp_refetch is defined and _subnets_resp_refetch.json is mapping and 'subnets' in _subnets_resp_refetch.json)
+         else (_subnets_resp_refetch.json | default([])))
+      }}
+  when: _subnets_resp_refetch is defined
+
+- name: Final fallback - derive _subnet_id from refetch
+  set_fact:
+    _subnet_id: >-
+      {{
+        _subnet_id
+        if (_subnet_id is not none and (_subnet_id|string)|length > 0)
+        else (
+          (_subnets_list
+            | selectattr('cidr','equalto', subnet.cidr)
+            | map(attribute='id') | list | first) | default(none)
+        )
+      }}
+
+# 5) UPDATE if present
+- name: Build subnet update body
+  set_fact:
+    _subnet_update_body: >-
+      {{
+        {'cidr': subnet.cidr, 'vlan': _vid}
+        | combine( (subnet.gateway is defined) | ternary({'gateway_ip': subnet.gateway}, {}), recursive=True )
+        | combine( (subnet.managed is defined) | ternary({'managed': subnet.managed|bool}, {}), recursive=True )
+      }}
+#      {{
+#        {}
+#        | combine( (subnet.gateway is defined) | ternary({'gateway_ip': subnet.gateway}, {}), recursive=True )
+#        | combine( (subnet.managed is defined) | ternary({'managed': subnet.managed|bool}, {}), recursive=True )
+#      }}
+
+- include_tasks: ../_auth_header.yml
+  when: _subnet_id is not none
+  no_log: true
+
+- name: Update subnet (if exists)
+  uri:
+    url: "{{ _maas_api }}/subnets/{{ _subnet_id }}/"
+    method: PUT
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Content-Type: application/x-www-form-urlencoded
+      Accept: application/json
+    body_format: form-urlencoded
+    body: "{{ _subnet_update_body }}"
+    status_code: [200]
+    return_content: true
+    use_netrc: false
+  when: _subnet_id is not none and (_subnet_id|string)|length > 0
+
+# 7) DNS servers
+# DNS servers: prefer subnet.dns_servers[], else maas_global_dns_servers
+- name: Choose DNS servers for this subnet
+  set_fact:
+    _dns_list: "{{ subnet.dns_servers | default(maas_global_dns_servers | default([])) | list }}"
+
+- include_tasks: ../_auth_header.yml
+  when: _dns_list | length > 0 and _subnet_id is not none and (_subnet_id|string)|length > 0
+  no_log: true
+
+- name: Set DNS servers on subnet
+  uri:
+    url: "{{ _maas_api }}/subnets/{{ _subnet_id }}/"
+    method: PUT
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Content-Type: application/x-www-form-urlencoded
+      Accept: application/json
+    body_format: form-urlencoded
+    body: "{{ {'dns_servers': _dns_list | join(' ')} }}"
+    status_code: [200]
+    use_netrc: false
+  when: _dns_list | length > 0 and _subnet_id is not none and (_subnet_id|string)|length > 0
+
+# 8) IP ranges
+# IP ranges (read from top-level /ipranges/, not /subnets/{id}/ipranges/)
+- include_tasks: ../_auth_header.yml
+  when:
+    - _subnet_id is not none
+    - subnet.ip_ranges is defined
+  no_log: true
+
+- name: Read all ipranges (we'll filter by subnet)
+  uri:
+    url: "{{ _maas_api }}/ipranges/"
+    method: GET
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+    return_content: true
+    use_netrc: false
+    status_code: [200]
+  register: _all_ranges_resp
+  when:
+    - _subnet_id is not none
+    - subnet.ip_ranges is defined
+
+# Normalize payload so later tasks don’t depend on .json vs .content
+- name: Normalize ipranges payload to a list
+  set_fact:
+    _ipranges_list: >-
+      {{
+        _all_ranges_resp.json
+          if (_all_ranges_resp is defined and _all_ranges_resp.json is defined and _all_ranges_resp.json != '')
+          else (_all_ranges_resp.content | from_json)
+      }}
+  when:
+    - _subnet_id is not none
+    - subnet.ip_ranges is defined
+    - _all_ranges_resp is defined
+
+- name: Show _subnet_id and ipranges count
+  debug:
+    msg:
+      - "_subnet_id (int) = {{ _subnet_id | int }}"
+      - "ipranges total = {{ (_ipranges_list | default([])) | length }}"
+  when:
+    - _subnet_id is not none
+    - subnet.ip_ranges is defined
+    - _ipranges_list is defined
+
+- name: Build normalized ipranges list
+  set_fact:
+    _ipranges_normalized: |
+      {% set out = [] %}
+      {% for r in (_ipranges_list | default([])) %}
+      {%   set sid = ((r.subnet.id if (r.subnet is mapping and 'id' in r.subnet) else r.subnet) | int) %}
+      {%   set _ = out.append({
+            'id': r.id,
+            'type': r.type,
+            'start_ip': r.start_ip,
+            'end_ip': r.end_ip,
+            'computed_subnet_id': sid
+          }) %}
+      {% endfor %}
+      {{ out }}
+  when:
+    - _subnet_id is not none
+    - subnet.ip_ranges is defined
+    - _ipranges_list is defined
+
+- name: Filter normalized ipranges to this subnet (robust int compare)
+  set_fact:
+    _subnet_ranges_existing: |
+      {% set sid = _subnet_id | int %}
+      {% set out = [] %}
+      {% for r in (_ipranges_normalized | default([])) %}
+      {%   if (r.computed_subnet_id | int) == sid %}
+      {%     set _ = out.append(r) %}
+      {%   endif %}
+      {% endfor %}
+      {{ out }}
+  when:
+    - _subnet_id is not none
+    - subnet.ip_ranges is defined
+    - _ipranges_normalized is defined
+
+- name: Create missing ranges
+  vars:
+    _exists: >-
+      {{
+        (_subnet_ranges_existing | default([]))
+        | selectattr('type','equalto', ipr.type | default('reserved'))
+        | selectattr('start_ip','equalto', ipr.start_ip)
+        | selectattr('end_ip','equalto', ipr.end_ip)
+        | list | length > 0
+      }}
+  include_tasks: subnet_range_create.yml
+  loop: "{{ subnet.ip_ranges | default([]) }}"
+  loop_control:
+    loop_var: ipr
+    label: "{{ ipr.type }} {{ ipr.start_ip }}-{{ ipr.end_ip }}"
+  when:
+    - _subnet_id is not none
+    - subnet.ip_ranges is defined
+    - not _exists

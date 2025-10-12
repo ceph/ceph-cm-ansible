@@ -1,0 +1,95 @@
+---
+# Expects: _fname, _fabric_by-name, vlan, _vlan_index, _body, _maas_api, maas_auth_header
+# (_fname and vlan are often passed from the caller; we normalize if pair=* is used)
+
+- name: Normalize inputs
+  set_fact:
+    _fname: "{{ _fname | default(pair.0.fabric) }}"
+    _fid: "{{ _fabric_by_name[pair.0.fabric] }}"
+    vlan:  "{{ vlan  | default(pair.1) }}"
+
+- name: Ensure VLAN present in index
+  assert:
+    that:
+      - _vlan_index[_fname] is defined
+      - _vlan_index[_fname][vlan.vid | string] is defined
+    fail_msg: >-
+      VLAN {{ vlan.vid }} not found in index for fabric {{ _fname }}.
+      Known vids: {{ _vlan_index.get(_fname, {}) | dict2items | map(attribute='key') | list }}
+
+- name: Clear any stale per-VLAN variables
+  set_fact:
+    _vlan_id: "{{ none }}"
+    _vobj: "{{ none }}"
+    _prc_candidate: ""
+    _primary_rack_controller: "{{ none }}"
+
+- name: Resolve VLAN object
+  set_fact:
+    _vobj: "{{ _vlan_index[_fname][vlan.vid | string] }}"
+
+- name: And ID
+  set_fact:
+    _vlan_id: "{{ _vobj.id | string }}"
+
+# Set the Primary Rack Controller to the VLAN-level defined one.  Otherwise empty string.
+- name: Compute per-VLAN primary rack controller candidate
+  set_fact:
+    _prc_candidate: "{{ (vlan | default({})).get('primary_rack_controller') | default('', true) | string | trim }}"
+
+# Use the VLAN-level defined PRC discovered above or use the global one.
+- name: Decide primary rack controller for this VLAN
+  set_fact:
+    _primary_rack_controller: "{{ _prc_candidate if (_prc_candidate | length) > 0 else (_global_primary_rack_controller | default(omit)) }}"
+
+- name: Build VLAN update body
+  vars:
+    _spaces_list: >-
+      {{
+        (vlan.subnets | default([]))
+        | selectattr('space','defined')
+        | map(attribute='space') | list | unique
+      }}
+    _desired_space: "{{ _spaces_list[0] if (_spaces_list | length) == 1 else omit }}"
+
+    _has_dynamic_for_vlan: >-
+      {{
+        (vlan.subnets | default([]))
+        | selectattr('ip_ranges','defined')
+        | map(attribute='ip_ranges') | flatten
+        | selectattr('type','equalto','dynamic')
+        | list | length > 0
+      }}
+  set_fact:
+    _vlan_update_body: >-
+      {{
+        {'name': vlan.name}
+        | combine( (vlan.mtu is defined) | ternary({'mtu': vlan.mtu}, {}), recursive=True )
+        | combine( (_desired_space is not none) | ternary({'space': _desired_space}, {}), recursive=True )
+        | combine(
+            (vlan.dhcp_on | default(false) | bool and (_primary_rack_controller is defined))
+            | ternary({'primary_rack': _primary_rack_controller}, {}), recursive=True
+          )
+        | combine(
+            (vlan.dhcp_on | default(false) | bool and _has_dynamic_for_vlan)
+            | ternary({'dhcp_on': true}, {}), recursive=True
+          )
+      }}
+
+- include_tasks: ../_auth_header.yml
+  no_log: true
+
+- name: Update VLAN properties
+  uri:
+    url: "{{ _maas_api }}/fabrics/{{ _fid }}/vlans/{{ vlan.vid }}/"
+    method: PUT
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Content-Type: application/x-www-form-urlencoded
+      Accept: application/json
+    body_format: form-urlencoded
+    body: "{{ _vlan_update_body }}"
+    status_code: [200]
+    return_content: true
+    use_netrc: false
+  no_log: true

@@ -1,0 +1,22 @@
+---
+# Build `_vlan_index` as: { "<fabric_name>": { "<vid as string>": <vlan_obj> } }
+
+# Start clean
+- set_fact:
+    _vlan_index: {}
+
+# Expect `_vlans_raw_by_fabric` to be a dict like:
+# { "tucson-qe": [ {vid: 1300, id: 5011, ...}, ... ], ... }
+- name: Normalize VLAN index with string vid keys
+  set_fact:
+    _vlan_index: |
+      {% set out = {} %}
+      {% for it in (_vlans_raw_by_fabric | default({}) | dict2items) %}
+      {%   set fname = it.key %}
+      {%   set vlist = it.value | default([]) %}
+      {%   set _ = out.update({ fname: {} }) %}
+      {%   for v in vlist %}
+      {%     set _ = out[fname].update({ (v.vid | string): v }) %}
+      {%   endfor %}
+      {% endfor %}
+      {{ out }}
