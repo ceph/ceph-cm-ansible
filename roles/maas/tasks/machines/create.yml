@@ -1,0 +1,36 @@
+---
+#- include_tasks: ../_resolve_host.yml
+
+- include_tasks: _auth_header.yml
+
+- name: Build machine create body
+  set_fact:
+    maas_create_body: >-
+      {{
+        dict({
+          'hostname': host,
+          'deployed': true,
+          'architecture': desired_arch,
+          'mac_addresses': mac_addresses
+        }
+        | combine( desired_domain is defined and {'domain': desired_domain} or {} ))
+      }}
+
+- name: machines create body for {{ host }} (system_id={{ system_id }})
+  debug:
+    var: maas_create_body
+
+- name: Create machine in MAAS
+  uri:
+    url: "{{ _maas_api }}/machines/"
+    method: POST
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Content-Type: application/x-www-form-urlencoded
+      Accept: application/json
+    body_format: form-urlencoded
+    body: "{{ maas_create_body }}"
+    status_code: 200
+  register: create_result
+  changed_when: create_result.status in [200, 201]
+  notify: "Rebuild MAAS machine indexes"

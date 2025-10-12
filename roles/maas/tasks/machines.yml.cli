@@ -1,0 +1,1064 @@
+---
+- name: Add all machines from inventory to MAAS
+  when: inventory_hostname in groups['maas_region_rack_server']
+  tags: machines
+  block:
+
+    - name: Read machines from MAAS
+      ansible.builtin.command:
+        argv: [ maas, "{{ maas_admin_username }}", machines, read ]
+      register: maas_read
+
+    - name: Parse MAAS machines JSON
+      ansible.builtin.set_fact:
+        maas_nodes_list: "{{ (maas_read.stdout | from_json) | list }}"
+
+    - name: Init MAAS map
+      ansible.builtin.set_fact:
+        maas_by_hostname: {}
+
+    - name: Populate MAAS map
+      vars:
+        boot_mac: >-
+          {{
+            (
+              (item.boot_interface.mac_address
+               if (item.boot_interface is defined and item.boot_interface and item.boot_interface.mac_address is defined)
+               else (item.interface_set | selectattr('mac_address','defined') | list | first).mac_address
+              ) | default('')
+            ) | lower
+          }}
+        boot_ip: >-
+          {{
+            (
+              (
+                (item.boot_interface.links | selectattr('ip_address','defined') | list | first).ip_address
+                if (item.boot_interface is defined and item.boot_interface and item.boot_interface.links | default([]))
+                else (item.ip_addresses | first)
+              ) | default('')
+            )
+          }}
+      loop: "{{ maas_nodes_list }}"
+      loop_control: { label: "{{ item.hostname | default('UNKNOWN') }}" }
+      ansible.builtin.set_fact:
+        maas_by_hostname: >-
+          {{
+            maas_by_hostname | combine({
+              (item.hostname | lower): {
+                'system_id': item.system_id | default(''),
+                'arch': item.architecture | default(''),
+                'mac': boot_mac,
+                'power_type': item.power_type | default(''),
+                'ip': boot_ip,
+                'status_name': item.status_name | default('')
+              }
+            })
+          }}
+
+    - name: Init desired inventory map
+      ansible.builtin.set_fact:
+        desired_by_hostname: {}
+
+    - name: Populate desired map from inventory
+      vars:
+        node: "{{ item }}"
+        hostname: "{{ node.split('.')[0] | lower }}"
+        boot_mac_key: "{{ hostvars[node]['maas_boot_mac_var'] | default(maas_boot_mac_var | default('ext_pere_mac')) }}"
+        want_mac_raw: "{{ hostvars[node][boot_mac_key] | default('') }}"
+        want_mac: "{{ want_mac_raw | lower }}"
+        boot_ip_key: "{{ hostvars[node]['maas_boot_ip_var'] | default(maas_boot_ip_var | default('ext_pere_ip')) }}"
+        want_ip: "{{ hostvars[node][boot_ip_key] | default('') }}"
+        want_arch: "{{ hostvars[node].get('arch', hostvars[node].get('maas_arch', maas_arch | default('amd64/generic'))) }}"
+        want_power: "{{ 'ipmi' if (hostvars[node].ipmi is defined and hostvars[node].ipmi|length>0) else hostvars[node].get('power_type','manual') }}"
+      loop: "{{ groups['testnodes'] | default([]) }}"
+      loop_control: { label: "{{ item }}" }
+      ansible.builtin.set_fact:
+        desired_by_hostname: >-
+          {{
+            desired_by_hostname | combine({
+              hostname: {
+                'hostname': hostname,
+                'mac': want_mac,
+                'arch': want_arch,
+                'power_type': want_power,
+                'ip': want_ip,
+                'ipmi_address': hostvars[node].ipmi | default(''),
+                'current_state': (maas_by_hostname.get(hostname, {}).status_name | default(''))
+              }
+            })
+          }}
+
+    - name: Assert each node has boot MAC and arch
+      vars:
+        node: "{{ item }}"
+        hostname: "{{ node.split('.')[0] | lower }}"
+        boot_mac_key: "{{ hostvars[node]['maas_boot_mac_var'] | default(maas_boot_mac_var | default('ext_pere_mac')) }}"
+      loop: "{{ groups['testnodes'] | default([]) }}"
+      loop_control: { label: "{{ item }}" }
+      ansible.builtin.assert:
+        that:
+          - hostvars[node][boot_mac_key] is defined
+          - (hostvars[node].get('arch', hostvars[node].get('maas_arch', maas_arch | default('amd64/generic')))) | string | length > 0
+
+    - name: Compute hosts to create
+      ansible.builtin.set_fact:
+        to_create: >-
+          {{
+            (desired_by_hostname.keys() | difference(maas_by_hostname.keys()))
+            | map('extract', desired_by_hostname)
+            | list
+          }}
+
+    # A) Try IPMI on each create-candidate
+    - name: Probe IPMI for create candidates
+      when: to_create | length > 0
+      loop: "{{ to_create }}"
+      loop_control: { label: "{{ item.hostname }} -> {{ item.ipmi_address | default('') }}" }
+      ansible.builtin.command:
+        argv:
+          - ipmitool
+          - -I
+          - lanplus
+          - -H
+          - "{{ item.ipmi_address }}"
+          - -U
+          - "{{ maas_ipmi_username }}"
+          - -P
+          - "{{ maas_ipmi_password }}"
+          - -N
+          - "1"
+          - -R
+          - "1"
+          - chassis
+          - power
+          - status
+      register: ipmi_probe_create
+      changed_when: false
+      failed_when: false
+    
+    - name: Build IPMI OK map for creates
+      when: ipmi_probe_create is defined
+      ansible.builtin.set_fact:
+        ipmi_ok_create_map: {}
+
+    - name: Accumulate IPMI OK map for creates
+      when: ipmi_probe_create is defined
+      loop: "{{ ipmi_probe_create.results }}"
+      loop_control: { label: "{{ item.item.hostname }} rc={{ item.rc }}" }
+      ansible.builtin.set_fact:
+        ipmi_ok_create_map: >-
+          {{
+            (ipmi_ok_create_map | default({}))
+            | combine({ (item.item.hostname): ((item.rc | int) == 0) })
+          }}
+    
+    # C) Rewrite to_create so power_type is 'ipmi' only if ipmi_ok else 'manual'
+    # init an empty list we’ll fill
+    - name: Init effective create list
+      ansible.builtin.set_fact:
+        to_create_effective: []
+    
+    # append each host with power_type decided by the probe result
+    - name: Build effective create list (ipmi if reachable else manual)
+      when: to_create | length > 0
+      loop: "{{ to_create }}"
+      loop_control: { label: "{{ item.hostname }}" }
+      ansible.builtin.set_fact:
+        to_create_effective: >-
+          {{
+            (to_create_effective | default([]))
+            + [ item | combine({
+                  'power_type': (ipmi_ok_create_map | default({})).get(item.hostname, false)
+                                | ternary('ipmi','manual')
+                }) ]
+          }}
+    
+    # replace the original list
+    - name: Apply effective create list
+      when: to_create_effective | length > 0
+      ansible.builtin.set_fact:
+        to_create: "{{ to_create_effective }}"
+
+    - name: Compute hosts to update
+      vars:
+        both_keys: "{{ desired_by_hostname.keys() | intersect(maas_by_hostname.keys()) }}"
+        diffs: >-
+          {%- set out = [] -%}
+          {%- for k in both_keys -%}
+            {%- set d = desired_by_hostname[k] -%}
+            {%- set m = maas_by_hostname[k] -%}
+            {%- set drift = [] -%}
+            {%- if (d.mac | default('')) != (m.mac | default('')) -%}{%- set _ = drift.append('mac') -%}{%- endif -%}
+            {%- if (d.arch | default('')) != (m.arch | default('')) -%}{%- set _ = drift.append('arch') -%}{%- endif -%}
+            {%- if (d.power_type | default('')) != (m.power_type | default('')) -%}{%- set _ = drift.append('power_type') -%}{%- endif -%}
+            {%- set ip_drift = ((d.ip | default('')) and ((d.ip | default('')) != (m.ip | default('')))) -%}
+            {%- if drift | length > 0 or ip_drift -%}
+              {%- set _ = out.append({
+                'hostname': k,
+                'mac': d.mac,
+                'arch': d.arch,
+                'power_type': d.power_type,
+                'want_ip': d.ip,
+                'have_ip': m.ip | default(''),
+                'ip_drift': ip_drift,
+                'drift': drift,
+                'system_id': m.system_id,
+                'ipmi_address': d.ipmi_address | default('')
+              }) -%}
+            {%- endif -%}
+          {%- endfor -%}
+          {{ out }}
+      ansible.builtin.set_fact:
+        to_update: "{{ diffs }}"
+
+    - name: Create missing machines in MAAS
+      when: to_create | length > 0
+      loop: "{{ to_create }}"
+      loop_control: { label: "{{ item.hostname }}" }
+      ansible.builtin.command:
+        argv:
+          - maas
+          - "{{ maas_admin_username }}"
+          - machines
+          - create
+          - "architecture={{ item.arch }}"
+          - "mac_addresses={{ item.mac }}"
+          - "hostname={{ item.hostname }}"
+          - "power_type={{ item.power_type | default('manual') }}"
+#          - "deployed=true"
+
+    - name: Re-read machines from MAAS after creates
+      when: to_create | default([]) | length > 0
+      ansible.builtin.command:
+        argv: [ maas, "{{ maas_admin_username }}", machines, read ]
+      register: maas_read_after_create
+      changed_when: false
+    
+    - name: Parse machines JSON (post-create)
+      when: maas_read_after_create is defined and (maas_read_after_create.stdout | default('')) | length > 0
+      ansible.builtin.set_fact:
+        maas_nodes_list: "{{ (maas_read_after_create.stdout | from_json) | list }}"
+    
+    - name: Rebuild maas_by_hostname (post-create)
+      when: maas_read_after_create is defined and (maas_read_after_create.stdout | default('')) | length > 0
+      vars:
+        boot_mac: >-
+          {{
+            (
+              (item.boot_interface.mac_address
+                if (item.boot_interface is defined and item.boot_interface and item.boot_interface.mac_address is defined)
+                else (item.interface_set | selectattr('mac_address','defined') | list | first).mac_address
+            ) | default('') | lower }}
+        boot_ip: >-
+          {{
+            (
+              (
+                (item.boot_interface.links | selectattr('ip_address','defined') | list | first).ip_address
+                if (item.boot_interface is defined and item.boot_interface and item.boot_interface.links | default([]))
+                else (item.ip_addresses | first)
+              ) | default('')
+            )
+          }}
+      loop: "{{ maas_nodes_list }}"
+      loop_control: { label: "{{ item.hostname | default('UNKNOWN') }}" }
+      ansible.builtin.set_fact:
+        maas_by_hostname: >-
+          {{
+            (maas_by_hostname | default({})) | combine({
+              (item.hostname | lower): {
+                'system_id': item.system_id | default(''),
+                'arch': item.architecture | default(''),
+                'mac': boot_mac,
+                'power_type': item.power_type | default(''),
+                'ip': boot_ip,
+                'status_name': item.status_name | default('')
+              }
+            })
+          }}
+
+    - name: Build desired physical MAC set per host
+      vars:
+        node: "{{ item }}"
+        hostname: "{{ node.split('.')[0] | lower }}"
+        # keys must come from the NODE (and coerce to strings to support names like "25Gb_2")
+        keys: "{{ (hostvars[node].maas_mac_keys | default([])) | map('string') | list }}"
+        # extract values safely, then default missing ones to ''
+        macs_raw: >-
+          {{
+            (keys | map('extract', hostvars[node]) | list)
+            | map('default','')
+            | list
+          }}
+        desired_macs: "{{ macs_raw | reject('equalto','') | map('lower') | list | unique }}"
+      loop: "{{ groups['testnodes'] | default([]) }}"
+      loop_control: { label: "{{ item }}" }
+      ansible.builtin.set_fact:
+        desired_phys_macs: "{{ (desired_phys_macs | default({})) | combine({ hostname: desired_macs }) }}"
+
+    - name: Read MAAS interfaces for each host
+      vars:
+        hostname: "{{ item.split('.')[0] | lower }}"
+        sid: "{{ maas_by_hostname.get(hostname, {}).get('system_id') | default('') }}"
+      loop: "{{ groups['testnodes'] | default([]) }}"
+      loop_control: { label: "{{ item }} (sid={{ sid | default('') }})" }
+      when: sid | length > 0
+      ansible.builtin.command:
+        argv: [ maas, "{{ maas_admin_username }}", interfaces, read, "{{ sid }}" ]
+      register: iface_reads
+      changed_when: false
+
+    - name: Index existing physical interfaces by host (normalized)
+      ansible.builtin.set_fact:
+        existing_phys_by_host: >-
+          {{
+            dict(
+              iface_reads.results
+              | selectattr('stdout','defined')
+              | map(attribute='item') | map('split','.') | map('first') | list
+              | zip(
+                  iface_reads.results
+                  | map(attribute='stdout') | map('from_json') | list
+                )
+            )
+          }}
+
+    - name: Show desired vs existing MACs (debug)
+      vars:
+        h: "{{ item.split('.')[0] | lower }}"
+      loop: "{{ groups['testnodes'] | default([]) }}"
+      loop_control: { label: "{{ item }}" }
+      ansible.builtin.debug:
+        msg:
+          desired: "{{ desired_phys_macs[h] | default([]) }}"
+          have: "{{ (existing_phys_by_host[h] | default([])) | selectattr('type','equalto','physical') | map(attribute='mac_address') | list }}"
+
+    - name: Compute phys interface drift + mac->id per host
+      vars:
+        hostname: "{{ item }}"
+        interfaces: "{{ existing_phys_by_host[hostname] | default([]) }}"
+        phys_ifaces: "{{ interfaces | selectattr('type','equalto','physical') | list }}"
+        have_macs: "{{ phys_ifaces | map(attribute='mac_address') | map('lower') | list }}"
+        want_macs: "{{ desired_phys_macs[hostname] | default([]) }}"
+        mac_to_id: >-
+          {{ dict(
+               (phys_ifaces | map(attribute='mac_address') | map('lower') | list)
+               | zip(phys_ifaces | map(attribute='id') | list)
+             )
+          }}
+        missing_macs: "{{ want_macs | difference(have_macs) }}"
+        extra_macs:   "{{ have_macs | difference(want_macs) }}"
+      loop: "{{ (desired_phys_macs | default({})).keys() | list }}"
+      loop_control: { label: "{{ item }}" }
+      ansible.builtin.set_fact:
+        iface_drift: "{{ (iface_drift | default({})) | combine({ hostname: {
+          'missing': missing_macs,
+          'extra': extra_macs,
+          'mac_to_id': mac_to_id
+        }}) }}"
+
+    - name: Build phys_create_list
+      ansible.builtin.set_fact:
+        phys_create_list: >-
+          {%- set out = [] -%}
+          {%- for h, want_macs in (desired_phys_macs | default({})).items() -%}
+            {%- set sid = (maas_by_hostname[h].system_id | default('')) -%}
+            {%- set missing = (iface_drift[h].missing | default([])) -%}
+            {%- for m in missing -%}
+              {%- set _ = out.append({'hostname': h, 'sid': sid, 'mac': m}) -%}
+            {%- endfor -%}
+          {%- endfor -%}
+          {{ out }}
+    
+    - name: Define allowed states for NIC changes
+      ansible.builtin.set_fact:
+        maas_allowed_states_for_phys: "{{ maas_allowed_states_for_phys | default(['New','Ready','Allocated','Broken']) }}"
+    
+    - name: Ensure status_name_map exists (hostname -> status_name)
+      when: status_name_map is not defined
+      ansible.builtin.set_fact:
+        status_name_map: >-
+          {{
+            dict(
+              (maas_nodes_list | map(attribute='hostname') | map('lower') | list)
+              | zip(maas_nodes_list | map(attribute='status_name') | list)
+            )
+          }}
+
+    - name: Split phys_create_list by eligibility (simple & clear)
+      ansible.builtin.set_fact:
+        phys_create_eligible: []
+        phys_create_ineligible: []
+    
+    - name: Accumulate phys_create elig / inelig
+      vars:
+        eligible_states: "{{ maas_allowed_states_for_phys }}"
+        st: "{{ status_name_map.get(item.hostname) | default('') }}"
+      loop: "{{ phys_create_list | default([]) }}"
+      loop_control: { label: "{{ item.hostname }} -> {{ st }}" }
+      ansible.builtin.set_fact:
+        phys_create_eligible: "{{ phys_create_eligible + [item] if st in eligible_states else phys_create_eligible }}"
+        phys_create_ineligible: "{{ phys_create_ineligible + [item] if st not in eligible_states else phys_create_ineligible }}"
+   
+    - name: Create missing physical interfaces in MAAS (eligible hosts)
+      when: phys_create_eligible | length > 0
+      loop: "{{ phys_create_eligible }}"
+      loop_control: { label: "{{ item.hostname }} -> {{ item.mac }}" }
+      ansible.builtin.command:
+        argv:
+          - maas
+          - "{{ maas_admin_username }}"
+          - interfaces
+          - create-physical
+          - "{{ item.sid }}"
+          - "mac_address={{ item.mac }}"
+      register: phys_create_results
+      changed_when: true
+    
+    - name: Re-read interfaces after physical creates
+      when: phys_create_eligible | length > 0
+      loop: "{{ phys_create_eligible | map(attribute='sid') | unique | list }}"
+      loop_control: { label: "{{ item }}" }
+      ansible.builtin.command:
+        argv: [ maas, "{{ maas_admin_username }}", interfaces, read, "{{ item }}" ]
+      register: iface_reads_after_phys_create
+      changed_when: false
+    
+    - name: Record phys-create skipped due to state (force=false)
+      when:
+        - not (maas_force_machine_update | default(false) | bool)
+        - (phys_create_ineligible | length) > 0
+      ansible.builtin.set_fact:
+        machines_skipped_due_to_state: >-
+          {{
+            (machines_skipped_due_to_state | default([]))
+            + (phys_create_ineligible | map(attribute='hostname') | list)
+          }}
+    
+    - name: "Mark {{ item }} broken to update physical interfaces"
+      when:
+        - (maas_force_machine_update | default(false) | bool)
+        - (phys_create_ineligible | length) > 0
+      loop: "{{ phys_create_ineligible | map(attribute='sid') | unique | list }}"
+      loop_control: { label: "{{ item }}" }
+      ansible.builtin.command:
+        argv: [ maas, "{{ maas_admin_username }}", machine, mark-broken, "{{ item }}" ]
+      register: phys_force_mark_broken
+      failed_when: >
+        (phys_force_mark_broken.rc != 0)
+        and ('No rack controllers can access the BMC' not in (phys_force_mark_broken.stdout | default('')))
+      changed_when: true
+    
+    - name: Create physical interfaces (while broken)
+      when:
+        - (maas_force_machine_update | default(false) | bool)
+        - (phys_create_ineligible | length) > 0
+      loop: "{{ phys_create_ineligible }}"
+      loop_control: { label: "{{ item.hostname }} -> {{ item.mac }}" }
+      ansible.builtin.command:
+        argv:
+          - maas
+          - "{{ maas_admin_username }}"
+          - interfaces
+          - create-physical
+          - "{{ item.sid }}"
+          - "mac_address={{ item.mac }}"
+      register: phys_force_create_results
+      changed_when: true
+    
+    - name: Mark fixed after physical interface create
+      when:
+        - (maas_force_machine_update | default(false) | bool)
+        - (phys_create_ineligible | length) > 0
+      loop: "{{ phys_create_ineligible | map(attribute='sid') | unique | list }}"
+      loop_control: { label: "{{ item }}" }
+      ansible.builtin.command:
+        argv: [ maas, "{{ maas_admin_username }}", machine, mark-fixed, "{{ item }}" ]
+      register: phys_force_mark_fixed
+      failed_when: >
+        (phys_force_mark_fixed.rc != 0)
+        and ('No rack controllers can access the BMC' not in (phys_force_mark_fixed.stdout | default('')))
+      changed_when: true
+
+    - name: Read interfaces for bond scan
+      loop: "{{ groups['testnodes'] | default([]) }}"
+      loop_control: { label: "{{ item }}" }
+      vars:
+        h: "{{ item.split('.')[0] | lower }}"
+        sid: "{{ maas_by_hostname[h].system_id | default(omit) }}"
+      when: sid is defined
+      ansible.builtin.command:
+        argv: [ maas, "{{ maas_admin_username }}", interfaces, read, "{{ sid }}" ]
+      register: bond_scan
+      changed_when: false
+
+    - name: Init bond maps
+      ansible.builtin.set_fact:
+        current_bonds_map: {}
+        current_bond_members: {}
+    
+    - name: Build current bond maps (per host)
+      loop: "{{ bond_scan.results | selectattr('stdout','defined') | list }}"
+      loop_control:
+        label: "{{ item.item.split('.')[0] | lower }}"
+      vars:
+        h: "{{ item.item.split('.')[0] | lower }}"
+        bonds: "{{ (item.stdout | from_json) | selectattr('type','equalto','bond') | list }}"
+        bond_names: "{{ bonds | map(attribute='name') | list }}"
+        bond_ids: "{{ bonds | map(attribute='id') | list }}"
+        bond_parents: "{{ bonds | map(attribute='parents') | list }}"
+        name_to_id: "{{ dict(bond_names | zip(bond_ids)) }}"
+        id_to_parents: "{{ dict(bond_ids | zip(bond_parents)) }}"
+      ansible.builtin.set_fact:
+        current_bonds_map: "{{ current_bonds_map | combine({ h: name_to_id }) }}"
+        current_bond_members: "{{ current_bond_members | combine({ h: id_to_parents }) }}"
+
+    - name: Ensure bond action lists exist
+      ansible.builtin.set_fact:
+        bond_create_list: "{{ bond_create_list | default([]) }}"
+        bond_update_list: "{{ bond_update_list | default([]) }}"
+    
+    - name: Compute bond actions per host
+      loop: "{{ groups['testnodes'] | default([]) }}"
+      loop_control: { label: "{{ item }}" }
+      vars:
+        node: "{{ item }}"
+        h: "{{ node.split('.')[0] | lower }}"
+        sid: "{{ maas_by_hostname[h].system_id | default('') }}"
+        want_bonds: "{{ hostvars[node].maas_bonds | default([]) }}"
+        mac_to_id: "{{ iface_drift[h].mac_to_id | default({}) }}"
+        have_bonds: "{{ current_bonds_map.get(h, {}) }}"
+      ansible.builtin.set_fact:
+        bond_create_list: >-
+          {%- set out = bond_create_list | default([]) -%}
+          {%- for b in want_bonds -%}
+            {%- set parent_macs = (b.interfaces | default([])) | map('extract', hostvars[node]) | map('lower') | list -%}
+            {%- set parent_ids = parent_macs | map('extract', mac_to_id) | select('defined') | list -%}
+            {%- if b.name not in have_bonds.keys() -%}
+              {%- set _ = out.append({
+                'hostname': h,
+                'sid': sid,
+                'name': b.name,
+                'mode': b.mode | default('802.3ad'),
+                'mtu': b.mtu | default(9000),
+                'parent_ids': parent_ids
+              }) -%}
+            {%- endif -%}
+          {%- endfor -%}
+          {{ out }}
+        bond_update_list: >-
+          {%- set out = bond_update_list | default([]) -%}
+          {%- for b in want_bonds -%}
+            {%- if b.name in have_bonds.keys() -%}
+              {%- set parent_macs = (b.interfaces | default([])) | map('extract', hostvars[node]) | map('lower') | list -%}
+              {%- set parent_ids = parent_macs | map('extract', mac_to_id) | select('defined') | list -%}
+              {%- set _ = out.append({
+                'hostname': h,
+                'sid': sid,
+                'name': b.name,
+                'mode': b.mode | default('802.3ad'),
+                'mtu': b.mtu | default(9000),
+                'parent_ids': parent_ids,
+                'have_bond_id': have_bonds[b.name]
+              }) -%}
+            {%- endif -%}
+          {%- endfor -%}
+          {{ out }}
+
+    - name: Define allowed MAAS states for bond changes
+      ansible.builtin.set_fact:
+        maas_allowed_states_for_bonds: ['New','Ready','Allocated','Broken']
+
+    
+    - name: Build eligibility lists for bond changes
+      vars:
+        eligible_hosts: >-
+          {{
+            status_name_map | dict2items
+            | selectattr('value','in', maas_allowed_states_for_bonds)
+            | map(attribute='key') | list
+          }}
+        all_bond_hosts: >-
+          {{
+            (
+              (bond_create_list | default([])) + (bond_update_list | default([]))
+            )
+            | map(attribute='hostname') | list
+            | unique | list
+          }}
+      ansible.builtin.set_fact:
+        bond_create_eligible: "{{ (bond_create_list | default([])) | selectattr('hostname','in', eligible_hosts) | list }}"
+        bond_update_eligible: "{{ (bond_update_list | default([])) | selectattr('hostname','in', eligible_hosts) | list }}"
+        bond_ineligible_hosts: "{{ all_bond_hosts | difference(eligible_hosts) | list }}"
+
+    - name: Recompute desired parent IDs for each bond update
+      when: bond_update_eligible | length > 0
+      loop: "{{ bond_update_eligible }}"
+      loop_control:
+        label: "{{ item.hostname }} -> {{ item.name }}"
+      vars:
+        hostname: "{{ item.hostname }}"
+        # get this host's bond definition from inventory/group_vars
+        bond_cfg: >-
+          {{
+            (hostvars[hostname].maas_bonds | default([]))
+            | selectattr('name','equalto', item.name) | first | default({})
+          }}
+        # the inventory keys for this bond (e.g. ['ext_pere_mac','25Gb_2'])
+        mac_keys: "{{ bond_cfg.interfaces | default([]) }}"
+        # resolve keys -> MACs from that host, normalize/lower, drop empties
+        macs_for_bond: >-
+          {{
+            mac_keys
+            | map('extract', hostvars[hostname]) | map('default','')
+            | map('lower') | reject('equalto','') | list
+          }}
+        # existing interface id map for this host: mac(lower) -> id
+        id_by_mac: "{{ iface_drift[hostname].mac_to_id | default({}) }}"
+        desired_parent_ids: >-
+          {{
+            macs_for_bond
+            | map('extract', id_by_mac, None)
+            | reject('equalto', None)
+            | map('string') | unique | sort | list
+          }}
+      ansible.builtin.set_fact:
+        bond_update_argvs: >-
+          {{
+            (bond_update_argvs | default([]))
+            + [ {
+                'sid': item.sid,
+                'bond_id': item.have_bond_id,
+                'argv': [
+                  'maas', maas_admin_username, 'interface', 'update',
+                  item.sid, (item.have_bond_id | string),
+                  'parents=' ~ (desired_parent_ids | join(',')),
+                  'bond_mode=' ~ (item.mode | default('802.3ad')),
+                  'mtu=' ~ (item.mtu | default(9000) | string)
+                ]
+              } ]
+          }}
+    
+    - name: Apply bond parents/mode/mtu (idempotent)
+      when: (bond_update_argvs | default([])) | length > 0
+      loop: "{{ bond_update_argvs }}"
+      loop_control: { label: "{{ item.sid }} -> bond {{ item.bond_id }}" }
+      vars:
+        # item.argv currently has base pieces; rebuild with repeated parents=
+        parents_ids: >-
+          {{
+            (item.argv | last) is string and (item.argv | last) is search('^parents=')
+              | ternary( (item.argv | last | regex_replace('^parents=', '')).split(','),
+                         [] )
+          }}
+        parents_args: "{{ parents_ids | map('string') | map('regex_replace','^(.*)$','parents=\\1') | list }}"
+        base_args: "{{ ['maas', maas_admin_username, 'interface', 'update', item.sid, (item.bond_id | string)] }}"
+        final_argv: "{{ base_args + parents_args + ['bond_mode=802.3ad', 'mtu=9000'] }}"
+      ansible.builtin.command:
+        argv: "{{ final_argv }}"
+      register: bond_parent_updates
+      changed_when: true
+
+    - name: Record machines skipped due to state (force=false)
+      when:
+        - not (maas_force_machine_update | default(false) | bool)
+        - bond_ineligible_hosts | length > 0
+      ansible.builtin.set_fact:
+        bond_skipped_due_to_state: >-
+          {{ (bond_skipped_due_to_state | default([])) + bond_ineligible_hosts }}
+
+    - name: Create bonds (machines in modifiable state)
+      when: bond_create_eligible | length > 0
+      loop: "{{ bond_create_eligible }}"
+      loop_control: { label: "{{ item.hostname }} -> {{ item.name }}" }
+      vars:
+        parents_args: >-
+          {{
+            item.parent_ids
+            | map('string')
+            | map('regex_replace','^(.*)$','parents=\\1')
+            | list
+          }}
+        argv_final: >-
+          {{
+            ['maas', maas_admin_username, 'interfaces', 'create-bond',
+             item.sid, 'name=' ~ item.name,
+             'bond_mode=' ~ (item.mode | default('802.3ad'))]
+            + parents_args
+            + ['mtu=' ~ (item.mtu | default(9000) | string)]
+            + ((item.vlan is defined) | ternary(['vlan=' ~ (item.vlan | string)], []))
+          }}
+      ansible.builtin.command:
+        argv: "{{ argv_final }}"
+      register: bond_create_results
+      changed_when: true
+
+    - name: Update bonds (machine in modifiable state)
+      when: bond_update_eligible | length > 0
+      loop: "{{ bond_update_eligible }}"
+      loop_control:
+        label: "{{ item.hostname }} -> {{ item.name }} (id={{ item.have_bond_id }})"
+      vars:
+        parents_args: >-
+          {{
+            item.parent_ids
+            | map('string')
+            | map('regex_replace','^(.*)$','parents=\1')
+            | list
+          }}
+        argv_final: >-
+          {{
+            ['maas', maas_admin_username, 'interface', 'update',
+             item.sid, (item.have_bond_id | string)]
+            + parents_args
+            + ['bond_mode=' ~ (item.mode | default('802.3ad')),
+               'mtu=' ~ (item.mtu | default(9000) | string)]
+          }}
+      ansible.builtin.command:
+        argv: "{{ argv_final }}"
+      register: bond_update_calls
+      changed_when: true
+
+    - name: Build force lists (ineligible hosts only, when forcing)
+      when: (maas_force_machine_update | default(false) | bool)
+      vars:
+        bond_create_force_hosts: "{{ (bond_create_list | default([])) | map(attribute='hostname') | list | unique | list | difference(bond_create_eligible | map(attribute='hostname') | list | unique | list) }}"
+        bond_update_force_hosts: "{{ (bond_update_list | default([])) | map(attribute='hostname') | list | unique | list | difference(bond_update_eligible | map(attribute='hostname') | list | unique | list) }}"
+      ansible.builtin.set_fact:
+        bond_create_force: "{{ (bond_create_list | default([])) | selectattr('hostname','in', bond_create_force_hosts) | list }}"
+        bond_update_force: "{{ (bond_update_list | default([])) | selectattr('hostname','in', bond_update_force_hosts) | list }}"
+        force_hosts_unique: "{{ (bond_create_force_hosts + bond_update_force_hosts) | unique | list }}"
+    
+    - name: Mark machines broken for forced bond updates
+      when:
+        - (maas_force_machine_update | default(false) | bool)
+        - force_hosts_unique | length > 0
+      loop: "{{ force_hosts_unique }}"
+      loop_control: { label: "{{ item }}" }
+      ansible.builtin.command:
+        argv:
+          - maas
+          - "{{ maas_admin_username }}"
+          - machine
+          - mark-broken
+          - "{{ maas_by_hostname[item].system_id }}"
+      register: mark_broken_result
+      # Treat only *other* non-zero failures as fatal
+      failed_when: >
+        (mark_broken_result.rc != 0) and
+        ('No rack controllers can access the BMC of node' not in (mark_broken_result.stdout | default(''))) and
+        ('No rack controllers can access the BMC of machine' not in (mark_broken_result.stdout | default('')))
+      # Still count as "changed" so downstream tasks run
+      changed_when: >
+        (mark_broken_result.rc == 0) or
+        ('No rack controllers can access the BMC' in (mark_broken_result.stdout | default('')))
+    
+    - name: Create bonds (forced, machine temporarily broken)
+      when:
+        - (maas_force_machine_update | default(false) | bool)
+        - bond_create_force | length > 0
+      loop: "{{ bond_create_force }}"
+      loop_control:
+        label: "{{ item.hostname }} -> {{ item.name }}"
+      vars:
+        parents_csv: "{{ item.parent_ids | map('string') | join(',') }}"
+        bond_create_argv: >-
+          {{
+            [
+              'maas',
+              maas_admin_username,
+              'interfaces',
+              'create-bond',
+              item.sid,
+              'name=' ~ item.name,
+              'bond_mode=' ~ (item.mode | default('802.3ad')),
+              'parents=' ~ parents_csv,
+              'mtu=' ~ (item.mtu | default(9000) | string)
+            ]
+            + ((item.vlan is defined) | ternary(['vlan=' ~ (item.vlan | string)], []))
+          }}
+      ansible.builtin.command:
+        argv: "{{ bond_create_argv }}"
+      register: bond_create_force_results
+      changed_when: true
+
+    # Read all fabrics and vlans to build a vid -> vlan_id map
+    - name: Read fabrics
+      ansible.builtin.command:
+        argv: [ maas, "{{ maas_admin_username }}", fabrics, read ]
+      register: maas_fabrics
+      changed_when: false
+    
+    - name: Build list of fabric IDs
+      ansible.builtin.set_fact:
+        fabric_ids: "{{ (maas_fabrics.stdout | from_json) | map(attribute='id') | list | unique }}"
+    
+    - name: Read VLANs for each fabric
+      loop: "{{ fabric_ids }}"
+      loop_control: { label: "fabric={{ item }}" }
+      ansible.builtin.command:
+        argv: [ maas, "{{ maas_admin_username }}", vlans, read, "{{ item }}" ]
+      register: maas_vlans_reads
+      changed_when: false
+    
+    - name: Build vid -> vlan_id map
+      ansible.builtin.set_fact:
+        vid_to_vlan_id: >-
+          {{
+            dict(
+              (maas_vlans_reads.results | map(attribute='stdout') | map('from_json') | list)
+              | sum(start=[])
+              | map(attribute='vid') | list
+              | zip(
+                  (maas_vlans_reads.results | map(attribute='stdout') | map('from_json') | list)
+                  | sum(start=[])
+                  | map(attribute='id') | list
+                )
+            )
+          }}
+
+    # For each bond needing a VLAN, compute the MAAS VLAN id
+    - name: Build bond->vlan_id updates
+      when: bond_update_eligible | length > 0
+      loop: "{{ bond_update_eligible }}"
+      loop_control: { label: "{{ item.hostname }} -> {{ item.name }}" }
+      vars:
+        bond_cfg: "{{ (maas_bonds | selectattr('name','equalto', item.name) | first) | default({}) }}"
+        desired_vid: "{{ bond_cfg.vlan | default(None) }}"
+        vlan_id: "{{ (desired_vid is not none) | ternary(vid_to_vlan_id.get(desired_vid), None) }}"
+      ansible.builtin.set_fact:
+        bond_vlan_updates: >-
+          {{
+            (bond_vlan_updates | default([]))
+            + ([{
+                'sid': item.sid,
+                'bond_id': item.have_bond_id,
+                'vlan_id': vlan_id
+              }] if vlan_id is not none else [])
+          }}
+    
+    - name: Attach bond to VLAN (set vlan=VLAN_ID)
+      when: (bond_vlan_updates | default([])) | length > 0
+      loop: "{{ bond_vlan_updates }}"
+      loop_control:
+        label: "{{ item.sid }} -> bond {{ item.bond_id }} vlan={{ item.vlan_id }}"
+      ansible.builtin.command:
+        argv:
+          - maas
+          - "{{ maas_admin_username }}"
+          - interface
+          - update
+          - "{{ item.sid }}"
+          - "{{ item.bond_id }}"
+          - "vlan={{ item.vlan_id }}"
+      register: bond_vlan_set
+      changed_when: true
+    
+    - name: Update bonds (forced, machine temporarily broken)
+      when:
+        - (maas_force_machine_update | default(false) | bool)
+        - bond_update_force | length > 0
+        - member_drift or (item.mode is defined) or (item.mtu is defined)
+      loop: "{{ bond_update_force }}"
+      loop_control: { label: "{{ item.hostname }} -> {{ item.name }} (id={{ item.have_bond_id }})" }
+      vars:
+        parents_csv: "{{ item.parent_ids | map('string') | join(',') }}"
+        bond_update_force_argv: >-
+          {{
+            [
+              'maas',
+              maas_admin_username,
+              'interface',
+              'update',
+              item.sid,
+              (item.have_bond_id | string),
+              'bond_mode=' ~ (item.mode | default('802.3ad')),
+              'parents=' ~ parents_csv,
+              'mtu=' ~ (item.mtu | default(9000) | string)
+            ]
+          }}
+      ansible.builtin.command:
+        argv: "{{ bond_update_force_argv }}"
+      register: bond_update_force_results
+      changed_when: true
+    
+    - name: Mark machines fixed after forced bond updates
+      when:
+        - (maas_force_machine_update | default(false) | bool)
+        - force_hosts_unique | length > 0
+      loop: "{{ force_hosts_unique }}"
+      loop_control: { label: "{{ item }}" }
+      ansible.builtin.command:
+        argv:
+          - maas
+          - "{{ maas_admin_username }}"
+          - machine
+          - mark-fixed
+          - "{{ maas_by_hostname[item].system_id }}"
+      register: mark_fixed_result
+      failed_when: >
+        (mark_fixed_result.rc != 0) and
+        ('No rack controllers can access the BMC of node' not in (mark_fixed_result.stdout | default(''))) and
+        ('No rack controllers can access the BMC of machine' not in (mark_fixed_result.stdout | default('')))
+      changed_when: >
+        (mark_fixed_result.rc == 0) or
+        ('No rack controllers can access the BMC' in (mark_fixed_result.stdout | default('')))
+
+    - name: Read machine details to inspect power parameters
+      vars:
+        hostname: "{{ item.split('.')[0] | lower }}"
+        sid: "{{ maas_by_hostname.get(hostname, {}).get('system_id') | default(omit) }}"
+      when: sid is defined
+      loop: "{{ groups['testnodes'] | default([]) }}"
+      loop_control: { label: "{{ item }}" }
+      ansible.builtin.command:
+        argv: [ maas, "{{ maas_admin_username }}", machine, read, "{{ sid }}" ]
+      register: machine_reads
+      changed_when: false
+
+    - name: Build map of current power settings
+      when: machine_reads is defined and machine_reads.results is defined
+      ansible.builtin.set_fact:
+        power_map: >-
+          {{
+            dict(
+              machine_reads.results
+              | selectattr('stdout','defined')
+              | map(attribute='item')
+              | map('split','.') | map('first') | list
+              | zip(machine_reads.results | map(attribute='stdout') | map('from_json'))
+            )
+          }}
+
+    - name: Select update candidates
+      ansible.builtin.set_fact:
+        update_candidates: >-
+          {{
+            to_update
+            | selectattr('drift', 'defined')
+            | selectattr('drift', 'ne', [])
+            | list
+          }}
+
+    # A) Try IPMI for each update-candidate that *wants* ipmi and has an address
+    - name: Probe IPMI for update candidates
+      loop: "{{ update_candidates }}"
+      loop_control: { label: "{{ item.hostname }} -> {{ ipmi_addr }}" }
+      vars:
+        ipmi_addr: "{{ desired_by_hostname[item.hostname].ipmi_address | default('') }}"
+      ansible.builtin.command:
+        argv:
+          - ipmitool
+          - -I
+          - lanplus
+          - -H
+          - "{{ ipmi_addr }}"
+          - -U
+          - "{{ maas_ipmi_username }}"
+          - -P
+          - "{{ maas_ipmi_password }}"
+          - -N
+          - "1"
+          - -R
+          - "1"
+          - chassis
+          - power
+          - status
+      register: ipmi_probe_update
+      changed_when: false
+      failed_when: false
+      when:
+        - update_candidates | default([]) | length > 0
+        - (item.power_type | default('manual')) == 'ipmi'
+        - ipmi_addr | length > 0
+        - maas_ipmi_username is defined
+        - maas_ipmi_password is defined
+    
+    # B) Build "hostname -> ipmi_ok" (rc == 0) lookup for updates
+    - name: Init IPMI OK map for updates
+      when: ipmi_probe_update is defined
+      ansible.builtin.set_fact:
+        ipmi_ok_update_map: {}
+    
+    - name: Accumulate IPMI OK map for updates
+      when: ipmi_probe_update is defined
+      loop: "{{ ipmi_probe_update.results }}"
+      loop_control: { label: "{{ item.item.hostname }} rc={{ item.rc }}" }
+      ansible.builtin.set_fact:
+        ipmi_ok_update_map: >-
+          {{
+            (ipmi_ok_update_map | default({}))
+            | combine({ (item.item.hostname): ((item.rc | int) == 0) })
+          }}
+    
+    # C) Produce update list with an *effective* power_type (ipmi if ok, else manual)
+    - name: Init effective update list
+      ansible.builtin.set_fact:
+        update_candidates_effective: []
+    
+    - name: Compute effective power_type for updates
+      when: update_candidates | default([]) | length > 0
+      loop: "{{ update_candidates }}"
+      loop_control: { label: "{{ item.hostname }}" }
+      ansible.builtin.set_fact:
+        update_candidates_effective: >-
+          {{
+            (update_candidates_effective | default([]))
+            + [ item | combine({
+                  'ipmi_address': (desired_by_hostname[item.hostname].ipmi_address | default('')),
+                  'effective_power_type':
+                    (
+                      ((item.power_type | default('manual')) == 'ipmi')
+                      and (ipmi_ok_update_map | default({})).get(item.hostname, false)
+                    )
+                    | ternary('ipmi','manual')
+                }) ]
+          }}
+
+    - name: Update machines (ipmi reachable)
+      when: update_candidates_effective | selectattr('effective_power_type','equalto','ipmi') | list | length > 0
+      loop: "{{ update_candidates_effective | selectattr('effective_power_type','equalto','ipmi') | list }}"
+      loop_control: { label: "{{ item.hostname }}" }
+      ansible.builtin.command:
+        argv:
+          - maas
+          - "{{ maas_admin_username }}"
+          - machine
+          - update
+          - "{{ item.system_id }}"
+          - "hostname={{ item.hostname }}"
+          - "architecture={{ item.arch }}"
+          - "power_type=ipmi"
+          - "mac_addresses={{ item.mac }}"
+          - "power_parameters_power_address={{ item.ipmi_address | default('') }}"
+          - "power_parameters_power_user={{ maas_ipmi_username }}"
+          - "power_parameters_power_pass={{ maas_ipmi_password }}"
+    
+    - name: Update machines (fallback to manual)
+      when: update_candidates_effective | selectattr('effective_power_type','equalto','manual') | list | length > 0
+      loop: "{{ update_candidates_effective | selectattr('effective_power_type','equalto','manual') | list }}"
+      loop_control: { label: "{{ item.hostname }}" }
+      ansible.builtin.command:
+        argv:
+          - maas
+          - "{{ maas_admin_username }}"
+          - machine
+          - update
+          - "{{ item.system_id }}"
+          - "hostname={{ item.hostname }}"
+          - "architecture={{ item.arch }}"
+          - "power_type=manual"
+          - "mac_addresses={{ item.mac }}"
+
+    - name: These machines need to be updated but were skipped for being in the wrong state
+      run_once: true
+      when:
+        - not (maas_force_machine_update | default(false) | bool)
+        - ((bond_skipped_due_to_state | default([])) | length > 0) or
+          ((machines_skipped_due_to_state | default([])) | length > 0)
+      ansible.builtin.debug:
+        msg: >-
+          These machines need to be updated but were skipped for being in the wrong state:
+          {{
+            ((bond_skipped_due_to_state | default([])) + (machines_skipped_due_to_state | default([])))
+            | unique | sort | list
+          }}

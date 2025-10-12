@@ -1,0 +1,6 @@
+---
+#- include_tasks: ../_resolve_host.yml
+
+- name: Would have deleted host {{ host }}
+  debug:
+    msg: "Would have deleted host {{ host }}"

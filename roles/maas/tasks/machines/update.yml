@@ -1,0 +1,114 @@
+---
+# roles/maas/tasks/machines/update.yml
+
+# 1) Fresh OAuth header (nonce/timestamp)
+- name: Build OAuth header
+  include_tasks: _auth_header.yml
+
+# 2) Record node system_id for downstream includes
+- name: Remember {{ inv_host }} = systemd id {{ system_id }}
+  set_fact:
+    _node_system_id: "{{ system_id }}"
+
+# 5) Initialize desired structures so later tasks never explode on undefined
+# Load desired bonds & interfaces from group_vars
+- name: Load desired bonds & interfaces from group_vars
+  set_fact:
+    _desired_bonds: "{{ hostvars[inv_host].maas_bonds | default([]) }}"
+    _desired_ifaces: "{{ hostvars[inv_host].maas_interfaces | default([]) }}"
+
+- include_tasks: machines/_refresh_iface_facts.yml
+
+- include_tasks: machines/_mark_broken.yml
+  when: system_status not in ['Broken', 'Ready', 'New', 'Allocated']
+
+- name: Apply interfaces (native_vid + tagged_vids)
+  include_tasks: machines/_apply_one_iface.yml
+  loop: "{{ _desired_ifaces }}"
+  loop_control:
+    loop_var: desired_iface
+    label: "{{ desired_iface.prefix | default('(no prefix)') }}"
+  vars:
+    iface_obj: "{{ desired_iface }}"
+
+# 9) Ensure bonds (each include runs per bond; no block-looping)
+- name: Ensure each bond
+  when: (_desired_bonds | default([])) | length > 0
+  include_tasks: machines/_ensure_bond.yml
+  loop: "{{ _desired_bonds | default([]) }}"
+  loop_control:
+    loop_var: bond
+    label: "{{ bond.name | default('unnamed-bond') }}"
+# Ensure we have fresh auth + base url
+- include_tasks: _auth_header.yml
+
+# Read all interfaces for this node
+- name: Read machine interfaces (for subnet assignment)
+  uri:
+    url: "{{ _maas_api }}/nodes/{{ system_id }}/interfaces/"
+    method: GET
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+    return_content: yes
+    status_code: 200
+  register: _ifaces_read
+  no_log: true
+
+# INIT
+- name: Init iface list (id, name, vlan_id)
+  set_fact:
+    _iface_rows: []
+
+- name: Build iface list (id, name, vlan_id, type) — only bond/vlan
+  set_fact:
+    _iface_rows: "{{ _iface_rows + [ {'id': i.id, 'name': i.name, 'vlan_id': i.vlan.id, 'type': i.type} ] }}"
+  loop: >-
+    {{
+      _ifaces_read.json
+      | selectattr('vlan','defined')
+      | selectattr('vlan.id','defined')
+      | selectattr('type','defined')
+      | selectattr('type','in',['bond','vlan'])
+      | list
+    }}
+  loop_control:
+    loop_var: i
+
+- include_tasks: _auth_header.yml
+
+# Fetch ALL subnets once (we'll group them locally)
+- name: Read all subnets
+  uri:
+    url: "{{ _maas_api }}/subnets/"
+    method: GET
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+    return_content: yes
+    status_code: 200
+  register: _all_subnets
+  no_log: true
+
+- name: Init subnets_by_vlan map
+  set_fact:
+    _subnets_by_vlan: {}
+
+# Build map: vlan_id -> [subnets...]
+- name: Group subnets by VLAN id
+  set_fact:
+    _subnets_by_vlan: "{{ _subnets_by_vlan | default({}) | combine({ (s.vlan.id|string): ( _subnets_by_vlan.get(s.vlan.id|string, []) + [s] ) }) }}"
+  loop: "{{ _all_subnets.json | default([]) }}"
+  loop_control:
+    loop_var: s
+  when: s.vlan is defined and s.vlan.id is defined
+
+- name: Apply subnet assignment for each iface (bond/vlan only)
+  when: (_iface_rows | length) > 0
+  include_tasks: machines/_apply_subnet.yml
+  loop: "{{ _iface_rows }}"
+  loop_control:
+    loop_var: row
+  vars:
+    iface: "{{ row }}"
+    candidate_subnets: "{{ _subnets_by_vlan.get(row.vlan_id|string, []) }}"

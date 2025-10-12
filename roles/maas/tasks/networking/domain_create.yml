@@ -1,0 +1,22 @@
+---
+# Expects: _maas_api, maas_api_key, domain_name
+# Builds a fresh OAuth header and creates the domain
+
+- include_tasks: ../_auth_header.yml
+#  no_log: true
+
+- uri:
+    url: "{{ _maas_api }}/domains/"
+    method: POST
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Content-Type: application/x-www-form-urlencoded
+      Accept: application/json
+    body_format: form-urlencoded
+    body:
+      name: "{{ domain_name }}"
+    status_code: [200, 201, 409]
+    use_netrc: false
+    return_content: false
+    validate_certs: true
+  #no_log: true
