@@ -49,6 +49,7 @@
   shell: "sgdisk --zap-all /dev/{{ item.key }} || sgdisk --zap-all /dev/{{ item.key }}"
   with_dict: "{{ ansible_devices }}"
   when:
+    - node_arch != "s390x"    
     - item.key not in root_disk
     - '"loop" not in item.key'
     - '"ram" not in item.key'
@@ -60,6 +61,7 @@
   shell: "dd if=/dev/zero of=/dev/{{ item.key }} bs=1M count=110"
   with_dict: "{{ ansible_devices }}"
   when:
+    - node_arch != "s390x"    
     - item.key not in root_disk
     - '"loop" not in item.key'
     - '"ram" not in item.key'
@@ -84,6 +86,6 @@
   shell: "pvremove --force --force --yes {{ item }}"
   with_items: "{{ pvs_to_remove.stdout_lines }}"
   when:
+    - node_arch != "s390x"
     - pvs_to_remove is defined
     - pvs_to_remove.stdout_lines|length > 0
-    - node_arch != "s390x"
