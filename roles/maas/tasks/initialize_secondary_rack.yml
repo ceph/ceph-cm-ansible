@@ -1,0 +1,25 @@
+---
+- name: Get secret for init-rack
+  command: "cat /var/snap/maas/common/maas/secret"
+  when: inventory_hostname in groups['maas_region_rack_server'] and maas_install.failed == false and maas_install.changed == true
+  tags: install_maas
+  register: secret_var
+
+- name: Initialize MAAS Rack Controller
+  when: inventory_hostname in groups['maas_rack_server'] and maas_install.failed == false and secret_var is defined and maas_install.changed == true
+  tags: install_maas
+  block:
+    - name: Disable timesyncd service
+      systemd_service:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+      loop:
+        - systemd-timesyncd
+        - chronyd
+
+    - name: Register Rack Controller with Region Controller
+      command: "maas init rack --maas-url http://{{ hostvars['test1']['ip'] }}:5240/MAAS/ --secret {{ hostvars['test1']['secret_var']['stdout'] }}"
+
+    - name: Restart MAAS Rack Controller
+      command: "snap restart maas"

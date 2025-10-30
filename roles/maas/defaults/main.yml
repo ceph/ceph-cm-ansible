@@ -1,0 +1,19 @@
+---
+# MAAS user and database variables
+maas_admin_username: "admin"
+maas_db_name: "maasdb"
+maas_db_user: "maas"
+maas_version: "3.5"
+postgres_version: "16"
+
+# DNS variables
+default_domains:
+  - "maas"
+
+maas_dns_domains:
+  ceph: "front.sepia.ceph.com"
+  ipmi: "ipmi.sepia.ceph.com"
+
+# NTP variables
+maas_ntp_servers: "ntp.ubuntu.com"
+maas_ntp_external_only: "false"
