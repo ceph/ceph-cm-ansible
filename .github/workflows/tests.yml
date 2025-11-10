@@ -22,11 +22,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'
     - name: Install ansible-lint
       run: |
         sudo apt-get update
         sudo apt-get purge ansible
-        sudo apt-get install python3-setuptools
         # This pinned ansible version should match teuthology's
         # requirements.txt.
         # And we choose an ansible-lint version to be compatible with this
