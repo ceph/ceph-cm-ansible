@@ -40,13 +40,16 @@
 - name: Wipe filesystems on non-root partitions
   shell: "wipefs --force --all /dev/{{ item }} || wipefs --all /dev/{{ item }}"
   with_items: "{{ non_root_partitions.stdout_lines }}"
-  when: non_root_partitions|length > 0
+  when:
+    - wipefs_disk    
+    - non_root_partitions|length > 0
 
 ## See https://github.com/ceph/ceph-ansible/issues/759#issue-153248281
 - name: Zap all non-root disks
   shell: "sgdisk --zap-all /dev/{{ item.key }} || sgdisk --zap-all /dev/{{ item.key }}"
   with_dict: "{{ ansible_devices }}"
   when:
+    - node_arch != "s390x"    
     - item.key not in root_disk
     - '"loop" not in item.key'
     - '"ram" not in item.key'
@@ -58,6 +61,7 @@
   shell: "dd if=/dev/zero of=/dev/{{ item.key }} bs=1M count=110"
   with_dict: "{{ ansible_devices }}"
   when:
+    - node_arch != "s390x"    
     - item.key not in root_disk
     - '"loop" not in item.key'
     - '"ram" not in item.key'
@@ -70,15 +74,18 @@
   retries: 5
   delay: 1
   ignore_errors: true
+  when: node_arch != "s390x"
 
 ## See http://tracker.ceph.com/issues/21989
 - name: Check for physical volumes
   shell: "pvdisplay | grep 'PV Name' | awk '{ print $3 }'"
   register: pvs_to_remove
+  when: node_arch != "s390x"
 
 - name: Remove physical volumes
   shell: "pvremove --force --force --yes {{ item }}"
   with_items: "{{ pvs_to_remove.stdout_lines }}"
   when:
+    - node_arch != "s390x"
     - pvs_to_remove is defined
     - pvs_to_remove.stdout_lines|length > 0
