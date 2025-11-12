@@ -66,6 +66,7 @@
         path: "{{ curtin_userdata_path.stdout if maas_install_method == 'snap' else '/etc/maas/preseeds/curtin_userdata' }}"
         insertafter: EOF
         block: |2
+            88_create_sudo_group: ["curtin", "in-target", "--", "sh", "-c", "groupadd -f sudo"]
             90_create_cm_user: ["curtin", "in-target", "--", "sh", "-c", "useradd {{ cm_user }} -m -s /bin/bash -g sudo"]
             92_delete_cm_pass: ["curtin", "in-target", "--", "sh", "-c", "passwd -d cm"]
             94_configure_sudo: ["curtin", "in-target", "--", "sh", "-c", "printf '%%sudo ALL=(ALL) NOPASSWD: ALL\nDefaults !requiretty\nDefaults visiblepw' >> /etc/sudoers.d/cephlab_sudo"]
