@@ -1,9 +1,16 @@
 ---
-# generate dnsmasq dhcp-host and host-address lines from inventory
-# note the top-level play definitions with subtasks.
+# Generate dnsmasq dhcp-host and host-address lines from inventory.
+# (note the top-level play definitions with subtasks.)
 #
-# Run with --limit set appropriately.
-# Generates files in $PWD/dnsmasq.conf/
+# Run with --limit set appropriately, for example,
+#
+# ansible-playbook --limit tucson_new_fabric tools/make-dnsmasq-conf.yml
+#
+# Generates files in $PWD/dnsmasq.conf/ to be hand-installed on
+# the dnsmasq server; intended to be included in a master conf file with
+# conf-file directives, for example:
+#
+# conf-file=tucson/ipmi.conf
 
 - name: make dnsmasq.conf dir if necessary
   hosts: all
