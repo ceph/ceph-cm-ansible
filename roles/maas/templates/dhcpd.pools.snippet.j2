@@ -1,0 +1,23 @@
+  {% if subnet_data.pools is defined -%}
+  {% for pool, pool_value in subnet_data.pools.items() -%}
+  pool {
+    {% if pool == "unknown_clients" -%}
+    allow unknown-clients;
+    {% else -%}
+    allow members of "{{ pool }}";
+    {% endif -%}
+    {% if pool_value.range is string -%}
+    range {{ pool_value.range }};
+    {% else -%}
+    range {{ pool_value.range|join(';\n    range ') }};
+    {% endif -%}
+    {% if pool_value.next_server is defined -%}
+    next-server {{ pool_value.next_server }};
+    {% endif -%}
+    {% if pool_value.filename is defined -%}
+    filename "{{ pool_value.filename }}";
+    {% endif -%}
+  }
+
+  {% endfor -%}
+  {%- endif -%}
