@@ -1,0 +1,149 @@
+---
+# Generate dnsmasq dhcp-host and host-address lines from inventory.
+# (note the top-level play definitions with subtasks.)
+#
+# Run with --limit set appropriately, for example,
+#
+# ansible-playbook --limit tucson_new_fabric tools/make-dnsmasq-conf.yml
+#
+# Generates files in $PWD/dnsmasq.conf/ to be hand-installed on
+# the dnsmasq server; intended to be included in a master conf file with
+# conf-file directives, for example:
+#
+# conf-file=tucson/ipmi.conf
+
+- name: make dnsmasq.conf dir if necessary
+  hosts: all
+  tasks:
+    - ansible.builtin.file:
+        path: ../dnsmasq.conf
+        state: directory
+      delegate_to: localhost
+      run_once: true
+  gather_facts: false
+
+- name: generate hostvars[myvars] for all hosts
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: 'set myvars'
+      set_fact:
+        myvars:
+          fqdn: "{{ inventory_hostname }}"
+          bmc_ip: "{{ ipmi }}"
+          bmc_mac: "{{ bmc }}"
+          boot_ip: "{{ hostvars[inventory_hostname][maas_boot_ip_var] }}"
+          boot_mac: "{{ hostvars[inventory_hostname][maas_boot_mac_var] }}"
+          domain: "{{ inventory_hostname | regex_replace('^[^.]+\\.', '') }}"
+          shortname: "{{ inventory_hostname | regex_replace('\\..*', '') }}"
+          domain_tag: "{{ inventory_hostname.split('.')[1:-4] | join('-') }}"
+      tags: always
+
+
+- name: generate files from hostvars[myvars]
+  hosts: all
+  gather_facts: false
+  vars:
+    ipmi_file: "../dnsmasq.conf/ipmi.conf"
+    ipmi_domain: "ipmi.ceph.tuc.ibm.com"
+
+  tasks:
+    #- name: get myvars
+    #  set_fact:
+    #    myvars: "{{ hostvars[inventory_hostname].myvars }}"
+
+    - name: build {{ ipmi_file }}
+      copy:
+        dest: "{{ ipmi_file }}"
+        content: |
+          ###
+          ### {{ ipmi_domain }}
+          ###
+          {% for host in ansible_play_hosts %}
+          {% set data = hostvars[host]['myvars'] %}
+          dhcp-host=set:ipmi,{{ data.bmc_mac }},{{ data.bmc_ip }},{{ data.shortname }}.{{ ipmi_domain }}
+          {% endfor %}
+          {% for host in ansible_play_hosts %}
+          {% set data = hostvars[host]['myvars'] %}
+          host-address={{ data.bmc_ip }},{{ data.shortname }}.{{ ipmi_domain }}
+          {% endfor %}
+          {% for vlan in maas_networking[0]['vlans'] %}
+          {% set data = hostvars[ansible_play_hosts[0]].myvars %}
+          {% for subnet in vlan['subnets'] %}
+          {% if data.bmc_ip | ansible.utils.ipaddr(subnet.cidr) %}
+          dhcp-range={{ subnet.gateway | ipmath(5) }},static,{{ subnet.cidr | ipaddr("netmask") }},{{ subnet.cidr | ipaddr("broadcast") }}
+          dhcp-option=tag:ipmi,option:router,{{ subnet.gateway }}
+          {% endif %}
+          {% endfor %}
+          {% endfor %}
+
+      delegate_to: localhost
+      run_once: true
+      tags: ipmi
+
+    # create a map from domain_tag to a list of hosts, so that we can loop
+    # across all the domain_tags
+    - name: Build map of domain_tag →> list of hosts
+      set_fact:
+        hosts_by_domain_tag: >-
+          {{
+            hosts_by_domain_tag | default({}) | combine({
+              (hostvars[item]['myvars']['domain_tag']): (
+                (hosts_by_domain_tag | default({})).get(hostvars[item]['myvars']['domain_tag'], []) + [item]
+              )
+            })
+          }}
+      loop: "{{ ansible_play_hosts }}"
+      loop_control:
+        loop_var: item
+      delegate_to: localhost
+      run_once: true
+
+
+    # maas_networking variable:
+    # maas_networking['tucson-qe']['vlans'][]['subnets'][]['cidr']
+
+    # loop across hosts_by_domain_tag, create a file named with 'domain_tag',
+    # add dhcp-host and host-address stanzas
+    - name: "build domain_tag dnsmasq conf part files"
+      copy:
+        dest: "../dnsmasq.conf/{{ domain_tag | replace('-', '.') }}.conf"
+        content: |
+          {% set domain = domain_tag | replace('-', '.') + '.ceph.tuc.ibm.com' %}
+          ###
+          ### {{ domain }}
+          ###
+          {% for host in hosts_by_domain_tag[domain_tag] %}
+          {% set data = hostvars[host]['myvars'] %}
+          dhcp-host=set:maas,set:{{domain_tag}},{{ data.boot_mac }},{{ data.boot_ip }},{{ data.fqdn }}
+          {% endfor %}
+          {% for host in hosts_by_domain_tag[domain_tag] %}
+          {% set data = hostvars[host]['myvars'] %}
+          host-address={{ data.boot_ip }},{{ data.fqdn }}
+          {% endfor %}
+          {% for vlan in maas_networking[0]['vlans'] %}
+          {% for subnet in vlan['subnets'] %}
+          {% if domain == subnet.domain %}
+          dhcp-range={{ subnet.gateway | ipmath(5) }},static,{{ subnet.cidr | ipaddr("netmask") }},{{ subnet.cidr | ipaddr("broadcast") }}
+          dhcp-option=tag:{{ domain_tag }},option:router,{{ subnet.gateway }}
+          {% endif %}
+          {% endfor %}
+          {% endfor %}
+      loop: "{{ hosts_by_domain_tag.keys() }}"
+      loop_control:
+        loop_var: domain_tag
+      delegate_to: localhost
+      run_once: true
+
+    - name: "build list of local= lines"
+      copy:
+        dest: "../dnsmasq.conf/local.conf"
+        content: |
+          local=/{{ ipmi_domain }}/
+          {% for domain_tag in hosts_by_domain_tag.keys() %}
+          {% set hv = hostvars[hosts_by_domain_tag[domain_tag][0]] %}
+          ### from {{ hv['myvars'].fqdn }}
+          local=/{{ hv['myvars'].domain }}/
+          {% endfor %}
+      delegate_to: localhost
+      run_once: true
