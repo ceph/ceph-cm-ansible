@@ -7,20 +7,23 @@
 ### SSH access to the host or not
 
 - hosts:
-    - ipmi
+    - all
   become: true
   gather_facts: false
   vars:
     # Set to true if setting up a bunch of BMCs for the first time
-    setup_user: false
+    setup_user: true
     initial_user: ADMIN
-    initial_pass: ADMIN
+    initial_pass: "{{ hostvars[inventory_hostname].bmc_password }}"
     # On Supermicro BMCs, Anonymous is UID 1 and reserved.  UID 2 is the default ADMIN:ADMIN
-    power_uid: 2
+    # On newer Supermicros, UID2 is ADMIN:<custom-pass-per-host>.  BEWARE: if you reset
+    # this user/pass you *cannot set it again*.
+    # Use 3 for much compatible.
+    power_uid: 3
     # Change this if the ipmi interface isn't found at channel 1
     # (i.e., if `ipmitool lan print 1` returns 'Invalid channel: 1')
     ipmi_channel_id: 1
-    use_dhcp: false
+    use_dhcp: true
     # "off" will disable setting a VLAN ID.  Octo needs VLAN 101 set.
     vlan_id: "off"
     # Define these for static settings.  These defaults are for Sepia.
@@ -28,12 +31,55 @@
     static_gateway: 172.21.47.254
     # Change to true if you want to force an 'mc reset cold' no matter what
     force_mc_reset: false
+    # true means "only try remote ipmitool access, no ssh"
+    only_lan_access: false
+
   tasks:
 
   # Pull in IPMI creds from secrets repo.
   # Override power_user and power_pass with --extra-vars if needed
-  - include_vars: ../roles/secrets/defaults/main.yml
-  - include_vars: "{{ secrets_path }}/ipmi.yml"
+  - block:
+      - include_vars: ../roles/secrets/defaults/main.yml
+      - include_vars: "{{ secrets_path }}/ipmi.yml"
+
+      - name: Make sure we have power_user and power_pass
+        fail:
+        when: power_user is not defined or power_pass is not defined
+    tags: always
+
+  - name: test factory ipmi creds
+    shell: "ipmitool -I lanplus -U {{ initial_user }} -P {{ initial_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} power status"
+    delegate_to: localhost
+    register: power_status_factory
+    when:
+      - setup_user
+    tags: test_user
+    ignore_errors: true
+
+  - name: test power_user/power_pass creds
+    shell: "ipmitool -I lanplus -U {{ power_user }} -P {{ power_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} power status"
+    delegate_to: localhost
+    register: power_status_power
+    when:
+      - setup_user
+    tags: test_user
+    ignore_errors: true
+
+  - debug:
+      msg: "factory {{ power_status_factory.rc == 0 }} power_user {{ power_status_power.rc == 0 }}"
+    when: (power_status_factory.rc != 0) or (power_status_power.rc != 0)
+    tags: test_user
+
+    # if running with --tags test_user, exit, otherwise proceed
+  - meta: end_host
+    tags:
+      - never
+      - test_user
+
+  - name: if both fail, halt now
+    fail:
+    when:
+      - (power_status_factory.rc != 0) and (power_status_power.rc != 0)
 
   - name: Check if we have SSH access
     shell: "timeout 3s ssh {{ inventory_hostname }} true"
@@ -41,6 +87,12 @@
     delegate_to: localhost
     failed_when: false
     changed_when: false
+    when: not only_lan_access
+
+  - name: Fake SSH failure if not desired
+    set_fact:
+      have_ssh_access: {"rc": 1}
+    when: only_lan_access
 
   # These first 4 tasks assume you don't have SSH access to the host yet.  We'll try again via SSH later if these fail.
   - name: Initial setup of username from localhost
@@ -53,7 +105,7 @@
     ignore_errors: true
 
   - name: Initial setup of permissions from localhost
-    shell: "ipmitool -I lanplus -U {{ power_user }} -P {{ initial_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} channel setaccess {{ ipmi_channel_id }} {{ power_uid }} privilege=4"
+    shell: "ipmitool -I lanplus -U {{ initial_user }} -P {{ initial_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} channel setaccess {{ ipmi_channel_id }} {{ power_uid }} privilege=4 callin=on ipmi=on"
     register: set_permissions_locally
     delegate_to: localhost
     when:
@@ -62,13 +114,24 @@
     ignore_errors: true
 
   - name: Initial setup of password from localhost
-    shell: "ipmitool -I lanplus -U {{ power_user }} -P {{ initial_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} user set password {{ power_uid }} {{ power_pass }}"
+    shell: "ipmitool -I lanplus -U {{ initial_user }} -P {{ initial_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} user set password {{ power_uid }} {{ power_pass }}"
     register: set_password_locally
     delegate_to: localhost
     when:
       - setup_user
       - have_ssh_access.rc != 0
     ignore_errors: true
+
+  - name: Enable user
+    shell: "ipmitool -I lanplus -U {{ initial_user }} -P {{ initial_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} user enable {{ power_uid }}"
+    delegate_to: localhost
+    when:
+      - setup_user
+      - have_ssh_access.rc != 0
+    ignore_errors: true
+
+  - meta: end_host
+    when: only_lan_access
 
   - name: Check if DHCP already enabled
     shell: "ipmitool -I lanplus -U {{ power_user }} -P {{ power_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} lan print 1 | grep -q DHCP"
