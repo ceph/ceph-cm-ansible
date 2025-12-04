@@ -8,41 +8,10 @@
   become: true
   tasks:
 
-# CentOS 9 on the braggi nodes likes to flip around which disk is sda and which is sdb.  Sometimes it comes up as sdb and sometimes sda.
-  - name: Get braggi /dev/sda disk info
-    parted:
-      device: "/dev/sda"
-      unit: GiB
-    register: "sda_parted"
-    when: '"braggi" in ansible_hostname'
-
-  - name: Get braggi /dev/sdb disk info
-    parted:
-      device: "/dev/sdb"
-      unit: GiB
-    register: "sdb_parted"
-    when: '"braggi" in ansible_hostname'
-
-  - set_fact:
-      mount_point: /home/jenkins-build
-    when: '"braggi" in ansible_hostname'
-
-  - set_fact:
-      disk: /dev/sda
-    when:
-      - '"braggi" in ansible_hostname'
-      - "sda_parted.disk.size > 500"
-
-  - set_fact:
-      disk: /dev/sdb
-    when:
-      - '"braggi" in ansible_hostname'
-      - "sdb_parted.disk.size > 500"
-
   - set_fact:
       disk: /dev/sdb
       mount_point: /home/jenkins-build
-    when: '"adami" in ansible_hostname'
+    when: '"braggi" in ansible_hostname or "adami" in ansible_hostname'
 
   - set_fact:
       disk: /dev/nvme0n1
