@@ -1,5 +1,5 @@
 ---
-# Generate dnsmasq dhcp-host and host-address lines from inventory.
+# Generate dnsmasq dhcp-host and host-record lines from inventory.
 # (note the top-level play definitions with subtasks.)
 #
 # Run with --limit set appropriately, for example,
@@ -36,7 +36,12 @@
           boot_mac: "{{ hostvars[inventory_hostname][maas_boot_mac_var] }}"
           domain: "{{ inventory_hostname | regex_replace('^[^.]+\\.', '') }}"
           shortname: "{{ inventory_hostname | regex_replace('\\..*', '') }}"
-          domain_tag: "{{ inventory_hostname.split('.')[1:-4] | join('-') }}"
+          # for tucson, ignore the last 4; for pok, the last 3
+          # maybe an algorithm: have a "top-level lab domain" var,
+          # ceph.tuc.ibm.com or sepia.ceph.com, and remove it, then sub
+          # . to -
+          # domain_tag: "{{ inventory_hostname.split('.')[1:-4] | join('-') }}"
+          domain_tag: "{{ inventory_hostname.split('.')[1:-3] | join('-') }}"
       tags: always
 
 
@@ -65,13 +70,13 @@
           {% endfor %}
           {% for host in ansible_play_hosts %}
           {% set data = hostvars[host]['myvars'] %}
-          host-address={{ data.bmc_ip }},{{ data.shortname }}.{{ ipmi_domain }}
+          host-record={{ data.shortname }}.{{ ipmi_domain }},{{ data.bmc_ip }}
           {% endfor %}
           {% for vlan in maas_networking[0]['vlans'] %}
           {% set data = hostvars[ansible_play_hosts[0]].myvars %}
           {% for subnet in vlan['subnets'] %}
           {% if data.bmc_ip | ansible.utils.ipaddr(subnet.cidr) %}
-          dhcp-range={{ subnet.gateway | ipmath(5) }},static,{{ subnet.cidr | ipaddr("netmask") }},{{ subnet.cidr | ipaddr("broadcast") }}
+          dhcp-range={{ subnet.gateway | ansible.utils.ipmath(5) }},static,{{ subnet.cidr | ansible.utils.ipaddr("netmask") }},{{ subnet.cidr | ansible.utils.ipaddr("broadcast") }}
           dhcp-option=tag:ipmi,option:router,{{ subnet.gateway }}
           {% endif %}
           {% endfor %}
@@ -99,17 +104,16 @@
       delegate_to: localhost
       run_once: true
 
-
     # maas_networking variable:
     # maas_networking['tucson-qe']['vlans'][]['subnets'][]['cidr']
 
     # loop across hosts_by_domain_tag, create a file named with 'domain_tag',
-    # add dhcp-host and host-address stanzas
+    # add dhcp-host and host-record stanzas
     - name: "build domain_tag dnsmasq conf part files"
       copy:
         dest: "../dnsmasq.conf/{{ domain_tag | replace('-', '.') }}.conf"
         content: |
-          {% set domain = domain_tag | replace('-', '.') + '.ceph.tuc.ibm.com' %}
+          {% set domain = domain_tag | replace('-', '.') + '.' + ipmi_domain %}
           ###
           ### {{ domain }}
           ###
@@ -119,12 +123,12 @@
           {% endfor %}
           {% for host in hosts_by_domain_tag[domain_tag] %}
           {% set data = hostvars[host]['myvars'] %}
-          host-address={{ data.boot_ip }},{{ data.fqdn }}
+          host-record={{ data.fqdn }},{{ data.boot_ip }}
           {% endfor %}
           {% for vlan in maas_networking[0]['vlans'] %}
           {% for subnet in vlan['subnets'] %}
           {% if domain == subnet.domain %}
-          dhcp-range={{ subnet.gateway | ipmath(5) }},static,{{ subnet.cidr | ipaddr("netmask") }},{{ subnet.cidr | ipaddr("broadcast") }}
+          dhcp-range={{ subnet.gateway | ansible.utils.ipmath(5) }},static,{{ subnet.cidr | ansible.utils.ipaddr("netmask") }},{{ subnet.cidr | ansible.utils.ipaddr("broadcast") }}
           dhcp-option=tag:{{ domain_tag }},option:router,{{ subnet.gateway }}
           {% endif %}
           {% endfor %}
