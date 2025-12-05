@@ -6,14 +6,15 @@
   tags:
    - user
 
-- name: Create the ansible user.
+- name: Create the ansible user
   user:
     name: "{{ cm_user }}"
     groups: sudo
+    append: yes
     shell: /bin/bash
-    uid: "{{ cm_user_uid }}"
+    state: present
     update_password: on_create
-  when: cm_user is defined and cm_user_uid is defined
+  when: cm_user is defined
   register: user_created
   tags:
    - user
