@@ -1,7 +1,13 @@
 {% set domain = item.key %}
-{% if item.value.ipvar is defined and item.value.ipvar.0 is defined %}
-{% set ipvar = item.value.ipvar %}
+
+{# Normalize ipvars: prefer item.value.ipvars (list), fallback to single ipvar #}
+{% set ipvars = [] %}
+{% if item.value.ipvars is defined %}
+  {% set ipvars = item.value.ipvars %}
+{% elif item.value.ipvar is defined %}
+  {% set ipvars = [ item.value.ipvar ] %}
 {% endif %}
+
 ;
 ; {{ ansible_managed }}
 ;
@@ -26,11 +32,13 @@ $ORIGIN {{ domain }}.
 {% endfor %}
 {% endif %}
 
-{% if item.value.ipvar is defined and item.value.ipvar.0 is defined %}
-{% for host in groups['all'] %}
-{% if hostvars[host][ipvar] is defined %}
-{% set ipaddr = hostvars[host][ipvar] %}
-{{ hostvars[host]['inventory_hostname_short'] }}			IN	A	{{ hostvars[host][ipvar] }}
-{% endif %}
-{% endfor %}
+{# Emit A records for each host and each ipvar #}
+{% if ipvars | length > 0 %}
+{%   for host in groups['all'] %}
+{%     for ipvar in ipvars %}
+{%       if hostvars[host][ipvar] is defined %}
+{{ hostvars[host]['inventory_hostname_short'] }}        IN      A       {{ hostvars[host][ipvar] }}
+{%       endif %}
+{%     endfor %}
+{%   endfor %}
 {% endif %}
