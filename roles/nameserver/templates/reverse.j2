@@ -1,6 +1,14 @@
 {% set zone = item.1 %}
 {% set domain = item.0.forward %}
-{% set ipvar = item.0.ipvar %}
+
+{# Normalize ipvars from item.0: prefer ipvars list, fall back to ipvar #}
+{% set ipvars = [] %}
+{% if item.0.ipvars is defined and item.0.ipvars %}
+  {% set ipvars = item.0.ipvars %}
+{% elif item.0.ipvar is defined and item.0.ipvar %}
+  {% set ipvars = [ item.0.ipvar ] %}
+{% endif %}
+
 ;
 ; {{ ansible_managed }}
 ;
@@ -19,12 +27,17 @@ $TTL {{ named_conf_soa_ttl }}
 
 ; Reverse zone {{ zone }} belongs to forward zone {{ domain }}
 
-{% for host in groups['all'] %}
-{% if hostvars[host][ipvar] is defined %}
-{% set octet1,octet2,octet3,octet4 = hostvars[host][ipvar].split('.') %}
-{% set cutip = octet1 + '.' + octet2 + '.' + octet3 %}
-{% if cutip == zone %}
-{{ octet4 }}		IN	PTR	{{ hostvars[host]['inventory_hostname_short'] }}.{{ domain }}.
+{% if ipvars | length > 0 %}
+{%   for host in groups['all'] %}
+{%     for ipvar in ipvars %}
+{%       if hostvars[host][ipvar] is defined %}
+{%         set octet1,octet2,octet3,octet4 = hostvars[host][ipvar].split('.') %}
+{%         set cutip = octet1 + '.' + octet2 + '.' + octet3 %}
+{%         if cutip == zone %}
+{%           set short = hostvars[host].inventory_hostname_short | default(host) %}
+{{ octet4 }}    IN      PTR     {{ short }}.{{ domain }}.
+{%         endif %}
+{%       endif %}
+{%     endfor %}
+{%   endfor %}
 {% endif %}
-{% endif %}
-{% endfor %}

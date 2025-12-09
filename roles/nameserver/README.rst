@@ -103,8 +103,8 @@ The ``named_domains`` dictionary is the bread and butter of creating zone files.
 ``forward``
   The domain of the forward lookup zone for each domain (key)
 
-``ipvar``
-  The variable assigned to a system in the Ansible inventory.  This allows systems to have multiple IPs assigned for a front and ipmi network, for example.  See **Inventory Example** below.
+``ipvar`` OR ``ipvars[]``
+  The variable(s) assigned to a system in the Ansible inventory.  This allows systems to have multiple IPs assigned for a front and ipmi network, for example.  See **Inventory Example** below.
 
 ``dynamic``
   Specifies whether the parent zone/domain should allow Dynamic DNS records.  See **Dynamic DNS** below for more information.
@@ -130,7 +130,9 @@ The ``named_domains`` dictionary is the bread and butter of creating zone files.
           - www                 IN      TXT     "my www host"
           - ns1.private         IN      A       192.168.0.1
       private.example.com:
-        ipvar: ip
+        ipvars:
+          - ip
+          - if_25Gb_ip
         dynamic: true
         ddns_hostname_prefixes:
           - dyn
