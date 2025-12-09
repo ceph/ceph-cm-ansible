@@ -5,6 +5,8 @@
     - incerta
     - irvingi
     - adami
+    - toko
+    - bath
   become: true
   tasks:
 
@@ -16,10 +18,10 @@
   - set_fact:
       disk: /dev/nvme0n1
       mount_point: /home/jenkins-build
-    when: '"incerta" in ansible_hostname'
+    when: ansible_hostname is search("incerta|toko")
 
 # Setting the mountpoint to libvirt/images on irvinigi because I'm adding two
-# right now as CentOS7 Vagrant builders.
+# right now as CentOS7 Vagrant builders.    
   - set_fact:
       disk: /dev/sdc
       mount_point: /var/lib/libvirt/images
@@ -58,3 +60,4 @@
       src: "{{ disk }}"
       state: mounted
       fstype: xfs
+
