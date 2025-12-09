@@ -1,0 +1,19 @@
+---
+- name: Install ovirt-guest-agent
+  apt:
+    name: ovirt-guest-agent
+    state: latest
+
+# https://bugs.launchpad.net/ubuntu/+source/ovirt-guest-agent/+bug/1609130
+- name: Create logfile and set permissions
+  file:
+    path: /var/log/ovirt-guest-agent/ovirt-guest-agent.log
+    owner: ovirtagent
+    group: ovirtagent
+    state: touch
+
+- name: Enable and start ovirt-guest-agent service
+  service:
+    name: ovirt-guest-agent
+    enabled: yes
+    state: started
