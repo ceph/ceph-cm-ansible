@@ -1,7 +1,7 @@
 ---
 - name: Set root disk
   set_fact:
-    root_disk: "{{ item.device|regex_replace('[0-9]+', '')|regex_replace('/dev/', '') }}"
+    root_disk: "{{ item.device | regex_replace('p?[0-9]+$', '') | regex_replace('^/dev/', '') }}"
   with_items: "{{ ansible_mounts }}"
   when:
     - item.mount == '/'
