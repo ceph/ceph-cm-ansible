@@ -16,15 +16,51 @@
   when: (ansible_distribution == "RedHat" and rhsm_registered is defined and rhsm_registered == true) or
         (ansible_os_family == "RedHat" and ansible_distribution != "RedHat")
 
-- name: Set root disk
+# Prefer /boot or /boot/efi if present, otherwise fall back to /
+- name: Determine device backing the OS
   set_fact:
-    root_disk: "{{ item.device|regex_replace('[0-9]+', '') }}"
-  with_items: "{{ ansible_mounts }}"
-  when: item.mount == '/'
+    _os_device: >-
+      {{
+        (
+          ansible_mounts
+          | selectattr('mount', 'in', ['/boot', '/boot/efi'])
+          | map(attribute='device')
+          | list
+          | first
+        )
+        | default(
+          (
+            ansible_mounts
+            | selectattr('mount', 'equalto', '/')
+            | map(attribute='device')
+            | list
+            | first
+          ),
+          true
+        )
+      }}
+
+- name: Normalize OS disk (strip /dev/ and partition suffix)
+  set_fact:
+    # e.g.
+    #  /dev/nvme0n1p1 -> nvme0n1
+    #  /dev/sda1      -> sda
+    #  /dev/nvme0n1   -> nvme0n1
+    root_disk: >-
+      {{
+        _os_device
+        | regex_replace('^/dev/', '')
+        | regex_replace('p?[0-9]+$', '')
+      }}
 
 - name: Compile list of non-root partitions
-  shell: "lsblk --list --noheadings | grep part | grep -v {{ root_disk|regex_replace('/dev/', '') }} | awk '{ print $1 }'"
+  shell: |
+    lsblk --list --noheadings --output NAME,TYPE \
+      | awk '$2 == "part" {print $1}' \
+      | grep -v "^{{ root_disk }}" || true
   register: non_root_partitions
+  changed_when: false
+  failed_when: false
 
 - name: Unmount any non-root mountpoints
   mount:
@@ -32,53 +68,153 @@
     state: unmounted
   with_items: "{{ ansible_mounts }}"
   when:
-    - item.mount != '/' and
-      not item.mount is match("/(boot|home|opt|root|srv|tmp|usr/local|var|.snapshots|snap)")
+    - item.mount != '/'
+    - not item.mount is match("/(boot|home|opt|root|srv|tmp|usr/local|var|.snapshots|snap)")
 
 ## http://tracker.ceph.com/issues/20533
 ## Trusty version of wipefs lacks --force option
 - name: Wipe filesystems on non-root partitions
   shell: "wipefs --force --all /dev/{{ item }} || wipefs --all /dev/{{ item }}"
   with_items: "{{ non_root_partitions.stdout_lines }}"
-  when: non_root_partitions|length > 0
+  when: non_root_partitions.stdout_lines | length > 0
+
+- name: Build unified list of disks that must never be zapped
+  set_fact:
+    zap_skip_disks: >-
+      {{
+        [ root_disk ] +
+        (ansible_devices.keys()
+         | select('match', '^loop')
+         | list) +
+        (ansible_devices.keys()
+         | select('match', '^ram')
+         | list) +
+        (ansible_devices.keys()
+         | select('match', '^sr')
+         | list) + 
+        (ansible_devices.keys()
+         | select('match', '^dm-')
+         | list)
+      }}
+
+- name: Default zap_disks to all zappable disks when not provided
+  set_fact:
+    zap_disks: >-
+      {{
+        ansible_devices.keys()
+        | difference(zap_skip_disks | default([]))
+        | list
+      }}
+  when:
+    - zap_disks is not defined or zap_disks | length == 0
 
 ## See https://github.com/ceph/ceph-ansible/issues/759#issue-153248281
-- name: Zap all non-root disks
+- name: Zap all allowed disks
   shell: "sgdisk --zap-all /dev/{{ item.key }} || sgdisk --zap-all /dev/{{ item.key }}"
   with_dict: "{{ ansible_devices }}"
-  when:
-    - item.key not in root_disk
-    - '"loop" not in item.key'
-    - '"ram" not in item.key'
-    - '"sr" not in item.key'
+  when: item.key not in zap_skip_disks
 
 ## See https://tracker.ceph.com/issues/22354 and
 ## https://github.com/ceph/ceph/pull/20400
-- name: Blow away lingering OSD data and FSIDs
+- name: Blow away lingering OSD data aVnd FSIDs
   shell: "dd if=/dev/zero of=/dev/{{ item.key }} bs=1M count=110"
   with_dict: "{{ ansible_devices }}"
-  when:
-    - item.key not in root_disk
-    - '"loop" not in item.key'
-    - '"ram" not in item.key'
-    - '"sr" not in item.key'
+  when: item.key not in zap_skip_disks
 
-- name: Remove all LVM data
-  shell: "dmsetup remove_all --force"
-  register: removed_lvm_data
-  until: "'Unable to remove' not in removed_lvm_data.stderr"
-  retries: 5
-  delay: 1
-  ignore_errors: true
-
-## See http://tracker.ceph.com/issues/21989
-- name: Check for physical volumes
-  shell: "pvdisplay | grep 'PV Name' | awk '{ print $3 }'"
+- name: List PVs on zap_disks only
+  shell: |
+    pvs --no-headings -o pv_name \
+      | awk '{print $1}' \
+      | grep -E "^/dev/({{ zap_disks | default([]) | join('|') }})" || true
   register: pvs_to_remove
-
-- name: Remove physical volumes
-  shell: "pvremove --force --force --yes {{ item }}"
-  with_items: "{{ pvs_to_remove.stdout_lines }}"
+  changed_when: false
+  failed_when: false
   when:
-    - pvs_to_remove is defined
-    - pvs_to_remove.stdout_lines|length > 0
+    - zap_disks is defined
+    - zap_disks | length > 0
+
+- name: Remove PVs on zap_disks
+  shell: "pvremove --force --force --yes {{ item }}"
+  loop: "{{ pvs_to_remove.stdout_lines | default([]) }}"
+  when:
+    - zap_disks is defined
+    - zap_disks | length > 0
+    - pvs_to_remove.stdout_lines | default([]) | length > 0
+
+# Optional: show what we're about to operate on
+- name: Debug zap_disks
+  debug:
+    var: zap_disks
+  when:
+    - zap_disks is defined
+    - zap_disks | length > 0
+
+# Find VGs whose PVs are on zap_disks
+- name: Find VGs on zap_disks
+  shell: |
+    DISKS="{{ zap_disks | join('|') }}"
+    pvs --no-headings --separator ',' -o pv_name,vg_name \
+      | awk -F',' '{gsub(/^ *| *$/,"",$1); gsub(/^ *| *$/,"",$2); print $1" "$2}' \
+      | egrep "/dev/(${DISKS})([0-9]+)?$" | awk '{print $2}' | sort -u || true
+  register: zap_vgs
+  changed_when: false
+  failed_when: false
+  when:
+    - zap_disks is defined
+    - zap_disks | length > 0
+
+- name: Debug VGs on zap_disks
+  debug:
+    var: zap_vgs.stdout_lines
+  when:
+    - zap_vgs is defined
+
+# Deactivate those VGs (if LVM still knows about them)
+- name: Deactivate VGs on zap_disks
+  shell: "vgchange -an {{ item }}"
+  loop: "{{ zap_vgs.stdout_lines | default([]) }}"
+  when:
+    - zap_vgs is defined
+    - zap_vgs.stdout_lines | length > 0
+  changed_when: true
+  failed_when: false
+
+# Remove those VGs (this also removes their LVs)
+- name: Remove VGs (and LVs) on zap_disks
+  shell: "vgremove -ff {{ item }}"
+  loop: "{{ zap_vgs.stdout_lines | default([]) }}"
+  when:
+    - zap_vgs is defined
+    - zap_vgs.stdout_lines | length > 0
+  changed_when: true
+  failed_when: false
+
+# Find dm (lvm) devices whose parent is one of zap_disks
+- name: Find dm devices on zap_disks
+  shell: |
+    for d in {{ zap_disks | join(' ') }}; do
+      lsblk -rno NAME,TYPE,PKNAME \
+        | awk -v dev="$d" '$2 == "lvm" && $3 == dev {print $1}'
+    done | sort -u
+  register: dm_on_zap_disks
+  changed_when: false
+  failed_when: false
+  when:
+    - zap_disks is defined
+    - zap_disks | length > 0
+
+- name: Debug dm devices on zap_disks
+  debug:
+    var: dm_on_zap_disks.stdout_lines
+  when:
+    - dm_on_zap_disks is defined
+
+# Remove those dm devices
+- name: Remove dm devices on zap_disks
+  shell: "dmsetup remove {{ item }}"
+  loop: "{{ dm_on_zap_disks.stdout_lines | default([]) }}"
+  when:
+    - dm_on_zap_disks is defined
+    - dm_on_zap_disks.stdout_lines | length > 0
+  changed_when: true
+  failed_when: false

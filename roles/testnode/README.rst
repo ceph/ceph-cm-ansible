@@ -246,6 +246,36 @@ An optional dictionary of filesystems you want created and where to mount them. 
         fstype: xfs
         mountpoint: "/var/cache/fscache"
 
+A dictionary of drives to use as OSDs that you want provisioned with LVM.  The name of the group under ``osd_selector_lvm`` can be whatever you want.  Use this **or** ``volume_groups{}`` but not both!::
+
+    osd_selector_lvm:
+      nvme:
+        size_gb: 1700
+        rotational: false
+        count: 2
+        vg_name: vg_nvme
+        lvs:
+          - name: lv_1
+            size: "400G"
+            scratch_dev: true
+          - name: lv_2
+            size: "400G"
+            scratch_dev: true
+          - name: lv_3
+            size: "400G"
+            scratch_dev: true
+          - name: lv_4
+            size: "400G"
+            scratch_dev: true
+          - name: lv_5
+            size: "100G"
+            scratch_dev: false
+      hdd:
+        min_size_gb: 8000
+        max_size_gb: 14000
+        rotational: true
+        count: 8
+
 A dictionary of volume groups you want created.  ``pvs`` should be a comma-delimited list.  Example::
 
     volume_groups:
@@ -278,6 +308,7 @@ Setting ``quick_lvs_to_create`` will:
 
         # Example would create 4 logical volumes each using 25% of a volume group created using all non-root physical volumes
         quick_lvs_to_create: 4
+
 
 Define ``check_for_nvme: true`` in Ansible inventory group_vars (by machine type) if the testnode should have an NVMe device.  This will include a few tasks to verify an NVMe device is present.  If the drive is missing, the tasks will mark the testnode down in the paddles_ lock database so the node doesn't repeatedly fail jobs.  Defaults to false::
 
