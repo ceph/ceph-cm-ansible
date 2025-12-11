@@ -1,58 +1,202 @@
 ---
-- name: Set root disk
+###############################################################################
+# PRE-TASKS: Apply to both osd_selector and quick_lvs_to_create methods
+###############################################################################
+
+- name: Set root disk (exclude OS disk)
   set_fact:
-    root_disk: "{{ item.device | regex_replace('p?[0-9]+$', '') | regex_replace('^/dev/', '') }}"
-  with_items: "{{ ansible_mounts }}"
+    root_disk: >-
+      {{
+        item.device
+        | regex_replace('p?[0-9]+$', '')
+        | regex_replace('^/dev/', '')
+      }}
+  loop: "{{ ansible_mounts }}"
+  when: item.mount == '/'
+
+- name: Build candidate data disks (non-root, non-loop/ram/dm)
+  set_fact:
+    candidate_disks: >-
+      {{
+        ansible_devices
+        | dict2items
+        | rejectattr('key', 'equalto', root_disk | default(''))
+        | rejectattr('key', 'match', '^loop')
+        | rejectattr('key', 'match', '^ram')
+        | rejectattr('key', 'match', '^dm-')
+        | list
+      }}
+
+###############################################################################
+# PATH 1: size-based selector (osd_selector_lvm{})
+###############################################################################
+
+- block:
+    - name: Init list of disks_with_size
+      set_fact:
+        disks_with_size: []
+
+    # Compute size_gb (handles GB and TB) + rotational flag
+    - name: Populate disks_with_size
+      set_fact:
+        disks_with_size: >-
+          {{
+            disks_with_size + [ {
+              'name': item.key,
+              'size_gb': (
+                (
+                  (item.value.size | regex_replace(' .*$', '') | float) * 1024
+                )
+                if ('TB' in (item.value.size | default('')))
+                else
+                  (item.value.size | regex_replace(' .*$', '') | float)
+              ),
+              'rotational': item.value.rotational | default('0')
+            } ]
+          }}
+      loop: "{{ candidate_disks | default([]) }}"
+
+    - name: Compute matching OSD disks by size + rotational
+      vars:
+        sel: "{{ osd_selector_lvm.nvme }}"
+        min_size: "{{ (sel.size_gb | float) - (sel.tolerance_gb | default(100) | float) }}"
+        max_size: "{{ (sel.size_gb | float) + (sel.tolerance_gb | default(100) | float) }}"
+        rotational_flag: "{{ sel.rotational | default(false) }}"
+      set_fact:
+        matching_osd_disks: >-
+          {{
+            disks_with_size
+            | selectattr('size_gb', '>=', min_size | float)
+            | selectattr('size_gb', '<=', max_size | float)
+            | selectattr(
+                'rotational',
+                'equalto',
+                (rotational_flag | ternary('1', '0'))
+              )
+            | map(attribute='name')
+            | list
+            | sort
+          }}
+
+    - name: Take first N OSD disks
+      set_fact:
+        osd_devices: >-
+          {{
+            matching_osd_disks[0:(osd_selector_lvm.nvme.count | default(1) | int)]
+          }}
+
+    - name: Ensure we found enough OSD disks
+      fail:
+        msg: >-
+          Wanted {{ osd_selector_lvm.nvme.count }} disks of ~{{ osd_selector_lvm.nvme.size_gb }} GB
+          (rotational={{ osd_selector_lvm.nvme.rotational }}), but only matched
+          {{ osd_devices | length }}: {{ osd_devices | default([]) }}
+      when: osd_devices | length < (osd_selector_lvm.nvme.count | default(1) | int)
+
+    - name: Build volume_groups from selected OSD disks
+      set_fact:
+        volume_groups: >-
+          {{
+            (volume_groups | default({}))
+            | combine({
+                osd_selector_lvm.nvme.vg_name: {
+                  'pvs': osd_devices
+                         | map('regex_replace', '^', '/dev/')
+                         | join(',')
+                }
+              })
+          }}
+
+    - name: Build logical_volumes from osd_selector_lvm LV layout
+      set_fact:
+        logical_volumes: >-
+          {{
+            (logical_volumes | default({}))
+            | combine({
+                item.name: {
+                  'vg': osd_selector_lvm.nvme.vg_name,
+                  'size': item.size,
+                  'scratch_dev': item.scratch_dev | default(false)
+                }
+              })
+          }}
+      loop: "{{ osd_selector_lvm.nvme.lvs | default([]) }}"
+
   when:
-    - item.mount == '/'
+    - osd_selector_lvm is defined
+    - osd_selector_lvm.nvme is defined
+
+###############################################################################
+# PATH 2: legacy quick_lvs_to_create (equal % across all non-root disks)
+###############################################################################
+
+- block:
+    - name: Set root disk
+      set_fact:
+        root_disk: "{{ item.device | regex_replace('p?[0-9]+$', '') | regex_replace('^/dev/', '') }}"
+      with_items: "{{ ansible_mounts }}"
+      when: item.mount == '/'
+
+    - name: Combine list of non-root disks
+      set_fact:
+        disks_for_vg: >-
+          {{
+            ansible_devices.keys()
+            | sort
+            | reject('match', root_disk)
+            | reject('match', 'loop')
+            | reject('match', 'ram')
+            | reject('match', 'dm-')
+            | map('regex_replace','^','/dev/')
+            | join(',')
+          }}
+
+    - set_fact: vg_name=vg_hdd
+      when:
+        - disks_for_vg is defined
+        - "'nvme' not in disks_for_vg"
+
+    - set_fact: vg_name=vg_nvme
+      when:
+        - disks_for_vg is defined
+        - "'nvme' in disks_for_vg"
+
+    - name: Create volume_groups dict
+      set_fact:
+        volume_groups:
+          "{'{{ vg_name }}': {'pvs': '{{ disks_for_vg }}' }}"
+      when: vg_name is defined
+
+    # This isn't perfect but with the |int at the end, this'll just round down
+    # if quick_lvs_to_create won't divide evenly to make sure the VG doesn't run out of space
+    - name: Determine desired logical volume percentage size
+      set_fact:
+        quick_lv_size: "{{ (100 / quick_lvs_to_create|int)|int }}"
+
+    - name: Create logical_volumes dict
+      set_fact:
+        logical_volumes:
+          "{
+             {%- for lv in range(quick_lvs_to_create|int) -%}
+             'lv_{{ lv + 1 }}':
+               {
+                 'vg': '{{ vg_name }}',
+                 'size': '{{ quick_lv_size }}%VG',
+                 'scratch_dev': true
+               }
+               {%- if not loop.last -%}
+                 ,
+               {%- endif -%}
+             {%- endfor -%}
+           }"
+
+  when:
     - quick_lvs_to_create is defined
+    - osd_selector_lvm is not defined
 
-- name: Combine list of non-root disks
-  set_fact:
-      disks_for_vg: "{{ ansible_devices.keys() | sort | reject('match',root_disk) | reject('match','loop') | reject('match','ram') | reject('match','dm-') | map('regex_replace','^','/dev/') | join(',') }}"
-  when: quick_lvs_to_create is defined
-
-- set_fact: vg_name=vg_hdd
-  when:
-    - disks_for_vg is defined
-    - "'nvme' not in disks_for_vg"
-
-- set_fact: vg_name=vg_nvme
-  when:
-    - disks_for_vg is defined
-    - "'nvme' in disks_for_vg"
-
-- name: Create volume_groups dict
-  set_fact:
-    volume_groups:
-      "{'{{ vg_name }}': {'pvs': '{{ disks_for_vg }}' }}"
-  when: vg_name is defined
-
-# This isn't perfect but with the |int at the end, this'll just round down
-# if quick_lvs_to_create won't divide evenly to make sure the VG doesn't run out of space
-- name: Determine desired logical volume percentage size
-  set_fact:
-    quick_lv_size: "{{ (100 / quick_lvs_to_create|int)|int }}"
-  when: quick_lvs_to_create is defined
-
-- name: Create logical_volumes dict
-  set_fact:
-    logical_volumes:
-      "{
-         {%- for lv in range(quick_lvs_to_create|int) -%}
-         'lv_{{ lv + 1 }}':
-           {
-             'vg': '{{ vg_name }}',
-             'size': '{{ quick_lv_size }}%VG',
-             'scratch_dev': true
-           }
-           {%- if not loop.last -%}
-             ,
-           {%- endif -%}
-         {%- endfor -%}
-       }"
-  when: quick_lvs_to_create is defined
-
+###############################################################################
+# COMMON: create VGs/LVs and /scratch_devs
+###############################################################################
 - name: "Create volume group(s)"
   lvg:
     vg: "{{ item.key }}"
@@ -80,9 +224,9 @@
     create: yes
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
     line: "/dev/{{ item.value.vg }}/{{ item.key }}"
   with_dict: "{{ logical_volumes }}"
   when:
     - logical_volumes is defined
-    - item.value.scratch_dev is defined
+    - item.value.scratch_dev | default(false)
