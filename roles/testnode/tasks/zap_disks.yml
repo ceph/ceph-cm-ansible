@@ -155,7 +155,7 @@
     DISKS="{{ zap_disks | join('|') }}"
     pvs --no-headings --separator ',' -o pv_name,vg_name \
       | awk -F',' '{gsub(/^ *| *$/,"",$1); gsub(/^ *| *$/,"",$2); print $1" "$2}' \
-      | egrep "/dev/(${DISKS})([0-9]+)?$" | awk '{print $2}' | sort -u || true
+      | egrep "/dev/(${DISKS})(p?[0-9]+)?$" | awk '{print $2}' | sort -u || true
   register: zap_vgs
   changed_when: false
   failed_when: false
