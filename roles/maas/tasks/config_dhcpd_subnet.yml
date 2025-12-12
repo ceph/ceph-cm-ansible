@@ -1,0 +1,169 @@
+---
+- name: Configure MAAS DHCP
+  when: inventory_hostname in groups['maas_region_rack_server']
+  tags: config_dhcp
+  block:
+  # This section enables DHCP on the subnets included into the secrets repo group_vars and creates an IP range for them
+   - name: Read maas ipranges
+     command: "maas {{ maas_admin_username }} ipranges read"
+     register: ip_ranges_raw
+
+   - name: Parse IP range JSON
+     set_fact:
+       existing_start_ips: "{{ ip_ranges_raw.stdout | from_json | map(attribute='start_ip') | list }}"
+       existing_end_ips: "{{ ip_ranges_raw.stdout | from_json | map(attribute='end_ip') | list }}"
+   
+   - name: Create IP Range for {{ subnet_name }} subnet
+     command: "maas {{ maas_admin_username }} ipranges create type={{ subnet_data.ip_range_type }} start_ip={{ subnet_data.start_ip }} end_ip={{ subnet_data.end_ip }}"
+     when: subnet_data.start_ip not in existing_start_ips and subnet_data.end_ip not in existing_end_ips
+
+   - name: Read maas subnet information
+     command: "maas {{ maas_admin_username }} subnet read {{ subnet_data.cidr }}"
+     register: subnet_info
+
+   - name: Define subnet variables
+     set_fact:
+       fabric_name: "{{ (subnet_info.stdout | from_json).vlan.fabric }}"
+       vlan_vid: "{{ (subnet_info.stdout | from_json).vlan.vid }}"
+       vlan_id: "{{ (subnet_info.stdout | from_json).id }}"
+   
+   - name: Enable DHCP on {{ subnet_name }} subnet
+     command: "maas {{ maas_admin_username }} vlan update {{ fabric_name }} {{ vlan_vid }} dhcp_on=True primary_rack={{ groups['maas_region_rack_server'][0].split('.')[0] }} secondary_rack={{ groups['maas_rack_server'][0].split('.')[0] }}"
+   
+   # This section creates the directory where the snippets are going to be copied
+   
+   - name: Define snippets path
+     set_fact:
+       snippets_path: "{{ '/var/snap/maas/common/maas/dhcp/snippets' if maas_install_method == 'snap' else '/var/lib/maas/dhcp/snippets' }}"
+  
+   - name: Create snippets directory
+     file:
+       path: "{{ snippets_path }}"
+       state: directory
+       mode: '0755'
+     register: snippets_directory
+     failed_when: snippets_directory.failed == true
+   
+   # This section verifies if the snippets already exist and creates the name variables
+   - name: Get current snippet names
+     command: bash -c "maas {{ maas_admin_username }} dhcpsnippets read"
+     register: current_snippets
+ 
+   - name: Parse snippet names JSON
+     set_fact:
+       existing_snippets: "{{ current_snippets.stdout | from_json | map(attribute='name') | list }}"
+
+   - name: Define snippet name variables
+     set_fact:
+       global_snippet: "global_dhcp"
+       classes_snippet: "{{ subnet_name }}_classes"
+       pools_snippet: "{{ subnet_name }}_pools"
+       hosts_snippet: "{{ subnet_name }}_hosts"    
+
+   # This section copies the snippets
+   
+   - name: Copy global DHCP snippet
+     template:
+       src: dhcpd.global.snippet.j2
+       dest: "{{ snippets_path }}/global_dhcp_snippet"
+     register: dhcp_global_config
+   
+   - name: Copy {{ subnet_name }} subnet classes snippet
+     template:
+       src: dhcpd.classes.snippet.j2
+       dest: "{{ snippets_path }}/{{ subnet_name }}_classes_snippet"
+     when: subnet_data.classes is defined
+     register: dhcp_classes_config
+   
+   - name: Copy {{ subnet_name }} subnet pools snippet
+     template:
+       src: dhcpd.pools.snippet.j2
+       dest: "{{ snippets_path }}/{{ subnet_name }}_pools_snippet"
+     when: subnet_data.pools is defined
+     register: dhcp_pools_config
+   
+   - name: Copy {{ subnet_name }} subnet hosts snippet
+     template:
+       src: dhcpd.hosts.snippet.j2
+       dest: "{{ snippets_path }}/{{ subnet_name }}_hosts_snippet"
+     register: dhcp_hosts_config
+   
+   # This section decodes the snippet files and creates the variables to add them into MAAS
+   
+   - name: Slurp global DHCP file content
+     slurp:
+       src: "{{ snippets_path }}/global_dhcp_snippet"
+     when: dhcp_global_config.failed == false
+     register: global_file
+   
+   - name: Decode global DHCP file content
+     set_fact:
+       global_content: "{{ global_file.content | b64decode }}"
+     when: dhcp_global_config.failed == false
+   
+   - name: Slurp {{ subnet_name }} classes file content
+     slurp:
+       src: "{{ snippets_path }}/{{ subnet_name }}_classes_snippet"
+     when: subnet_data.classes is defined and dhcp_classes_config.failed == false
+     register: classes_file
+   
+   - name: Decode {{ subnet_name }} classes file content
+     set_fact:
+       classes_content: "{{ classes_file.content | b64decode }}"
+     when: subnet_data.classes is defined and dhcp_classes_config.failed == false
+   
+   - name: Slurp {{ subnet_name }} pools file content
+     slurp:
+       src: "{{ snippets_path }}/{{ subnet_name }}_pools_snippet"
+     when: subnet_data.pools is defined and dhcp_pools_config.failed == false
+     register: pools_file
+   
+   - name: Decode {{ subnet_name }} pools file content
+     set_fact:
+       pools_content: "{{ pools_file.content | b64decode }}"
+     when: subnet_data.pools is defined and dhcp_pools_config.failed == false
+   
+   - name: Slurp {{ subnet_name }} hosts file content
+     slurp:
+       src: "{{ snippets_path }}/{{ subnet_name }}_hosts_snippet"
+     register: hosts_file
+   
+   - name: Decode {{ subnet_name }} hosts file content
+     set_fact:
+       hosts_content: "{{ hosts_file.content | b64decode }}"
+   
+   # This section deletes the snippets if already exist
+   
+   - name: Delete global DHCP snippet if already exists
+     command: "maas {{ maas_admin_username }} dhcpsnippet delete {{ global_snippet }}"
+     when: dhcp_global_config.changed == true and global_snippet in existing_snippets
+   
+   - name: Delete {{ subnet_name }} subnet classes snippet if already exists
+     command: "maas {{ maas_admin_username }} dhcpsnippet delete {{ classes_snippet }}"
+     when: subnet_data.classes is defined and dhcp_classes_config.changed == true and classes_snippet in existing_snippets
+   
+   - name: Delete {{ subnet_name }} subnet pools snippet if already exists
+     command: "maas {{ maas_admin_username }} dhcpsnippet delete {{ pools_snippet }}"
+     when: subnet_data.pools is defined and dhcp_pools_config.changed == true and pools_snippet in existing_snippets
+   
+   - name: Delete {{ subnet_name }} subnet hosts snippet if already exists
+     command: "maas {{ maas_admin_username }} dhcpsnippet delete {{ hosts_snippet }}"
+     when: dhcp_hosts_config.changed == true and hosts_snippet in existing_snippets
+   
+   # This section adds snippets into MAAS
+   
+   - name: Add global DHCP snippet into MAAS
+     command: "maas {{ maas_admin_username }} dhcpsnippets create name='{{ global_snippet }}' value='{{ global_content }}' description='This snippet configures the global DHCP options' global_snippet=true"
+     when: dhcp_global_config.failed == false and dhcp_global_config.changed == true
+   
+   - name: Add {{ subnet_name }} classes snippet into MAAS
+     command: "maas {{ maas_admin_username }} dhcpsnippets create name='{{ classes_snippet }}' value='{{ classes_content }}' description='This snippet configures the classes in {{ subnet_name }} subnet' subnet='{{ vlan_id }}'"
+     when: subnet_data.classes is defined and dhcp_classes_config.failed == false and dhcp_classes_config.changed == true
+   
+   - name: Add {{ subnet_name }} pools snippet into MAAS
+     command: "maas {{ maas_admin_username }} dhcpsnippets create name='{{ pools_snippet }}' value='{{ pools_content }}' description='This snippet configures the pools in {{ subnet_name }} subnet' subnet='{{ vlan_id }}'"
+     when: subnet_data.pools is defined and dhcp_pools_config.failed == false and dhcp_pools_config.changed == true
+   
+   - name: Add {{ subnet_name }} hosts snippet into MAAS
+     command: "maas {{ maas_admin_username }} dhcpsnippets create name='{{ hosts_snippet }}' value='{{ hosts_content }}' description='This snippet configures the hosts in {{ subnet_name }} subnet' subnet='{{ vlan_id }}'"
+     when: dhcp_hosts_config.failed == false and dhcp_hosts_config.changed == true
