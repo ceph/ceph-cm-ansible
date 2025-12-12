@@ -26,27 +26,41 @@
   tags:
     - packages
 
-# This was ported directly from chef.  I was unable to figure out a better way
-# to do this, but it seems to just be adding the user_xattr option to the root filesystem mount.
-# I believe perl was used here initially because the mount resources provided by chef and ansible
-# require both the name (i.e. /) and the source (UUID="<some_uuid>") to ensure it's editing the correct line
-# in /etc/fstab.  This won't work for us because the root file system source (UUID or label) is different depending
-# on the image used to create this node (downburst and cobbler use different images).
-- name: Use perl to add user_xattr to the root mount options in fstab.
-  command:
-    perl -pe 'if (m{^([^#]\S*\s+/\s+\S+\s+)(\S+)(\s+.*)$}) { $_="$1$2,user_xattr$3\n" unless $2=~m{(^|,)user_xattr(,|$)}; }' -i.bak /etc/fstab
-  args:
-    creates: /etc/fstab.bak
-  register: add_user_xattr
-  when:
-    - modify_fstab == true
-    - not containerized_node
+- name: Get root mount info (source, fstype, options)
+  command: findmnt -n -o SOURCE,FSTYPE,OPTIONS /
+  register: root_findmnt
+  changed_when: false
 
-- name: Enable xattr for this boot.
-  command:
-    mount -o remount,user_xattr /
-  when: add_user_xattr is defined and
-        add_user_xattr is changed
+- name: Parse root mount info
+  set_fact:
+    root_src: "{{ root_findmnt.stdout.split()[0] }}"
+    root_fstype: "{{ root_findmnt.stdout.split()[1] }}"
+    root_opts: "{{ root_findmnt.stdout.split()[2] }}"
+
+- name: Ensure user_xattr is present for / in fstab (ext2/3/4 only)
+  lineinfile:
+    path: /etc/fstab
+    backup: yes
+    backrefs: yes
+    regexp: '^(?!#)(\S+\s+/\s+\S+\s+)(\S+)(\s+.*)$'
+    line: '\1\2,user_xattr\3'
+  register: fstab_root_xattr
+  when:
+    - modify_fstab | bool
+    - not containerized_node
+    - root_fstype is match('^ext[234]$')
+    - root_opts is not search('(^|,)user_xattr(,|$)')
+
+- name: Remount / with user_xattr (this boot)
+  mount:
+    path: /
+    src: "{{ root_src }}"
+    fstype: "{{ root_fstype }}"
+    opts: "{{ root_opts }},user_xattr"
+    state: remounted
+  when:
+    - fstab_root_xattr is defined
+    - fstab_root_xattr is changed
 
 - name: Ensure fuse, kvm and disk groups exist.
   group:
