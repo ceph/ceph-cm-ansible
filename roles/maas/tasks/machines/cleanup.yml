@@ -1,0 +1,55 @@
+# Ensure auth header for cleanup
+- include_tasks: ../_auth_header.yml
+
+# Normalize unique list (in case the same node was handled twice)
+- name: Normalize _marked_broken unique list
+  set_fact:
+    _marked_broken: "{{ _marked_broken | default([]) | unique }}"
+  run_once: true
+
+# Fetch current status for each before flipping (idempotent safeguard)
+- name: GET node details before un-breaking
+  uri:
+    url: "{{ _maas_api }}/nodes/{{ sid }}/"
+    method: GET
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+    status_code: 200
+    return_content: true
+  loop: "{{ _marked_broken | default([]) }}"
+  loop_control:
+    loop_var: sid
+  register: _cleanup_status
+
+- include_tasks: ../_auth_header.yml
+
+# Un-break only those still Broken
+- name: POST op=mark_fixed
+  uri:
+    url: "{{ _maas_api }}/machines/{{ sid }}/op-mark_fixed"
+    method: POST
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+      Content-Type: application/x-www-form-urlencoded
+    body: ""
+    body_format: form-urlencoded
+    status_code: 200
+  loop: >-
+    {{
+      (_cleanup_status.results | default([]))
+      | selectattr('json.status_name','defined')
+      | selectattr('json.status_name','equalto','Broken')
+      | map(attribute='item') | list
+    }}
+  loop_control:
+    loop_var: sid
+  register: _mark_fixed_resp
+  changed_when: true
+
+# Optional: clear the list so a later run doesn’t try to un-break again
+- name: Clear shared _marked_broken list
+  set_fact:
+    _marked_broken: []
+  run_once: true

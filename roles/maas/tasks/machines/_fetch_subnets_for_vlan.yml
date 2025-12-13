@@ -1,0 +1,21 @@
+# Expects: vlan_id
+# Produces/updates: _subnets_by_vlan (dict: { vlan_id: <subnet_list> })
+
+- include_tasks: _auth_header.yml
+
+- name: Query subnets for VLAN {{ vlan_id }}
+  uri:
+    url: "{{ maas_api_url }}/api/2.0/vlans/{{ vlan_id }}/?op=subnets"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ _maas_auth.json.token }}"
+    return_content: true
+  register: _subnets_resp
+
+- name: Accumulate subnets into map
+  set_fact:
+    _subnets_by_vlan: >-
+      {{
+        (_subnets_by_vlan | default({})) |
+        combine({ (vlan_id|string): (_subnets_resp.json | default([])) })
+      }}

@@ -1,0 +1,225 @@
+---
+# Expects: _subnet_id, ipr (range spec with type/start_ip/end_ip), maas_auth_header, _subnet_ranges_existing
+# Optional: maas_overwrite_ipranges (default: false)
+
+- name: Default overwrite flag
+  set_fact:
+    maas_overwrite_ipranges: "{{ maas_overwrite_ipranges | default(false) | bool }}"
+
+# Helper facts
+- set_fact:
+    _ipr_type: "{{ ipr.type | default('reserved') }}"
+    _ipr_start: "{{ ipr.start_ip }}"
+    _ipr_end: "{{ ipr.end_ip }}"
+    _overlaps: []
+
+# --- exact match detection (boolean, no None pitfalls) ---
+- name: Compute exact-match flag for this subnet/type/span
+  vars:
+    _want_type:  "{{ _ipr_type  | string }}"
+    _want_start: "{{ _ipr_start | string }}"
+    _want_end:   "{{ _ipr_end   | string }}"
+  set_fact:
+    _exact_exists: >-
+      {{
+        (
+          (_subnet_ranges_existing | default([]))
+          | selectattr('type',     'equalto', _want_type)
+          | selectattr('start_ip', 'equalto', _want_start)
+          | selectattr('end_ip',   'equalto', _want_end)
+          | list | length
+        ) > 0
+      }}
+
+# (optional) tiny debug so you can see it flip true/false
+- name: Tiny debug so you can see it flip true/false
+  debug:
+    msg:
+      - "subnet_id: {{ _subnet_id }}"
+      - "existing ranges on this subnet: {{ _subnet_ranges_existing | length }}"
+      - "looking for: {{ _ipr_type }} {{ _ipr_start }}-{{ _ipr_end }}"
+      - "exact_exists={{ _exact_exists }}"
+    verbosity: 0
+
+# --- overlap detection stays as you had it ---
+
+# Skip only when an exact already exists
+- name: Skip create when exact range already exists
+  debug:
+    msg: "IP range already present ({{ _ipr_type }} {{ _ipr_start }}-{{ _ipr_end }}); skipping."
+  when: _exact_exists
+
+# Always define _overlaps, even if earlier overlap-compute tasks were skipped
+- name: Ensure _overlaps is defined
+  set_fact:
+    _overlaps: "{{ _overlaps | default([]) }}"
+
+- include_tasks: ../_auth_header.yml
+  no_log: true
+
+- name: Read all ipranges (server truth)
+  uri:
+    url: "{{ _maas_api }}/ipranges/"
+    method: GET
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+    return_content: true
+    status_code: [200]
+  register: _ipr_read
+  no_log: true
+
+- name: Filter ipranges down to this subnet id
+  set_fact:
+    _subnet_ranges_existing: >-
+      {{ (_ipr_read.json | default([]))
+         | selectattr('subnet.id','equalto', _subnet_id)
+         | list }}
+
+# Build tuple/list forms of the new range once
+- name: Compute tuple forms of new start/end
+  set_fact:
+    _new_start_t: "{{ _ipr_start | split('.') | map('int') | list }}"
+    _new_end_t:   "{{ _ipr_end   | split('.') | map('int') | list }}"
+
+# existing.start <= new.end  AND  existing.end >= new.start  (inclusive)
+- name: Accumulate overlaps for this subnet/type/span (inclusive, no ipaddr)
+  set_fact:
+    _overlaps: "{{ _overlaps + [r] }}"
+  loop: "{{ _subnet_ranges_existing | default([]) }}"
+  loop_control:
+    loop_var: r
+  when:
+    - (r.start_ip | split('.') | map('int') | list) <= _new_end_t
+    - (r.end_ip   | split('.') | map('int') | list) >= _new_start_t
+
+- name: Debug overlaps (if any)
+  debug:
+    msg:
+      - "Overlaps (ids): {{ _overlaps | map(attribute='id') | list }}"
+      - "Overlaps (types): {{ _overlaps | map(attribute='type') | list }}"
+      - "Overlaps (spans): {{ _overlaps | map(attribute='start_ip') | list }} — {{ _overlaps | map(attribute='end_ip') | list }}"
+  when: _overlaps | length > 0
+
+# Fail on overlapping ranges (unless overwrite enabled)
+- name: Fail on overlapping ranges (unless overwrite enabled)
+  fail:
+    msg: >-
+      Requested {{ _ipr_type }} range {{ _ipr_start }}-{{ _ipr_end }}
+      overlaps existing ranges:
+      {{ (_overlaps | default([])) | map(attribute='start_ip') | list }} - {{ (_overlaps | default([])) | map(attribute='end_ip') | list }}.
+      Re-run with maas_overwrite_ipranges=true to replace them.
+  when:
+    - not _exact_exists
+    - (_overlaps | default([])) | length > 0
+    - not maas_overwrite_ipranges
+
+- include_tasks: ../_auth_header.yml
+  no_log: true
+
+- name: Read this subnet to check for managed=true and dynamic range mismatch
+  uri:
+    url: "{{ _maas_api }}/subnets/{{ _subnet_id }}/"
+    method: GET
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+    return_content: true
+    status_code: [200]
+  register: _subnet_read
+  no_log: true
+
+- set_fact:
+    _server_subnet_managed: "{{ (_subnet_read.json.managed | default(false)) | bool }}"
+
+- name: Fail if subnet is unmanaged but a dynamic range is requested
+  fail:
+    msg: >-
+      Refusing to create a dynamic range on unmanaged subnet id={{ _subnet_id }}
+      ({{ _subnet_read.json.cidr }}). Set 'managed: true' on the subnet or use a
+      reserved range instead. Requested: {{ _ipr_type }} {{ _ipr_start }}-{{ _ipr_end }}.
+  when:
+    - _ipr_type == 'dynamic'
+    - not _server_subnet_managed
+
+# Delete overlapping ipranges before create
+- include_tasks: ../_auth_header.yml
+  when:
+    - not _exact_exists
+    - (_overlaps | default([])) | length > 0
+    - maas_overwrite_ipranges
+  no_log: true
+
+# before delete loop
+- set_fact:
+    _overlap_ids: "{{ _overlaps | map(attribute='id') | list | unique | list }}"
+
+- name: Delete overlapping ipranges before create
+  uri:
+    url: "{{ _maas_api }}/ipranges/{{ ov_id }}/"
+    method: DELETE
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+    status_code: [200, 204, 404]
+    return_content: false
+  loop: "{{ _overlap_ids }}"
+  loop_control:
+    loop_var: ov_id
+    label: "delete id={{ ov_id }}"
+  failed_when: false
+  when:
+    - (_overlaps | length) > 0
+    - maas_overwrite_ipranges
+    - not _exact_exists
+  no_log: true
+
+- include_tasks: ../_auth_header.yml
+  no_log: true
+
+- name: Read all ipranges again (post-delete)
+  uri:
+    url: "{{ _maas_api }}/ipranges/"
+    method: GET
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+    return_content: true
+    status_code: [200]
+  register: _ipr_read_after
+  no_log: true
+
+- name: Filter ipranges down to this subnet id (post-delete)
+  set_fact:
+    _subnet_ranges_existing: >-
+      {{ (_ipr_read_after.json | default([]))
+         | selectattr('subnet.id','equalto', _subnet_id)
+         | list }}
+
+- include_tasks: ../_auth_header.yml
+  when:
+    - not _exact_exists
+    - ((_overlaps | default([])) | length == 0) or maas_overwrite_ipranges
+  no_log: true
+
+- name: Create iprange
+  uri:
+    url: "{{ _maas_api }}/ipranges/"
+    method: POST
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Content-Type: application/x-www-form-urlencoded
+      Accept: application/json
+    body_format: form-urlencoded
+    body:
+      subnet: "{{ _subnet_id | string }}"
+      type: "{{ _ipr_type | default('reserved') }}"
+      start_ip: "{{ _ipr_start }}"
+      end_ip: "{{ _ipr_end }}"
+    status_code: [200, 201, 409]
+    return_content: true
+    use_netrc: false
+  register: _range_create_resp
+  when:
+    - not _exact_exists
+    - ((_overlaps | default([])) | length == 0) or maas_overwrite_ipranges

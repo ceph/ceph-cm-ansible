@@ -1,0 +1,23 @@
+---
+# Parse the MAAS API key ONCE and pre-encode the static OAuth pieces.
+
+- name: Bail if no MAAS key
+  assert:
+    that:
+      - maas_api_key is defined
+      - (maas_api_key | length) > 0
+    fail_msg: "maas_api_key not available."
+
+# Split key: <consumer_key>:<token_key>:<token_secret>
+- name: Parse MAAS API key once
+  set_fact:
+    maas_ck_raw: "{{ (maas_api_key.split(':'))[0] }}"
+    maas_tk_raw: "{{ (maas_api_key.split(':'))[1] }}"
+    maas_ts_raw: "{{ (maas_api_key.split(':'))[2] }}"
+
+# Pre-encode static values used in every header
+- name: Pre-encode OAuth static pieces
+  set_fact:
+    maas_ck_enc: "{{ maas_ck_raw | urlencode }}"
+    maas_tk_enc: "{{ maas_tk_raw | urlencode }}"
+    maas_sig_enc: "{{ ('&' ~ maas_ts_raw) | urlencode }}"

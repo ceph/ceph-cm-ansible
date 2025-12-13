@@ -1,0 +1,432 @@
+---
+# Prereqs (set by your own auth tasks):
+# - maas_api_url: e.g. "http://10.64.1.25:5240"
+# - maas_auth_header: OAuth 1.0 PLAINTEXT header string
+# Inputs:
+# - maas_networking: your fabric/vlan/subnet structure
+# - maas_global_dns_servers: optional list of DNS servers
+# - maas_global_primary_rack_controller: optional Controller *hostname*
+#   Rack Controller must be defined at the VLAN level if not defined globally.
+
+################################################################################
+# API base
+################################################################################
+- name: Set MAAS API base URL
+  set_fact:
+    _maas_api: "{{ maas_api_url | trim('/') }}/MAAS/api/2.0"
+
+################################################################################
+# Inventory Validation
+################################################################################
+
+# --- Check for DHCP-enabled VLANs that are missing dynamic ip_ranges ----------
+
+# Always init so the assert never sees an undefined var
+- name: Init list of DHCP violations
+  set_fact:
+    _dhcp_missing_dynamic: []
+
+- name: Build list of fabric/vlan pairs
+  set_fact:
+    _fabric_vlans: "{{ maas_networking | subelements('vlans', skip_missing=True) }}"
+
+# Flag any VLAN with dhcp_on=true but no dynamic ranges on any of its subnets
+- name: Find DHCP-enabled VLANs missing dynamic ranges
+  vars:
+    _vlan: "{{ item.1 }}"
+    _dyn_count: >-
+      {{
+        (_vlan.subnets | default([]))
+        | selectattr('ip_ranges','defined')
+        | map(attribute='ip_ranges')
+        | flatten
+        | selectattr('type','equalto','dynamic')
+        | list
+        | length
+      }}
+  when:
+    - _vlan.dhcp_on | default(false) | bool
+    - (_dyn_count | int) == 0
+  set_fact:
+    _dhcp_missing_dynamic: >-
+      {{
+        (_dhcp_missing_dynamic | default([]))
+        + [ { 'fabric': item.0.fabric, 'vid': _vlan.vid, 'name': _vlan.name | default('') } ]
+      }}
+  loop: "{{ _fabric_vlans }}"
+  loop_control:
+    label: "{{ item.0.fabric }}:{{ item.1.vid }}"
+
+- name: Fail if any DHCP-enabled VLAN lacks a dynamic range
+  assert:
+    that:
+      - (_dhcp_missing_dynamic | default([])) | length == 0
+    fail_msg: >-
+      DHCP is enabled but no dynamic range is defined on these VLANs:
+      {{ (_dhcp_missing_dynamic | default([])) | to_nice_json }}
+
+# --- Check for undefined primary rack controller per VLAN ---------------------
+
+# 1) Capture global if provided (and non-empty)
+- name: Capture global primary rack controller id (if set)
+  set_fact:
+    _global_primary_rack_controller: "{{ maas_global_primary_rack_controller | string }}"
+  when:
+    - maas_global_primary_rack_controller is defined
+    - (maas_global_primary_rack_controller | string) | length > 0
+
+# 2) If no global, ensure every VLAN declares primary_rack_controller
+- name: Build list of VLANs missing primary_rack_controller (when no global set)
+  set_fact:
+    _vlans_missing_prc: |
+      {% set missing = [] %}
+      {% for pair in (maas_networking | subelements('vlans', skip_missing=True)) %}
+      {%   set fab = pair[0] %}
+      {%   set v   = pair[1] %}
+      {%   if v.primary_rack_controller is not defined or (v.primary_rack_controller | string) | length == 0 %}
+      {%     set _ = missing.append(fab.fabric ~ ":VID " ~ (v.vid | string)) %}
+      {%   endif %}
+      {% endfor %}
+      {{ missing }}
+  when: _global_primary_rack_controller is not defined
+
+- name: Require maas_global_primary_rack_controller or per-VLAN primary_rack_controller
+  assert:
+    that:
+      - (_global_primary_rack is defined) or (_vlans_missing_prc | length == 0)
+    fail_msg: >-
+      Missing primary rack controller configuration.
+      Either set 'maas_global_primary_rack_controller' or add 'primary_rack_controller'
+      on each VLAN. Missing for:
+      {{ (_vlans_missing_prc | default([])) | join('\n') }}
+  when: _global_primary_rack_controller is not defined
+
+################################################################################
+# Domains
+################################################################################
+- name: Collect unique domains from maas_networking
+  set_fact:
+    _wanted_domains: >-
+      {{
+        maas_networking
+        | map(attribute='vlans') | flatten
+        | map(attribute='subnets') | flatten
+        | selectattr('domain','defined')
+        | map(attribute='domain')
+        | list | unique
+      }}
+
+- include_tasks: _auth_header.yml
+#- name: Read existing RCs
+#  uri:
+#    url: "{{ _maas_api }}/rackcontrollers/"
+#    method: GET
+#    headers: { Authorization: "{{ maas_auth_header }}" }
+#    return_content: true
+#  register: _domains_resp
+#
+#- pause:
+
+- name: Read existing domains
+  uri:
+    url: "{{ _maas_api }}/domains/"
+    method: GET
+    headers: { Authorization: "{{ maas_auth_header }}" }
+    return_content: true
+  register: _domains_resp
+
+- name: Index domains by name
+  set_fact:
+    _domains_by_name: "{{ (_domains_resp.json | default([])) | items2dict(key_name='name', value_name='id') }}"
+
+- name: Compute domains to create
+  set_fact:
+    _new_domains: "{{ _wanted_domains | difference((_domains_by_name.keys() | list)) }}"
+
+# _wanted_domains must be a real list (use the unique/flatten filter recipe)
+
+- name: Ensure desired domains exist
+  include_tasks: networking/domain_create.yml
+  loop: "{{ _new_domains }}"
+  loop_control:
+    loop_var: domain_name
+#  #no_log: true
+
+################################################################################
+# Spaces
+################################################################################
+- name: Collect unique spaces from maas_networking
+  set_fact:
+    _wanted_spaces: >-
+      {{
+        maas_networking
+        | map(attribute='vlans') | flatten
+        | map(attribute='subnets') | flatten
+        | selectattr('space','defined')
+        | map(attribute='space')
+        | list | unique
+      }}
+
+- include_tasks: _auth_header.yml
+  #no_log: true
+
+- name: Read existing spaces
+  uri:
+    url: "{{ _maas_api }}/spaces/"
+    method: GET
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+    return_content: true
+    use_netrc: false
+  register: _spaces_resp
+  #no_log: true
+
+- name: Index spaces by name
+  set_fact:
+    _spaces_by_name: "{{ (_spaces_resp.json | default([])) | items2dict(key_name='name', value_name='id') }}"
+
+- name: Compute spaces to create
+  set_fact:
+    _new_spaces: "{{ _wanted_spaces | difference((_spaces_by_name.keys() | list)) }}"
+
+- name: Ensure desired spaces exist
+  include_tasks: networking/space_create.yml
+  loop: "{{ _new_spaces }}"
+  loop_control:
+    loop_var: space_name
+  #no_log: true
+
+################################################################################
+# Fabrics
+################################################################################
+- include_tasks: _auth_header.yml
+  #no_log: true
+
+- name: Read fabrics
+  uri:
+    url: "{{ _maas_api }}/fabrics/"
+    method: GET
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+    return_content: true
+    use_netrc: false
+  register: _fabrics_resp
+  #no_log: true
+
+- name: Index fabrics by name
+  set_fact:
+    _fabric_by_name: "{{ (_fabrics_resp.json | default([])) | items2dict(key_name='name', value_name='id') }}"
+
+- name: Collect desired fabric names from maas_networking
+  set_fact:
+    _wanted_fabrics: "{{ maas_networking | map(attribute='fabric') | list | unique }}"
+
+- name: Compute fabrics to create
+  set_fact:
+    _new_fabrics: "{{ _wanted_fabrics | difference((_fabric_by_name.keys() | list)) }}"
+
+- name: Ensure fabrics exist
+  include_tasks: networking/fabric_create.yml
+  loop: "{{ _new_fabrics }}"
+  loop_control:
+    loop_var: fabric_name
+  #no_log: true
+
+# Refresh fabrics after creates
+- include_tasks: _auth_header.yml
+  #no_log: true
+
+- name: Refresh fabrics
+  uri:
+    url: "{{ _maas_api }}/fabrics/"
+    method: GET
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+    return_content: true
+    use_netrc: false
+  register: _fabrics_resp2
+  #no_log: true
+
+- name: Re-index fabrics
+  set_fact:
+    _fabric_by_name: "{{ (_fabrics_resp2.json | default([])) | items2dict(key_name='name', value_name='id') }}"
+
+################################################################################
+# VLANs
+################################################################################
+- name: Validate VLAN names
+  loop: "{{ maas_networking | subelements('vlans', skip_missing=True) }}"
+  loop_control:
+    loop_var: item
+  assert:
+    that:
+      - item.1.name is match('^[a-z0-9-]+$')
+    fail_msg: "Invalid VLAN name '{{ item.1.name }}' — only lowercase letters and dashes are allowed."
+
+# Read VLANs per fabric (looped helper so each GET has fresh auth)
+- name: init raw vlans holder
+  set_fact:
+    _vlans_raw_by_fabric: {}
+
+- name: Read VLANs for each fabric
+  include_tasks: networking/fabric_vlans_read.yml
+  loop: "{{ maas_networking }}"
+  loop_control:
+    loop_var: fab_obj
+  #no_log: true
+
+- name: Build VLAN index (first pass)
+  include_tasks: networking/vlan_build_index.yml
+
+- name: Create VLANs that are missing
+  vars:
+    _fname: "{{ pair.0.fabric }}"
+    vlan:   "{{ pair.1 }}"
+    _vrec:  "{{ _vlan_index.get(_fname, {}) }}"
+    # handle both string and int vid keys so creation works regardless of index build
+    _exists: "{{ (_vrec.get(vlan.vid | string) is not none) or (_vrec.get(vlan.vid) is not none) }}"
+  include_tasks: networking/vlan_create.yml
+  loop: "{{ maas_networking | subelements('vlans', skip_missing=True) }}"
+  loop_control:
+    loop_var: pair
+    label: "{{ pair.0.fabric }}:{{ pair.1.vid }}"
+  when: not _exists
+
+# Refresh VLANs after creates (read again via helper) and rebuild index
+- name: Reset raw vlans holder
+  set_fact:
+    _vlans_raw_by_fabric: {}
+
+- name: Re-read VLANs for each fabric
+  include_tasks: networking/fabric_vlans_read.yml
+  loop: "{{ maas_networking }}"
+  loop_control:
+    loop_var: fab_obj
+
+- name: Build VLAN index (second pass)
+  include_tasks: networking/vlan_build_index.yml
+
+################################################################################
+# Subnets (create/update DNS + ranges) BEFORE enabling VLAN DHCP
+################################################################################
+# Build (fabric, vlan) pairs
+- name: Build list of fabric/vlan pairs
+  set_fact:
+    _fabric_vlans: "{{ maas_networking | subelements('vlans', skip_missing=True) }}"
+
+- name: Build list of (fabric, vlan, subnet) triples
+  set_fact:
+    _subnet_triples: |
+      {% set out = [] %}
+      {% for pair in _fabric_vlans %}
+      {%   set fab = pair[0] %}
+      {%   set vlan = pair[1] %}
+      {%   for sn in vlan.subnets | default([]) %}
+      {%     set _ = out.append([fab, vlan, sn]) %}
+      {%   endfor %}
+      {% endfor %}
+      {{ out }}
+
+- name: Ensure subnets, DNS servers, and IP ranges
+  include_tasks: networking/subnet_apply.yml
+  vars:
+    trio: "{{ item }}"
+  loop: "{{ _subnet_triples }}"
+  loop_control:
+    label: "{{ item[0].fabric }} : VID {{ item[1].vid }} : {{ item[2].cidr }}"
+
+################################################################################
+# VLAN property updates (name/mtu/dhcp_on) AFTER ranges exist
+################################################################################
+################################################################################
+# VLAN property updates (name/mtu/dhcp_on/space) AFTER ranges exist
+################################################################################
+
+## Resolve the VLAN id safely (handles string/int VID keys)
+#- name: Resolve VLAN id for update
+#  vars:
+#    _fname: "{{ pair.0.fabric }}"
+#    vlan:   "{{ pair.1 }}"
+#  set_fact:
+#    _vobj: >-
+#      {{
+#        _vlan_index[_fname].get(vlan.vid|string)
+#        or _vlan_index[_fname].get(vlan.vid)
+#      }}
+#    _vlan_id: "{{ _vobj.id if (_vobj is defined and _vobj) else None }}"
+#  loop: "{{ maas_networking | subelements('vlans', skip_missing=True) }}"
+#  loop_control:
+#    loop_var: pair
+#    label: "{{ pair.0.fabric }}:{{ pair.1.vid }}"
+#
+#- name: Ensure VLAN exists in index before updating
+#  assert:
+#    that:
+#      - _vlan_id is not none
+#    fail_msg: >-
+#      VLAN {{ pair.1.vid }} on fabric {{ pair.0.fabric }} not found in _vlan_index.
+#      Known VIDs: {{ _vlan_index[pair.0.fabric] | dict2items | map(attribute='key') | list }}
+#  loop: "{{ maas_networking | subelements('vlans', skip_missing=True) }}"
+#  loop_control:
+#    loop_var: pair
+#    label: "{{ pair.0.fabric }}:{{ pair.1.vid }}"
+#
+## Build update body (name/mtu/space + dhcp_on only if we saw a dynamic range in inventory)
+#- name: Build VLAN update body
+#  vars:
+#    _fname: "{{ pair.0.fabric }}"
+#    vlan:   "{{ pair.1 }}"
+#
+#    # unique space from subnets (if exactly one specified)
+#    _spaces_list: >-
+#      {{
+#        (vlan.subnets | default([]))
+#        | selectattr('space','defined')
+#        | map(attribute='space') | list | unique
+#      }}
+#    _desired_space: "{{ _spaces_list[0] if (_spaces_list | length) == 1 else omit }}"
+#
+#    # does inventory declare at least one dynamic range on any subnet of this VLAN?
+#    _has_dynamic_for_vlan: >-
+#      {{
+#        (vlan.subnets | default([]))
+#        | selectattr('ip_ranges','defined')
+#        | map(attribute='ip_ranges') | flatten
+#        | selectattr('type','equalto','dynamic')
+#        | list | length > 0
+#      }}
+#  set_fact:
+#    _body: >-
+#      {{
+#        {'name': vlan.name}
+#        | combine( (vlan.mtu is defined)     | ternary({'mtu': vlan.mtu}, {}), recursive=True )
+#        | combine( (_desired_space is not none) | ternary({'space': _desired_space}, {}), recursive=True )
+#        | combine(
+#            (vlan.dhcp_on | default(false) | bool and _has_dynamic_for_vlan)
+#            | ternary({'dhcp_on': true}, {}), recursive=True
+#          )
+#      }}
+#  loop: "{{ maas_networking | subelements('vlans', skip_missing=True) }}"
+#  loop_control:
+#    loop_var: pair
+#    label: "{{ pair.0.fabric }}:{{ pair.1.vid }}"
+
+## Do the actual VLAN update (expects _vlan_id and _body set by the two tasks above)
+#- name: Call VLAN Update tasks
+#  include_tasks: networking/vlan_update.yml
+#  loop: "{{ maas_networking | subelements('vlans', skip_missing=True) | map('join', ':') | list }}"
+#  loop_control:
+#    label: "{{ item }}"
+
+- name: Call VLAN Update tasks
+  include_tasks: networking/vlan_update.yml
+  loop: "{{ maas_networking | subelements('vlans', skip_missing=True) }}"
+  loop_control:
+    loop_var: pair
+    label: "{{ pair.0.fabric }}:{{ pair.1.vid }}"
+  vars:
+    _fname: "{{ pair.0.fabric }}"
+    vlan:   "{{ pair.1 }}"
