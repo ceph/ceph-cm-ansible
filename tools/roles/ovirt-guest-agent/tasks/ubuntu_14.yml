@@ -1,0 +1,16 @@
+---
+- name: Install ovirt-guest-agent repo
+  file:
+    src: ovirt-guest-agent.list
+    path: /etc/apt/sources.list.d/ovirt-guest-agent.list
+
+- name: Install ovirt-guest-agent repo key
+  apt_key:
+    url: "http://download.opensuse.org/repositories/home:/evilissimo:/ubuntu:/14.04/xUbuntu_14.04//Release.key"
+    state: present
+
+- name: Install ovirt-guest-agent
+  apt:
+    name: ovirt-guest-agent
+    state: latest
+    update_cache: yes

@@ -1,0 +1,12 @@
+---
+- name: Install ovirt-guest-agent
+  yum:
+    name: ovirt-guest-agent
+    enablerepo: epel
+    state: latest
+
+- name: Enable and start ovirt-guest-agent service
+  service:
+    name: ovirt-guest-agent
+    enabled: yes
+    state: started

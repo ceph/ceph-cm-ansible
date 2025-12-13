@@ -1,0 +1,59 @@
+---
+### This playbook is useful for setting up a smithi as Jenkins slave
+### for use with 2.jenkins.ceph.com.
+### Primarily, this just sets up the NVMe device to be mounted at {{ mount_dir }}
+### NOTE: Not idempotent!  This will erase any data at {{ mount_dir }}
+
+- hosts:
+    - smithi
+  become: true
+  vars:
+    mount_dir: "/var/lib/libvirt/images"
+  tasks:
+
+  - name: Remove all non-admin users
+    user:
+      name: "{{ item.name }}"
+      state: absent
+      remove: yes
+    with_items: "{{ lab_users }} + [{'name': 'ubuntu'}]"
+
+  - name: Install deps
+    package:
+      state: latest
+      name: "{{ item }}"
+    with_items:
+      - xfsprogs
+
+  - name: Stop Jenkins slave service in case it's running
+    service:
+      name: jenkins
+      state: stopped
+    failed_when: false
+
+  - name: "Unmount /dev/nvme0n1"
+    mount:
+      path: "{{ item.mount }}"
+      state: unmounted
+    with_items: "{{ ansible_mounts }}"
+    when: item.device == "/dev/nvme0n1"
+
+  - name: Zap NVMe disk
+    command: "sgdisk -Z /dev/nvme0n1"
+
+  - name: Make filesystem on NVMe disk
+    filesystem:
+      fstype: xfs
+      dev: "/dev/nvme0n1"
+
+  - name: "Make {{ mount_dir }} dir"
+    file:
+      path: "{{ mount_dir }}"
+      state: directory
+
+  - name: Mount NVMe disk
+    mount:
+      path: "{{ mount_dir }}"
+      src: "/dev/nvme0n1"
+      fstype: xfs
+      state: mounted

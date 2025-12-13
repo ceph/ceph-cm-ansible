@@ -1,0 +1,104 @@
+---
+### This playbook is useful for setting up a baremetal hosts (irvingi or senta)
+### as a RHEL Hypervisor to serve Jenkins VMs.  Expects a RHEL7 image
+### already subscribed to RHSM and had ceph-cm-ansible common role
+### ran against it.
+
+- hosts:
+    - irvingi
+    - senta
+  vars:
+    # Default to configure /vms disk
+    configure_disk: true
+  vars_prompt:
+    # Forcefully reconfigure disk even if it's already mounted
+    - name: "force_configure_disk"
+      prompt: "\nWARNING: You will lose data if you enter \"y\"\nDo you want to forcefully reconfigure the VMs disk even if it's already set up? (y|n)"
+      default: "n"
+  become: true
+  tasks:
+
+  - name: Enable rhev-mgmt repo
+    command: "subscription-manager repos --enable=rhel-7-server-rhev-mgmt-agent-rpms"
+
+  - name: Install packages
+    yum:
+      name: "{{ item }}"
+      state: latest
+      enablerepo: epel
+    with_items:
+      - gdisk
+      - parted
+      - vdsm
+
+  - name: Find 1TB SSD
+    set_fact:
+      vm_ssd: "{{ item.key }}"
+    with_dict: "{{ ansible_devices }}"
+    when: item.value.model == "Samsung SSD 850"
+
+  # This is where the RHEV virtual machines will reside
+  - name: Make /vms dir and set permissions
+    file:
+      state: directory
+      path: /vms
+      owner: vdsm
+      group: kvm
+
+  # Unmount /vms so configure_disk is set to true
+  - name: Unmount 1TB SSD if we're forcefully reconfiguring
+    mount:
+      name: /vms
+      state: unmounted
+    when: force_configure_disk == "y"
+
+  - name: Update ansible_mounts
+    setup:
+      filter: ansible_mounts
+    when: force_configure_disk == "y"
+
+  # Check if the 1TB SSD is already mounted at the /vms mountpoint.
+  # This is the ONLY way the playbook checks if the host is already configured
+  - name: Check if /vms already mounted
+    set_fact:
+      configure_disk: false
+    with_items: "{{ ansible_mounts }}"
+    when: '"/vms" in item.mount'
+
+  - debug: var=configure_disk
+
+  - name: Zap 1TB SSD
+    command: sgdisk -Z "/dev/{{ vm_ssd }}"
+    when: configure_disk == true
+
+  - name: Create partition table
+    command: "parted -s /dev/{{ vm_ssd }} mktable msdos"
+    when: configure_disk == true
+
+  - name: Create partition
+    command: "parted /dev/{{ vm_ssd }} unit '%' mkpart primary 0 100"
+    when: configure_disk == true
+
+  - name: Create filesystem
+    filesystem:
+      fstype: xfs
+      dev: "/dev/{{ vm_ssd }}1"
+      force: yes
+    when: configure_disk == true
+
+  - name: Find VM partition UUID
+    command: "lsblk -n -o uuid /dev/{{ vm_ssd }}1"
+    register: vm_uuid
+
+  - name: Mount 1TB SSD to /vms
+    mount:
+      name: /vms
+      src: "UUID={{ vm_uuid.stdout }}"
+      fstype: xfs
+      opts: defaults
+      state: mounted
+
+  - name: Copy RHEV SSH key to root's authorized_keys
+    authorized_key:
+      user: root
+      key: http://mgr01.front.sepia.ceph.com/engine.ssh.key.txt
