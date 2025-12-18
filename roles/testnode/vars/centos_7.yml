@@ -9,7 +9,7 @@ yum_repos:
     gpgcheck: 0
   lab-extras:
     name: lab-extras
-    baseurl: "http://{{ mirror_host }}/lab-extras/centos7/"
+    baseurl: "https://{{ mirror_host }}/lab-extras/centos7/"
     enabled: 1
     gpgcheck: 0
 

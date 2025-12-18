@@ -22,7 +22,7 @@ yum_repos:
     protect: 0
   lab-extras:
     name: lab-extras
-    baseurl: "http://{{ mirror_host }}/lab-extras/centos6/"
+    baseurl: "https://{{ mirror_host }}/lab-extras/centos6/"
     enabled: 1
     gpgcheck: 0
     priority: 2

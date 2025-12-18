@@ -4,7 +4,7 @@
 common_yum_repos:
   lab-extras:
     name: "lab-extras"
-    baseurl: "http://{{ mirror_host }}/lab-extras/rhel6/"
+    baseurl: "https://{{ mirror_host }}/lab-extras/rhel6/"
     enabled: 1
     gpgcheck: 0
     priority: 2

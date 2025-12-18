@@ -5,7 +5,7 @@
 common_yum_repos:
   lab-extras:
     name: "lab-extras"
-    baseurl: "http://{{ mirror_host }}/lab-extras/8/"
+    baseurl: "https://{{ mirror_host }}/lab-extras/8/"
     enabled: 1
     gpgcheck: 0
 
