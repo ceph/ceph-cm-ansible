@@ -31,11 +31,17 @@
   register: current_clocksource
 
 - name: Set the hardware clock
-  command: hwclock --systohc
+  command: hwclock --systohc --verbose
+  become: true
+  become_method: sudo
+  become_user: root
+  environment:
+    PATH: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
   # unless system clock is using kvm-clock
   when: current_clocksource.stdout.find('kvm-clock') == -1
   tags:
     - timezone
+  ignore_errors: true
 
 # configure Kerberos
 - import_tasks: kerberos.yml
