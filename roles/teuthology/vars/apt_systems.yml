@@ -17,6 +17,7 @@ teuthology_extra_packages:
   - libffi-dev
   - libssl-dev
   - libyaml-dev
+  - conserver-client
   # The following are requirements for serving teuthology logs
   - nginx
 
