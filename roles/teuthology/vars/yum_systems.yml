@@ -1,1 +1,3 @@
 ---
+teuthology_extra_packages:
+  - conserver-client
