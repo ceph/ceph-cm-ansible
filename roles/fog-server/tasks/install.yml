@@ -4,6 +4,7 @@
     repo: https://github.com/FOGProject/fogproject.git
     dest: "/home/{{ fog_user }}/fog"
     version: "{{ fog_branch }}"
+  become_user: "{{ fog_user }}"
 
 - name: Install FOG
   shell: "sudo ./installfog.sh -Y -f /home/{{ fog_user }}/temp_settings"

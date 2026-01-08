@@ -5,6 +5,7 @@
     dest: "/home/{{ fog_user }}/fog"
     version: "{{ fog_branch }}"
     update: yes
+  become_user: "{{ fog_user }}"
 
 - name: Update FOG
   shell: "sudo ./installfog.sh -Y -f /home/{{ fog_user }}/temp_settings"
