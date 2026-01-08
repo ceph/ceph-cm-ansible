@@ -1,4 +1,4 @@
 ---
 fog_user: fog
-fog_branch: master
+fog_branch: stable
 fog_dhcp_server: false
