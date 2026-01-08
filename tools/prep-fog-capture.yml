@@ -61,6 +61,35 @@
       path: /var/lib/ceph
       state: unmounted
 
+  - name: Install one-shot service to regenerate SSH host keys on first boot
+    copy:
+      dest: /etc/systemd/system/regen-ssh-hostkeys.service
+      owner: root
+      group: root
+      mode: '0644'
+      content: |
+        [Unit]
+        Description=Regenerate SSH host keys on first boot
+        ConditionPathExists=!/etc/ssh/ssh_host_ed25519_key
+        Before=ssh.service
+  
+        [Service]
+        Type=oneshot
+        ExecStart=/usr/bin/ssh-keygen -A
+        ExecStartPost=/bin/systemctl disable regen-ssh-hostkeys.service
+  
+        [Install]
+        WantedBy=multi-user.target
+  
+  - name: Reload systemd daemon
+    systemd:
+      daemon_reload: true
+  
+  - name: Enable regen-ssh-hostkeys.service
+    systemd:
+      name: regen-ssh-hostkeys.service
+      enabled: true
+
   - name: Get list of SSH host keys
     shell: "ls -1 /etc/ssh/ssh_host_*"
     register: ssh_host_keys
