@@ -128,6 +128,12 @@
   # if the time is off, it slowly drifts back in sync.  Since our testnodes
   # are ephemeral, they don't ever have enough time to correctly drift
   # back to the correct time.  So we'll force it in the captured OS images.
+  - name: Install ntpdate command if missing
+    package:
+      name: ntpdate
+      state: present
+    when: '"ntp" in ntp_service'
+
   - name: Force time synchronization using stepping | ntp
     command: "ntpdate -b {{ ntp_servers|join(' ') }}"
     when: '"ntp" in ntp_service'
