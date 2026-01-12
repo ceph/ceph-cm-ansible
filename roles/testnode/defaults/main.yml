@@ -3,7 +3,7 @@ mirror_host: apt-mirror.sepia.ceph.com
 git_mirror_host: git.ceph.com
 key_host: download.ceph.com
 gitbuilder_host: gitbuilder.ceph.com
-pip_mirror_url: "http://{{ mirror_host }}/pypi/simple"
+pip_mirror_url: "https://{{ mirror_host }}/pypi/simple"
 
 # yum repos common to a major version or distro
 common_yum_repos: {}
