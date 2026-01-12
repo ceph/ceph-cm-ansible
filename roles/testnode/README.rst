@@ -53,7 +53,7 @@ This host is used by teuthology to download ceph packages and will be given high
 
 The mirror to download and install ``pip`` from::
 
-    pip_mirror_url: "http://{{ mirror_host }}/pypi/simple"
+    pip_mirror_url: "https://{{ mirror_host }}/pypi/simple"
 
 A hash defining yum repos that would be common across a major version. Each key in the hash represents
 the filename of a yum repo created in /etc/yum.repos.d. The key/value pairs as the value for that repo
@@ -65,7 +65,7 @@ will be used as the properties for the repo file::
     common_yum_repos:
       rhel-7-fcgi-ceph:
         name: "RHEL 7 Local fastcgi Repo"
-        baseurl: http://gitbuilder.ceph.com/mod_fastcgi-rpm-rhel7-x86_64-basic/ref/master/
+        baseurl: https://gitbuilder.ceph.com/mod_fastcgi-rpm-rhel7-x86_64-basic/ref/master/
         enabled: 1
         gpgcheck: 0
         priority: 2
@@ -80,7 +80,7 @@ will be used as the properties for the repo file::
     yum_repos:
       fedora-fcgi-ceph:
         name: Fedora Local fastcgi Repo
-        baseurl: http://gitbuilder.ceph.com/mod_fastcgi-rpm-fedora20-x86_64-basic/ref/master/
+        baseurl: https://gitbuilder.ceph.com/mod_fastcgi-rpm-fedora20-x86_64-basic/ref/master/
         enabled: 1
         gpgcheck: 0
         priority: 0
@@ -130,7 +130,7 @@ an apt repo to be added to sources.list::
     # An Example:
     common_apt_repos:
       # mod_fastcgi for radosgw
-      - "deb http://gitbuilder.ceph.com/libapache-mod-fastcgi-deb-{{ansible_distribution_release}}-x86_64-basic/ref/master/ {{ansible_distribution_release}} main"
+      - "deb https://gitbuilder.ceph.com/libapache-mod-fastcgi-deb-{{ansible_distribution_release}}-x86_64-basic/ref/master/ {{ansible_distribution_release}} main"
 
 A list defining version-specific apt repos. Each item in the list represents an apt repo to be added to sources.list::
 
