@@ -31,6 +31,11 @@ test2 ip=172.x.x.x ipmi=10.0.8.x mac=08:00:27:ed:43:x
 [maas_db_server]
 test1 ip=172.x.x.x ipmi=10.0.8.x mac=08:00:27:ed:43:x
 
+[maas:children]
+maas_region_rack_server
+maas_rack_server
+maas_db_server
+
 You can do this installation with 3 or 2 nodes depending on your needs.
 If you want to use a dedicated DB server you can just put it in the maas_db_server group, use a different server in maas_region_rack_server and another in maas_rack_server.
 Or if you want to simplify and you dont mind to use your maas server as DB server too, you can use the same node in maas_db_server and in maas_region_rack_server, as they are different services and use different ports they can be installed on the same node. This way you use only 2 nodes for the installation the db+region+rack server and the secondary rack for high availability.
@@ -46,7 +51,11 @@ maas_admin_email: "admin@example.com"
 maas_db_name: "maasdb"
 maas_db_user: "maas"
 maas_db_password: "maaspassword"
-maas_version: "3.5"
+maas_version: "3.7"
+postgres_version: "16"
+maas_install_method: "apt" #This playbook can install MAAS with snap or with apt packages, you can select the install method with this variable. Consider that the behavior of MAAS changes depending of the install method you select.
+maas_home_dir: "/home/ubuntu/maas" #In order to be able to modify default files whe you install MAAS with SNAP you need to unsquash the snap filesystem inside another directory, this variable defines that directory, so it is only relevant when you select snap as maas_install_method.
+global_kernel_opt: "console=tty0 console=ttyS1,115200" #This are the global kernel options that MAAS will put on all deployed systems, there is a way to create kernel parameters with tags for individual group of servers but at this moment this playbook does not configure those.
 
 NTP variables include:
 maas_ntp_servers: "ntp.ubuntu.com"  # NTP servers, specified as IP addresses or hostnames delimited by commas and/or spaces, to be used as time references for MAAS itself, the machines MAAS deploys, and devices that make use of MAAS's DHCP services. MAAS uses ntp.ubuntu.com by default. You can put a single server or multiple servers.
@@ -96,7 +105,7 @@ dhcp_maas_subnets: #This is a list of dictionaries, you can list here all the su
     end_ip: 172.21.16.20
     ip_range_type: dynamic
 
-This is large dictionary that gets parsed out into individual snippet files. Each top-level key (front and back in the example) will get its own snippet file created.
+This is large dictionary that gets parsed out into individual snippet files. Each top-level key (front and back in the example) will get its own snippet file created. please consider that this task only configures the subnets but it does not create them, so in order for this task to work you should have your network interfaces with a subnet already created.
 
 Under each subnet, cidr, ipvar, and macvar are required. ipvar and macvar tell the Jinja2 template which IP address and MAC address should be used for each host in each subnet snippet, the value of these variables should be the name of the variable that holds the ip address and mac address, respectively (for hosts that have more than one interface). That is, you might have "ipfront=1.2.3.4 ipback=5.6.7.8", and for the front subnet, 'ipvar' would be set to 'ipfront', and for the back network, 'ipvar' would be set to 'ipback', if those variables are not defined in the inventory then that host will not be included into the subnet configuration.
 
@@ -106,11 +115,19 @@ smithi001.front.sepia.ceph.com mac=0C:C4:7A:BD:15:E8 ip=172.21.15.1 ipmi=172.21.
 
 This will result in a static lease for smithi001-front with IP 172.21.15.1 and MAC 0C:C4:7A:BD:15:E8 in front_hosts snippet and a smithi001-ipmi entry with IP 172.21.47.1 with MAC 0C:C4:7A:6E:21:A7 in ipmi_hosts snippet.
 
-start_ip, end_ip and ip_range_type are required too in order to create an IP range. MAAS needs a range in order to enable DHCP on the subnet. In this case the ip_range_type is configured as dynamic, it could be dynamic or static.
+start_ip, end_ip and ip_range_type are required too in order to create an IP range. MAAS needs a range in order to enable DHCP on the subnet. In this case the ip_range_type is configured as dynamic, it could be dynamic or reserved.
 
 The classes are optional, they are groups of DHCP clients defined by specific criteria, allowing the possibility to apply custom DHCP options or behaviors to those groups. This enables more granular control over how DHCP services are delivered to different client types, like assigning specific IP addresses or configuring other network parameters based on device type or other characteristics. In this case we have virtual and lxc but you can include here any group you want with any name. In our specific case we are including into these groups hosts that match with an specific mac address criteria.
 
 The pools are optional too, they are ranges of IP addresses that a DHCP server uses to automatically assign to DHCP clients on a network. These addresses are dynamically allocated, meaning they are leased to clients for a specific duration and can be reclaimed when no longer in use. DHCP pools allow for efficient IP address management and are essential for networks where devices are frequently added or moved. In the example above we are using pools to assign IPs to the classes we just defined and to the unknown_clients which are servers that are not defined into the DHCP config file.
+
+Users variables include:
+
+keys_repo: "https://github.com/ceph/keys"
+keys_branch: main
+keys_repo_path: "~/.cache/src/keys"
+
+These variables just specify the repository, path and branch where the public SSH keys are stored, MAAS needs this to be able to create users and include their SSH keys too.
 
 ## Usage
 
@@ -128,25 +145,29 @@ ansible-playbook maas.yml
 ## Role Structure
 
 maas
-  ├── defaults
-  │   └── main.yml
-  ├── meta
-  │   └── main.yml
-  ├── README.md
-  ├── tasks
-  │   ├── add_machines.yml
-  │   ├── config_dhcpd_subnet.yml
-  │   ├── config_dns.yml
-  │   ├── config_ntp.yml
-  │   ├── initialize_region_rack.yml
-  │   ├── initialize_secondary_rack.yml
-  │   ├── install_maasdb.yml
-  │   └── main.yml
-  └── templates
-      ├── dhcpd.classes.snippet.j2
-      ├── dhcpd.global.snippet.j2
-      ├── dhcpd.hosts.snippet.j2
-      └── dhcpd.pools.snippet.j2
+├── defaults
+│   └── main.yml
+├── meta
+│   └── main.yml
+├── README.md
+├── tasks
+│   ├── add_machines.yml
+│   ├── add_users.yml
+│   ├── config_dhcpd_subnet.yml
+│   ├── config_dns.yml
+│   ├── config_maas.yml
+│   ├── config_ntp.yml
+│   ├── initialize_region_rack.yml
+│   ├── initialize_secondary_rack.yml
+│   ├── install_maasdb.yml
+│   └── main.yml
+└── templates
+    ├── arm_uefi.j2
+    ├── dhcpd.classes.snippet.j2
+    ├── dhcpd.global.snippet.j2
+    ├── dhcpd.hosts.snippet.j2
+    └── dhcpd.pools.snippet.j2
+
 
 ## Tags
 
@@ -154,3 +175,4 @@ maas
 - add-machines #Add Machines to MAAS only if they are not already present.
 - config_dhcp #Configures DHCP options only if there are any change in the DHCP variables.
 - config_dns #Configure DNS domains and add the DNS Records that are not currently into a domain.
+- config_maas #Configure curtin_scripts files and modify some default files in MAAS to address issues during depoyment, also it configures the global kernel parameters.
