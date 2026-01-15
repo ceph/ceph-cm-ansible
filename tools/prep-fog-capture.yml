@@ -61,6 +61,35 @@
       path: /var/lib/ceph
       state: unmounted
 
+  - name: Install one-shot service to regenerate SSH host keys on first boot
+    copy:
+      dest: /etc/systemd/system/regen-ssh-hostkeys.service
+      owner: root
+      group: root
+      mode: '0644'
+      content: |
+        [Unit]
+        Description=Regenerate SSH host keys on first boot
+        ConditionPathExists=!/etc/ssh/ssh_host_ed25519_key
+        Before=ssh.service
+  
+        [Service]
+        Type=oneshot
+        ExecStart=/usr/bin/ssh-keygen -A
+        ExecStartPost=/bin/systemctl disable regen-ssh-hostkeys.service
+  
+        [Install]
+        WantedBy=multi-user.target
+  
+  - name: Reload systemd daemon
+    systemd:
+      daemon_reload: true
+  
+  - name: Enable regen-ssh-hostkeys.service
+    systemd:
+      name: regen-ssh-hostkeys.service
+      enabled: true
+
   - name: Get list of SSH host keys
     shell: "ls -1 /etc/ssh/ssh_host_*"
     register: ssh_host_keys
@@ -128,6 +157,12 @@
   # if the time is off, it slowly drifts back in sync.  Since our testnodes
   # are ephemeral, they don't ever have enough time to correctly drift
   # back to the correct time.  So we'll force it in the captured OS images.
+  - name: Install ntpdate command if missing
+    package:
+      name: ntpdate
+      state: present
+    when: '"ntp" in ntp_service'
+
   - name: Force time synchronization using stepping | ntp
     command: "ntpdate -b {{ ntp_servers|join(' ') }}"
     when: '"ntp" in ntp_service'
