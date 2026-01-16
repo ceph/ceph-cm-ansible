@@ -1,8 +1,6 @@
 ---
-### This standalone playbook can be used to prep a COBBLER-IMAGED testnode
+### This standalone playbook can be used to prep a MAAS-IMAGED testnode
 ### so that it can be used to capture an OS image for FOG.
-### This playbook is needed for a couple reasons
-###   - NIC configs get hard coded into the captured FOG images so nodes reimaged by FOG don't come up with network
 
 - hosts:
     - testnodes
@@ -10,21 +8,8 @@
   gather_facts: false
   tasks:
 
-  # (Missing in RHEL8)
-  - name: Check for /usr/bin/python
-    shell: echo marco
-    register: polo
-    ignore_errors: true
-
-  - name: Set ansible_python_interpreter=/usr/bin/python3
-    set_fact:
-      ansible_python_interpreter: /usr/bin/python3
-    when: polo is failed
-
-  # Now that we know where python is, we can gather_facts
   - setup:
 
-  # We need to leave /.cephlab_rc_local or else each FOG reimage would tell Cobbler to run ceph-cm-ansible
   - name: Remove lock files and udev rules
     file:
       path: "{{ item }}"
@@ -72,19 +57,19 @@
         Description=Regenerate SSH host keys on first boot
         ConditionPathExists=!/etc/ssh/ssh_host_ed25519_key
         Before=ssh.service
-  
+
         [Service]
         Type=oneshot
         ExecStart=/usr/bin/ssh-keygen -A
         ExecStartPost=/bin/systemctl disable regen-ssh-hostkeys.service
-  
+
         [Install]
         WantedBy=multi-user.target
-  
+
   - name: Reload systemd daemon
     systemd:
       daemon_reload: true
-  
+
   - name: Enable regen-ssh-hostkeys.service
     systemd:
       name: regen-ssh-hostkeys.service
@@ -96,7 +81,7 @@
     ignore_errors: true
 
   # Key regeneration is done automatically on CentOS firstboot.
-  # For Ubuntu, we'll add `dpkg-reconfigure openssh-server` to rc.local
+  # For Ubuntu, we'll add a systemd service to regenerate them on boot.
   - name: Delete SSH host keys so they're generated during firstboot on cloned machines
     file:
       path: "{{ item }}"
@@ -179,3 +164,308 @@
 
   - name: Sync the hardware clock
     command: "hwclock --systohc"
+
+  - name: Disable cloud init and disruptive apt services
+    ansible.builtin.systemd:
+      name: "{{ item }}"
+      enabled: false
+      state: stopped
+      masked: true
+    loop:
+      - cloud-init-local.service
+      - cloud-init.service
+      - cloud-config.service
+      - cloud-final.service
+      - unattended-upgrades.service
+      - apt-daily.service
+      - apt-daily-upgrade.service
+      - apt-daily.timer
+      - apt-daily-upgrade.timer
+    failed_when: false
+    when: ansible_os_family == "Debian"
+
+  - name: Disable cloud init networking config
+    ansible.builtin.copy:
+      dest: /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
+      owner: root
+      group: root
+      mode: "0644"
+      content: |
+        network:
+          config: disabled
+    failed_when: false
+
+  - name: Disable cloud init completely
+    ansible.builtin.file:
+      path: /etc/cloud/cloud-init.disabled
+      state: touch
+      owner: root
+      group: root
+      mode: "0644"
+
+  - name: Remove cloud init state
+    ansible.builtin.file:
+      path: /var/lib/cloud
+      state: absent
+    failed_when: false
+
+  - name: Remove cloud init netplan file
+    ansible.builtin.file:
+      path: /etc/netplan/50-cloud-init.yaml
+      state: absent
+    failed_when: false
+    when: ansible_os_family == "Debian"
+
+  - name: Debian netplan from link config
+    block:
+      - name: Install netplan link selection script
+        ansible.builtin.copy:
+          dest: /usr/local/sbin/netplan-from-link.sh
+          owner: root
+          group: root
+          mode: "0755"
+          content: |
+            #!/usr/bin/env bash
+            set -euo pipefail
+
+            OUT="/etc/netplan/01-fog.yaml"
+            STAMP="/.cephlab_net_configured"
+
+            if [[ -f "$STAMP" ]]; then
+              exit 0
+            fi
+
+            rm -f /etc/netplan/*.yaml || true
+
+            pick_iface() {
+              for c in /sys/class/net/*/carrier; do
+                iface="$(basename "$(dirname "$c")")"
+
+                case "$iface" in
+                  lo|docker*|veth*|virbr*|br*|cni*|flannel*|weave*|zt*|wg*|tun*|tap*|sit*|ip6tnl*|gre*|gretap*|erspan*|bond* )
+                    continue
+                    ;;
+                esac
+
+                if [[ -r "$c" ]] && [[ "$(cat "$c")" == "1" ]]; then
+                  echo "$iface"
+                  return 0
+                fi
+              done
+
+              ip -4 route show default 2>/dev/null | awk '{for(i=1;i<=NF;i++) if ($i=="dev") {print $(i+1); exit}}' || true
+            }
+
+            iface=""
+            for _ in $(seq 1 30); do
+              iface="$(pick_iface || true)"
+              if [[ -n "${iface:-}" ]]; then
+                break
+              fi
+              sleep 1
+            done
+
+            if [[ -z "${iface:-}" ]]; then
+              echo "netplan-from-link could not find an uplink interface" >&2
+              exit 0
+            fi
+
+            cat >"$OUT" <<EOF
+            network:
+              version: 2
+              renderer: networkd
+              ethernets:
+                ${iface}:
+                  dhcp4: true
+                  dhcp6: false
+                  optional: false
+                  dhcp4-overrides:
+                    use-dns: true
+                    use-hostname: true
+                  nameservers:
+                    addresses: [10.20.192.11]
+            EOF
+
+            chmod 0644 "$OUT"
+
+            if command -v netplan >/dev/null 2>&1; then
+              netplan generate || true
+              netplan apply || true
+            fi
+
+            touch "$STAMP"
+
+      - name: Install systemd unit for netplan link selection
+        ansible.builtin.copy:
+          dest: /etc/systemd/system/netplan-from-link.service
+          owner: root
+          group: root
+          mode: "0644"
+          content: |
+            [Unit]
+            Description=Write netplan from link carrier once
+            After=systemd-udev-settle.service local-fs.target
+            Wants=systemd-udev-settle.service
+
+            [Service]
+            Type=oneshot
+            ExecStart=/usr/local/sbin/netplan-from-link.sh
+            RemainAfterExit=yes
+
+            [Install]
+            WantedBy=multi-user.target
+
+      - name: Enable netplan link selection unit
+        ansible.builtin.systemd:
+          name: netplan-from-link.service
+          enabled: true
+          state: started
+          daemon_reload: true
+
+      - name: Fog prep disable network manager best effort
+        ansible.builtin.systemd:
+          name: NetworkManager
+          enabled: false
+          state: stopped
+        failed_when: false
+
+      - name: Fog prep enable networkd
+        ansible.builtin.systemd:
+          name: systemd-networkd
+          enabled: true
+          state: started
+          daemon_reload: true
+
+      - name: Fog prep avoid wait online hang
+        ansible.builtin.systemd:
+          name: systemd-networkd-wait-online
+          enabled: false
+          state: stopped
+        failed_when: false
+
+      - name: Fog prep netplan generate
+        ansible.builtin.command: netplan generate
+        changed_when: false
+        failed_when: false
+
+      - name: Fog prep netplan apply
+        ansible.builtin.command: netplan apply
+        changed_when: true
+        failed_when: false
+    when: ansible_os_family == "Debian"
+
+  - name: Disable cloud init services
+    ansible.builtin.systemd:
+      name: "{{ item }}"
+      enabled: false
+      state: stopped
+      masked: true
+    loop:
+      - cloud-init-local.service
+      - cloud-init.service
+      - cloud-config.service
+      - cloud-final.service
+    failed_when: false
+    when: ansible_os_family == "RedHat"
+
+  - name: CentOS9 network manager from link config
+    block:
+      - name: Install network manager link selection script
+        ansible.builtin.copy:
+          dest: /usr/local/sbin/nm-from-link.sh
+          owner: root
+          group: root
+          mode: "0755"
+          content: |
+            #!/usr/bin/env bash
+            set -euo pipefail
+
+            STAMP="/.cephlab_net_configured"
+            if [[ -f "$STAMP" ]]; then
+              exit 0
+            fi
+
+            pick_iface() {
+              for c in /sys/class/net/*/carrier; do
+                iface="$(basename "$(dirname "$c")")"
+
+                case "$iface" in
+                  lo|docker*|veth*|virbr*|br*|cni*|flannel*|weave*|zt*|wg*|tun*|tap*|sit*|ip6tnl*|gre*|gretap*|erspan*|bond* )
+                    continue
+                    ;;
+                esac
+
+                if [[ -r "$c" ]] && [[ "$(cat "$c")" == "1" ]]; then
+                  echo "$iface"
+                  return 0
+                fi
+              done
+
+              ip -4 route show default 2>/dev/null | awk '{for(i=1;i<=NF;i++) if ($i=="dev") {print $(i+1); exit}}' || true
+            }
+
+            iface=""
+            for _ in $(seq 1 30); do
+              iface="$(pick_iface || true)"
+              if [[ -n "${iface:-}" ]]; then
+                break
+              fi
+              sleep 1
+            done
+
+            if [[ -z "${iface:-}" ]]; then
+              echo "nm-from-link could not find an uplink interface" >&2
+              exit 0
+            fi
+
+            systemctl enable --now NetworkManager || true
+
+            IFACE="$iface"
+            CONN="fog-dhcp-${IFACE}"
+
+            # Remove existing connections pinned to this interface (prevents stale MAC/IP settings)
+            nmcli -t -f NAME,DEVICE con show | awk -F: -v d="$IFACE" '$2==d {print $1}' | while read -r n; do
+              [[ -n "$n" ]] && nmcli con delete "$n" || true
+            done
+
+            # Remove same-named conn if present
+            nmcli -t -f NAME con show | grep -qx "$CONN" && nmcli con delete "$CONN" || true
+
+            nmcli con add type ethernet ifname "$IFACE" con-name "$CONN" ipv4.method auto ipv6.method ignore
+            nmcli con mod "$CONN" connection.autoconnect yes
+            nmcli con mod "$CONN" ipv4.ignore-auto-dns yes
+            nmcli con mod "$CONN" ipv4.dns "10.20.192.11"
+            nmcli con up "$CONN" || true
+
+            touch "$STAMP"
+
+      - name: Install systemd unit for network manager link selection
+        ansible.builtin.copy:
+          dest: /etc/systemd/system/nm-from-link.service
+          owner: root
+          group: root
+          mode: "0644"
+          content: |
+            [Unit]
+            Description=Write NetworkManager connection from link carrier once
+            After=systemd-udev-settle.service local-fs.target
+            Wants=systemd-udev-settle.service
+
+            [Service]
+            Type=oneshot
+            ExecStart=/usr/local/sbin/nm-from-link.sh
+            RemainAfterExit=yes
+
+            [Install]
+            WantedBy=multi-user.target
+
+      - name: Enable network manager link selection unit
+        ansible.builtin.systemd:
+          name: nm-from-link.service
+          enabled: true
+          state: started
+          daemon_reload: true
+
+    when:
+      - ansible_os_family == "RedHat"
+      - ansible_distribution_major_version|int >= 9
