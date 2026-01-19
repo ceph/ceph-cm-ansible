@@ -295,6 +295,22 @@
 
             touch "$STAMP"
 
+      - name: Install Ubuntu 20 netplan file to ensure NIC comes up
+        copy:
+          dest: /etc/netplan/00-base-dhcp.yaml
+          owner: root
+          group: root
+          mode: '0644'
+          content: |
+           network:
+             version: 2
+             renderer: networkd
+             ethernets:
+               enp1s0f0:
+                 dhcp4: true
+                 optional: true
+        when: ansible_distribution_major_version|int == 20
+
       - name: Install systemd unit for netplan link selection
         ansible.builtin.copy:
           dest: /etc/systemd/system/netplan-from-link.service
