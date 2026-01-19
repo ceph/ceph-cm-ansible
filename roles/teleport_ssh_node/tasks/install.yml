@@ -1,0 +1,95 @@
+---
+# Install Teleport
+
+########################
+# Ubuntu / Debian
+########################
+
+- name: Install dependencies (Debian/Ubuntu)
+  ansible.builtin.apt:
+    name: curl
+    state: present
+    update_cache: yes
+  when: ansible_os_family == "Debian"
+
+- name: Add Teleport GPG key (Debian/Ubuntu)
+  ansible.builtin.get_url:
+    url: https://apt.releases.teleport.dev/gpg
+    dest: /usr/share/keyrings/teleport-archive-keyring.asc
+    mode: '0644'
+  when: ansible_os_family == "Debian"
+
+- name: Add Teleport apt repo (pinned major v15)
+  ansible.builtin.apt_repository:
+    repo: >
+      deb [signed-by=/usr/share/keyrings/teleport-archive-keyring.asc]
+      https://apt.releases.teleport.dev/ubuntu
+      {{ ansible_distribution_release }} stable/v15
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Install Teleport (pinned) on Debian/Ubuntu
+  ansible.builtin.apt:
+    name: "teleport{{ teleport_pkg_version }}"
+    state: present
+    update_cache: yes
+  when: ansible_os_family == "Debian"
+
+
+########################
+# RHEL / CentOS / EL9
+########################
+
+- name: Remove any old Teleport repo (EL)
+  ansible.builtin.file:
+    path: /etc/yum.repos.d/teleport.repo
+    state: absent
+  when: ansible_os_family == "RedHat"
+
+- name: Clean dnf metadata (EL)
+  ansible.builtin.command: dnf clean all
+  changed_when: false
+  when: ansible_os_family == "RedHat"
+
+- name: Install base deps safely (EL)
+  ansible.builtin.dnf:
+    name:
+      - curl
+      - dnf-plugins-core
+    state: present
+    disablerepo: "*"
+    enablerepo: "baseos,appstream"
+  when: ansible_os_family == "RedHat"
+
+- name: Install versionlock plugin (EL9)
+  ansible.builtin.dnf:
+    name: dnf-command(versionlock)
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Read OS ID (EL)
+  ansible.builtin.shell: ". /etc/os-release && echo $ID"
+  register: os_release_id
+  changed_when: false
+  when: ansible_os_family == "RedHat"
+
+- name: Add Teleport yum repo (pinned major v15)
+  ansible.builtin.command: >
+    dnf config-manager --add-repo
+    https://yum.releases.teleport.dev/{{ os_release_id.stdout | trim }}/{{ ansible_distribution_major_version }}/Teleport/{{ ansible_architecture }}/stable/v15/teleport.repo
+  args:
+    creates: /etc/yum.repos.d/teleport.repo
+  when: ansible_os_family == "RedHat"
+
+- name: Install Teleport (pinned) on EL
+  ansible.builtin.dnf:
+    name: "teleport-{{ teleport_version }}"
+    state: present
+    update_cache: true
+  when: ansible_os_family == "RedHat"
+
+- name: Lock Teleport version (EL)
+  ansible.builtin.command: dnf versionlock add teleport-{{ teleport_version }}
+  args:
+    creates: /etc/dnf/plugins/versionlock.list
+  when: ansible_os_family == "RedHat"

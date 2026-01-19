@@ -1,0 +1,28 @@
+---
+- name: Set hostname with domain
+  become: true
+  hostname:
+    name: "{{ ansible_hostname }}.front.sepia.ceph.com"
+  when: ansible_fqdn is not defined or not ansible_fqdn.endswith('front.sepia.ceph.com')
+
+- name: Assert join token provided
+  assert:
+    that:
+      - teleport_join_token is defined
+      - teleport_join_token | length > 0
+    fail_msg: "teleport_join_token is required"
+
+- name: Render teleport config
+  template:
+    src: teleport.yaml.j2
+    dest: /etc/teleport.yaml
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart teleport
+
+- name: Enable and start teleport
+  systemd:
+    name: teleport
+    enabled: true
+    state: started
