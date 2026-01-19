@@ -67,6 +67,7 @@ packages:
   # for test-crash.sh
   - gdb
   - iozone
+  - wget
 
 epel_packages:
   - dbench
