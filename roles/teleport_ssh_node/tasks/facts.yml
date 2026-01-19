@@ -1,0 +1,12 @@
+---
+- name: Assert FQDN exists
+  assert:
+    that:
+      - ansible_fqdn is defined
+      - ansible_fqdn | length > 0
+    fail_msg: "ansible_fqdn is empty — fix hostname/DNS before continuing"
+
+- name: Set teleport facts
+  set_fact:
+    teleport_nodename: "{{ ansible_fqdn }}"
+    teleport_role_label: "{{ ansible_hostname }}"

@@ -1,0 +1,37 @@
+version: v3
+
+teleport:
+  nodename: {{ teleport_nodename }}
+  data_dir: /var/lib/teleport
+
+  join_params:
+    token_name: {{ teleport_join_token }}
+    method: token
+
+  proxy_server: {{ teleport_proxy }}
+  ca_pin: {{ teleport_ca_pin }}
+  diag_addr: ""
+
+  log:
+    output: stderr
+    severity: INFO
+    format:
+      output: text
+
+auth_service:
+  enabled: "no"
+
+ssh_service:
+  enabled: "yes"
+  labels:
+    role: {{ teleport_role_label }}
+  commands:
+    - name: hostname
+      command: [hostname]
+      period: 1m0s
+
+proxy_service:
+  enabled: "no"
+  https_keypairs: []
+  https_keypairs_reload_interval: 0s
+  acme: {}

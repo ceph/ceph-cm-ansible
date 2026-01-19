@@ -1,0 +1,12 @@
+---
+teleport_version: "15.5.4"
+teleport_proxy: "teleport.ceph.com:443"
+teleport_ca_pin: "sha256:3dcff35bc57ea8570af409ee9bad6a6c7acff5556bf7c094d34034e5f826b235"
+teleport_join_token: ""
+
+teleport_pkg_version: "=15.5.4"
+# Full node name used by Teleport
+teleport_nodename: "{{ ansible_fqdn | default(ansible_hostname) }}"
+
+# Short role label (hostname without domain)
+teleport_role_label: "{{ ansible_hostname }}"

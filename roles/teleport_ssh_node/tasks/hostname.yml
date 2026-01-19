@@ -1,0 +1,4 @@
+---
+- name: Ensure hostname is FQDN
+  hostname:
+    name: "{{ ansible_fqdn }}"
