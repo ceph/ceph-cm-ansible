@@ -231,10 +231,6 @@
             OUT="/etc/netplan/01-fog.yaml"
             STAMP="/.cephlab_net_configured"
 
-            if [[ -f "$STAMP" ]]; then
-              exit 0
-            fi
-
             rm -f /etc/netplan/*.yaml || true
 
             pick_iface() {
@@ -397,9 +393,6 @@
             set -euo pipefail
 
             STAMP="/.cephlab_net_configured"
-            if [[ -f "$STAMP" ]]; then
-              exit 0
-            fi
 
             pick_iface() {
               for c in /sys/class/net/*/carrier; do
