@@ -1,0 +1,33 @@
+---
+- name: Install PostgreSQL
+  apt:
+    name: postgresql-{{ postgres_version}}
+    state: present
+  when: inventory_hostname in groups['maas_db_server']
+  tags: 
+    - install_maas
+    - install_db
+  register: postgres_install
+
+- name: Configure PostgreSQL for MAAS
+  when: inventory_hostname in groups['maas_db_server'] and postgres_install is changed
+  tags: 
+    - install_maas
+    - install_db  
+  block:
+    - name: Create PostgreSQL user for MAAS
+      command: sudo -i -u postgres psql -c "CREATE USER \"{{ maas_db_user }}\" WITH ENCRYPTED PASSWORD '{{ maas_db_password }}'"
+          
+    - name: Create PostgreSQL database for MAAS
+      command: sudo -i -u postgres createdb -O "{{ maas_db_user }}" "{{ maas_db_name }}"
+          
+    - name: Allow MAAS region controller to connect
+      lineinfile:
+        path: /etc/postgresql/{{ postgres_version }}/main/pg_hba.conf
+        line: "host    {{ maas_db_name }}    {{ maas_db_user }}    0/0    md5"
+        insertafter: EOF
+
+    - name: Restart PostgreSQL
+      systemd:
+        name: postgresql
+        state: restarted
