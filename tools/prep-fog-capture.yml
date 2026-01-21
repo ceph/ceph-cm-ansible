@@ -230,12 +230,25 @@
 
             OUT="/etc/netplan/01-fog.yaml"
             STAMP="/.cephlab_net_configured"
+            LOG="/var/log/netplan-from-link.log"
+
+            log() {
+              echo "$(date -u +%FT%T.%N | cut -c1-23) netplan-from-link: $*" | tee -a "$LOG" >&2
+            }
+
+            exec 2> >(tee -a "$LOG" >&2)
+            exec 1>&2
+
+            log "starting"
+            log "kernel=$(uname -r)"
+            log "cmdline=$(cat /proc/cmdline || true)"
 
             rm -f /etc/netplan/*.yaml || true
 
             pick_iface() {
-              for c in /sys/class/net/*/carrier; do
-                iface="$(basename "$(dirname "$c")")"
+              for d in /sys/class/net/*; do
+                iface="$(basename "$d")"
+                c="$d/carrier"
 
                 case "$iface" in
                   lo|docker*|veth*|virbr*|br*|cni*|flannel*|weave*|zt*|wg*|tun*|tap*|sit*|ip6tnl*|gre*|gretap*|erspan*|bond* )
@@ -243,29 +256,48 @@
                     ;;
                 esac
 
-                if [[ -r "$c" ]] && [[ "$(cat "$c" 2>/dev/null || true)" == "1" ]]; then
+                ip link set dev "$iface" up 2>/dev/null || true
+                v="$(cat "$c" 2>/dev/null || true)"
+                log "probe iface=$iface carrier='${v}' path=$c"
+                if [[ -r "$c" ]] && [[ "$v" == "1" ]]; then
+                  log "selected iface=$iface via carrier"
                   echo "$iface"
                   return 0
                 fi
               done
 
-              ip -4 route show default 2>/dev/null | awk '{for(i=1;i<=NF;i++) if ($i=="dev") {print $(i+1); exit}}' || true
+              dflt="$(ip -4 route show default 2>/dev/null | awk '{for(i=1;i<=NF;i++) if ($i=="dev") {print $(i+1); exit}}' || true)"
+              if [[ -n "${dflt:-}" ]]; then
+                log "selected iface=$dflt via default-route"
+                echo "$dflt"
+                return 0
+              fi
+
+              return 1
             }
 
             iface=""
-            for _ in $(seq 1 30); do
+            for i in $(seq 1 30); do
               iface="$(pick_iface || true)"
               if [[ -n "${iface:-}" ]]; then
                 break
               fi
+              log "no iface yet (attempt $i/30); sleeping 1s"
               sleep 1
             done
 
             if [[ -z "${iface:-}" ]]; then
-              echo "netplan-from-link could not find an uplink interface" >&2
+              log "netplan-from-link could not find an uplink interface"
+              log "ip -o link:"
+              ip -o link show || true
+              log "ip -4 addr:"
+              ip -4 addr show || true
+              log "ip -4 route:"
+              ip -4 route show || true
               exit 0
             fi
 
+            log "writing netplan to $OUT for iface=$iface"
             cat >"$OUT" <<EOF
             network:
               version: 2
@@ -282,14 +314,22 @@
                     addresses: [10.20.192.11]
             EOF
 
-            chmod 0644 "$OUT"
+            chmod 0600 "$OUT"
 
             if command -v netplan >/dev/null 2>&1; then
+              log "netplan generate"
               netplan generate || true
+              log "netplan apply"
               netplan apply || true
+            else
+              log "netplan not found; skipping generate/apply"
             fi
 
+            log "final ip -4 addr for iface=$iface"
+            ip -4 addr show dev "$iface" || true
+
             touch "$STAMP"
+            log "done; touched $STAMP"
 
       - name: Install Ubuntu 20 netplan file to ensure NIC comes up
         copy:
@@ -307,7 +347,7 @@
                  optional: true
         when: ansible_distribution_major_version|int == 20
 
-      - name: Install systemd unit for netplan link selection
+      - name: Install netplan-from-link systemd unit
         ansible.builtin.copy:
           dest: /etc/systemd/system/netplan-from-link.service
           owner: root
@@ -316,8 +356,8 @@
           content: |
             [Unit]
             Description=Write netplan from link carrier once
-            After=systemd-udev-settle.service local-fs.target
-            Wants=systemd-udev-settle.service
+            After=systemd-networkd.service local-fs.target
+            Wants=systemd-networkd.service
 
             [Service]
             Type=oneshot
