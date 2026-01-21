@@ -1,0 +1,12 @@
+---
+- include: ubuntu_16.yml
+  when: ansible_distribution == "Ubuntu" and
+        ansible_distribution_major_version == "16"
+
+- include: ubuntu_14.yml
+  when: ansible_distribution == "Ubuntu" and
+        ansible_distribution_major_version == "14"
+
+- include: rpm.yml
+  when: ansible_distribution == "CentOS" or
+        ansible_distribution == "RedHat"
