@@ -49,6 +49,7 @@
     name: "{{ packages|list }}"
     state: present 
   when: packages|length > 0
+  retries: 5
 
 - name: Install epel packages
   package:
