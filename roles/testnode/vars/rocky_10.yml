@@ -8,6 +8,34 @@ common_yum_repos:
     enabled: 1
     gpgcheck: 0
 
+yum_repos:
+  baseos:
+    name: "Rocky Linux $releasever - BaseOS"
+    baseurls:
+      - "https://nyc.mirrors.clouvider.net/rocky/{{ ansible_distribution_major_version }}/BaseOS/{{ ansible_architecture }}/os/"
+      - "https://plug-mirror.rcac.purdue.edu/rocky/{{ ansible_distribution_major_version }}/BaseOS/{{ ansible_architecture }}/os/"
+      - "https://rocky-linux-us-east4.production.gcp.mirrors.ctrliq.cloud/pub/rocky/{{ ansible_distribution_major_version }}/BaseOS/{{ ansible_architecture }}/os/"
+    enabled: 1
+    gpgcheck: 0
+
+  appstream:
+    name: "Rocky Linux $releasever - AppStream"
+    baseurls:
+      - "https://nyc.mirrors.clouvider.net/rocky/{{ ansible_distribution_major_version }}/AppStream/{{ ansible_architecture }}/os/"
+      - "https://plug-mirror.rcac.purdue.edu/rocky/{{ ansible_distribution_major_version }}/AppStream/{{ ansible_architecture }}/os/"
+      - "https://rocky-linux-us-east4.production.gcp.mirrors.ctrliq.cloud/pub/rocky/{{ ansible_distribution_major_version }}/AppStream/{{ ansible_architecture }}/os/"
+    enabled: 1
+    gpgcheck: 0
+
+  crb:
+    name: "Rocky Linux $releasever - CRB"
+    baseurls:
+      - "https://nyc.mirrors.clouvider.net/rocky/{{ ansible_distribution_major_version }}/CRB/{{ ansible_architecture }}/os/"
+      - "https://plug-mirror.rcac.purdue.edu/rocky/{{ ansible_distribution_major_version }}/CRB/{{ ansible_architecture }}/os/"
+      - "https://rocky-linux-us-east4.production.gcp.mirrors.ctrliq.cloud/pub/rocky/{{ ansible_distribution_major_version }}/CRB/{{ ansible_architecture }}/os/"
+    enabled: 1
+    gpgcheck: 0
+
 # When mirrors become available, these will be filenames in roles/testnodes/templates/mirrorlists/10/
 yum_mirrorlists: []
 

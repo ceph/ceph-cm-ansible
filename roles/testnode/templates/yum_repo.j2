@@ -3,6 +3,12 @@
 #
 
 [{{ item.key }}]
-{% for k, v in item.value.items() | sort -%}
-  {{ k }}={{ v }}
+{% for k, v in item.value.items() | sort %}
+{% if k == "baseurls" %}
+{%   for url in v %}
+baseurl={{ url }}
+{%   endfor %}
+{% else %}
+{{ k }}={{ v }}
+{% endif %}
 {% endfor %}
