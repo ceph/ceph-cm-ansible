@@ -122,6 +122,16 @@ We were already doing this with epel mirrorlists in the ``common`` role but star
     https://path/to/another/mirror
 
 
+A list of repo files to remove from /etc/yum.repos.d::
+
+    yum_repos_to_remove: []
+
+    # An example:
+    yum_repos_to_remove:
+      - rocky-extras.repo
+      - rocky-devel.repo
+
+
 A list defining apt repos that would be common across a major version or distro. Each item in the list represents
 an apt repo to be added to sources.list::
 

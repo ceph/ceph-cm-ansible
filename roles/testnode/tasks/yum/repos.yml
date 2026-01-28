@@ -1,4 +1,13 @@
 ---
+- name: Remove repo files we don't want
+  file:
+    path: "/etc/yum.repos.d/{{ item }}"
+    state: absent
+  loop: "{{ yum_repos_to_remove }}"
+  when:
+    - yum_repos_to_remove is defined
+    - yum_repos_to_remove | length > 0
+
 - name: Configure local mirrorlists
   template:
     src: 'mirrorlists/{{ ansible_distribution_major_version }}/{{ item }}'

@@ -11,6 +11,12 @@ common_yum_repos:
 # When mirrors become available, these will be filenames in roles/testnodes/templates/mirrorlists/10/
 yum_mirrorlists: []
 
+yum_repos_to_remove:
+  - rocky.repo
+  - rocky-extras.repo
+  - rocky-devel.repo
+  - rocky-addons.repo
+
 packages_to_upgrade:
   - libgcrypt # explicitly tied to qemu build
 
