@@ -80,6 +80,7 @@ packages:
   - podman-docker
   - lvm2
   - python3-setuptools
+  - wget
 
 epel_packages:
   - dbench
