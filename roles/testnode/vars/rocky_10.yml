@@ -81,6 +81,9 @@ packages:
   - lvm2
   - python3-setuptools
   - wget
+  - which
+  - perl-Test-Harness
+  - fuse
 
 epel_packages:
   - dbench
