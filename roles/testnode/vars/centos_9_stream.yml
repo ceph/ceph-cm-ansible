@@ -61,6 +61,7 @@ packages:
 
   # centos stream additions start here
   - lvm2
+  - net-tools
 
 epel_packages:
   - dbench
