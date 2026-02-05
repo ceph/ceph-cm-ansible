@@ -84,6 +84,7 @@ packages:
   - which
   - perl-Test-Harness
   - fuse
+  - openssl
 
 epel_packages:
   - dbench
