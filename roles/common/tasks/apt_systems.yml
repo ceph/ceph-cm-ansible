@@ -57,3 +57,24 @@
     state: present
   when:
     - ansible_distribution_major_version|int >= 24
+
+# Outbound port 80 traffic is blocked in Sepia
+- name: Find apt source list files
+  ansible.builtin.find:
+    paths:
+      - /etc/apt
+      - /etc/apt/sources.list.d
+    patterns:
+      - sources.list
+      - "*.list"
+    file_type: file
+  register: apt_source_files
+
+- name: Replace http with https in apt sources
+  ansible.builtin.replace:
+    path: "{{ item.path }}"
+    regexp: '(^\s*deb(?:-src)?\s+)(http://)'
+    replace: '\1https://'
+    backup: yes
+  loop: "{{ apt_source_files.files }}"
+  notify: apt update
