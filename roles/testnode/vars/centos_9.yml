@@ -68,6 +68,8 @@ packages:
   - gdb
   - iozone
   - wget
+  - fuse
+  - net-tools
 
 epel_packages:
   - dbench
