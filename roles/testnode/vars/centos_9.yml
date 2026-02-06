@@ -59,6 +59,7 @@ packages:
   - qemu-kvm-core
   - qemu-kvm-block-rbd
   # for pjd tests
+  - perl-Test-Harness
   - libacl-devel
   # for nvme-loop dependent tests
   - lvm2
