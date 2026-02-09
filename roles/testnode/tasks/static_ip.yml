@@ -1,8 +1,0 @@
----
-- name: Set up static IP in /etc/hosts.
-  lineinfile:
-    dest: /etc/hosts
-    line: "{{ ansible_default_ipv4['address'] }} {{ ansible_fqdn }} {{ ansible_hostname }}"
-    regexp: "^127.0.1.1"
-    backrefs: yes
-    state: present
