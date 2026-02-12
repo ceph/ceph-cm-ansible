@@ -33,7 +33,9 @@
 - name: Set the hardware clock
   command: hwclock --systohc
   # unless system clock is using kvm-clock
-  when: current_clocksource.stdout.find('kvm-clock') == -1
+  when: 
+    - current_clocksource.stdout.find('kvm-clock') == -1
+    - ansible_facts.architecture != "s390x"
   tags:
     - timezone
 
