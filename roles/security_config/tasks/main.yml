@@ -1,0 +1,6 @@
+---
+- name: Install and configure Falcon sensor
+  import_tasks: install_falcon.yml
+
+- name: Configure MOTD banner
+  import_tasks: motd.yml

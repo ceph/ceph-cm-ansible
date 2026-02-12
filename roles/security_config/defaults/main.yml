@@ -1,0 +1,29 @@
+---
+falcon_cid: "20709802E00E4B4C9442CE5F8CA3E69D-9C"
+falcon_tags: "UT/EXAMPLE,CCODE/EXAMPLE,UPDATES/PROD,AV/YES,OWNER/EXAMPLE"
+
+falcon_repo:
+  rhel:
+    "9":
+      x86_64: "https://edr-tools.platformops.ciso.ibm.com/api/download/sensor/ww/N/falcon-sensor.el9.x86_64.rpm"
+      aarch64: "https://edr-tools.platformops.ciso.ibm.com/api/download/sensor/ww/N/falcon-sensor.el9.aarch64.rpm"
+    "10":
+      x86_64: "https://edr-tools.platformops.ciso.ibm.com/api/download/sensor/ww/N/falcon-sensor.el10.x86_64.rpm"
+      aarch64: "https://edr-tools.platformops.ciso.ibm.com/api/download/sensor/ww/N/falcon-sensor.el10.aarch64.rpm"
+  ubuntu:
+    "22":
+      x86_64: "https://edr-tools.platformops.ciso.ibm.com/api/download/sensor/ww/N/falcon-sensor_amd64.deb"
+      aarch64: "https://edr-tools.platformops.ciso.ibm.com/api/download/sensor/ww/N/falcon-sensor_arm64.deb"
+    "24":
+      x86_64: "https://edr-tools.platformops.ciso.ibm.com/api/download/sensor/ww/N/falcon-sensor_amd64.deb"
+      aarch64: "https://edr-tools.platformops.ciso.ibm.com/api/download/sensor/ww/N/falcon-sensor_arm64.deb"
+  suse:
+    "15":
+      x86_64: "https://edr-tools.platformops.ciso.ibm.com/api/download/sensor/ww/N/falcon-sensor.suse15.x86_64.rpm"
+      aarch64: "https://edr-tools.platformops.ciso.ibm.com/api/download/sensor/ww/N/falcon-sensor.suse15.aarch64.rpm"
+
+motd_banner: |
+  ************************************************************
+  * WARNING: This system is monitored and protected.        *
+  * Unauthorized access is prohibited and logged.           *
+  ************************************************************

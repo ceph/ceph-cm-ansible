@@ -1,0 +1,12 @@
+---
+- name: Config MOTD block
+  block:
+    - name: Manage /etc/motd banner
+      blockinfile:
+        path: /etc/motd
+        create: yes
+        marker: "# {mark} ANSIBLE MANAGED MOTD"
+        block: "{{ motd_banner }}"
+      when: motd_banner is defined
+  tags:
+    - config_motd

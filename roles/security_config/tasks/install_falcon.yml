@@ -1,0 +1,73 @@
+---
+- name: Install Falcon block
+  block:
+    - name: Normalize platform
+      set_fact:
+        falcon_platform: >-
+          {%- if ansible_os_family == 'RedHat' -%}
+          rhel
+          {%- elif ansible_os_family == 'Suse' -%}
+          suse
+          {%- elif ansible_os_family == 'Debian' -%}
+          ubuntu
+          {%- else -%}
+          unsupported
+          {% endif %}
+
+    - name: Fail if unsupported OS
+      fail:
+        msg: "Falcon not supported on {{ ansible_distribution }}"
+      when: falcon_platform == 'unsupported'
+
+    - name: Determine package URL
+      set_fact:
+        falcon_url: "{{ falcon_repo[falcon_platform][ansible_distribution_major_version][ansible_architecture] }}"
+
+    - name: Download Falcon package
+      get_url:
+        url: "{{ falcon_url }}"
+        dest: "/tmp/{{ falcon_url | basename }}"
+        mode: '0644'
+
+    - name: Copy Falcon gpg key
+      ansible.builtin.template:
+        src: "Falcon_Linux_Sensor_RPM_Signing_GPG_Key_2025.gpg.j2"
+        dest: /tmp/Falcon_Linux_Sensor_RPM_Signing_GPG_Key_2025.gpg
+        mode: '0644'
+
+    - name: Import Falcon gpg key (RHEL / SUSE)
+      rpm_key:
+        state: present
+        key: /tmp/Falcon_Linux_Sensor_RPM_Signing_GPG_Key_2025.gpg
+      when: falcon_platform in ['rhel', 'suse']
+
+    - name: Import Falcon gpg key (Ubuntu)
+      apt_key:
+        state: present
+        file: /tmp/Falcon_Linux_Sensor_RPM_Signing_GPG_Key_2025.gpg
+      when: falcon_platform == 'ubuntu'
+
+    - name: Install RPM package (RHEL / SUSE)
+      package:
+        name: "/tmp/{{ falcon_url | basename }}"
+        state: present
+      when: falcon_platform in ['rhel', 'suse']
+
+    - name: Install DEB package (Ubuntu)
+      apt:
+        deb: "/tmp/{{ falcon_url | basename }}"
+      when: falcon_platform == 'ubuntu'
+
+    - name: Configure CID
+      command: /opt/CrowdStrike/falconctl -s --cid={{ falcon_cid }}
+
+    - name: Configure tags
+      command: /opt/CrowdStrike/falconctl -s --tags={{ falcon_tags }}
+
+    - name: Ensure falcon service started
+      service:
+        name: falcon-sensor
+        state: started
+        enabled: yes
+  tags:
+    - install_falcon
