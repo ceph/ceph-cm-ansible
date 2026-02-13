@@ -79,6 +79,3 @@ configure_cachefilesd: false
 
 # Is this a containerized testnode?
 containerized_node: false
-
-# Set to false if disk should not cleaned - simple runs for nodes with one disk only.
-wipefs_disk: true
