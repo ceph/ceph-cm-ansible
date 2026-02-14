@@ -85,6 +85,8 @@ packages:
   - perl-Test-Harness
   - fuse
   - openssl
+  - policycoreutils-python-utils
+  - bzip2
 
 epel_packages:
   - dbench
