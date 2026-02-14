@@ -71,6 +71,8 @@ packages:
   - wget
   - fuse
   - net-tools
+  - policycoreutils-python-utils
+  - bzip2
 
 epel_packages:
   - dbench
