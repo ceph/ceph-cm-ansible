@@ -73,6 +73,7 @@ packages:
   - net-tools
   - policycoreutils-python-utils
   - bzip2
+  - bind-utils
 
 epel_packages:
   - dbench
