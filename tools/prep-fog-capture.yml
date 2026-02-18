@@ -179,3 +179,4 @@
 
   - name: Sync the hardware clock
     command: "hwclock --systohc"
+    when: ansible_facts.architecture != "s390x"
