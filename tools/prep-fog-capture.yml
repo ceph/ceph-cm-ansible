@@ -178,4 +178,10 @@
     when: '"chrony" in ntp_service'
 
   - name: Sync the hardware clock
-    command: "hwclock --systohc"
+    command: "hwclock --systohc --verbose"
+    become: true
+    become_method: sudo
+    become_user: root
+    environment:
+      PATH: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    ignore_errors: true
