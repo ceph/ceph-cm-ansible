@@ -1,0 +1,83 @@
+---
+- name: Config MAAS
+  when: inventory_hostname in groups['maas_region_rack_server']
+  tags: config_maas
+  block:
+    - name: Check if MAAS was already unsquashed
+      stat:
+        path: "/var/lib/snapd/snaps/maas_x1.snap"
+      register: maas_x1
+
+    - name: Verify that MAAS directory exist
+      ansible.builtin.file:
+        path: "{{ maas_home_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      when: "maas_install_method == 'snap' and not maas_x1.stat.exists"
+      register: maas_home
+
+    - name: Check installed MAAS snap
+      ansible.builtin.stat:
+        path: "/var/lib/snapd/snaps/maas_*.snap"
+      when: "maas_install_method == 'snap' and not maas_x1.stat.exists"
+      register: maas_snap
+
+    - name: Unsquash MAAS FS
+      command: "sudo unsquashfs -d {{ maas_home_dir }} {{ maas_snap.stdout }}"
+      when: "maas_install_method == 'snap' and maas_home is defined and not maas_x1.stat.exists"
+      register: maas_fs
+
+    - name: Change MAAS current to home directory
+      command: "sudo snap try {{ maas_home_dir }}"
+      when: "maas_install_method == 'snap' and maas_fs is defined and not maas_x1.stat.exists"
+
+    - name: Check UEFI template directory
+      ansible.builtin.stat:
+        path: "{{ maas_home_dir }}/lib/python3/dist-packages/provisioningserver/templates/uefi/config.local.arm64.template"
+      when: "maas_install_method == 'snap'"
+      register: uefi_template_path
+
+    - name: Copy UEFI template to support ARM OS's
+      ansible.builtin.template:
+        src: arm_uefi.j2
+        dest: "{{ uefi_template_path.stdout if maas_install_method == 'snap' else '/usr/lib/python3/dist-packages/provisioningserver/templates/uefi/config.local.arm64.template' }}"
+        owner: root
+        group: root
+        mode: '0644'
+    
+    - name: Check curtin scripts directory
+      ansible.builtin.stat:
+        path: "{{ maas_home_dir }}/usr/lib/python3/dist-packages/curtin/commands/install_grub.py"
+      when: "maas_install_method == 'snap'"
+      register: curtin_scripts_path    
+
+    - name: Add force flag into install_grub curtin script to allow ARM deployment
+      ansible.builtin.replace:
+        path: "{{ curtin_scripts_path.stdout if maas_install_method == 'snap' else '/usr/lib/python3/dist-packages/curtin/commands/install_grub.py' }}"
+        regexp: "'--recheck']"
+        replace: "'--recheck', '--force']"
+
+    - name: Check curtin_userdata directory
+      ansible.builtin.stat:
+        path: "{{ maas_home_dir }}/etc/maas/preseeds/curtin_userdata"
+      when: "maas_install_method == 'snap'"
+      register: curtin_userdata_path
+
+    - name: Copy curtin_userdata template to generate CM user
+      ansible.builtin.blockinfile:
+        path: "{{ curtin_userdata_path.stdout if maas_install_method == 'snap' else '/etc/maas/preseeds/curtin_userdata' }}"
+        insertafter: EOF
+        block: |2
+            88_create_sudo_group: ["curtin", "in-target", "--", "sh", "-c", "groupadd -f sudo"]
+            90_create_cm_user: ["curtin", "in-target", "--", "sh", "-c", "useradd {{ cm_user }} -m -s /bin/bash -g sudo"]
+            92_delete_cm_pass: ["curtin", "in-target", "--", "sh", "-c", "passwd -d cm"]
+            94_configure_sudo: ["curtin", "in-target", "--", "sh", "-c", "printf '%%sudo ALL=(ALL) NOPASSWD: ALL\nDefaults !requiretty\nDefaults visiblepw' >> /etc/sudoers.d/cephlab_sudo"]
+            96_create_ssh_directory: ["curtin", "in-target", "--", "sh", "-c", "mkdir -p /home/cm/.ssh"]
+            98_copy_ssh_keys_cm: ["curtin", "in-target", "--", "sh", "-c", "echo '{{ cm_user_ssh_keys|join('\n') }}' >> /home/cm/.ssh/authorized_keys"]
+      when: "cm_user_ssh_keys is defined and cm_user is defined"
+
+    - name: Configure global kernel options
+      command: "maas {{ maas_admin_username }} maas set-config name=kernel_opts value='{{ global_kernel_opt }}'"
+      when: "global_kernel_opt is defined"
