@@ -19,11 +19,12 @@
       register: maas_home
 
     - name: Check installed MAAS snap
-      shell: "sudo ls -t /var/lib/snapd/snaps/maas_*"
+      ansible.builtin.stat:
+        path: "/var/lib/snapd/snaps/maas_*.snap"
       when: "maas_install_method == 'snap' and not maas_x1.stat.exists"
       register: maas_snap
 
-    - name: Unsquahs MAAS FS
+    - name: Unsquash MAAS FS
       command: "sudo unsquashfs -d {{ maas_home_dir }} {{ maas_snap.stdout }}"
       when: "maas_install_method == 'snap' and maas_home is defined and not maas_x1.stat.exists"
       register: maas_fs
@@ -33,7 +34,8 @@
       when: "maas_install_method == 'snap' and maas_fs is defined and not maas_x1.stat.exists"
 
     - name: Check UEFI template directory
-      shell: "ls {{ maas_home_dir }}/lib/python*/site-packages/provisioningserver/templates/uefi/config.local.arm64.template"
+      ansible.builtin.stat:
+        path: "{{ maas_home_dir }}/lib/python3/dist-packages/provisioningserver/templates/uefi/config.local.arm64.template"
       when: "maas_install_method == 'snap'"
       register: uefi_template_path
 
@@ -46,7 +48,8 @@
         mode: '0644'
     
     - name: Check curtin scripts directory
-      shell: "ls {{ maas_home_dir }}/usr/lib/python3/dist-packages/curtin/commands/install_grub.py"
+      ansible.builtin.stat:
+        path: "{{ maas_home_dir }}/usr/lib/python3/dist-packages/curtin/commands/install_grub.py"
       when: "maas_install_method == 'snap'"
       register: curtin_scripts_path    
 
@@ -57,7 +60,8 @@
         replace: "'--recheck', '--force']"
 
     - name: Check curtin_userdata directory
-      shell: "ls {{ maas_home_dir }}/etc/maas/preseeds/curtin_userdata"
+      ansible.builtin.stat:
+        path: "{{ maas_home_dir }}/etc/maas/preseeds/curtin_userdata"
       when: "maas_install_method == 'snap'"
       register: curtin_userdata_path
 
