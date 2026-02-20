@@ -8,14 +8,57 @@
   tags:
     - always
 
+- name: Import distro-specific vars
+  include_vars: "{{ ansible_os_family }}.yml"
+  tags:
+    - always
+
 # Install and update system packages
 - import_tasks: packages.yml
   tags:
     - packages
 
-- name: Enable and start ntpd
+- name: Gather facts after installing packages
+  service_facts:
+  tags:
+    - always
+
+- name: Determine which time service exists (chrony/ntp/timesyncd)
+  set_fact:
+    time_services: "{{ ansible_facts.services.keys() | list }}"
+    timesyncd_service_name: >-
+      {{ 'systemd-timesyncd' if 'systemd-timesyncd.service' in ansible_facts.services else '' }}
+    chrony_service_name: >-
+      {{
+        'chronyd' if 'chronyd.service' in ansible_facts.services
+        else ('chrony' if 'chrony.service' in ansible_facts.services else '')
+      }}
+    ntp_service_name: >-
+      {{
+        'ntpd' if 'ntpd.service' in ansible_facts.services
+        else ('ntp' if 'ntp.service' in ansible_facts.services else '')
+      }}
+  tags:
+    - always
+
+- name: Set time_service_name
+  set_fact:
+    time_service_name: >-
+      {{
+        chrony_service_name
+        if chrony_service_name|length > 0
+        else (
+          ntp_service_name
+          if ntp_service_name|length > 0
+          else timesyncd_service_name
+        )
+      }}
+  tags:
+    - always
+
+- name: "Enable and start {{ time_service_name }}"
   service:
-    name: ntpd
+    name: "{{ time_service_name }}"
     state: started
     enabled: yes
   tags:
@@ -27,13 +70,14 @@
     path: "{{ named_conf_zones_path }}"
     mode: '0700'
     state: directory
-    owner: named
-    group: named
+    owner: "{{ bind_user }}"
+    group: "{{ bind_group }}"
   tags:
     - always
 
 # Configure firewalld
 - import_tasks: firewall.yml
+  when: ansible_os_family != "Debian"
   tags:
     - firewall
 

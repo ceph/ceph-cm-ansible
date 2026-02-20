@@ -3,8 +3,8 @@
   file:
     path: "{{ named_conf_data_dir }}"
     state: directory
-    owner: named
-    group: named
+    owner: "{{ bind_user }}"
+    group: "{{ bind_group }}"
 
 - name: Create named.conf
   template:
@@ -32,6 +32,12 @@
     - ansible_selinux.status == "enabled"
 
 # Helps prevent accidental DoS
+- name: Ensure nf_conntrack module is loaded
+  modprobe:
+    name: nf_conntrack
+    state: present
+  failed_when: false
+
 - name: Double maximum configured connections
   sysctl:
     name: net.nf_conntrack_max

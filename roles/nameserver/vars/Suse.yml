@@ -19,3 +19,9 @@ packages:
   #- ntpdate
   # do we really need selinux on opensuse?
   - python-selinux
+
+bind_service: named
+bind_user: named
+bind_group: named
+
+named_conf_zones_path: /var/lib/named

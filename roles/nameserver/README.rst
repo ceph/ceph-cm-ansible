@@ -71,6 +71,8 @@ Most variables are defined in ``roles/nameserver/defaults/main.yml`` and values 
 |                                                        |                                                                                                                           |
 |                                                        |**NOTE:** Setting to "yes" will add ``allow-recursion { any; }``. See To-Do.                                               |
 +--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+
+|``named_conf_dnssec_validation: "no"``                  |Optionally define whether to use DNSSEC validation.                                                                        |
++--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+
 |::                                                      |A list of nameservers BIND should forward external DNS queries to.  This is not required but should be defined in          |
 |                                                        |``ansible/inventory/group_vars/nameserver.yml`` if desired.                                                                |
 |  named_forwarders:                                     |                                                                                                                           |

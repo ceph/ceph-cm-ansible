@@ -17,3 +17,9 @@ packages:
   ## for NTP
   - ntp
   - ntpdate
+
+bind_service: named
+bind_user: named
+bind_group: named
+
+named_conf_zones_path: /var/named/zones

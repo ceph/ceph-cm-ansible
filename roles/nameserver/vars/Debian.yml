@@ -1,0 +1,19 @@
+---
+packages:
+  ## misc tools
+  - vim
+  - wget
+  - plocate
+  - git
+  ## bind-specific packages
+  - bind9
+  - bind9utils
+  ## for NTP
+  - ntp
+  - ntpdate
+
+bind_service: bind9
+bind_user: bind
+bind_group: bind
+
+named_conf_zones_path: /etc/bind/zones
