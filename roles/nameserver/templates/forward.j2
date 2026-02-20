@@ -32,13 +32,27 @@ $ORIGIN {{ domain }}.
 {% endfor %}
 {% endif %}
 
-{# Emit A records for each host and each ipvar #}
-{% if ipvars | length > 0 %}
-{%   for host in groups['all'] %}
-{%     for ipvar in ipvars %}
-{%       if hostvars[host][ipvar] is defined %}
-{{ hostvars[host]['inventory_hostname_short'] }}        IN      A       {{ hostvars[host][ipvar] }}
-{%       endif %}
-{%     endfor %}
-{%   endfor %}
+{% set reverse_prefixes = item.value.reverse | default([]) %}
+
+{%- if ipvars | length > 0 %}
+{%- for host in groups['all'] %}
+{%-   for ipvar in ipvars %}
+{%-     set ip = hostvars[host].get(ipvar) %}
+{%-     if ip %}
+
+{# Emit A records for each host/ipvar ONLY if the IP matches one of item.value.reverse prefixes #}
+{%-       set ns = namespace(ok=false) %}
+{%-       for rev in reverse_prefixes %}
+{%-         if ip == rev or ip.startswith(rev ~ '.') %}
+{%-           set ns.ok = true %}
+{%-         endif %}
+{%-       endfor %}
+
+{%-       if ns.ok %}
+{{ "%-40s %-6s %-6s %s" | format(hostvars[host]['inventory_hostname_short'], "IN", "A", ip) }}
+{%        endif %}
+
+{%      endif %}
+{%    endfor %}
+{%  endfor %}
 {% endif %}
