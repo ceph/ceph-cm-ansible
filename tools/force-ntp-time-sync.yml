@@ -1,0 +1,141 @@
+---
+- name: Set NTP server to soko02 and force time sync (chrony/ntpd/timesyncd)
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  vars:
+    ntp_server: soko02.front.sepia.ceph.com
+    ntp_conf: /etc/ntp.conf
+    chrony_conf: /etc/chrony.conf
+    timesyncd_conf: /etc/systemd/timesyncd.conf
+
+  tasks:
+    - name: Gather service facts
+      service_facts:
+
+    - name: Determine which time services exist
+      set_fact:
+        is_rhel_family: "{{ ansible_facts.os_family == 'RedHat' }}"
+        has_chrony: "{{ 'chronyd.service' in ansible_facts.services }}"
+        has_ntpd: "{{ 'ntpd.service' in ansible_facts.services or 'ntp.service' in ansible_facts.services }}"
+        has_timesyncd_unit: "{{ 'systemd-timesyncd.service' in ansible_facts.services }}"
+        ntpd_service_name: >-
+          {{
+            'ntpd' if 'ntpd.service' in ansible_facts.services
+            else ('ntp' if 'ntp.service' in ansible_facts.services else 'ntpd')
+          }}
+
+    # --------------------
+    # RHEL-family: enforce chrony (CentOS Stream/Rocky/RHEL)
+    # --------------------
+    - block:
+        - name: Ensure chrony is installed
+          package:
+            name: chrony
+            state: present
+
+        - name: Remove existing chrony server/pool lines
+          lineinfile:
+            path: "{{ chrony_conf }}"
+            regexp: '^(server|pool)\s+'
+            state: absent
+
+        - name: Add chrony server
+          lineinfile:
+            path: "{{ chrony_conf }}"
+            line: "server {{ ntp_server }} iburst"
+            insertafter: EOF
+
+        - name: Enable + restart chronyd
+          service:
+            name: chronyd
+            enabled: yes
+            state: restarted
+
+        - name: Force time step with chrony
+          command: chronyc -a makestep
+          register: chrony_makestep
+          changed_when: true
+      when: is_rhel_family
+
+    # --------------------
+    # Non-RHEL: best-effort timesyncd (ONLY if unit exists, never fail)
+    # --------------------
+    - block:
+        - name: Configure systemd-timesyncd NTP server
+          ini_file:
+            path: "{{ timesyncd_conf }}"
+            section: Time
+            option: NTP
+            value: "{{ ntp_server }}"
+
+        - name: Restart systemd-timesyncd (best effort)
+          service:
+            name: systemd-timesyncd
+            state: restarted
+            enabled: yes
+          register: timesyncd_restart
+          failed_when: false
+
+        - name: Kick timesyncd to resync (best effort)
+          shell: |
+            timedatectl set-ntp false || true
+            timedatectl set-ntp true  || true
+          changed_when: true
+          failed_when: false
+      when: (not is_rhel_family) and has_timesyncd_unit
+
+    # --------------------
+    # ntpd: only if present (best effort)
+    # --------------------
+    - block:
+        - name: Remove existing ntp server lines
+          lineinfile:
+            path: "{{ ntp_conf }}"
+            regexp: '^server\s+'
+            state: absent
+
+        - name: Add ntp server
+          lineinfile:
+            path: "{{ ntp_conf }}"
+            line: "server {{ ntp_server }} iburst"
+            insertafter: EOF
+
+        - name: Restart ntpd (or ntp)
+          service:
+            name: "{{ ntpd_service_name }}"
+            state: restarted
+            enabled: yes
+
+        - name: Force immediate sync via ntpd -gq (preferred; best effort)
+          shell: |
+            systemctl stop {{ ntpd_service_name }} || true
+            (ntpd -gq || ntpsec-ntpd -gq) 2>/dev/null || true
+            systemctl start {{ ntpd_service_name }} || true
+          register: ntpd_gq
+          changed_when: true
+          failed_when: false
+      when: has_ntpd and (not is_rhel_family)  # RHEL path already handled via chrony
+
+    # --------------------
+    # Status / sanity
+    # --------------------
+    - name: Show current time + sync status (best effort)
+      shell: |
+        date -u
+        (timedatectl status || true) | sed -n '1,25p'
+      register: time_status
+      changed_when: false
+      failed_when: false
+
+    - name: Summary
+      debug:
+        msg:
+          - "os_family={{ ansible_facts.os_family }} distribution={{ ansible_facts.distribution }} {{ ansible_facts.distribution_version }}"
+          - "chrony present: {{ has_chrony }}"
+          - "ntpd present: {{ has_ntpd }} (service={{ ntpd_service_name }})"
+          - "timesyncd unit present: {{ has_timesyncd_unit }}"
+          - "chrony makestep: {{ (chrony_makestep.stdout | default('skipped')) }}"
+          - "ntpd -gq: {{ (ntpd_gq.stdout | default('skipped')) }}"
+          - "time/status:\n{{ time_status.stdout | default('') }}"
