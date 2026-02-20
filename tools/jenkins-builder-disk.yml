@@ -69,12 +69,10 @@
       state: latest
     when: ansible_os_family == "Debian"
 
-  - name: Unmount
+  - name: Unmount (ignore if not mounted)
     mount:
       path: "{{ mount_point }}"
-      src: "{{ disk }}"
       state: unmounted
-      fstype: xfs
     ignore_errors: true
 
   - name: Zap disk
@@ -85,9 +83,14 @@
       fstype: xfs
       dev: "{{ disk }}"
 
-  - name: Mount disk
+  - name: Get XFS UUID
+    command: "blkid -s UUID -o value {{ disk }}"
+    register: xfs_uuid
+    changed_when: false
+
+  - name: Mount disk (fstab uses UUID)
     mount:
       path: "{{ mount_point }}"
-      src: "{{ disk }}"
-      state: mounted
+      src: "UUID={{ xfs_uuid.stdout }}"
       fstype: xfs
+      state: mounted
