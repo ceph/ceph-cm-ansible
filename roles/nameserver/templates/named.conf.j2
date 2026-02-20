@@ -22,6 +22,8 @@ options {
 	allow-transfer		{ {% for ip in named_conf_allow_axfr -%}{{ ip }}; {% endfor -%} };
 {% endif %}
 
+        listen-on-v6 { none; };
+
 {% if named_conf_slave is defined and named_conf_slave == true %}
 	## Slave-specific config
 	# Set these in case named_conf_soa vars are lower than the BIND default.
