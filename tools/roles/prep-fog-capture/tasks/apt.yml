@@ -1,0 +1,97 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  when: ansible_facts.os_family == "Debian"
+
+- name: Full upgrade (apt dist-upgrade)
+  apt:
+    upgrade: dist
+  when: ansible_facts.os_family == "Debian"
+
+- name: Check if reboot is required (Debian/Ubuntu)
+  stat:
+    path: /var/run/reboot-required
+  register: deb_reboot_required
+  when: ansible_facts.os_family == "Debian"
+
+- name: Install one-shot service to regenerate SSH host keys on first boot
+  copy:
+    src: files/regen-ssh-hostkeys.service
+    dest: /etc/systemd/system/regen-ssh-hostkeys.service
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: true
+
+- name: Enable regen-ssh-hostkeys.service
+  systemd:
+    name: regen-ssh-hostkeys.service
+    enabled: true
+
+- set_fact:
+    ntp_service: ntp
+
+- name: Remove cloud init netplan file
+  file:
+    path: /etc/netplan/50-cloud-init.yaml
+    state: absent
+  failed_when: false
+
+- name: Install netplan link selection script
+  copy:
+    src: files/netplan-from-link.sh
+    dest: /usr/local/sbin/netplan-from-link.sh
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install netplan-from-link systemd unit
+  copy:
+    src: files/netplan-from-link.service
+    dest: /etc/systemd/system/netplan-from-link.service
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Enable netplan link selection systemd unit
+  systemd:
+    name: netplan-from-link.service
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Disable NetworkManager
+  systemd:
+    name: NetworkManager
+    enabled: false
+    state: stopped
+  failed_when: false
+
+- name: Enable networkd
+  systemd:
+    name: systemd-networkd
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Avoid wait online hang
+  systemd:
+    name: systemd-networkd-wait-online
+    enabled: false
+    state: stopped
+  failed_when: false
+
+- name: Fog prep netplan generate
+  command: netplan generate
+  changed_when: false
+  failed_when: false
+
+- name: Fog prep netplan apply
+  command: netplan apply
+  changed_when: true
+  failed_when: false
