@@ -10,41 +10,46 @@
   become: true
   tasks:
 
-# CentOS 9 on the braggi nodes likes to flip around which disk is sda and which is sdb.  Sometimes it comes up as sdb and sometimes sda.
-  - name: Check if /dev/sda is the 400GB disk on a braggi
+# CentOS 9 on these nodes likes to flip around which disk is sda and which is sdb.
+# We pick the ~400GB disk by choosing the one < 500 GiB.
+  - set_fact:
+      jenkins_slave_mount_point: /home/jenkins-build
+      disk_flip_host: "{{ ('braggi' in ansible_hostname) or ('adami' in ansible_hostname) }}"
+  
+  - name: Check if /dev/sda is the 400GB disk (braggi/adami)
     parted:
       device: "/dev/sda"
       unit: GiB
-    register: "sda_parted"
-    when: '"braggi" in ansible_hostname'
-
-  - name: Check if /dev/sdb is the 400GB disk on a braggi
+    register: sda_parted
+    when: disk_flip_host
+  
+  - name: Check if /dev/sdb is the 400GB disk (braggi/adami)
     parted:
       device: "/dev/sdb"
       unit: GiB
-    register: "sdb_parted"
-    when: '"braggi" in ansible_hostname'
-
-  - set_fact:
-      mount_point: /home/jenkins-build
-    when: '"braggi" in ansible_hostname'
-
-  - set_fact:
+    register: sdb_parted
+    when: disk_flip_host
+  
+  - name: Set mount_point for jenkins-build (braggi/adami)
+    set_fact:
+      mount_point: "{{ jenkins_slave_mount_point }}"
+    when: disk_flip_host
+  
+  - name: Select 400GB disk as /dev/sda (braggi/adami)
+    set_fact:
       disk: /dev/sda
     when:
-      - '"braggi" in ansible_hostname'
-      - "sda_parted.disk.size < 500"
-
-  - set_fact:
+      - disk_flip_host
+      - sda_parted.disk.size is defined
+      - sda_parted.disk.size < 500
+  
+  - name: Select 400GB disk as /dev/sdb (braggi/adami)
+    set_fact:
       disk: /dev/sdb
     when:
-      - '"braggi" in ansible_hostname'
-      - "sdb_parted.disk.size < 500"
-
-  - set_fact:
-      disk: /dev/sdb
-      mount_point: /home/jenkins-build
-    when: '"adami" in ansible_hostname'
+      - disk_flip_host
+      - sdb_parted.disk.size is defined
+      - sdb_parted.disk.size < 500
 
   - set_fact:
       disk: /dev/nvme0n1
@@ -69,12 +74,10 @@
       state: latest
     when: ansible_os_family == "Debian"
 
-  - name: Unmount
+  - name: Unmount (ignore if not mounted)
     mount:
       path: "{{ mount_point }}"
-      src: "{{ disk }}"
       state: unmounted
-      fstype: xfs
     ignore_errors: true
 
   - name: Zap disk
@@ -85,9 +88,14 @@
       fstype: xfs
       dev: "{{ disk }}"
 
-  - name: Mount disk
+  - name: Get XFS UUID
+    command: "blkid -s UUID -o value {{ disk }}"
+    register: xfs_uuid
+    changed_when: false
+
+  - name: Mount disk (fstab uses UUID)
     mount:
       path: "{{ mount_point }}"
-      src: "{{ disk }}"
-      state: mounted
+      src: "UUID={{ xfs_uuid.stdout }}"
       fstype: xfs
+      state: mounted
