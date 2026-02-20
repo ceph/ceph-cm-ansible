@@ -22,7 +22,11 @@ options {
 	allow-transfer		{ {% for ip in named_conf_allow_axfr -%}{{ ip }}; {% endfor -%} };
 {% endif %}
 
-        listen-on-v6 { none; };
+	listen-on-v6 { none; };
+
+{% if named_conf_dnssec_validation is defined %}
+	dnssec-validation {{ named_conf_dnssec_validation }};
+{% endif %}
 
 {% if named_conf_slave is defined and named_conf_slave == true %}
 	## Slave-specific config
