@@ -1,37 +1,41 @@
 ---
+- name: Gather installed package facts
+  package_facts:
+    manager: auto
+
 - name: Check if ntp package installed
-  command: rpm -q ntp
-  ignore_errors: true
-  register: ntp_installed
+  set_fact:
+    ntp_installed: true
+  when: "'ntp' in ansible_facts.packages"
 
 - name: Check if chrony package installed
-  command: rpm -q chrony
-  ignore_errors: true
-  register: chrony_installed
+  set_fact:
+    chrony_installed: true
+  when: "'chrony' in ansible_facts.packages"
 
 # Use NTP if neither time service is installed
 - set_fact:
     use_ntp: true
     use_chrony: false
   when:
-    - ntp_installed.rc != 0
-    - chrony_installed.rc != 0
+    - not (ntp_installed | default(false))
+    - not (chrony_installed | default(false))
 
 # Use NTP if it's installed and Chrony isn't
 - set_fact:
     use_ntp: true
     use_chrony: false
   when:
-    - ntp_installed.rc == 0
-    - chrony_installed.rc != 0
+    - ntp_installed | default(false)
+    - not (chrony_installed | default(false))
 
 # Use Chrony if it's installed and NTP isn't
 - set_fact:
     use_ntp: false
     use_chrony: true
   when:
-    - ntp_installed.rc != 0
-    - chrony_installed.rc == 0
+    - not (ntp_installed | default(false))
+    - chrony_installed | default(false)
 
 # It's unlikely we have four baremetal hosts doing nothing but serving as NTP servers.
 # Thus, we shouldn't go uninstalling anything since either package could be a dependency
@@ -39,17 +43,17 @@
 - fail:
     msg: "Both NTP and Chrony are installed.  Check dependencies before removing either package and proceeding."
   when:
-    - ntp_installed.rc == 0
-    - chrony_installed.rc == 0
+    - ntp_installed | default(false)
+    - chrony_installed | default(false)
 
 - name: Install and update ntp package
-  yum:
+  package:
     name: ntp
     state: latest
   when: use_ntp == true
 
 - name: Install and update chrony package
-  yum:
+  package:
     name: chrony
     state: latest
   when: use_chrony == true
@@ -98,11 +102,25 @@
     - conf_written is changed
     - use_chrony == true
 
-- name: Check for firewalld
+- name: Detect firewalld
   command: firewall-cmd --state
-  failed_when: false
   register: firewalld_state
+  changed_when: false
+  failed_when: false
 
+- name: Detect ufw
+  command: ufw status
+  register: ufw_state
+  changed_when: false
+  failed_when: false
+
+- name: Detect iptables
+  command: iptables -L -n
+  register: iptables_state
+  changed_when: false
+  failed_when: false
+
+# --- firewalld ---
 - name: Allow NTP traffic through firewalld
   firewalld:
     service: ntp
@@ -111,9 +129,40 @@
     state: enabled
   when: firewalld_state.rc == 0
 
-- name: Allow NTP traffic through iptables
+# --- ufw ---
+- name: Allow NTP traffic through ufw
+  command: ufw allow 123/udp
+  when:
+    - firewalld_state.rc != 0
+    - ufw_state.rc == 0
+
+# --- iptables (best-effort) ---
+- name: Allow NTP traffic through iptables (runtime)
+  command: iptables -C INPUT -p udp --dport 123 -j ACCEPT
+  register: ntp_rule_check
+  changed_when: false
+  failed_when: false
+  when:
+    - firewalld_state.rc != 0
+    - ufw_state.rc != 0
+    - iptables_state.rc == 0
+
+- name: Insert NTP ACCEPT rule if missing
+  command: iptables -I INPUT -p udp --dport 123 -j ACCEPT
+  when:
+    - firewalld_state.rc != 0
+    - ufw_state.rc != 0
+    - iptables_state.rc == 0
+    - ntp_rule_check.rc != 0
+
+- name: Persist iptables rules if possible (best-effort)
   command: "{{ item }}"
-  with_items:
-    - "iptables -I INPUT -p udp -m udp --dport 123 -j ACCEPT"
-    - "service iptables save"
-  when: firewalld_state.rc != 0
+  loop:
+    - sh -lc 'command -v iptables-save >/dev/null && command -v iptables-restore >/dev/null && true'
+    - sh -lc 'test -d /etc/iptables || true'
+  changed_when: false
+  failed_when: false
+  when:
+    - firewalld_state.rc != 0
+    - ufw_state.rc != 0
+    - iptables_state.rc == 0
