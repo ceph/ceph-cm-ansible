@@ -2,11 +2,11 @@
 # Restart for config file updates
 - name: restart named
   service:
-    name: named
+    name: "{{ bind_service }}"
     state: restarted
 
 # Reload for zone file updates
 - name: reload named
   service:
-    name: named
+    name: "{{ bind_service }}"
     state: reloaded
