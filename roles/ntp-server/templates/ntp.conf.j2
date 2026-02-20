@@ -18,7 +18,7 @@ restrict -6 ::1
 
 # Allow these networks to query this NTP server
 {% for lan in ntp_permitted_lans %}
-restrict {{ lan | ipaddr('network') }} mask {{ lan | ipaddr('netmask') }} nomodify notrap
+restrict {{ lan }} nomodify notrap
 {% endfor %}
 
 # Get time from these public hosts
