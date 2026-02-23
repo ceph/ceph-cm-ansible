@@ -22,6 +22,12 @@ options {
 	allow-transfer		{ {% for ip in named_conf_allow_axfr -%}{{ ip }}; {% endfor -%} };
 {% endif %}
 
+	listen-on-v6 { none; };
+
+{% if named_conf_dnssec_validation is defined %}
+	dnssec-validation {{ named_conf_dnssec_validation }};
+{% endif %}
+
 {% if named_conf_slave is defined and named_conf_slave == true %}
 	## Slave-specific config
 	# Set these in case named_conf_soa vars are lower than the BIND default.
@@ -80,11 +86,10 @@ zone "{{ key }}" {
 {% for key, zone in named_domains.items() %}
 {% if zone.reverse is defined and zone.reverse.0 is defined %}
 {% for reverse in zone.reverse %}
-{% if ansible_env._ == "/usr/bin/python3" %}
-{% set octet1,octet2,octet3,_ = reverse.split('.') %}
-{% else %}
-{% set octet1,octet2,octet3 = reverse.split('.') %}
-{% endif %}
+{% set parts = reverse.split('.') %}
+{% set octet1 = parts[0] %}
+{% set octet2 = parts[1] %}
+{% set octet3 = parts[2] %}
 zone "{{ octet3 }}.{{ octet2 }}.{{ octet1 }}.in-addr.arpa" {
 {% if named_conf_slave is defined and named_conf_slave == true %}
 	type	slave;
