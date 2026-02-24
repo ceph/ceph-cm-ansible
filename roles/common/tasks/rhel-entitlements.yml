@@ -18,6 +18,10 @@
   set_fact:
     have_entitlements: "{{ subscription_manager_org != '' and subscription_manager_activationkey != ''}}"
 
+- name: 'Set rhsm_repos based on the architecture'
+  set_fact:
+    rhsm_repos: "rhsm_repos_{{ ansible_facts.architecture }}"
+
 - name: Find existing CA Cert RPMs
   command: rpm -qa katello-ca-consumer*
   register: existing_satellite_cert
@@ -161,7 +165,7 @@
 
 - name: Set replace_repos true if rhsm_repos differs from repo_list
   set_fact:
-    replace_repos: "{{ repo_list|sort != rhsm_repos|sort }}"
+    replace_repos: "{{ repo_list|sort != vars[rhsm_repos]|sort }}"
   when: repo_list is defined
 
 - name: Set replace_repos true if newly-subscribed
@@ -178,7 +182,7 @@
   no_log: true
 
 - name: Enable necessary rhsm repos
-  command: subscription-manager repos {% for repo in rhsm_repos|list %}--enable={{ repo }} {% endfor %}
+  command: subscription-manager repos {% for repo in vars[rhsm_repos]|list %}--enable={{ repo }} {% endfor %}
   when: rhsm_registered == true and
         replace_repos|bool == true
   retries: 5

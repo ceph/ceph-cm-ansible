@@ -1,8 +1,18 @@
 ---
-rhsm_repos:
+rhsm_repos_s390x:
+  - rhel-9-for-s390x-baseos-e4s-rpms
+  - rhel-9-for-s390x-appstream-eus-rpms
+  - codeready-builder-for-rhel-9-s390x-rpms
+
+rhsm_repos_x86_64:
   - rhel-9-for-x86_64-baseos-rpms
   - rhel-9-for-x86_64-appstream-rpms
   - codeready-builder-for-rhel-9-x86_64-rpms
+
+rhsm_repos_arm64:
+  - rhel-9-for-aarch64-baseos-rpms
+  - rhel-9-for-aarch64-appstream-rpms
+  - codeready-builder-for-rhel-9-aarch64-rpms
 
 nrpe_selinux_packages:
   - python3-libsemanage
