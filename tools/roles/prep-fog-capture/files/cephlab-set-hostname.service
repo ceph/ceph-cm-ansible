@@ -1,0 +1,14 @@
+[Unit]
+Description=Ceph Lab hostname configuration
+After=network-online.target nss-lookup.target
+Wants=nss-lookup.target
+
+[Service]
+StandardOutput=journal+console
+StandardError=journal+console
+Type=oneshot
+ExecStart=/usr/local/sbin/cephlab-set-hostname.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

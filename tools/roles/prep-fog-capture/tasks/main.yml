@@ -1,0 +1,161 @@
+---
+# Tasks common to all distros
+# We import tasks based on ansible_os_family about halfway through
+
+- setup:
+
+- name: Remove lock files, udev rules, logs
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - /etc/udev/rules.d/70-persistent-net.rules
+    - /.cephlab_net_configured
+    - /.cephlab_hostname_set
+    - /ceph-qa-ready
+    - /var/log/netplan-from-link.log
+    - /var/log/nm-from-link.log
+    - /var/log/cephlab-set-hostname.log
+    - /var/log/cloud-init-output.log
+    - /var/log/cloud-init.log
+
+- name: Remove /var/lib/ceph mountpoint from fstab
+  shell: sed -i '/\/var\/lib\/ceph/d' /etc/fstab
+
+- name: Unmount /var/lib/ceph
+  mount:
+    path: /var/lib/ceph
+    state: unmounted
+
+- name: Import tasks for RPM-based distros
+  import_tasks: rpm.yml
+  when: ansible_os_family == "RedHat" or ansible_os_family == "Suse"
+
+- name: Import tasks for APT-based distros
+  import_tasks: apt.yml
+  when: ansible_os_family == "Debian"
+
+# If we updated the kernel in apt/rpm.yml
+- name: Reboot if required
+  reboot:
+    msg: "Rebooting trial node after kernel/package updates"
+    reboot_timeout: 1800
+    connect_timeout: 10
+    test_command: whoami
+  when: >
+    (ansible_facts.os_family == "Debian" and deb_reboot_required.stat.exists) or
+    (ansible_facts.os_family == "RedHat" and rhel_needs_reboot.rc != 0) or
+    (ansible_facts.os_family == "Suse" and suse_reboot_required.stat.exists)
+
+- name: Get list of SSH host keys
+  shell: "ls -1 /etc/ssh/ssh_host_*"
+  register: ssh_host_keys
+  ignore_errors: true
+
+- name: Delete SSH host keys so they're generated during firstboot on cloned machines
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items: "{{ ssh_host_keys.stdout_lines|default([]) }}"
+  when: ssh_host_keys is defined
+
+# el <= 7 = ntpd
+# el >= 8 = chronyd
+# Ubuntu  = ntp
+- name: "Stop {{ ntp_service }} service"
+  service:
+    name: "{{ ntp_service }}"
+    state: stopped
+  when: '"ntp" in ntp_service'
+
+# The theory here is although we do have the ntp service running on boot,
+# if the time is off, it slowly drifts back in sync.  Since our testnodes
+# are ephemeral, they don't ever have enough time to correctly drift
+# back to the correct time.  So we'll force it in the captured OS images.
+- name: Install ntpdate command if missing
+  package:
+    name: ntpdate
+    state: present
+  when: '"ntp" in ntp_service'
+
+- name: Force time synchronization using stepping | ntp
+  command: "ntpdate -b {{ ntp_servers|join(' ') }}"
+  when: '"ntp" in ntp_service'
+
+- name: "Start {{ ntp_service }}"
+  service:
+    name: "{{ ntp_service }}"
+    state: started
+
+# chronyd needs to be started in order to force time sync. This differs from ntpd.
+- name: Force time synchronization using stepping | chrony
+  command: chronyc -a makestep
+  when: '"chrony" in ntp_service'
+
+- name: Sync the hardware clock
+  command: "hwclock --systohc"
+
+- name: Disable cloud init and disruptive apt services
+  systemd:
+    name: "{{ item }}"
+    enabled: false
+    state: stopped
+    masked: true
+  loop:
+    - cloud-init-local.service
+    - cloud-init.service
+    - cloud-config.service
+    - cloud-final.service
+    - unattended-upgrades.service
+    - apt-daily.service
+    - apt-daily-upgrade.service
+    - apt-daily.timer
+    - apt-daily-upgrade.timer
+  failed_when: false
+
+- name: Disable cloud init networking config
+  copy:
+    dest: /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      network:
+        config: disabled
+  failed_when: false
+
+- name: Disable cloud init completely
+  file:
+    path: /etc/cloud/cloud-init.disabled
+    state: touch
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Remove cloud init state
+  file:
+    path: /var/lib/cloud
+    state: absent
+  failed_when: false
+
+- name: Install cephlab-set-hostname script
+  copy:
+    src: files/cephlab-set-hostname.sh
+    dest: /usr/local/sbin/
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install cephlab-set-hostname systemd unit
+  copy:
+    src: files/cephlab-set-hostname.service
+    dest: /etc/systemd/system/cephlab-set-hostname.service
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Enable cephlab-set-hostname service
+  systemd:
+    name: cephlab-set-hostname.service
+    enabled: true
+    daemon_reload: true

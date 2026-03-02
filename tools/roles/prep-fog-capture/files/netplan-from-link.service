@@ -1,0 +1,14 @@
+[Unit]
+Description=Write netplan from link carrier once
+After=systemd-networkd.service local-fs.target
+Wants=systemd-networkd.service
+
+[Service]
+StandardOutput=journal+console
+StandardError=journal+console
+Type=oneshot
+ExecStart=/usr/local/sbin/netplan-from-link.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

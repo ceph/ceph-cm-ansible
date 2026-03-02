@@ -1,0 +1,14 @@
+[Unit]
+Description=Write NetworkManager connection from link carrier once
+After=systemd-udev-settle.service local-fs.target
+Wants=systemd-udev-settle.service
+
+[Service]
+StandardOutput=journal+console
+StandardError=journal+console
+Type=oneshot
+ExecStart=/usr/local/sbin/nm-from-link.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

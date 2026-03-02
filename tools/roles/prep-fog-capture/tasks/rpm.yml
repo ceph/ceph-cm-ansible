@@ -1,0 +1,98 @@
+---
+- name: Upgrade all packages to latest (dnf)
+  dnf:
+    name: "*"
+    state: latest
+    update_cache: true
+  when: ansible_facts.os_family == "RedHat"
+
+- name: Ensure dnf-utils present (for needs-restarting)
+  package:
+    name: dnf-utils
+    state: present
+  when: ansible_facts.os_family == "RedHat"
+
+- name: Check if reboot is required (RHEL family)
+  command: needs-restarting -r
+  register: rhel_needs_reboot
+  changed_when: false
+  failed_when: false
+  when: ansible_facts.os_family == "RedHat"
+
+- name: Find existing ifcfg scripts
+  shell: |
+    ls -1 {{ ifcfg_dir }}/ifcfg-* 2>/dev/null | grep -v ifcfg-lo || true
+  vars:
+    ifcfg_dir: >-
+      {{ '/etc/sysconfig/network-scripts'
+         if ansible_os_family == 'RedHat'
+         else '/etc/sysconfig/network'
+         if ansible_os_family == 'Suse'
+         else '' }}
+  register: ifcfg_scripts
+
+- name: Delete ifcfg scripts
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ ifcfg_scripts.stdout_lines | default([]) }}"
+  when: ifcfg_scripts is defined
+
+- name: Unsubscribe RHEL
+  command: subscription-manager unregister
+  when: ansible_distribution == "RedHat"
+  failed_when: false
+
+# A file gets leftover when a testnode is registered with Satellite that caused
+# each registered subsequent testnode to report the wrong hostname
+- name: Clean up katello facts
+  file:
+    path: /etc/rhsm/facts/katello.facts
+    state: absent
+  when: ansible_distribution == "RedHat"
+
+# https://bugzilla.redhat.com/show_bug.cgi?id=1814337
+- name: Disable dnf-makecache service
+  service:
+    name: dnf-makecache.timer
+    state: stopped
+    enabled: no
+  when:
+    - ansible_os_family == "RedHat"
+    - ansible_distribution_major_version|int >= 8
+
+# Hopefully fixes https://github.com/ceph/ceph-cm-ansible/pull/544#issuecomment-599076564
+- name: Clean DNF cache
+  shell: "dnf clean all && rm -rf /var/cache/dnf/*"
+  when:
+    - ansible_os_family == "RedHat"
+    - ansible_distribution_major_version|int >= 8
+
+- name: Ensure sshd-keygen is enabled so host keys get regenerated on boot
+  systemd:
+    name: sshd-keygen.target
+    enabled: true
+
+- set_fact:
+    ntp_service: ntpd
+  when: ansible_os_family == "RedHat" and ansible_distribution_major_version|int <= 7
+
+- set_fact:
+    ntp_service: chronyd
+  when: (ansible_os_family == "RedHat" and ansible_distribution_major_version|int >= 8) or
+        ansible_os_family == "Suse"
+
+- name: Install systemd unit for network manager link selection
+  copy:
+    src: files/nm-from-link.service
+    dest: /etc/systemd/system/nm-from-link.service
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Enable network manager link selection unit
+  systemd:
+    name: nm-from-link.service
+    enabled: true
+    state: started
+    daemon_reload: true
