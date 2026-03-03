@@ -1,0 +1,229 @@
+---
+- name: Validate MAAS server configuration
+  ansible.builtin.assert:
+    that:
+      - groups['maas'] is defined and groups['maas'] | length > 0
+      - maas_server_ip != 'undefined_maas_server'
+    fail_msg: "The [maas] group must contain at least one host, and maas_server_ip must be defined. Current maas_server_ip: {{ maas_server_ip }}"
+  tags:
+    - always
+
+- name: Include secrets
+  include_vars: "{{ item }}"
+  no_log: true
+  with_first_found:
+    - "{{ secrets_path | mandatory }}/maas.yml"
+  tags:
+    - always
+
+- name: Set MAAS cluster instance host
+  set_fact:
+    maas_cluster_instance: "{{ maas_cluster_instance | combine({'host': maas_api_url}) }}"
+
+- name: Include any additional dns records from the dns_records.yml
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ inventory_path | mandatory }}/group_vars/dns_records.yml"
+  tags:
+    - always
+
+- name: Ensure maas.maas collection is installed
+  ansible.builtin.command:
+    cmd: ansible-galaxy collection install maas.maas
+  register: collection_install
+  changed_when: collection_install.rc == 0 and 'Nothing to do' not in collection_install.stdout
+  failed_when: collection_install.rc != 0 and 'already installed' not in collection_install.stderr
+
+- name: Validate mandatory dns_domains
+  ansible.builtin.assert:
+    that:
+      - dns_domains.ip is defined and dns_domains.ip | length > 0
+      - dns_domains.ipmi is defined and dns_domains.ipmi | length > 0
+    fail_msg: "dns_domains must include non-empty 'ip' and 'ipmi' keys"
+
+- name: Validate dns_records
+  ansible.builtin.assert:
+    that:
+      - dns_records is defined
+      - dns_records | length >= 0
+      - item.type != 'MX' or (item.priority is defined and item.target is defined)
+      - item.type != 'SRV' or (item.priority is defined and item.weight is defined and item.port is defined and item.target is defined)
+    fail_msg: "dns_records must be a list with valid MX (priority, target) and SRV (priority, weight, port, target) fields"
+  loop: "{{ dns_records | default([]) }}"
+  when: dns_records is defined
+
+- name: Load inventory hosts into in-memory inventory
+  ansible.builtin.add_host:
+    name: "{{ item }}"
+    ansible_host: "{{ item }}"
+    groups: "maas_hosts"
+    vars: "{{ hostvars[item] }}"
+  loop: "{{ groups | dict2items | rejectattr('key', 'in', excluded_groups) | sum(attribute='value', start=[]) }}"
+
+- name: Fetch all MAAS DNS domains
+  maas.maas.dns_domain_info:
+    cluster_instance: "{{ maas_cluster_instance }}"
+  register: maas_domains
+
+- name: Fetch all MAAS DNS records
+  maas.maas.dns_record_info:
+    cluster_instance: "{{ maas_cluster_instance }}"
+  register: maas_records
+
+- name: Build inventory records
+  ansible.builtin.set_fact:
+    inventory_records: >
+      [
+        {% for host in groups['maas_hosts'] | default([]) %}
+          {% set hostname = hostvars[host].ansible_host.split('.')[0] %}
+          {% if hostvars[host].ip is defined %}
+            {'fqdn': '{{ hostname + '.' + dns_domains.ip }}', 'type': 'A/AAAA', 'data': '{{ hostvars[host].ip }}'},
+          {% endif %}
+          {% if hostvars[host].ipmi is defined %}
+            {'fqdn': '{{ hostname + '.' + dns_domains.ipmi }}', 'type': 'A/AAAA', 'data': '{{ hostvars[host].ipmi }}'},
+          {% endif %}
+        {% endfor %}
+      ]
+
+- name: Build static records
+  ansible.builtin.set_fact:
+    static_records: >
+      [
+        {% for record in dns_records %}
+          {'fqdn': '{{ record.name + '.' + record.domain }}', 'type': '{{ record.type }}', 'data': '{{ record.priority | string + " " + record.target if record.type == "MX" else record.priority | string + " " + record.weight | string + " " + record.port | string + " " + record.target if record.type == "SRV" else record.algorithm | string + " " + record.fptype | string + " " + record.fingerprint if record.type == "SSHFP" else record.ip | default(record.target | default(record.value | default(""))) }}'},
+        {% endfor %}
+      ]
+
+- name: Set desired FQDNs and types
+  ansible.builtin.set_fact:
+    desired_records: "{{ (inventory_records | default([])) + (static_records | default([])) }}"
+
+- name: Remove DNS records from unwanted domains
+  maas.maas.dns_record:
+    cluster_instance: "{{ maas_cluster_instance }}"
+    domain: "{{ item.fqdn | regex_replace('^[^.]+\\.(.*)$', '\\1') }}"
+    name: "{{ item.name | regex_replace('^(.*?)\\..*', '\\1') }}"
+    type: "{{ item.type }}"
+    state: absent
+  loop: "{{ maas_records.records }}"
+  when:
+    - item.fqdn | regex_replace('^[^.]+\\.(.*)$', '\\1') not in excluded_domains
+    - item.fqdn | regex_replace('^[^.]+\\.(.*)$', '\\1') not in (maas_domains.records | selectattr('is_default', 'equalto', true) | map(attribute='name') | list)
+    - item.fqdn | regex_replace('^[^.]+\\.(.*)$', '\\1') not in dns_domains.values()
+    - item.type in supported_record_types
+  register: removed_unwanted_domain_records
+  changed_when: removed_unwanted_domain_records.changed
+  retries: 3
+  delay: 5
+  until: removed_unwanted_domain_records is not failed
+
+- name: Remove unwanted DNS records in managed domains
+  maas.maas.dns_record:
+    cluster_instance: "{{ maas_cluster_instance }}"
+    domain: "{{ item.fqdn | regex_replace('^[^.]+\\.(.*)$', '\\1') }}"
+    name: "{{ item.name | regex_replace('^(.*?)\\..*', '\\1') }}"
+    type: "{{ item.type }}"
+    state: absent
+  loop: "{{ maas_records.records }}"
+  when:
+    - item.fqdn | regex_replace('^[^.]+\\.(.*)$', '\\1') not in excluded_domains
+    - item.fqdn | regex_replace('^[^.]+\\.(.*)$', '\\1') not in (maas_domains.records | selectattr('is_default', 'equalto', true) | map(attribute='name') | list)
+    - item.fqdn | regex_replace('^[^.]+\\.(.*)$', '\\1') in dns_domains.values()
+    - item.type in supported_record_types
+    - desired_records | selectattr('fqdn', 'equalto', item.fqdn) | selectattr('type', 'equalto', item.type) | list | length == 0
+  register: removed_managed_records
+  changed_when: removed_managed_records.changed
+  retries: 3
+  delay: 5
+  until: removed_managed_records is not failed
+
+- name: Remove unwanted DNS domains
+  maas.maas.dns_domain:
+    cluster_instance: "{{ maas_cluster_instance }}"
+    name: "{{ item.name }}"
+    state: absent
+  loop: "{{ maas_domains.records }}"
+  when:
+    - item.name not in excluded_domains
+    - item.is_default is not true
+    - item.name not in dns_domains.values()
+  register: removed_domains
+  changed_when: removed_domains.changed
+  retries: 3
+  delay: 5
+  until: removed_domains is not failed
+
+- name: Create or update MAAS DNS domains
+  maas.maas.dns_domain:
+    cluster_instance: "{{ maas_cluster_instance }}"
+    name: "{{ item.value }}"
+    ttl: "{{ dns_ttl }}"
+    state: present
+  loop: "{{ dns_domains | dict2items }}"
+  register: dns_domain_result
+  changed_when: dns_domain_result.changed
+  retries: 3
+  delay: 5
+  until: dns_domain_result is not failed
+
+- name: Create or update MAAS DNS A records for inventory hosts
+  maas.maas.dns_record:
+    cluster_instance: "{{ maas_cluster_instance }}"
+    domain: "{{ item.1.value }}"
+    name: "{{ hostvars[item.0].ansible_host.split('.')[0] }}"
+    type: A/AAAA
+    data: "{{ hostvars[item.0][item.1.key] }}"
+    ttl: "{{ dns_ttl }}"
+    state: present
+  with_nested:
+    - "{{ groups['maas_hosts'] | default([]) }}"
+    - "{{ dns_domains | dict2items }}"
+  when:
+    - hostvars[item.0].ansible_host is defined
+    - hostvars[item.0][item.1.key] is defined
+  register: dns_record_result
+  changed_when: dns_record_result.changed
+  retries: 3
+  delay: 5
+  until: dns_record_result is not failed
+
+- name: Create or update MAAS DNS records from dns_records
+  maas.maas.dns_record:
+    cluster_instance: "{{ maas_cluster_instance }}"
+    domain: "{{ item.domain }}"
+    name: "{{ item.name }}"
+    type: "{{ item.type }}"
+    data: "{{ item.priority | string + ' ' + item.target if item.type == 'MX' else item.priority | string + ' ' + item.weight | string + ' ' + item.port | string + ' ' + item.target if item.type == 'SRV' else item.algorithm | string + ' ' + item.fptype | string + ' ' + item.fingerprint if item.type == 'SSHFP' else item.ip | default(item.target | default(item.value | default(''))) }}"
+    ttl: "{{ dns_ttl }}"
+    state: present
+  loop: "{{ dns_records }}"
+  when: item.type != 'NS'
+  register: static_dns_record_result
+  changed_when: static_dns_record_result.changed
+  retries: 3
+  delay: 5
+  until: static_dns_record_result is not failed
+
+- name: Notify about skipped NS records
+  ansible.builtin.debug:
+    msg: "Skipped NS record creation for {{ item.name }}.{{ item.domain }} due to module limitation. Please create manually in MAAS."
+  loop: "{{ dns_records }}"
+  when: item.type == 'NS'
+
+- name: Display DNS domain creation results
+  ansible.builtin.debug:
+    msg: "DNS domain {{ item.item.value }} created/updated: {{ item }}"
+  loop: "{{ dns_domain_result.results }}"
+  when: dns_domain_result.results is defined
+
+- name: Display DNS record creation results for inventory hosts
+  ansible.builtin.debug:
+    msg: "DNS record {{ hostvars[item.item.0].ansible_host.split('.')[0] }}.{{ item.item.1.value }} created/updated: {{ item }}"
+  loop: "{{ dns_record_result.results }}"
+  when: dns_record_result.results is defined and item.skipped is not defined
+
+- name: Display static DNS record creation results
+  ansible.builtin.debug:
+    msg: "Static DNS record {{ item.item.name }}.{{ item.item.domain }} ({{ item.item.type }}) created/updated: {{ item }}"
+  loop: "{{ static_dns_record_result.results | default([]) }}"
+  when: item.skipped is not defined and item.changed

@@ -1,0 +1,6 @@
+---
+- name: Deploy MAAS DNS
+  hosts: localhost
+  connection: local
+  roles:
+    - role: maas_nameserver
