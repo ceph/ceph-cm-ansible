@@ -51,13 +51,25 @@
       ansible.builtin.stat:
         path: "{{ maas_home_dir }}/usr/lib/python3/dist-packages/curtin/commands/install_grub.py"
       when: "maas_install_method == 'snap'"
-      register: curtin_scripts_path    
+      register: curtin_scripts_path
 
     - name: Add force flag into install_grub curtin script to allow ARM deployment
       ansible.builtin.replace:
-        path: "{{ curtin_scripts_path.stdout if maas_install_method == 'snap' else '/usr/lib/python3/dist-packages/curtin/commands/install_grub.py' }}"
+        path: "{{ curtin_scripts_path.stat.path
+                  if (maas_install_method == 'snap' and
+                      curtin_scripts_path.stat.exists)
+                  else '/usr/lib/python3/dist-packages/curtin/commands/install_grub.py' }}"
         regexp: "'--recheck']"
         replace: "'--recheck', '--force']"
+
+    - name: Allow RHEL 10 in install_grub script's version check
+      ansible.builtin.replace:
+        path: "{{ curtin_scripts_path.stat.path
+                  if (maas_install_method == 'snap' and
+                      curtin_scripts_path.stat.exists)
+                  else '/usr/lib/python3/dist-packages/curtin/commands/install_grub.py' }}"
+        regexp: 'if rhel_ver in \["7", "8", "9"\]:'
+        replace: 'if rhel_ver in ["7", "8", "9", "10"]:'
 
     - name: Check curtin_userdata directory
       ansible.builtin.stat:
