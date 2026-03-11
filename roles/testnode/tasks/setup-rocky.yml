@@ -1,2 +1,10 @@
 ---
 - import_tasks: imitate_ubuntu.yml
+
+- name: Add iozone to global PATH
+  copy:
+    dest: /etc/profile.d/iozone.sh
+    content: 'export PATH=$PATH:/opt/iozone/bin'
+    mode: '0644'
+  tags:
+    - packages
