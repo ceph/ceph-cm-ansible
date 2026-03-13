@@ -16,6 +16,8 @@ bind_service: bind9
 bind_user: bind
 bind_group: bind
 
+named_conf_dir: /var/cache/bind
+named_conf_data_dir: /var/cache/bind
 named_conf_zones_path: /etc/bind/zones
 named_defaults_file: /etc/default/named
 named_conf_file: /etc/bind/named.conf
