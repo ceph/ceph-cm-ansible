@@ -25,3 +25,4 @@ bind_user: named
 bind_group: named
 
 named_conf_zones_path: /var/lib/named
+named_defaults_file: /etc/sysconfig/named
