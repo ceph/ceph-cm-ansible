@@ -17,3 +17,4 @@ bind_user: bind
 bind_group: bind
 
 named_conf_zones_path: /etc/bind/zones
+named_defaults_file: /etc/default/named
