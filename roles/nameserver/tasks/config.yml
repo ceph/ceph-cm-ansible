@@ -19,7 +19,7 @@
     regexp: '^OPTIONS='
     line: "OPTIONS=\"{{ named_conf_daemon_opts }}\""
     state: present
-    create: True
+    create: false
   notify: restart named
 
 - name: Configure SELinux to allow named to write to master zone files
