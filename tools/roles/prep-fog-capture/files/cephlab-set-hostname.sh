@@ -57,11 +57,11 @@ reverse_lookup() {
 }
 
 set_hostname() {
-  local fqdn="$1"
+  local shortname="$1"
   if command -v hostnamectl >/dev/null 2>&1; then
-    hostnamectl set-hostname "${fqdn}"
+    hostnamectl set-hostname "${shortname}"
   else
-    hostname "${fqdn}"
+    hostname "${shortname}"
   fi
 }
 
@@ -173,8 +173,8 @@ if [[ -z "${newhostname}" ]]; then
 fi
 
 # Apply hostname + persist
-set_hostname "${newhostname}"
 shorthostname="${newhostname%%.*}"
+set_hostname "${shorthostname}"
 echo "${newhostname}" > /etc/hostname
 
 log "Rewriting /etc/hosts from scratch"
