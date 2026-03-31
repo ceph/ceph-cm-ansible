@@ -1,0 +1,36 @@
+---
+- name: Get secret for init-rack
+  command: "cat {{ '/var/snap/maas/common/maas/secret' if maas_install_method == 'snap' else '/var/lib/maas/secret' }}"
+  when: inventory_hostname in groups['maas_region_rack_server'] and maas_install.failed == false and maas_install.changed == true
+  tags: install_maas
+  register: secret_var
+
+- name: Initialize MAAS Rack Controller
+  when: inventory_hostname in groups['maas_rack_server'] and maas_install.failed == false and secret_var is defined and maas_install.changed == true
+  tags: install_maas
+  block:
+    - name: List all enabled services
+      ansible.builtin.service_facts:
+      when: "maas_install_method == 'snap'"
+
+    - name: Disable timesyncd service
+      systemd_service:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+      when: "maas_install_method == 'snap' and '{{ item }}.service' in ansible_facts.services and ansible_facts['services']['{{ item }}.service']['status'] != 'not-found'"
+      loop:
+        - systemd-timesyncd
+        - chrony
+
+    - name: Register Rack Controller with Region Controller Snap
+      command: "maas init rack --maas-url http://{{ hostvars[groups['maas_region_rack_server'].0]['ip'] }}:5240/MAAS/ --secret {{ hostvars[groups['maas_region_rack_server'].0]['secret_var']['stdout'] }}"
+      when: "maas_install_method == 'snap'"
+
+    - name: Register Rack Controller with Region Controller Apt
+      command: "maas-rack register --url=http://{{ hostvars[groups['maas_region_rack_server'].0]['ip'] }}:5240/MAAS/ --secret={{ hostvars[groups['maas_region_rack_server'].0]['secret_var']['stdout'] }}"
+      when: "maas_install_method == 'apt'"
+
+    - name: Restart MAAS Rack Controller
+      command: "snap restart maas"
+      when: "maas_install_method == 'snap'"

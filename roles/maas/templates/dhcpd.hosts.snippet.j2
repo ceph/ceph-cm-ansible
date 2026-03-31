@@ -1,0 +1,16 @@
+  {% for host in groups['all'] | sort | unique -%}
+  {% if hostvars[host][subnet_data.macvar] is defined -%}
+  {% if hostvars[host][subnet_data.ipvar] | ansible.utils.ipaddr(subnet_data.cidr) -%}
+  host {{ host.split('.')[0] }}-{{ subnet_name }} {
+   {% if hostvars[host]['domain_name_servers'] is defined -%}
+    option domain-name-servers {{ hostvars[host]['domain_name_servers']|join(', ') }};
+    {% endif -%}
+    hardware ethernet {{ hostvars[host][subnet_data.macvar] }};
+    fixed-address {{ hostvars[host][subnet_data.ipvar] }};
+  {% if hostvars[host]['dhcp_option_hostname'] is defined and hostvars[host]['dhcp_option_hostname'] == true %}
+  option host-name "{{ host.split('.')[0] }}";
+  {% endif -%}
+  }
+  {% endif -%}
+  {% endif -%}
+  {% endfor -%}

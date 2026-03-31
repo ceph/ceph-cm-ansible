@@ -1,0 +1,46 @@
+---
+- name: Initialize MAAS Region + Rack Controller
+  when: inventory_hostname in groups['maas_region_rack_server'] and maas_install.failed == false and maas_install.changed == true
+  tags: install_maas
+  block:
+    - name: List all enabled services
+      ansible.builtin.service_facts:
+      when: "maas_install_method == 'snap'"
+
+    - name: Disable timesyncd service
+      systemd_service:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+      when: "maas_install_method == 'snap' and '{{ item }}.service' in ansible_facts.services and ansible_facts['services']['{{ item }}.service']['status'] != 'not-found'" 
+      loop:
+        - systemd-timesyncd
+        - chrony
+
+    - name: Initialize MAAS Region Controller Snap
+      expect:  
+        command: "maas init region+rack --database-uri postgres://{{ maas_db_user }}:{{ maas_db_password }}@localhost/{{ maas_db_name }}"
+        responses:
+          "MAAS URL*": ""
+          "Controller has already been initialized*": ""
+        timeout: 300
+      when: "maas_install_method == 'snap'"
+
+    - name: Starting MAAS region service Apt
+      ansible.builtin.systemd:
+        name: maas-regiond.service
+        state: started
+        no_block: false
+      when: "maas_install_method == 'apt'"
+  
+    - name: Perform database migrations
+      command: "{{ 'maas' if maas_install_method == 'snap' else 'maas-region' }} migrate"
+
+    - name: Create MAAS admin user
+      command: "sudo maas createadmin --username={{ maas_admin_username }} --password={{ maas_admin_password }} --email={{ maas_admin_email }}"
+      register: admin_user_created
+      ignore_errors: true
+
+    - name: Restart MAAS services
+      command: "snap restart maas"
+      when: "maas_install_method == 'snap'"
