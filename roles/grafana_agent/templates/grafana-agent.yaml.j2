@@ -1,33 +1,26 @@
-server:
-  log_level: info
-
 metrics:
+  wal_directory: /var/lib/grafana-agent/wal
   global:
-    remote_write:
-      - url: {{ agent_mimir_url }}
-        basic_auth:
-          username: {{ agent_mimir_username }}
-          password: {{ agent_mimir_password }}
-        queue_config:
-          max_backoff: 5m
-    external_labels:
-      nodetype: unknown_nodetype
-      ingest_instance: {{ inventory_hostname }}
-    scrape_interval: {{ scrape_interval_global }}
-  configs:
-    - name: {{ inventory_hostname }}
-      scrape_configs:
-        - job_name: 'grafana-agent-exporter'
-          relabel_configs:
-            - source_labels: [__address__]
-              target_label: instance
-              replacement: {{ inventory_hostname }}
+    scrape_interval: {{ scrape_interval_global | default('60s') }}
 
-integrations:
-  node_exporter:
-    enabled: true
-    scrape_interval: {{ scrape_interval_node }}
-    instance: {{ inventory_hostname }}
-    rootfs_path: /
-    sysfs_path: /sys
-    procfs_path: /proc
+  configs:
+    - name: default
+      scrape_configs:
+        - job_name: node
+          static_configs:
+            - targets: ['localhost:9100']
+          relabel_configs:
+            - target_label: instance
+              replacement: "{{ ansible_fqdn }}:9100"
+            - target_label: nodename
+              replacement: "{{ ansible_fqdn }}"
+
+      remote_write:
+        - url: "{{ agent_mimir_url }}"
+          tls_config:
+            insecure_skip_verify: true
+{% if mimir_username is defined and mimir_password is defined %}
+          basic_auth:
+            username: "{{ mimir_username }}"
+            password: "{{ mimir_password }}"
+{% endif %}

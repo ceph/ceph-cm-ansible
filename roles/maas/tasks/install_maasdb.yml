@@ -1,7 +1,7 @@
 ---
 - name: Install PostgreSQL
   apt:
-    name: postgresql-{{ postgres_version}}
+    name: postgresql-{{ postgres_version }}
     state: present
   when: inventory_hostname in groups['maas_db_server']
   tags: 
