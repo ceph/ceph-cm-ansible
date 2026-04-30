@@ -7,20 +7,73 @@
 
 - name: Gather facts on listening ports
   community.general.listen_ports_facts:
+  tags:
+    - always
 
 # Resolving selinux conflicts
 - import_tasks: useradd-selinux.yml
   when: ansible_os_family == "RedHat"
 
-- name: Check if prometheus is listening on port 9090
-  ansible.builtin.debug:
-    msg: The {{ item.name }} service - pid {{ item.pid }} is running on same port as grafana-agent please set {{ item.name }} to listen on a diffrent port than {{ item.port }}
+
+- name: Fail if prometheus is listening on port 9090 (conflicts with grafana-agent)
+  ansible.builtin.fail:
+    msg: |
+      ERROR: Port conflict detected!
+
+      The '{{ item.name }}' service (PID {{ item.pid }}) is listening on port {{ item.port }}.
+
+      grafana-agent is meant to scrape metrics and forward them to Mimir.
+      Having prometheus listening on 9090 creates a port conflict.
+
+      Please do one of the following:
+        1. Change prometheus to listen on a different port (recommended, e.g. 9091)
+        2. Disable or remove the prometheus service if you want to use grafana-agent instead
+
+      After fixing the conflict, re-run this playbook.
   vars:
-    tcp_listen_violations: "{{ ansible_facts.tcp_listen | selectattr('name', 'in', tcp_whitelist) | list }}"
-    tcp_whitelist:
-      - prometheus
+    tcp_listen_violations: "{{ ansible_facts.tcp_listen | selectattr('port', 'equalto', 9090) | list }}"
   loop: "{{ tcp_listen_violations }}"
-  failed_when: true
+  when:
+    - ansible_facts.tcp_listen is defined
+    - tcp_listen_violations | length > 0
+  tags:
+    - always
+
+# Install node_exporter
+- name: Install prometheus-node-exporter (Debian/Ubuntu)
+  become: true
+  ansible.builtin.package:
+    name: prometheus-node-exporter
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Install EPEL repository (RedHat)
+  become: true
+  ansible.builtin.dnf:
+    name: epel-release
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Install node_exporter (RedHat family)
+  become: true
+  ansible.builtin.package:
+    name: node_exporter
+    state: present
+  when: ansible_os_family == "RedHat"
+
+# Determine correct service name
+- name: Determine node_exporter service name
+  ansible.builtin.set_fact:
+    node_exporter_service_name: "{{ 'prometheus-node-exporter' if ansible_pkg_mgr == 'apt' else 'node_exporter' }}"
+
+# Enable and start node_exporter
+- name: Enable and start node_exporter
+  become: true
+  ansible.builtin.systemd:
+    name: "{{ node_exporter_service_name }}"
+    enabled: true
+    state: started
+    daemon_reload: true
 
 - name: "Ensure that path /etc/apt/keyrings exists"
   become: true
@@ -68,6 +121,15 @@
   ansible.builtin.package:
     name: "grafana-agent"
     state: "present"
+
+- name: Ensure Grafana Agent WAL directory exists
+  become: true
+  ansible.builtin.file:
+    path: /var/lib/grafana-agent/wal
+    state: directory
+    owner: grafana-agent
+    group: grafana-agent
+    mode: '0750'
 
 - name: "Enable grafana-agent"
   become: true
