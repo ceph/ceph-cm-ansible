@@ -76,6 +76,11 @@
 # Configure MAAS
 - import_tasks: config_maas.yml
 
+- import_tasks: api_auth_pretasks.yml
+  tags:
+    - always
+    - api
+
 # Configure NTP Service
 - import_tasks: config_ntp.yml
 
