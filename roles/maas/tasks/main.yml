@@ -81,6 +81,12 @@
     - always
     - api
 
+# Configure Networks
+- import_tasks: networking.yml
+  tags:
+    - networking
+
+
 # Configure NTP Service
 - import_tasks: config_ntp.yml
 

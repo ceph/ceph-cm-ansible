@@ -6,7 +6,7 @@ This Ansible playbook automates the installation and initial configuration of [M
 
 - Installs MAAS packages
 - Initializes MAAS with a default user with High Availability
-- Configures networking (DHCP, DNS, etc.)
+- Configures networking (Domains, Spaces, Fabrics, VLANs, Subnets, IP ranges, DHCP, DNS, etc.) via the MAAS REST API
 - Adds Machines from inventory into MAAS
 
 ## Requirements
@@ -121,6 +121,55 @@ The classes are optional, they are groups of DHCP clients defined by specific cr
 
 The pools are optional too, they are ranges of IP addresses that a DHCP server uses to automatically assign to DHCP clients on a network. These addresses are dynamically allocated, meaning they are leased to clients for a specific duration and can be reclaimed when no longer in use. DHCP pools allow for efficient IP address management and are essential for networks where devices are frequently added or moved. In the example above we are using pools to assign IPs to the classes we just defined and to the unknown_clients which are servers that are not defined into the DHCP config file.
 
+Networking variables include:
+
+The networking configuration is driven entirely by the `maas_networking` data structure (MUST be defined in `group_vars/all.yml`). It is consumed by `tasks/networking.yml`, which then includes the smaller, single-purpose task files under `tasks/networking/`. The role talks to MAAS over its REST API (using the OAuth header built by `_auth_header.yml`), and is idempotent: it reads what already exists and only creates or updates what is missing or different.
+
+The top-level shape is a list of fabrics, each with its own list of VLANs, and each VLAN with its own list of subnets:
+
+maas_networking:
+  - fabric: pok                      # Fabric name (created if missing)
+    vlans:
+      - vid: 1338                    # 802.1Q VLAN id (required)
+        name: new-front              # Required. Must match ^[a-z0-9-]+$ (lowercase, digits, dashes)
+        description: "..."           # Optional, stored on the VLAN
+        mtu: 1500                    # Optional, applied during VLAN update
+        dhcp_on: false               # Optional. If true, MAAS DHCP is enabled for the VLAN
+        primary_rack_controller: ""  # Optional per-VLAN override of the global primary rack controller
+        subnets:
+          - cidr: 10.20.192.0/20     # Required
+            domain: front.sepia.ceph.com   # Optional. Collected and created as MAAS Domains
+            inventory_prefixes: ["front"]  # Hint to match ansible inventory hosts/IPs during host creation
+            managed: false           # Optional. Should MAAS allocate IPs on this subnet?
+            space: "pok"             # Optional. Created as a MAAS Space and bound to the VLAN
+            gateway: 10.20.192.1     # Optional. Maps to MAAS subnet `gateway_ip`
+            dns_servers: []          # Optional list. Falls back to maas_global_dns_servers when empty
+            ip_ranges:               # Optional list of reserved/dynamic ranges
+              - type: reserved       # 'reserved' or 'dynamic'
+                start_ip: 10.20.192.1
+                end_ip: 10.20.207.253
+              - type: dynamic
+                start_ip: 10.20.207.254
+                end_ip: 10.20.207.254
+
+Supporting variables:
+
+maas_global_dns_servers: Optional list of DNS server IPs. Used as a fallback for any subnet whose `dns_servers` list is empty or unset.
+
+maas_global_primary_rack_controller: Optional. Hostname of the controller to use as primary rack for any VLAN that does not declare its own `primary_rack_controller`. If neither the global value nor a per-VLAN value is set, the role will fail early during validation rather than silently leave VLANs without a rack controller.
+
+maas_overwrite_ipranges: Optional, defaults to `false`. When `true`, overlapping IP ranges discovered in MAAS will be deleted before the desired range is created. When `false` (the default) the play will fail with the conflicting range ids/spans so the user can resolve it manually.
+
+What `tasks/networking.yml` does, in order:
+
+1. Validates the inventory before making any API calls. It fails fast if any DHCP-enabled VLAN is missing a `dynamic` ip_range, if any VLAN name violates the `^[a-z0-9-]+$` rule, or if `maas_global_primary_rack_controller` is unset and any VLAN omits `primary_rack_controller`.
+2. Reads the existing MAAS Domains and creates any new domains found in `maas_networking[*].vlans[*].subnets[*].domain` (`networking/domain_create.yml`).
+3. Reads the existing MAAS Spaces and creates any new spaces found in the subnet definitions (`networking/space_create.yml`).
+4. Reads the existing Fabrics and creates any missing fabrics named in `maas_networking[*].fabric` (`networking/fabric_create.yml`).
+5. Reads each fabric's VLANs (`networking/fabric_vlans_read_from_maas.yml`) and builds a `_vlan_index` keyed by fabric and VID (`networking/vlan_build_index.yml`). Missing VLANs are created with their `vid`, `name`, `description`, `mtu`, and `space`, but not yet with `dhcp_on` (`networking/vlan_create.yml`). The index is then rebuilt to pick up newly-created VLANs.
+6. For every (fabric, vlan, subnet) triple, applies the subnet (`networking/subnet_apply.yml`): creates it if missing or updates it in place, sets `gateway_ip` and `managed`, applies DNS servers (subnet-level first, then `maas_global_dns_servers`), and reconciles its IP ranges (`networking/subnet_range_create.yml`). The range task skips exact matches, refuses to create a `dynamic` range on an unmanaged subnet, and either fails on overlaps or replaces them depending on `maas_overwrite_ipranges`.
+7. Finally, updates each VLAN's mutable properties — `name`, `mtu`, `space`, `primary_rack`, and `dhcp_on` — only after IP ranges exist, since MAAS will reject `dhcp_on=true` on a VLAN with no dynamic range (`networking/vlan_update.yml`).
+
 Users variables include:
 
 keys_repo: "https://github.com/ceph/keys"
@@ -160,7 +209,18 @@ maas
 │   ├── initialize_region_rack.yml
 │   ├── initialize_secondary_rack.yml
 │   ├── install_maasdb.yml
-│   └── main.yml
+│   ├── main.yml
+│   ├── networking.yml
+│   └── networking
+│       ├── domain_create.yml
+│       ├── fabric_create.yml
+│       ├── fabric_vlans_read_from_maas.yml
+│       ├── space_create.yml
+│       ├── subnet_apply.yml
+│       ├── subnet_range_create.yml
+│       ├── vlan_build_index.yml
+│       ├── vlan_create.yml
+│       └── vlan_update.yml
 └── templates
     ├── arm_uefi.j2
     ├── dhcpd.classes.snippet.j2
@@ -176,3 +236,4 @@ maas
 - config_dhcp #Configures DHCP options only if there are any change in the DHCP variables.
 - config_dns #Configure DNS domains and add the DNS Records that are not currently into a domain.
 - config_maas #Configure curtin_scripts files and modify some default files in MAAS to address issues during depoyment, also it configures the global kernel parameters.
+- networking #Run only the MAAS networking reconciliation tasks (Domains, Spaces, Fabrics, VLANs, Subnets, IP ranges) driven by the `maas_networking` variable.

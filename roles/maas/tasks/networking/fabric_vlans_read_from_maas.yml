@@ -1,0 +1,37 @@
+---
+# Purpose: For one fabric (passed in as `fab_obj`), GET its VLAN list from
+# MAAS and merge the result into the running `_vlans_raw_by_fabric` accumulator.
+# Looped over every fabric by `tasks/networking.yml` so we end up with a single
+# dict keyed by fabric name.
+#
+# Expects:
+#   - _maas_api            : MAAS API base URL
+#   - maas_auth_header     : OAuth header string (rebuilt fresh below)
+#   - _fabric_by_name      : { "<fabric_name>": <fabric_id> } produced earlier
+#                            in networking.yml from GET /fabrics/
+#   - fab_obj              : one entry from `maas_networking`; uses .fabric
+#   - _vlans_raw_by_fabric : the accumulator (initialized to {} by the caller)
+# Returns:
+#   - _vlans_raw_by_fabric : same dict, now with an entry
+#                            { fab_obj.fabric: [<vlan_obj>, ...] } merged in.
+# Side effects: GET {{ _maas_api }}/fabrics/<id>/vlans/.
+
+- include_tasks: ../_auth_header.yml
+  no_log: true
+
+- name: Read VLANs for fabric {{ fab_obj.fabric }} from MAAS
+  uri:
+    url: "{{ _maas_api }}/fabrics/{{ _fabric_by_name[fab_obj.fabric] }}/vlans/"
+    method: GET
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+    return_content: true
+    use_netrc: false
+  register: _vlans_resp
+  no_log: true
+
+- name: Merge VLANs for fabric {{ fab_obj.fabric }} into _vlans_raw_by_fabric
+  set_fact:
+    _vlans_raw_by_fabric: "{{ _vlans_raw_by_fabric | combine({ fab_obj.fabric: (_vlans_resp.json | default([])) }, recursive=True) }}"
+  no_log: true
