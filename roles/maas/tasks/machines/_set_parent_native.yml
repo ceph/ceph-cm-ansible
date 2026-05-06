@@ -1,0 +1,34 @@
+---
+# Purpose: Set the native VLAN on one parent interface (a NIC enslaved to
+# a bond). Looped over all parents of a bond from _ensure_bond.yml when
+# the parents disagree with the bond's intended native VLAN.
+#
+# Expects:
+#   - system_id              : MAAS node system_id
+#   - parent_id              : MAAS interface id of the parent NIC (loop var
+#                              in _ensure_bond.yml)
+#   - _target_native_vlan_id : MAAS VLAN object id to set as native (numeric,
+#                              not the 802.1Q VID)
+#   - _inv_host_resolved     : inventory hostname (for log labels)
+#   - _maas_api, maas_auth_header
+# Returns: nothing.
+# Side effects: PUT {{ _maas_api }}/nodes/<system_id>/interfaces/<parent_id>/
+# with {"vlan": <id>}.
+
+- include_tasks: ../_auth_header.yml
+
+- name: PUT vlan on parent {{ parent_id }} on {{ _inv_host_resolved }}
+  uri:
+    url: "{{ _maas_api }}/nodes/{{ system_id }}/interfaces/{{ parent_id }}/"
+    method: PUT
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+      Content-Type: application/json
+    body_format: json
+    body:
+      vlan: "{{ _target_native_vlan_id | int }}"
+    status_code: [200, 201]
+  register: _put_parent_vlan
+  changed_when: _put_parent_vlan.status in [200, 201]
+  no_log: true

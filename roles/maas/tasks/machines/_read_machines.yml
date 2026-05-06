@@ -1,0 +1,34 @@
+---
+# Purpose: Pull the full /machines/ list from MAAS so the rest of the
+# machines flow has a fresh view of every node (status, system_id, MACs,
+# interfaces, ...). Called once at the top of machines.yml and again from
+# the "Rebuild MAAS machine indexes" handler after we create new machines.
+#
+# Expects:
+#   - _maas_api, maas_auth_header (rebuilt fresh below)
+# Returns:
+#   - maas_nodes_list : the raw JSON list returned by /machines/
+#   - _with_names     : same list, filtered to only entries with a hostname.
+# Side effects: GET {{ _maas_api }}/machines/.
+
+- include_tasks: ../_auth_header.yml
+
+- name: Read all machines from MAAS
+  uri:
+    url: "{{ _maas_api }}/machines/"
+    method: GET
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+    return_content: yes
+    status_code: 200
+  register: _all_machines
+  no_log: true
+
+- name: Parse MAAS machines JSON
+  set_fact:
+    maas_nodes_list: "{{ _all_machines.json | list }}"
+
+- name: Keep only entries with hostname
+  set_fact:
+    _with_names: "{{ maas_nodes_list | selectattr('hostname', 'defined') | list }}"

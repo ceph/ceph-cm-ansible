@@ -170,6 +170,75 @@ What `tasks/networking.yml` does, in order:
 6. For every (fabric, vlan, subnet) triple, applies the subnet (`networking/subnet_apply.yml`): creates it if missing or updates it in place, sets `gateway_ip` and `managed`, applies DNS servers (subnet-level first, then `maas_global_dns_servers`), and reconciles its IP ranges (`networking/subnet_range_create.yml`). The range task skips exact matches, refuses to create a `dynamic` range on an unmanaged subnet, and either fails on overlaps or replaces them depending on `maas_overwrite_ipranges`.
 7. Finally, updates each VLAN's mutable properties — `name`, `mtu`, `space`, `primary_rack`, and `dhcp_on` — only after IP ranges exist, since MAAS will reject `dhcp_on=true` on a VLAN with no dynamic range (`networking/vlan_update.yml`).
 
+Machines variables include:
+
+`tasks/machines.yml` reconciles MAAS's view of physical machines against the Ansible inventory group `[maas_machines]`. Inputs come from a mix of group-level variables (suitable defaults for an entire fleet) and per-host inventory variables (anything that's host-specific, like MAC addresses and per-host overrides). The role talks to MAAS over its REST API and is idempotent: it builds a plan from the current state, then creates / updates / deletes only the deltas.
+
+Per-host variables (typically defined in `group_vars/<group>.yml` or `host_vars/<host>.yml`):
+
+maas_arch: amd64/generic     # Optional. MAAS architecture string. Defaults to global maas_arch, then 'amd64/generic'.
+maas_domain: front.sepia.ceph.com   # Optional. MAAS domain to assign on create. Defaults to global maas_domain.
+maas_boot_mac_var: if_25Gb_mac      # Name of the inventory var that holds the boot interface's MAC.
+maas_boot_ip_var:  if_25Gb_ip       # Name of the inventory var that holds the boot interface's IP.
+maas_interfaces:                    # List of physical interfaces to reconcile.
+  - prefix: if_25Gb                 # Required. Inventory variable prefix; the role reads <prefix>_mac (and <prefix>_ip) from hostvars.
+    native_vid: 1338                # Optional. VID to set as the parent's native VLAN.
+    tagged_vids: [1339]             # Optional list. Tagged VLAN subinterfaces to create on this parent (e.g. ipmi).
+    mtu: 9000                       # Optional. Sets MTU on the parent if it differs from MAAS's current value.
+    desired_mode: AUTO              # Optional. Per-iface override for subnet linking mode (DHCP/AUTO/STATIC/LINK_UP).
+maas_bonds:                         # Optional. List of bonds to ensure on this host.
+  - name: bond0
+    interfaces: [if_25Gb_a, if_25Gb_b]   # Inventory var names whose values are MACs (or literal MACs / iface names).
+    mode: 802.3ad
+    mtu: 9000
+    native_vid: 1338                # Optional. Native VLAN of the bond.
+    tagged_vids: [1339]             # Optional. Tagged VLAN subinterfaces to create on the bond.
+    link_speed: 25000               # Optional. Only updated while the bond's link is connected.
+
+Per-host inventory line example. The role pairs each `maas_interfaces[*].prefix` with `<prefix>_mac` (and optionally `<prefix>_ip`) from the host's inventory facts:
+
+    smithi001 if_25Gb_mac=0C:C4:7A:BD:15:E8 if_25Gb_ip=10.20.192.1 ipmi=10.20.208.1
+
+Inventory groups consumed by the machines flow:
+
+    [maas_machines]            : the set of hosts that should exist in MAAS.
+    [maas_region_rack_server]  : MAAS region/rack controllers — never created or deleted.
+    [maas_db_server]           : MAAS DB host(s)            — never created or deleted.
+    [maas_dont_delete]         : escape hatch — listed here means "leave alone".
+
+Supporting role-level variables:
+
+maas_delete_hosts: false           # Optional, default false. When true, hosts in MAAS that aren't in [maas_machines] (and aren't excluded) get included via machines/delete.yml. NOTE: machines/delete.yml is currently a debug-only dry-run; flipping this flag does not actually delete anything until that task issues a real DELETE.
+maas_allow_create_physical: true   # Optional, default true. When a desired interface MAC is not present on the MAAS node, the role POSTs ?op=create_physical to add it (only relevant for VMs / freshly-commissioned bare metal where MAAS doesn't know the NIC yet).
+maas_iface_mode_default: DHCP      # Optional, default 'DHCP'. Subnet-linking mode used when an iface doesn't specify desired_mode. MAAS accepts DHCP, AUTO, STATIC, and LINK_UP.
+maas_power_boot_type: efi          # Optional, default 'efi'. Sent as power_parameters_power_boot_type when create.yml ships IPMI creds with a new machine.
+
+IPMI credentials are loaded from the secrets repo and never inlined in the inventory. `set_ipmi_creds.yml` searches, in order: `{{ secrets_path }}/host_vars/<short>.yml`, `{{ secrets_path }}/group_vars/<base_group>.yml` (where `<base_group>` is the short name with trailing digits stripped — e.g. `smithi001` → `smithi`), and finally `{{ secrets_path }}/ipmi.yml`. The first file found supplies `power_user` and `power_pass`. All URI tasks that touch those values use `no_log: true` so they don't leak into Ansible's run output.
+
+What `tasks/machines.yml` does, in order:
+
+1. Initialize `_maas_api`, build a fresh OAuth header (`_auth_header.yml`), and read every machine from MAAS (`machines/_read_machines.yml`).
+2. Build per-FQDN and per-short-name lookup maps over the MAAS payload (`machines/_build_indexes.yml`): `maas_by_hostname`, `maas_host_to_macs`, `maas_host_to_ifaces`, `maas_host_to_status`, `maas_short_to_id`, `maas_by_short`, `inventory_by_short`. Fail fast if MAAS contains duplicate short hostnames.
+3. Plan the create / update / delete sets (`machines/_plan_sets.yml`): `_create_short` is short names in the inventory but not in MAAS; `_delete_short` is the reverse; `_update_short` is the intersection. Hosts in `[maas_region_rack_server]`, `[maas_db_server]`, and `[maas_dont_delete]` are excluded from all three sets. `_plan_ipmi` is the union of create + update — the set we'd want to push IPMI credentials for.
+4. CREATE: for each name in `_create_short`, `machines/create.yml` POSTs a skeleton machine. If IPMI creds and an `ipmi` host var are available, it ships them in the create body (so MAAS can commission the node); otherwise it creates the machine in `Deployed` state to suppress commissioning. The "Rebuild MAAS machine indexes" handler is notified.
+5. `meta: flush_handlers` — re-reads `/machines/` and rebuilds the indexes so the update pass below sees the freshly-created hosts.
+6. UPDATE: re-runs the planner and then, for each name in `_update_short` whose status is not `Deployed`, includes `machines/update.yml`. That file refreshes interface facts (`machines/_refresh_iface_facts.yml`), optionally marks the node `Broken` if it's not already in a state that allows interface edits (`machines/_mark_broken.yml`), reconciles each entry in `maas_interfaces` (`machines/_apply_one_iface.yml`) and each entry in `maas_bonds` (`machines/_ensure_bond.yml`), then groups MAAS subnets by VLAN id and links each iface whose MAC matches the inventory to a subnet on its VLAN (`machines/_apply_subnet.yml`).
+7. IPMI: for every host in `_plan_ipmi` that has a MAAS `system_id`, `machines/set_ipmi_creds.yml` loads credentials from the secrets repo and PUTs them onto the machine (idempotent — MAAS rejects duplicates with 200/empty diff).
+8. DELETE: when `maas_delete_hosts: true`, loops over `_delete_short` via `machines/delete.yml`. Currently a dry-run.
+9. CLEANUP: any node we marked `Broken` earlier is moved back to its prior state via `machines/cleanup.yml` (POST `op=mark_fixed` after a GET to confirm it's still `Broken`).
+
+Per-iface helpers (called from `update.yml`):
+
+`machines/_apply_one_iface.yml` — resolves the parent physical interface by its inventory MAC (`<prefix>_mac`), creates it if missing (when `maas_allow_create_physical=true`), updates the parent's MTU and native VLAN, and creates any missing tagged VLAN subinterfaces listed in `iface.tagged_vids`. If the parent appears as a VLAN subinterface in MAAS, the role walks back to the underlying physical interface before issuing the native-VLAN PUT (MAAS rejects native-VLAN updates on a VLAN-typed interface).
+
+`machines/_ensure_bond.yml` — finds an existing bond by name, falls back to matching by parent-MAC set if the name doesn't match, creates the bond via `?op=create_bond` when needed, then updates `bond_mode` / `mtu` / `link_speed` and reconciles each parent's native VLAN (`machines/_set_parent_native.yml`) and any missing tagged subinterfaces (`machines/_create_vlan_on_parent.yml`).
+
+`machines/_apply_subnet.yml` — for each interface MAC the role recognizes from inventory, finds candidate subnets on its VLAN; if no link exists it creates one against the first candidate with the desired mode; if a link exists with the wrong mode it unlinks and relinks; if the link is already correct it skips silently.
+
+`machines/_ensure_boot_iface.yml` — sets the node's boot interface to the inventory-defined boot MAC (`maas_boot_mac_var`). Currently invoked on demand only; `update.yml` does not include it by default.
+
+**NOTE:** Running the entirety of the `machines` tag can take 6+ hours.  Optimization can probably done to not continuously hit the `/machines` API endpoint but getting this ansible merged was prioritized over continued optimization.
+
 Users variables include:
 
 keys_repo: "https://github.com/ceph/keys"
@@ -200,7 +269,6 @@ maas
 │   └── main.yml
 ├── README.md
 ├── tasks
-│   ├── add_machines.yml
 │   ├── add_users.yml
 │   ├── config_dhcpd_subnet.yml
 │   ├── config_dns.yml
@@ -209,6 +277,24 @@ maas
 │   ├── initialize_region_rack.yml
 │   ├── initialize_secondary_rack.yml
 │   ├── install_maasdb.yml
+│   ├── machines.yml
+│   ├── machines
+│   │   ├── _apply_one_iface.yml
+│   │   ├── _apply_subnet.yml
+│   │   ├── _build_indexes.yml
+│   │   ├── _create_vlan_on_parent.yml
+│   │   ├── _ensure_bond.yml
+│   │   ├── _ensure_boot_iface.yml
+│   │   ├── _mark_broken.yml
+│   │   ├── _plan_sets.yml
+│   │   ├── _read_machines.yml
+│   │   ├── _refresh_iface_facts.yml
+│   │   ├── _set_parent_native.yml
+│   │   ├── cleanup.yml
+│   │   ├── create.yml
+│   │   ├── delete.yml
+│   │   ├── set_ipmi_creds.yml
+│   │   └── update.yml
 │   ├── main.yml
 │   ├── networking.yml
 │   └── networking
@@ -237,3 +323,7 @@ maas
 - config_dns #Configure DNS domains and add the DNS Records that are not currently into a domain.
 - config_maas #Configure curtin_scripts files and modify some default files in MAAS to address issues during depoyment, also it configures the global kernel parameters.
 - networking #Run only the MAAS networking reconciliation tasks (Domains, Spaces, Fabrics, VLANs, Subnets, IP ranges) driven by the `maas_networking` variable.
+- machines #Run only the MAAS machines reconciliation (create / update interfaces & bonds / link subnets / set IPMI / cleanup) driven by the inventory group `[maas_machines]` plus per-host `maas_*` variables.
+- create_machines #Subset of `machines`: only the create pass (skeleton machine entries for hosts not yet in MAAS).
+- update_machines #Subset of `machines`: only the update pass (interfaces, bonds, subnet links).
+- ipmi #Subset of `machines`: only the IPMI credential push (read MAAS, plan, set creds).

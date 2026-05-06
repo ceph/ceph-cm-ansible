@@ -16,7 +16,7 @@
     maas_ck_raw: "{{ (maas_api_key.split(':'))[0] }}"
     maas_tk_raw: "{{ (maas_api_key.split(':'))[1] }}"
     maas_ts_raw: "{{ (maas_api_key.split(':'))[2] }}"
-  no_log: true
+#  no_log: true
 
 # Pre-encode static values used in every header
 - name: Pre-encode OAuth static pieces

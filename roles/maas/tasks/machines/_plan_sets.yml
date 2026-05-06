@@ -1,0 +1,79 @@
+---
+# Purpose: Decide which hosts to create / update / delete in MAAS by diffing
+# what's already in MAAS against what the inventory says should be there.
+# Always works in short hostnames so MAAS's domain doesn't need to match
+# the inventory's domain.
+#
+# Excluded groups are never touched: maas_region_rack_server (the
+# controllers themselves), maas_db_server (the DB host), and
+# maas_dont_delete (manual escape hatch).
+#
+# Expects:
+#   - maas_by_hostname           : built by _build_indexes.yml
+#   - groups['maas_machines']    : inventory group of hosts that should
+#                                  exist in MAAS
+#   - groups['maas_region_rack_server'], groups['maas_db_server'],
+#     groups['maas_dont_delete'] : excluded groups (any of these may be
+#                                  empty / undefined)
+# Returns:
+#   - _existing_names      : short names currently in MAAS
+#   - machine_names        : short names from inventory
+#   - maas_excluded_hosts  : short names we will never create/update/delete
+#   - _create_short        : in inventory, not in MAAS, not excluded
+#   - _delete_short        : in MAAS, not in inventory, not excluded
+#   - _update_short        : in both, not excluded
+#   - _plan_ipmi           : (_create_short + _update_short) — hosts whose
+#                            IPMI creds we'll push in machines.yml
+# Side effects: none. Pure local transform.
+
+- name: Normalize hostnames (ignore domains)
+  set_fact:
+    # Short names that exist in MAAS right now
+    _existing_names: >-
+      {{
+        (maas_by_hostname | default({}))
+        | dict2items
+        | map(attribute='value.hostname')
+        | reject('equalto', None)
+        | list
+      }}
+
+    # Short names from your inventory group
+    machine_names: >-
+      {{
+        groups.get('maas_machines', [])
+        | map('extract', hostvars, 'inventory_hostname_short')
+        | reject('equalto', None)
+        | list
+      }}
+
+    # Short names that must be excluded
+    maas_excluded_hosts: >-
+      {{
+        (
+          groups.get('maas_region_rack_server', []) +
+          groups.get('maas_db_server', []) +
+          groups.get('maas_dont_delete', [])
+        )
+        | map('extract', hostvars, 'inventory_hostname_short')
+        | reject('equalto', None)
+        | unique
+        | list
+      }}
+
+# 2) Plan using SHORT names only
+- name: Determine which hosts to create, update, and delete
+  set_fact:
+    _create_short: "{{ machine_names | difference(_existing_names + maas_excluded_hosts) | list }}"
+    _delete_short: "{{ _existing_names | difference(machine_names + maas_excluded_hosts) | list }}"
+    _update_short: "{{ (_existing_names | intersect(machine_names)) | difference(maas_excluded_hosts) | list }}"
+
+# Plan: set IPMI creds for everything in create + update (short names)
+- name: Build combined IPMI plan list (create + update)
+  set_fact:
+    _plan_ipmi: >-
+      {{
+        ((_create_short | default([])) + (_update_short | default([])))
+        | unique
+        | list
+      }}

@@ -1,0 +1,167 @@
+---
+# Purpose: Reconcile one existing MAAS machine against the inventory.
+# Called once per name in `_update_short` (built by _plan_sets.yml).
+# Skipped from machines.yml for any host whose status is "Deployed" — we
+# don't touch deployed machines.
+#
+# Step-by-step:
+#   1) Refresh interface facts for the node.
+#   2) If the node isn't in an edit-allowed state (Broken/Ready/New/Allocated),
+#      flag it Broken via _mark_broken.yml so we can edit interfaces.
+#      cleanup.yml will revert it at end of play.
+#   3) Walk `maas_interfaces` and reconcile each entry via _apply_one_iface.yml
+#      (parent NIC, MTU, native VLAN, tagged VLAN subinterfaces).
+#   4) Walk `maas_bonds` and reconcile each entry via _ensure_bond.yml.
+#   5) Read all subnets from MAAS, group by VLAN id, and link each interface
+#      whose MAC is in inventory to the right subnet via _apply_subnet.yml.
+#
+# Expects:
+#   - host                         : short hostname
+#   - inv_host                     : ansible inventory hostname
+#   - system_id                    : MAAS system_id
+#   - existing                     : MAAS object for this host (from
+#                                    maas_by_short)
+#   - system_status                : current MAAS status_name
+#   - hostvars[inv_host].maas_interfaces / .maas_bonds : the desired NIC and
+#                                                        bond layout
+#   - _maas_api, maas_auth_header
+# Returns: nothing.
+# Side effects: many — see the included helper files for details.
+
+- name: Build OAuth header
+  include_tasks: ../_auth_header.yml
+
+# 2) Record node system_id for downstream includes
+- name: Remember {{ inv_host }} = systemd id {{ system_id }}
+  set_fact:
+    _node_system_id: "{{ system_id }}"
+
+# 5) Initialize desired structures so later tasks never explode on undefined
+# Load desired bonds & interfaces from group_vars
+- name: Load desired bonds & interfaces from group_vars
+  set_fact:
+    _desired_bonds: "{{ hostvars[inv_host].maas_bonds | default([]) }}"
+    _desired_ifaces: "{{ hostvars[inv_host].maas_interfaces | default([]) }}"
+
+- include_tasks: _refresh_iface_facts.yml
+
+- include_tasks: _mark_broken.yml
+  when: system_status not in ['Broken', 'Ready', 'New', 'Allocated']
+
+- name: Apply interfaces (native_vid + tagged_vids)
+  include_tasks: _apply_one_iface.yml
+  loop: "{{ _desired_ifaces }}"
+  loop_control:
+    loop_var: desired_iface
+    label: "{{ desired_iface.prefix | default('(no prefix)') }}"
+  vars:
+    iface_obj: "{{ desired_iface }}"
+
+# 9) Ensure bonds (each include runs per bond; no block-looping)
+- name: Ensure each bond
+  when: (_desired_bonds | default([])) | length > 0
+  include_tasks: _ensure_bond.yml
+  loop: "{{ _desired_bonds | default([]) }}"
+  loop_control:
+    loop_var: bond
+    label: "{{ bond.name | default('unnamed-bond') }}"
+
+# Ensure we have fresh auth + base url
+- include_tasks: ../_auth_header.yml
+
+# Read all interfaces for this node
+- name: Read machine interfaces (for subnet assignment)
+  uri:
+    url: "{{ _maas_api }}/nodes/{{ system_id }}/interfaces/"
+    method: GET
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+    return_content: yes
+    status_code: 200
+  register: _ifaces_read
+  no_log: true
+
+# INIT
+- name: Init iface list (id, name, vlan_id)
+  set_fact:
+    _iface_rows: []
+
+# Build iface list (id, name, vlan_id, type) — bonds, vlans, physical NICs
+- name: Build iface list (id, name, vlan_id, type, mac)
+  set_fact:
+    _iface_rows: "{{ _iface_rows + [ {
+      'id': i.id,
+      'name': i.name,
+      'vlan_id': i.vlan.id,
+      'type': i.type,
+      'mac': (i.mac_address | default('') | lower)
+    } ] }}"
+  loop: >-
+    {{
+      _ifaces_read.json
+      | selectattr('vlan','defined')
+      | selectattr('vlan.id','defined')
+      | selectattr('type','defined')
+      | list
+    }}
+  loop_control:
+    loop_var: i
+
+- include_tasks: ../_auth_header.yml
+
+# Fetch ALL subnets once (we'll group them locally)
+- name: Read all subnets
+  uri:
+    url: "{{ _maas_api }}/subnets/"
+    method: GET
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+    return_content: yes
+    status_code: 200
+  register: _all_subnets
+  no_log: true
+
+- name: Init subnets_by_vlan map
+  set_fact:
+    _subnets_by_vlan: {}
+
+# Build map: vlan_id -> [subnets...]
+- name: Group subnets by VLAN id
+  set_fact:
+    _subnets_by_vlan: >-
+      {{
+        _subnets_by_vlan | default({}) | combine({
+          (s.vlan.id|string):
+            (_subnets_by_vlan.get(s.vlan.id|string, []) + [s])
+        })
+      }}
+  loop: "{{ _all_subnets.json | default([]) }}"
+  loop_control:
+    loop_var: s
+  when: s.vlan is defined and s.vlan.id is defined
+
+- name: Collect known MACs from inventory (any var ending in _mac)
+  set_fact:
+    _inv_macs: >-
+      {{
+        hostvars[inventory_hostname]
+        | dict2items
+        | selectattr('key', 'search', '_mac$')
+        | map(attribute='value')
+        | map('lower')
+        | reject('equalto', '')
+        | list
+      }}
+
+- name: Apply subnet assignment for each iface (bond/vlan/physical) we know from inventory
+  include_tasks: _apply_subnet.yml
+  loop: "{{ _iface_rows | selectattr('mac', 'in', _inv_macs) | list }}"
+  loop_control:
+    loop_var: row
+  when:
+    - _iface_rows | length > 0
+  vars:
+    iface: "{{ row }}"
+    candidate_subnets: "{{ _subnets_by_vlan.get(row.vlan_id | string, []) }}"
