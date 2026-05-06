@@ -56,6 +56,11 @@
       mount_point: /home/jenkins-build
     when: ansible_hostname is search("incerta|toko")
 
+  - set_fact:
+      disk: /dev/nvme1n1
+      mount_point: /home/jenkins-build
+    when: ansible_hostname is search("bath")
+
 # Setting the mountpoint to libvirt/images on irvinigi because I'm adding two
 # right now as CentOS7 Vagrant builders.
   - set_fact:
