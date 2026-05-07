@@ -35,17 +35,17 @@
       mount_point: "{{ jenkins_slave_mount_point }}"
     when: disk_flip_host
   
-  - name: Select 400GB disk as /dev/sda (braggi/adami)
+  - name: Select sdb disk if sda is < 500GiB (braggi/adami)
     set_fact:
-      disk: /dev/sda
+      disk: /dev/sdb
     when:
       - disk_flip_host
       - sda_parted.disk.size is defined
       - sda_parted.disk.size < 500
   
-  - name: Select 400GB disk as /dev/sdb (braggi/adami)
+  - name: Select sda disk if sdb is < 500GiB (braggi/adami)
     set_fact:
-      disk: /dev/sdb
+      disk: /dev/sda
     when:
       - disk_flip_host
       - sdb_parted.disk.size is defined
