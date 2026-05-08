@@ -14,3 +14,12 @@ archive_base: {{ archive_base }}
 ceph_git_base_url: {{ teuthology_ceph_git_base_url }}
 queue_host: localhost
 queue_port: 11300
+
+# for virtual ips (vip task)
+vip:
+  - machine_subnet: 172.21.0.0/20
+    virtual_subnet: 10.0.0.0/16
+# for kubernetes pod network
+vnet:
+  - machine_subnet: 172.21.0.0/20
+    virtual_subnet: 10.128.0.0/9
