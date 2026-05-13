@@ -1,12 +1,93 @@
 ---
+# Play 1: fact/var gathering
 - hosts: long_running_cluster
   tasks:
     - name: Pull in vars from common role
       include_vars: "roles/common/vars/{{ ansible_pkg_mgr }}_systems.yml"
 
+# Play 2: discover which hosts have the admin keyring.
+# tasks: always ensures this runs even under --tags coredump.
 - hosts: long_running_cluster
+  gather_facts: false
+  tasks:
+    - name: Check for Ceph admin keyring
+      ansible.builtin.stat:
+        path: /etc/ceph/ceph.client.admin.keyring
+      register: _admin_keyring_stat
+      tags: always
+
+    - name: Record admin keyring presence
+      ansible.builtin.set_fact:
+        has_ceph_admin_keyring: "{{ _admin_keyring_stat.stat.exists }}"
+      tags: always
+
+# Play 3: role application, one host at a time with cluster health gates.
+- hosts: long_running_cluster
+  serial: 1
   become: true
+  vars:
+    # Prefer hosts discovered at runtime (Play 2, within --limit scope).
+    # Fall back to hosts with `ceph_admin_host: true` in host_vars —
+    # an inventory variable visible for all hosts regardless of --limit.
+    _ceph_monitor_host: >-
+      {%- set result = [] -%}
+      {%- for h in groups['long_running_cluster'] -%}
+        {%- if hostvars[h]['has_ceph_admin_keyring'] | default(false) | bool
+            or hostvars[h]['ceph_admin_host'] | default(false) | bool -%}
+          {%- set _ = result.append(h) -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {{ result | first | default('') }}
+  pre_tasks:
+    - name: Fail if no Ceph admin host could be identified
+      ansible.builtin.fail:
+        msg: >-
+          No host with the Ceph admin keyring found. Either include an
+          admin-capable host in your --limit, or set `ceph_admin_host: true`
+          in host_vars for a host with /etc/ceph/ceph.client.admin.keyring.
+      when: _ceph_monitor_host == ''
+      run_once: true
+      tags: coredump
+
+    - name: Wait for healthy cluster before touching {{ inventory_hostname }}
+      ansible.builtin.command: ceph -s --format json
+      delegate_to: "{{ _ceph_monitor_host }}"
+      changed_when: false
+      register: _pre_health
+      until: >-
+        (
+          (_pre_health.stdout | from_json).pgmap.pgs_by_state
+          | selectattr('state_name', 'search', 'inactive')
+          | map(attribute='count') | sum | int == 0
+        ) and (
+          (_pre_health.stdout | from_json).osdmap.num_in_osds | int ==
+          (_pre_health.stdout | from_json).osdmap.num_up_osds | int
+        )
+      retries: 30
+      delay: 10
+      tags: coredump
+
   roles:
     - long_running_cluster
+
+  post_tasks:
+    - name: Wait for cluster to recover after restarting {{ inventory_hostname }}
+      ansible.builtin.command: ceph -s --format json
+      delegate_to: "{{ _ceph_monitor_host }}"
+      changed_when: false
+      register: _post_health
+      until: >-
+        (
+          (_post_health.stdout | from_json).pgmap.pgs_by_state
+          | selectattr('state_name', 'search', 'inactive')
+          | map(attribute='count') | sum | int == 0
+        ) and (
+          (_post_health.stdout | from_json).osdmap.num_in_osds | int ==
+          (_post_health.stdout | from_json).osdmap.num_up_osds | int
+        )
+      retries: 60
+      delay: 10
+      tags: coredump
+
   handlers:
     - import_tasks: roles/common/handlers/main.yml

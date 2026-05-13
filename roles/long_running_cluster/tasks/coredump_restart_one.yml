@@ -1,0 +1,29 @@
+---
+# Ansible does not support inserting tasks between loop iterations — a plain
+# `loop` on a single task completes all iterations before the next task runs.
+# Using `include_tasks` in a loop is the only way to interleave a health check
+# after each individual service restart. Ansible requires include_tasks to
+# reference a file, so the restart + health check pair lives here rather than
+# inline in coredump.yml.
+
+- name: Restart {{ _restart_svc }}
+  ansible.builtin.systemd:
+    name: "{{ _restart_svc }}"
+    state: restarted
+
+- name: Wait for cluster to stabilize after restarting {{ _restart_svc }}
+  ansible.builtin.command: ceph -s --format json
+  delegate_to: "{{ _ceph_monitor_host }}"
+  changed_when: false
+  register: _per_svc_health
+  until: >-
+    (
+      (_per_svc_health.stdout | from_json).pgmap.pgs_by_state
+      | selectattr('state_name', 'search', 'inactive')
+      | map(attribute='count') | sum | int == 0
+    ) and (
+      (_per_svc_health.stdout | from_json).osdmap.num_in_osds | int ==
+      (_per_svc_health.stdout | from_json).osdmap.num_up_osds | int
+    )
+  retries: 60
+  delay: 10

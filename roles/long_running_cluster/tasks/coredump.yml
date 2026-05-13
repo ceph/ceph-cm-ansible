@@ -1,0 +1,106 @@
+---
+- name: Find ceph-*.target.wants directories
+  ansible.builtin.find:
+    paths: /etc/systemd/system
+    patterns: "ceph-*.target.wants"
+    file_type: directory
+  register: _coredump_target_wants_dirs
+
+- name: Fail if no ceph target.wants directories found
+  ansible.builtin.fail:
+    msg: "No ceph-*.target.wants directories found. Is this host managed by cephadm?"
+  when: _coredump_target_wants_dirs.files | length == 0
+
+- name: Find Ceph service symlinks in target.wants directories
+  ansible.builtin.find:
+    paths: "{{ _coredump_target_wants_dirs.files | map(attribute='path') | list }}"
+    file_type: link
+    patterns: "ceph-*.service"
+  register: _coredump_service_links
+
+- name: Build candidate service names, excluding bare template units
+  # Template units (ceph-<fsid>@.service) have no instance specifier — they
+  # cannot be restarted directly and must be excluded.
+  ansible.builtin.set_fact:
+    _coredump_candidate_services: >-
+      {{ _coredump_service_links.files
+         | map(attribute='path')
+         | map('basename')
+         | unique
+         | reject('match', '^ceph-[^@]+@\.service$')
+         | list }}
+
+- name: Check ActiveState of each candidate service
+  # Services from decommissioned clusters retain symlinks but have no unit.run.
+  # Restarting them fails. Only restart services that are genuinely active.
+  ansible.builtin.command:
+    cmd: systemctl show {{ item }} --property=ActiveState --value
+  loop: "{{ _coredump_candidate_services }}"
+  register: _coredump_svc_states
+  changed_when: false
+  failed_when: false
+
+- name: Filter candidate services to only those currently active
+  ansible.builtin.set_fact:
+    _coredump_active_services: >-
+      {{ _coredump_svc_states.results
+         | selectattr('stdout', 'equalto', 'active')
+         | map(attribute='item')
+         | list }}
+
+- name: Show active Ceph services that will be reconfigured
+  ansible.builtin.debug:
+    msg: "Active Ceph services: {{ _coredump_active_services }}"
+
+- name: Extract unique FSIDs from active services
+  # Each FSID needs its own drop-in on the ceph-<fsid>@.service template.
+  ansible.builtin.set_fact:
+    _coredump_fsids: >-
+      {{ _coredump_active_services
+         | map('regex_replace', '^ceph-([^@]+)@.*', '\1')
+         | unique
+         | list }}
+
+- name: Create coredump storage directory
+  ansible.builtin.file:
+    path: "{{ coredump_dir }}"
+    state: directory
+    mode: "1777"
+    owner: root
+    group: root
+
+- name: Configure core_pattern via sysctl
+  ansible.posix.sysctl:
+    name: kernel.core_pattern
+    value: "{{ core_pattern }}"
+    sysctl_file: /etc/sysctl.d/60-ceph-coredump.conf
+    reload: true
+    state: present
+
+- name: Create systemd drop-in directory for each FSID template service
+  ansible.builtin.file:
+    path: "/etc/systemd/system/ceph-{{ item }}@.service.d"
+    state: directory
+    mode: "0755"
+  loop: "{{ _coredump_fsids }}"
+
+- name: Write LimitCORE drop-in for each FSID template service
+  ansible.builtin.copy:
+    dest: "/etc/systemd/system/ceph-{{ item }}@.service.d/coredump.conf"
+    content: |
+      [Service]
+      LimitCORE=infinity
+    mode: "0644"
+  loop: "{{ _coredump_fsids }}"
+  register: _coredump_dropin_results
+  notify: Reload systemd daemon
+
+- name: Flush systemd daemon reload before restarting services
+  ansible.builtin.meta: flush_handlers
+
+- name: Restart each active Ceph service and wait for cluster to stabilize
+  ansible.builtin.include_tasks: coredump_restart_one.yml
+  loop: "{{ _coredump_active_services }}"
+  loop_control:
+    loop_var: _restart_svc
+  when: _coredump_dropin_results is changed
