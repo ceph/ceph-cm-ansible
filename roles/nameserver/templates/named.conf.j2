@@ -24,6 +24,8 @@ options {
 
 	listen-on-v6 { none; };
 
+	minimal-responses	no;
+
 {% if named_conf_dnssec_validation is defined %}
 	dnssec-validation {{ named_conf_dnssec_validation }};
 {% endif %}
