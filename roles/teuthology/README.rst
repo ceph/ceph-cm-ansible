@@ -20,3 +20,20 @@ It currently does NOT do these things:
 
 - Manage ``teuthology-worker`` processes
 - Run ``teuthology-nuke --stale``
+
+Variables
+---------
+
+``journald_max_retention``
+  How long ``systemd-journald`` will retain log entries before rotating them
+  out, regardless of disk pressure.  Accepts any value valid for
+  ``journald.conf``'s ``MaxRetentionSec`` (e.g. ``7day``, ``30day``).
+
+  Default: ``7day``
+
+``journald_max_use``
+  Maximum total disk space the journal may consume under
+  ``/var/log/journal``.  Accepts any value valid for ``journald.conf``'s
+  ``SystemMaxUse`` (e.g. ``1G``, ``2G``).
+
+  Default: ``2G``
