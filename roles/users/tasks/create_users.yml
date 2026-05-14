@@ -14,6 +14,7 @@
     shell: /bin/bash
     state: present
     append: yes
+    home: "{{ ('teuthology' in group_names) | ternary('/tank/home', '/home') }}/{{ item.name }}"
   with_items: "{{ managed_admin_users }}"
 
 - name: Create all users without sudo access.
@@ -21,4 +22,5 @@
     name: "{{ item.name }}"
     shell: /bin/bash
     state: present
+    home: "{{ ('teuthology' in group_names) | ternary('/tank/home', '/home') }}/{{ item.name }}"
   with_items: "{{ managed_users }}"
