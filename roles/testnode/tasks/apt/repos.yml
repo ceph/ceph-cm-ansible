@@ -8,14 +8,33 @@
     mode: 0644
   register: apt_prefs
 
+- name: Ensure keyrings directory exists
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+
+# The following task used to use the apt_key ansible module.
+# apt_key is deprecated because it adds keys to the global keyring, meaning
+# any key could be used to authenticate any repo. Instead, we store each key
+# under /etc/apt/keyrings/ and require each repo entry to reference its key
+# explicitly via signed-by= (enforced by the assert task below).
+
 - name: Install apt keys
-  apt_key:
-    url: "{{ item }}"
-    state: present
-  with_items:
-    - "http://{{ key_host }}/keys/autobuild.asc"
-    - "http://{{ key_host }}/keys/release.asc"
+  get_url:
+    url: "{{ item.url }}"
+    dest: "/etc/apt/keyrings/{{ item.name }}"
+    mode: '0644'
+    owner: root
+    group: root
+  loop:
+    - { url: "http://{{ key_host }}/keys/autobuild.asc", name: "autobuild.asc" }
+    - { url: "http://{{ key_host }}/keys/release.asc",   name: "release.asc" }
   # try for 2 minutes before failing
+  register: key_download
+  until: key_download is succeeded
   retries: 24
   delay: 5
 
@@ -25,11 +44,22 @@
     name: "{{ python_apt_package_name|default('python-apt') }}"
     state: present
 
+- name: Verify apt repo strings include signed-by
+  assert:
+    that:
+      - "'signed-by=' in item"
+    fail_msg: >-
+      apt repo entry is missing a signed-by= option: "{{ item }}"
+      Entries must reference a key under /etc/apt/keyrings/, e.g.
+      [signed-by=/etc/apt/keyrings/release.asc]
+  loop: "{{ apt_repos|list + common_apt_repos|list }}"
+  when: (apt_repos|list + common_apt_repos|list) | length > 0
+
 - name: Add local apt repos.
   apt_repository:
     repo: "{{ item }}"
     state: present
-    update_cache: no 
+    update_cache: no
     mode: 0644
   with_items: "{{ apt_repos|list + common_apt_repos|list }}"
   register: local_apt_repos
