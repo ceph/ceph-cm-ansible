@@ -133,16 +133,19 @@ A list of repo files to remove from /etc/yum.repos.d::
 
 
 A list defining apt repos that would be common across a major version or distro. Each item in the list represents
-an apt repo to be added to sources.list::
+an apt repo to be added to sources.list. Each entry **must** include a ``signed-by=`` option pointing to the
+corresponding key installed under ``/etc/apt/keyrings/`` (see ``key_host`` above)::
 
     common_apt_repos: []
 
     # An Example:
     common_apt_repos:
       # mod_fastcgi for radosgw
-      - "deb https://gitbuilder.ceph.com/libapache-mod-fastcgi-deb-{{ansible_distribution_release}}-x86_64-basic/ref/master/ {{ansible_distribution_release}} main"
+      - "deb [signed-by=/etc/apt/keyrings/autobuild.asc] https://gitbuilder.ceph.com/libapache-mod-fastcgi-deb-{{ansible_distribution_release}}-x86_64-basic/ref/master/ {{ansible_distribution_release}} main"
 
-A list defining version-specific apt repos. Each item in the list represents an apt repo to be added to sources.list::
+
+A list defining version-specific apt repos. Each item in the list represents an apt repo to be added to sources.list.
+Each entry **must** include a ``signed-by=`` option pointing to the corresponding key installed under ``/etc/apt/keyrings/``::
 
     apt_repos: []
 
