@@ -9,6 +9,21 @@
 - import_tasks: yum_systems.yml
   when: ansible_pkg_mgr == "yum"
 
+- name: Configure systemd journal retention
+  ini_file:
+    path: /etc/systemd/journald.conf
+    section: Journal
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+    mode: 0644
+  loop:
+    - { option: MaxRetentionSec, value: "{{ journald_max_retention }}" }
+    - { option: SystemMaxUse,    value: "{{ journald_max_use }}" }
+  notify: restart systemd-journald
+  tags:
+    - config
+    - journald
+
 # Set up the different users that teuthology uses
 - import_tasks: setup_users.yml
 
