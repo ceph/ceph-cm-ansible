@@ -351,6 +351,10 @@ Include the grafana_agent role to report testnode resource statistics to Grafana
 
     run_grafana_agent_role: true
 
+Enable firewalld.  Defaults to ``false``::
+
+    enable_firewalld: false
+
 
 Tags
 ++++
@@ -365,6 +369,9 @@ cpan
 
 filesystems
     Create and mount filesystems.
+
+firewalld
+    Enable or disable (default) firewalld
 
 gpg-keys
     Install gpg keys on Fedora.    

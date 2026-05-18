@@ -95,6 +95,8 @@
 
 - name: Disable firewall
   import_tasks: yum/firewall.yml
+  tags:
+    - firewalld
 
 - name: Enable SELinux
   selinux: state=permissive policy=targeted
