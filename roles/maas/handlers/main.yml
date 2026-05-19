@@ -1,0 +1,11 @@
+---
+- include_tasks: _auth_header.yml
+  listen: "Rebuild MAAS machine indexes"
+
+- name: Read machines from MAAS (handler)
+  listen: "Rebuild MAAS machine indexes"
+  include_tasks: machines/_read_machines.yml
+
+- name: Build machine indexes (handler)
+  listen: "Rebuild MAAS machine indexes"
+  include_tasks: machines/_build_indexes.yml

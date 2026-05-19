@@ -12,7 +12,7 @@
         existing_usernames: "{{ existing_users.stdout | from_json | map(attribute='username') | list }}"
     
     - name: Create all admin users.
-      command: "maas {{ maas_admin_username }} users create username={{ item.name }} email={{ item.email }} password={{ item.name }}temp is_superuser=1"
+      command: "maas {{ maas_admin_username }} users create username={{ item.name }} email={{ item.email }} password={{ item.name ~ 'temp' }} is_superuser=1"
       with_items: "{{ admin_users }}"
       when: item.name not in existing_usernames
 

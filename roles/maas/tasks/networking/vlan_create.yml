@@ -1,0 +1,50 @@
+---
+# Purpose: Create one VLAN inside a fabric. Called once per (fabric, vlan)
+# pair from the loop in networking.yml; only invoked when the VID isn't
+# already present in `_vlan_index`. Idempotent — accepts 409 (already exists)
+# as success.
+#
+# NOTE: dhcp_on is NOT set here; vlan_update.yml flips it later, after the
+# subnet's IP ranges exist (MAAS rejects dhcp_on=true on a VLAN with no
+# dynamic range).
+#
+# Expects:
+#   - _maas_api       : MAAS API base URL
+#   - maas_auth_header: OAuth header string (rebuilt fresh below)
+#   - _fabric_by_name : { "<fabric_name>": <fabric_id> }
+#   - pair            : a (fabric_obj, vlan_obj) pair from
+#                       `maas_networking | subelements('vlans', ...)`
+#                       (pair.0 = the fabric entry, pair.1 = the vlan entry)
+# Returns: nothing.
+# Side effects: POST {{ _maas_api }}/fabrics/<fid>/vlans/ with body assembled
+# from pair.1's vid/name/description/mtu/space.
+
+- include_tasks: ../_auth_header.yml
+  no_log: true
+
+- name: Build VLAN create body for {{ pair.0.fabric }}:{{ pair.1.vid }}
+  set_fact:
+    _fid: "{{ _fabric_by_name[pair.0.fabric] }}"
+    _vlan_create_body: >-
+      {{
+        {'vid': pair.1.vid}
+        | combine( (pair.1.name is defined)        | ternary({'name': pair.1.name}, {}), recursive=True )
+        | combine( (pair.1.description is defined) | ternary({'description': pair.1.description}, {}), recursive=True )
+        | combine( (pair.1.mtu is defined)         | ternary({'mtu': pair.1.mtu}, {}), recursive=True )
+        | combine( (pair.1.space is defined)       | ternary({'space': pair.1.space}, {}), recursive=True )
+      }}
+
+- name: Create VLAN {{ pair.0.fabric }}:{{ pair.1.vid }} in MAAS
+  uri:
+    url: "{{ _maas_api }}/fabrics/{{ _fid }}/vlans/"
+    method: POST
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Content-Type: application/x-www-form-urlencoded
+      Accept: application/json
+    body_format: form-urlencoded
+    body: "{{ _vlan_create_body }}"
+    status_code: [200, 201, 409]
+    return_content: true
+    use_netrc: false
+  no_log: true

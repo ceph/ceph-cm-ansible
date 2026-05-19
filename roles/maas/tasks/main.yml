@@ -49,32 +49,71 @@
 
 - import_tasks: initialize_secondary_rack.yml
 
-# Logging into the MAAS API to use CLI
+# Logging into the MAAS API to use CLI.
+#
+# Skip these when `maas_api_key` is already supplied (typically from
+# `group_vars/maas.yml`, which loads it from MAAS_*_API_KEY in the environment).
+# Anything that talks to MAAS over HTTP — networking.yml, machines.yml — only
+# needs the parsed key (see api_auth_pretasks.yml), not a CLI session, so we
+# only spend a `maas login` round-trip when we actually have to discover the
+# key from the controller itself.
 - name: Get API key
   command: maas apikey --username={{ maas_admin_username }}
-  when: inventory_hostname in groups['maas_region_rack_server']
+  when:
+    - inventory_hostname in groups['maas_region_rack_server']
+    - (maas_api_key | default('') | length) == 0
   tags:
   - config_dhcp
   - config_maas
-  - add_machines
+  - machines
   - config_dns
   - config_ntp
-  - add_users  
-  register: maas_api_key
+  - add_users
+  register: _maas_api_key_cmd
+  no_log: true
+
+- name: Capture API key from CLI
+  set_fact:
+    maas_api_key: "{{ _maas_api_key_cmd.stdout }}"
+  when:
+    - _maas_api_key_cmd is defined
+    - _maas_api_key_cmd.stdout is defined
+  tags:
+  - config_dhcp
+  - config_maas
+  - machines
+  - config_dns
+  - config_ntp
+  - add_users
+  no_log: true
 
 - name: Log into MAAS API
-  command: "maas login {{ maas_admin_username }} http://{{ hostvars[groups['maas_region_rack_server'].0]['ip'] }}:5240/MAAS/api/2.0/ {{ maas_api_key.stdout }}"
-  when: inventory_hostname in groups['maas_region_rack_server']
+  command: "maas login {{ maas_admin_username }} http://{{ hostvars[groups['maas_region_rack_server'].0]['ip'] }}:5240/MAAS/api/2.0/ {{ maas_api_key }}"
+  when:
+    - inventory_hostname in groups['maas_region_rack_server']
+    - _maas_api_key_cmd is defined
+    - _maas_api_key_cmd.stdout is defined
   tags:
   - config_dhcp
   - config_maas
-  - add_machines
+  - machines
   - config_dns
   - config_ntp
-  - add_users  
+  - add_users
+  no_log: true
 
 # Configure MAAS
 - import_tasks: config_maas.yml
+
+- import_tasks: api_auth_pretasks.yml
+  tags:
+    - always
+    - api
+
+# Configure Networks
+- import_tasks: networking.yml
+  tags:
+    - networking
 
 # Configure NTP Service
 - import_tasks: config_ntp.yml
@@ -94,19 +133,26 @@
   tags: config_dhcp
 
 # Add Machines into MAAS
-- import_tasks: add_machines.yml
+- import_tasks: machines.yml
+  tags: machines
 
 # Add Users into MAAS
 - import_tasks: add_users.yml
 
-# Logout from MAAS API  
+# Logout from MAAS API.
+# Only logout if we actually logged in above (i.e., we discovered the key via
+# `maas apikey` and ran `maas login`). When `maas_api_key` came from
+# group_vars/maas.yml there is no CLI session to log out of.
 - name: Logout from MAAS
   command: "maas logout {{ maas_admin_username }}"
   tags:
   - config_dhcp
   - config_maas
-  - add_machines
+  - machines
   - config_dns
   - config_ntp
   - add_users
-  when: inventory_hostname in groups['maas_region_rack_server']
+  when:
+    - inventory_hostname in groups['maas_region_rack_server']
+    - _maas_api_key_cmd is defined
+    - _maas_api_key_cmd.stdout is defined

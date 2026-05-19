@@ -1,0 +1,79 @@
+---
+# Purpose: Create one new machine entry in MAAS. Called once per name in
+# `_create_short` (built by _plan_sets.yml). Notifies the
+# "Rebuild MAAS machine indexes" handler so subsequent passes see the new
+# host.
+#
+# When creating machines for the first time, MAAS automatically tries to
+# commission them upon creation. In order to do so, it needs to be able to
+# control them over IPMI. So the logic here is: if IPMI credentials are
+# available (power_user, power_pass, and the host has an `ipmi` var), ship
+# them in the create payload so MAAS will commission. Otherwise, create
+# the machine in a Deployed state so MAAS doesn't try to commission it.
+#
+# Expects:
+#   - host         : the short hostname to create
+#   - inv_host     : ansible inventory hostname (looked up via inventory_by_short)
+#   - desired_arch : MAAS architecture string (defaults to amd64/generic)
+#   - desired_domain : optional MAAS domain (omit if not set)
+#   - mac_addresses: list of MACs collected from inventory `<prefix>_mac` vars
+#   - power_user / power_pass : optional IPMI creds loaded from secrets repo
+#                               in machines.yml
+#   - hostvars[inv_host].ipmi : optional. The IPMI BMC IP address.
+#   - _maas_api, maas_auth_header
+# Returns: nothing (notifies handler).
+# Side effects: POST {{ _maas_api }}/machines/.
+
+- include_tasks: ../_auth_header.yml
+
+- name: Build machine create body
+  set_fact:
+    maas_create_body: >-
+      {{
+        dict({
+          'hostname': host,
+          'architecture': desired_arch,
+          'mac_addresses': mac_addresses
+        })
+        | combine(desired_domain is defined and {'domain': desired_domain} or {})
+        | combine(
+            (
+              (power_user is defined)
+              and (power_pass is defined)
+              and (hostvars[inv_host].ipmi is defined)
+            )
+            and {
+              'deployed': false,
+              'commission': false,
+              'power_type': 'ipmi',
+              'power_parameters_power_address': hostvars[inv_host].ipmi,
+              'power_parameters_power_user': power_user,
+              'power_parameters_power_pass': power_pass,
+              'power_parameters_power_boot_type': (maas_power_boot_type | default('efi'))
+            }
+            or {
+              'deployed': true
+            }
+          )
+      }}
+
+- name: machines create body for {{ host }}
+  debug:
+    var: maas_create_body
+    verbosity: 1
+
+- name: Create machine in MAAS
+  uri:
+    url: "{{ _maas_api }}/machines/"
+    method: POST
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Content-Type: application/x-www-form-urlencoded
+      Accept: application/json
+    body_format: form-urlencoded
+    body: "{{ maas_create_body }}"
+    status_code: 200
+  register: create_result
+  changed_when: create_result.status in [200, 201]
+  notify: "Rebuild MAAS machine indexes"
+  no_log: true

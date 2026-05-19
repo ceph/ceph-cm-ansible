@@ -1,0 +1,65 @@
+---
+# Purpose: Move one MAAS node into the `Broken` state so we can edit its
+# interfaces (MAAS only allows interface changes in a small set of states:
+# Broken, Ready, New, Allocated). Tracks every host we mark so cleanup.yml
+# can revert them at the end of the play.
+#
+# Skipped entirely if the node is already in one of those edit-allowed
+# states (no-op, idempotent).
+#
+# Expects:
+#   - system_id      : MAAS system_id
+#   - inv_host       : ansible inventory hostname (for log labels)
+#   - system_status  : current MAAS status_name as a string (e.g. "Deployed")
+#   - broken_at      : timestamp string used in the comment body
+#   - _maas_api, maas_auth_header
+# Returns:
+#   - _marked_broken         : list of system_ids appended to (consumed by
+#                              machines/cleanup.yml at end of play)
+#   - _failed_to_mark_broken : list of system_ids that returned 403
+# Side effects:
+#   - POST {{ _maas_api }}/machines/<system_id>/op-mark_broken (with comment)
+
+- name: Resolve current status from passed var
+  set_fact:
+    _maas_status_name: "{{ system_status | default('') | string }}"
+
+- block:
+    - name: Build mark_broken comment body
+      set_fact:
+        _mark_broken_body: "comment={{ ('Temp: editing NIC at ' ~ broken_at) | urlencode }}"
+
+    # Refresh header again right before POST (avoids timestamp drift)
+    - include_tasks: ../_auth_header.yml
+
+    - name: POST {{ inv_host }} ?op=mark_broken (with note)
+      when: _maas_status_name != 'Broken'
+      uri:
+        url: "{{ _maas_api }}/machines/{{ system_id }}/op-mark_broken"
+        method: POST
+        headers:
+          Authorization: "{{ maas_auth_header }}"
+          Accept: application/json
+          Content-Type: application/x-www-form-urlencoded
+        body: "{{ _mark_broken_body }}"
+        body_format: form-urlencoded
+        status_code: [200, 403]   # handle both; branch below
+      register: _mark_broken_resp
+      changed_when: "_maas_status_name != 'Broken' and _mark_broken_resp.status == 200"
+      failed_when: "_mark_broken_resp.status not in [200, 403]"
+      no_log: true
+
+    - name: Remember that we marked {{ inv_host }} Broken
+      when: _maas_status_name != 'Broken' and _mark_broken_resp.status == 200
+      set_fact:
+        _marked_broken: "{{ (_marked_broken | default([])) + [ system_id ] }}"
+      changed_when: false
+
+    - name: Remember that we failed to mark {{ inv_host }} broken
+      when: _maas_status_name != 'Broken' and _mark_broken_resp.status == 403
+      set_fact:
+        _failed_to_mark_broken: "{{ (_failed_to_mark_broken | default([])) + [ system_id ] }}"
+      changed_when: false
+
+  # Skip if upstream says it's already Broken (and, if desired, skip Ready)
+  when: _maas_status_name not in ['Broken', 'Ready', 'New', 'Allocated']

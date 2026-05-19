@@ -1,0 +1,56 @@
+---
+# Purpose: Create one tagged VLAN subinterface on a parent interface
+# (physical NIC or bond) on a MAAS node. Used by _ensure_bond.yml when
+# `bond.tagged_vids` includes a VID that doesn't yet exist on the bond.
+#
+# Note: VLAN_ID here is MAAS's internal numeric vlan object id, NOT the
+# 802.1Q VID. The caller resolves VID → VLAN id via `_vlan_lookup`.
+#
+# Expects:
+#   - parent_id : MAAS interface id of the parent (e.g. a bond id)
+#   - vlan_id   : MAAS VLAN object id (numeric, not the 802.1Q VID)
+#   - system_id : MAAS node system_id
+#   - _ifaces   : optional. If set, used for a sanity check that
+#                 parent_id actually exists on this node.
+#   - _maas_api, maas_auth_header
+#   - vid_label : optional. Cosmetic label string for nicer logging.
+# Returns: nothing.
+# Side effects: POST {{ _maas_api }}/nodes/<system_id>/interfaces/?op=create_vlan
+
+- name: Validate required vars
+  fail:
+    msg: >-
+      Missing var(s). parent_id={{ parent_id|default('UNSET') }},
+      vlan_id={{ vlan_id|default('UNSET') }},
+      system_id={{ system_id|default('UNSET') }}
+  when: parent_id is not defined or vlan_id is not defined or system_id is not defined
+
+# Optional: quick sanity that the parent exists in _ifaces (if _ifaces available)
+- name: Sanity-check parent exists on node (optional)
+  vars:
+    _parent_found: >-
+      {{
+        (_ifaces | selectattr('id','equalto', parent_id|int) | list | length) > 0
+      }}
+  when:
+    - _ifaces is defined
+    - not _parent_found | bool
+  fail:
+    msg: "Parent interface id {{ parent_id }} not found on node {{ system_id }}"
+
+- include_tasks: ../_auth_header.yml
+
+- name: "POST op=create_vlan (parent={{ parent_id }}, vlan={{ vlan_id }})"
+  uri:
+    url: "{{ _maas_api }}/nodes/{{ system_id }}/interfaces/?op=create_vlan"
+    method: POST
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Accept: application/json
+      Content-Type: application/x-www-form-urlencoded
+    body: "parent={{ parent_id }}&vlan={{ vlan_id }}"
+    body_format: form-urlencoded
+    status_code: 200
+  register: _create_vlan_resp
+  changed_when: true
+  no_log: true
