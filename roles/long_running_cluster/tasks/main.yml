@@ -12,3 +12,8 @@
 - import_tasks: logrotate.yml
   tags:
     - logrotate
+
+- import_tasks: coredump.yml
+  tags:
+    - coredump
+  when: store_coredumps|bool

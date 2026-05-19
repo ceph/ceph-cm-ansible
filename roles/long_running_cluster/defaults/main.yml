@@ -1,0 +1,7 @@
+---
+# Should the LRC hosts be configured to store Ceph coredumps?
+store_coredumps: True
+
+coredump_dir: /var/lib/ceph/coredump
+
+core_pattern: "{{ coredump_dir }}/core.%e.%p.%t"
