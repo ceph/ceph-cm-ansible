@@ -1,0 +1,14 @@
+---
+inventory_path: "{{ lookup('env', 'ANSIBLE_INVENTORY_PATH') | default('/etc/ansible/hosts', true) }}"
+# MAAS server IP address
+maas_server_ip: "{{ groups.get('maas', []) | first | default('undefined_maas_server') }}"
+# MAAS API URL
+maas_api_url: "http://{{ maas_server_ip }}:5240/MAAS"
+# Default TTL for DNS records
+dns_ttl: 3600
+# Groups to exclude from inventory processing
+excluded_groups: ['all', 'ungrouped']
+# Domains to exclude from management
+excluded_domains: ['maas', 'front.sepia.ceph.com']
+# Supported DNS record types
+supported_record_types: ['A/AAAA', 'CNAME', 'MX', 'NS', 'SRV', 'SSHFP', 'TXT']
