@@ -82,6 +82,14 @@
   when: (ansible_os_family == "RedHat" and ansible_distribution_major_version|int >= 8) or
         ansible_os_family == "Suse"
 
+- name: Install network manager link selection script
+  copy:
+    src: files/nm-from-link.sh
+    dest: /usr/local/sbin/nm-from-link.sh
+    owner: root
+    group: root
+    mode: "0755"
+
 - name: Install systemd unit for network manager link selection
   copy:
     src: files/nm-from-link.service
