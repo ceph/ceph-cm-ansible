@@ -4,14 +4,15 @@
     pubkey_users: "{{ managed_users|list + managed_admin_users|list }}"
 
 - name: Clone the keys repo
-  local_action:
-    module: git
+  git:
     repo: "{{ keys_repo }}"
     version: "{{ keys_branch }}"
     # http://tracker.ceph.com/issues/16615
     # depth: 1
     force: yes
     dest: "{{ keys_repo_path }}"
+  delegate_to: localhost
+
   become: false
   when: keys_repo is defined
   connection: local
