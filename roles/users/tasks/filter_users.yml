@@ -1,39 +1,133 @@
 ---
-- name: Merge extra_admin_users into managed_admin_users
+# make a lookup of all users from name to dict
+- name: Build user lookup table
   set_fact:
-    # The following adds items from extra_admin_users to managed_admin_users, while
-    # fetching keys from the latter if they are not present in the former. It's as pretty
-    # as it can get without whitespace breaking the parser.
-    managed_admin_users:
-      "{% for new_admin in extra_admin_users -%}
-         {% for lab_user in managed_users -%}
-           {% if new_admin.name == lab_user.name %}{{ new_admin.update(lab_user) }}{% endif %}
-         {%- endfor %}
-      {%- endfor %}{{ managed_admin_users|list + extra_admin_users|list }}"
-  when: extra_admin_users is defined and extra_admin_users|length > 0
+    managed_users_by_name: >-
+      {{
+        dict(
+          managed_users
+          | map(attribute='name')
+          | zip(managed_users)
+        )
+      }}
+
+
+# fully expand extra_admin_users, which might be
+# 1) a list of names only, in which case fill in fields from managed_users, or
+# 2) objects with field definitions, in which case use them
+
+- name: Initialize expanded admin list
+  set_fact:
+    expanded_admin_users: []
+
+- name: Canonicalize extra_admin_users
+  set_fact:
+    expanded_admin_users: >-
+      {{
+        expanded_admin_users
+        + [
+            managed_users_by_name[item.name]
+            if item.name in managed_users_by_name
+            else item
+          ]
+      }}
+  loop: "{{ extra_admin_users }}"
+  when:
+    - extra_admin_users is defined
+    - extra_admin_users | length > 0
+
+- name: Merge expanded_admin_users into managed_admin_users
+  set_fact:
+    managed_admin_users: >-
+      {{
+        (managed_admin_users | default([]))
+        + expanded_admin_users
+      }}
+  when:
+    - extra_admin_users is defined
+    - extra_admin_users | length > 0
 
 - name: Remove managed_admin_users from managed_users
   set_fact:
-    # The following rebuilds the managed_users list while omitting users already present
-    # in managed_admin_users
-    managed_users:
-      "[{% for lab_user in managed_users -%}
-      {% if not managed_admin_users|selectattr('name', 'equalto', lab_user.name)|list|length %}{{ lab_user }},{% endif %}
-      {%- endfor %}]"
-  when: extra_admin_users is defined and extra_admin_users|length > 0
+    managed_users: >-
+      {{
+        managed_users
+        | rejectattr(
+            'name',
+            'in',
+            managed_admin_users
+            | map(attribute='name')
+            | list
+          )
+        | list
+      }}
+  when:
+    - managed_admin_users is defined
+    - managed_admin_users | length > 0
 
-- name: Filter the managed_users list
-  set_fact:
-    managed_users:
-        "[{% for user in managed_users %}
-            {% if user.name in users %}{{ user }},{%endif%}
-        {%endfor%}]"
-  when: users|length > 0
+# filter both by 'users' list
 
-- name: Filter the managed_admin_users list
+- name: Filter managed_users if users is set
   set_fact:
-    managed_admin_users:
-        "[{% for user in managed_admin_users %}
-            {% if user.name in users %}{{ user }},{%endif%}
-        {%endfor%}]"
-  when: users|length > 0
+    managed_users: >-
+      {{
+        managed_users
+        | selectattr('name', 'in', users)
+        | list
+      }}
+  when:
+    - users is defined
+    - users | length > 0
+
+- name: Filter managed_admin_users if users is set
+  set_fact:
+    managed_admin_users: >-
+      {{
+        managed_admin_users
+        | selectattr('name', 'in', users)
+        | list
+      }}
+  when:
+    - users is defined
+    - users | length > 0
+
+#
+# debug; enable by adding '--tags=debug' when running
+#
+- name: show filtered users types
+  debug:
+    msg:
+      - "users type={{ users | type_debug }}"
+      - "managed_users type={{ managed_users | type_debug }}"
+      - "managed_admin_users type={{ managed_admin_users | type_debug }}"
+      - "extra_admin_users type={{ extra_admin_users | type_debug }}"
+  tags:
+    - never
+
+- name: show users
+  debug:
+    var: users
+  tags:
+    - never
+  when:
+    users is defined
+
+- name: show managed_users
+  debug:
+    var: managed_users
+  tags:
+    - never
+
+- name: show managed_admin_users
+  debug:
+    var: managed_admin_users
+  tags:
+    - never
+
+- name: show extra_admin_users
+  debug:
+    var: extra_admin_users
+  tags:
+    - never
+  when:
+    extra_admin_users is defined
