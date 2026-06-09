@@ -1,7 +1,7 @@
 ---
 - name: Install PostgreSQL
   apt:
-    name: postgresql-{{ postgres_version }}
+    name: "postgresql-{{ postgres_version }}"
     state: present
   when: inventory_hostname in groups['maas_db_server']
   tags: 
@@ -23,7 +23,7 @@
           
     - name: Allow MAAS region controller to connect
       lineinfile:
-        path: /etc/postgresql/{{ postgres_version }}/main/pg_hba.conf
+        path: "/etc/postgresql/{{ postgres_version }}/main/pg_hba.conf"
         line: "host    {{ maas_db_name }}    {{ maas_db_user }}    0/0    md5"
         insertafter: EOF
 

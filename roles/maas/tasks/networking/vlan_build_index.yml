@@ -1,0 +1,31 @@
+---
+# Purpose: Reshape `_vlans_raw_by_fabric` (built by fabric_vlans_read_from_maas)
+# into a fast, two-level lookup keyed first by fabric name and then by VID
+# (as a string, so callers can do `_vlan_index[fname][vlan.vid | string]`
+# regardless of whether the VID came in as int or string).
+#
+# Expects:
+#   - _vlans_raw_by_fabric : { "<fabric_name>": [<vlan_obj>, ...], ... }
+#                            (assembled across all fabrics; e.g.
+#                            { "tucson-qe": [ {vid: 1300, id: 5011, ...}, ... ] })
+# Returns:
+#   - _vlan_index          : { "<fabric_name>": { "<vid_str>": <vlan_obj> } }
+# Side effects: none. Pure local transform.
+
+- name: Reset _vlan_index
+  set_fact:
+    _vlan_index: {}
+
+- name: Normalize VLAN index with string vid keys
+  set_fact:
+    _vlan_index: |
+      {% set out = {} %}
+      {% for it in (_vlans_raw_by_fabric | default({}) | dict2items) %}
+      {%   set fname = it.key %}
+      {%   set vlist = it.value | default([]) %}
+      {%   set _ = out.update({ fname: {} }) %}
+      {%   for v in vlist %}
+      {%     set _ = out[fname].update({ (v.vid | string): v }) %}
+      {%   endfor %}
+      {% endfor %}
+      {{ out }}

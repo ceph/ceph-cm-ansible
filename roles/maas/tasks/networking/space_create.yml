@@ -1,0 +1,28 @@
+---
+# Purpose: Create one MAAS space by name. Idempotent — accepts 409
+# (already exists) as success.
+#
+# Expects:
+#   - _maas_api       : MAAS API base URL
+#   - maas_auth_header: OAuth header string (rebuilt fresh below)
+#   - space_name      : the space to create (e.g. "pok")
+# Returns: nothing.
+# Side effects: POST {{ _maas_api }}/spaces/ with body name={{ space_name }}.
+
+- include_tasks: ../_auth_header.yml
+  no_log: true
+
+- name: Create space {{ space_name }} in MAAS
+  uri:
+    url: "{{ _maas_api }}/spaces/"
+    method: POST
+    headers:
+      Authorization: "{{ maas_auth_header }}"
+      Content-Type: application/x-www-form-urlencoded
+      Accept: application/json
+    body_format: form-urlencoded
+    body:
+      name: "{{ space_name }}"
+    status_code: [200, 201, 409]
+    use_netrc: false
+  no_log: true

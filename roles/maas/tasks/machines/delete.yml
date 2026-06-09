@@ -1,0 +1,22 @@
+---
+# Purpose: Delete one MAAS machine. Currently a dry-run — machines.yml only
+# includes this when `maas_delete_hosts=true`, but this task only emits a
+# debug message. To enable real deletes, replace the debug below with:
+#   uri:
+#     url: "{{ _maas_api }}/machines/{{ system_id }}/"
+#     method: DELETE
+#     headers: { Authorization: "{{ maas_auth_header }}" }
+#     status_code: [200, 204, 404]
+#   no_log: true
+#
+# Expects:
+#   - host      : short hostname (for log labels)
+#   - system_id : MAAS system_id of the host to delete
+#   - inv_host  : ansible inventory hostname
+# Returns: nothing.
+# Side effects: none today (debug-only). Will become DELETE /machines/<id>/
+# once the dry-run is removed.
+
+- name: Would have deleted host {{ host }}
+  debug:
+    msg: "Would have deleted host {{ host }} (system_id={{ system_id }})"

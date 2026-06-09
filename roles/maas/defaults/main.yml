@@ -27,3 +27,10 @@ maas_ntp_external_only: "false"
 keys_repo: "https://github.com/ceph/keys"
 keys_branch: main
 keys_repo_path: "~/.cache/src/keys"
+
+# Should MAAS mark machines broken in order to update their network interface configurations in MAAS?
+maas_force_machine_update: false
+
+# Override in secrets
+maas_ipmi_username: ADMIN
+maas_ipmi_password: ADMIN
