@@ -53,6 +53,7 @@
     register: power_status_factory
     when:
       - setup_user
+      - not only_lan_access|bool
     tags: test_user
     ignore_errors: true
 
@@ -62,6 +63,7 @@
     register: power_status_power
     when:
       - setup_user
+      - not only_lan_access|bool
     tags: test_user
     ignore_errors: true
 
@@ -80,6 +82,8 @@
     fail:
     when:
       - (power_status_factory.rc != 0) and (power_status_power.rc != 0)
+    tags:
+      - test_user
 
   - name: Check if we have SSH access
     shell: "timeout 3s ssh {{ inventory_hostname }} true"
@@ -99,6 +103,7 @@
     shell: "ipmitool -I lanplus -U {{ initial_user }} -P {{ initial_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} user set name {{ power_uid }} {{ power_user }}"
     register: set_username_locally
     delegate_to: localhost
+    become: false
     when:
       - setup_user
       - have_ssh_access.rc != 0
@@ -108,6 +113,7 @@
     shell: "ipmitool -I lanplus -U {{ initial_user }} -P {{ initial_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} channel setaccess {{ ipmi_channel_id }} {{ power_uid }} privilege=4 callin=on ipmi=on"
     register: set_permissions_locally
     delegate_to: localhost
+    become: false
     when:
       - setup_user
       - have_ssh_access.rc != 0
@@ -117,6 +123,7 @@
     shell: "ipmitool -I lanplus -U {{ initial_user }} -P {{ initial_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} user set password {{ power_uid }} {{ power_pass }}"
     register: set_password_locally
     delegate_to: localhost
+    become: false
     when:
       - setup_user
       - have_ssh_access.rc != 0
@@ -125,6 +132,7 @@
   - name: Enable user
     shell: "ipmitool -I lanplus -U {{ initial_user }} -P {{ initial_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} user enable {{ power_uid }}"
     delegate_to: localhost
+    become: false
     when:
       - setup_user
       - have_ssh_access.rc != 0
@@ -137,6 +145,7 @@
     shell: "ipmitool -I lanplus -U {{ power_user }} -P {{ power_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} lan print 1 | grep -q DHCP"
     register: dhcp_already_enabled
     delegate_to: localhost
+    become: false
     when: use_dhcp
     failed_when: dhcp_already_enabled.stderr != ''
     changed_when: false
@@ -145,6 +154,7 @@
     shell: "ipmitool -I lanplus -U {{ power_user }} -P {{ power_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} lan set {{ ipmi_channel_id }} ipsrc dhcp"
     register: set_to_dhcp_locally
     delegate_to: localhost
+    become: false
     when:
       - use_dhcp
       - (dhcp_already_enabled is defined and dhcp_already_enabled.rc != 0)
