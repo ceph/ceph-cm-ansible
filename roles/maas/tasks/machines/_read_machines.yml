@@ -11,7 +11,7 @@
 #   - _with_names     : same list, filtered to only entries with a hostname.
 # Side effects: GET {{ _maas_api }}/machines/.
 
-- include_tasks: ../_auth_header.yml
+- include_tasks: "{{ role_path }}/tasks/_auth_header.yml"
 
 - name: Read all machines from MAAS
   uri:
