@@ -220,6 +220,23 @@
       - not use_dhcp
       - have_ssh_access.rc != 0
 
+  - name: Enable SOL via SSH
+    shell: "ipmitool sol set enabled true"
+    changed_when: false
+    when:
+      - have_ssh_access.rc == 0
+    tags:
+      - sol
+
+  - name: Enable SOL via localhost
+    shell: "ipmitool -I lanplus -U {{ power_user }} -P {{ power_pass }} -H {{ inventory_hostname_short }}.{{ ipmi_domain }} sol set enabled true"
+    delegate_to: localhost
+    changed_when: false
+    when:
+      - have_ssh_access.rc != 0
+    tags:
+      - sol
+
   - set_fact:
       existing_network_settings_list: "{{ existing_network_settings.stdout.split('\n') }}"
     when:
