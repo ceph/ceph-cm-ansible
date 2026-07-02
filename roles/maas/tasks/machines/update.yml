@@ -14,6 +14,8 @@
 #   4) Walk `maas_bonds` and reconcile each entry via _ensure_bond.yml.
 #   5) Read all subnets from MAAS, group by VLAN id, and link each interface
 #      whose MAC is in inventory to the right subnet via _apply_subnet.yml.
+#      Bonded-member physicals are excluded — MAAS won't link a subnet on an
+#      interface that's enslaved in a bond.
 #
 # Expects:
 #   - host                         : short hostname
@@ -108,6 +110,34 @@
   loop_control:
     loop_var: i
 
+# Names of physical interfaces currently enslaved in a bond. MAAS rejects
+# link_subnet on these ("Cannot link interface(ethN) when interface is in a
+# bond"), so they must be excluded from the subnet pass below. The bond
+# itself (and its VLAN subinterfaces) carries the IP.
+- name: Collect bonded-member interface names
+  set_fact:
+    _bond_member_names: >-
+      {{
+        _ifaces_read.json
+        | selectattr('type', 'equalto', 'bond')
+        | map(attribute='parents') | flatten | unique | list
+      }}
+
+# Bonds with no native VLAN: MAAS parks their untagged interface on the
+# parents' VLAN (e.g. bond100 lands on 1343 alongside bond25). Left in the
+# subnet pass, the CIDR match would assign that VLAN's IP to the bare bond
+# and collide with the interface that actually owns it. Only the bond's
+# tagged .NNNN children should get IPs, so exclude the bare bond by name.
+- name: Collect no-native bond names (their untagged iface takes no IP)
+  set_fact:
+    _no_native_bond_names: >-
+      {{
+        _desired_bonds
+        | rejectattr('native_vid', 'defined')
+        | map(attribute='name')
+        | list
+      }}
+
 - include_tasks: ../_auth_header.yml
 
 # Fetch ALL subnets once (we'll group them locally)
@@ -155,11 +185,23 @@
         | list
       }}
 
-- name: Apply subnet assignment for each iface (bond/vlan/physical) we know from inventory
+# Link subnets only on interfaces that can actually hold an IP: bonds, VLAN
+# subinterfaces, and standalone physicals. Bonded-member physicals share their
+# bond's MAC (so the _inv_macs match pulls them in), but they're filtered out
+# here by name via _bond_member_names.
+- name: Apply subnet assignment for each linkable iface we know from inventory
   include_tasks: _apply_subnet.yml
-  loop: "{{ _iface_rows | selectattr('mac', 'in', _inv_macs) | list }}"
+  loop: >-
+    {{
+      _iface_rows
+      | selectattr('mac', 'in', _inv_macs)
+      | rejectattr('name', 'in', _bond_member_names)
+      | rejectattr('name', 'in', _no_native_bond_names)
+      | list
+    }}
   loop_control:
     loop_var: row
+    label: "{{ row.name }} (vlan {{ row.vlan_id }})"
   when:
     - _iface_rows | length > 0
   vars:
