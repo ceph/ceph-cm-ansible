@@ -32,6 +32,8 @@
 #   - GET  /nodes/<id>/interfaces/<iface.id>/                (read links)
 #   - POST /nodes/<id>/interfaces/<iface.id>/?op=link_subnet
 #   - POST /nodes/<id>/interfaces/<iface.id>/?op=unlink_subnet
+#   - POST /ipaddresses/?op=release (force) — only when the desired STATIC IP
+#     is already seen on this same iface as a discovered DHCP lease
 
 - name: "Skip if no candidate subnets for VLAN {{ iface.vlan_id }}"
   when: (candidate_subnets | length) == 0
@@ -161,6 +163,35 @@
               )
           }}
 
+    # MAAS keeps a DISCOVERED StaticIPAddress record for a machine's active
+    # DHCP lease (shown in the iface's `discovered` field). link_subnet with
+    # mode=STATIC rejects with 404 "IP address is already in use." while any
+    # record holds that IP — and unlink_subnet does NOT remove the discovered
+    # one. When the IP we want is already seen on this same interface, release
+    # the discovered record first so the STATIC claim can succeed. If another
+    # machine holds the IP, we don't release anything and the link fails loud.
+    - name: Collect IPs MAAS already sees on this iface (links + discovered)
+      set_fact:
+        _iface_seen_ips: >-
+          {{
+            ((_if_detail.json.links | default([], true))
+             | selectattr('ip_address', 'defined')
+             | map(attribute='ip_address') | list)
+            +
+            ((_if_detail.json.discovered | default([], true))
+             | selectattr('ip_address', 'defined')
+             | map(attribute='ip_address') | list)
+          }}
+
+    - name: Decide whether the desired STATIC IP must be released first
+      set_fact:
+        _needs_ip_release: >-
+          {{
+            (_desired_mode | upper == 'STATIC')
+            and (_desired_static_ip | length > 0)
+            and (_desired_static_ip in _iface_seen_ips)
+          }}
+
     - name: Show link decision inputs
       debug:
         msg:
@@ -171,11 +202,37 @@
           current_mode: "{{ _current_mode }}"
           current_ip: "{{ _current_ip }}"
           needs_relink: "{{ _needs_relink }}"
+          needs_ip_release: "{{ _needs_ip_release }}"
         verbosity: 1
 
     # ---------------------------------------------------------------
     # Case 1: no link on this VLAN → link with desired mode (+ IP)
     # ---------------------------------------------------------------
+    - include_tasks: ../_auth_header.yml
+      when:
+        - not _has_link_on_vlan
+        - _needs_ip_release
+
+    - name: Release discovered IP record blocking STATIC link
+      when:
+        - not _has_link_on_vlan
+        - _needs_ip_release
+      uri:
+        url: "{{ _maas_api }}/ipaddresses/?op=release"
+        method: POST
+        headers:
+          Authorization: "{{ maas_auth_header }}"
+          Accept: application/json
+          Content-Type: application/x-www-form-urlencoded
+        body_format: form-urlencoded
+        body:
+          ip: "{{ _desired_static_ip }}"
+          force: "true"
+          discovered: "true"
+        # 404 = no discovered record with this IP; nothing to release
+        status_code: [200, 204, 404]
+      no_log: false
+
     - include_tasks: ../_auth_header.yml
       when: not _has_link_on_vlan
 
@@ -219,6 +276,31 @@
           id: "{{ _existing_link.id }}"
         status_code: [200, 204, 409]
       no_log: true
+
+    - include_tasks: ../_auth_header.yml
+      when:
+        - _needs_relink
+        - _needs_ip_release
+
+    - name: Release discovered IP record blocking STATIC relink
+      when:
+        - _needs_relink
+        - _needs_ip_release
+      uri:
+        url: "{{ _maas_api }}/ipaddresses/?op=release"
+        method: POST
+        headers:
+          Authorization: "{{ maas_auth_header }}"
+          Accept: application/json
+          Content-Type: application/x-www-form-urlencoded
+        body_format: form-urlencoded
+        body:
+          ip: "{{ _desired_static_ip }}"
+          force: "true"
+          discovered: "true"
+        # 404 = no discovered record with this IP; nothing to release
+        status_code: [200, 204, 404]
+      no_log: false
 
     - include_tasks: ../_auth_header.yml
       when: _needs_relink
