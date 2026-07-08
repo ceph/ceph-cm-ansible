@@ -264,16 +264,13 @@
       {{
         (
           ['name=' ~ (bond.name | urlencode)]
-          + (_bond_parent_ids
-               | map('string')
-               | map('regex_replace','^(.*)$','parents=\1')
-               | list)
-          + (bond.mtu  is defined | ternary(['mtu=' ~ (bond.mtu|string)], []))
-          + (bond.mode is defined | ternary(['bond_mode=' ~ (bond.mode | urlencode)], []))
-          + (_bond_create_native_vid is defined
-               | ternary(['vlan=' ~ (_bond_create_native_vid|string)], []))
-        )
-        | join('&')
+          + (_bond_parent_ids | map('string')
+               | map('regex_replace','^(.*)$','parents=\1') | list)
+          + (['mtu=' ~ (bond.mtu | string)] if bond.mtu is defined else [])
+          + (['bond_mode=' ~ (bond.mode | urlencode)] if bond.mode is defined else [])
+          + (['vlan=' ~ (_bond_create_native_vid | string)]
+               if _bond_create_native_vid is defined else [])
+        ) | join('&')
       }}
 
 - include_tasks: ../_auth_header.yml

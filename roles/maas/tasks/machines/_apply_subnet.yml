@@ -1,27 +1,39 @@
 ---
 # Purpose: Apply a subnet link to one MAAS interface so its IP-assignment
 # mode (DHCP / AUTO / STATIC / LINK_UP) matches what the inventory wants.
-# Three outcomes:
-#   - Already linked on this VLAN with the desired mode → noop.
-#   - Linked on this VLAN but the mode is wrong → unlink and relink.
-#   - Not linked on this VLAN → create a link against the first candidate
-#     subnet using the desired mode.
+#
+# IP assignment: if any inventory var ending in `_ip` holds an address that
+# falls inside this subnet's CIDR, the interface is linked STATIC with that
+# exact address (no DHCP, no dynamic range needed). Otherwise the link uses
+# `iface.desired_mode` or the global `maas_iface_mode_default` (LINK_UP by
+# default — connects the iface without assigning an address).
+#
+# STATIC requires the subnet to be `managed: true` in MAAS. The address must
+# be inside the subnet CIDR; on some MAAS versions a STATIC assignment inside
+# a *reserved* range is rejected — keep reserved ranges off the static IPs or
+# shrink them if MAAS complains.
+#
+# Outcomes:
+#   - Not linked on this VLAN              → link with desired mode (+ IP).
+#   - Linked, but mode or static IP wrong  → unlink, then relink.
+#   - Already correct                      → noop.
 #
 # Expects:
 #   - iface             : { id, name, vlan_id, type, mac } row from update.yml
 #   - candidate_subnets : list of MAAS subnet objects on iface.vlan_id
-#                         (passed in; usually _subnets_by_vlan[vlan_id_str])
+#   - inv_host          : ansible inventory hostname (for *_ip lookup)
 #   - system_id         : MAAS node system_id
 #   - _maas_api, maas_auth_header
 # Optional:
 #   - iface.desired_mode      : per-iface override of the link mode
-#   - maas_iface_mode_default : default 'DHCP'. Used when
-#                               iface.desired_mode is not set.
-# Returns: nothing.
+#   - maas_iface_mode_default : fallback mode when no static IP is found
+#                               and iface.desired_mode is unset. Default LINK_UP.
 # Side effects:
 #   - GET  /nodes/<id>/interfaces/<iface.id>/                (read links)
 #   - POST /nodes/<id>/interfaces/<iface.id>/?op=link_subnet
-#   - POST /nodes/<id>/interfaces/<iface.id>/?op=unlink_subnet (mode mismatch)
+#   - POST /nodes/<id>/interfaces/<iface.id>/?op=unlink_subnet
+#   - POST /ipaddresses/?op=release (force) — only when the desired STATIC IP
+#     is already seen on this same iface as a discovered DHCP lease
 
 - name: "Skip if no candidate subnets for VLAN {{ iface.vlan_id }}"
   when: (candidate_subnets | length) == 0
@@ -47,13 +59,33 @@
       no_log: true
 
     # ---------------------------------------------------------------
-    # Normalize / derive facts
+    # Choose subnet, find a matching inventory IP, decide mode
     # ---------------------------------------------------------------
-    - name: Compute candidate subnet IDs and desired mode
+    - name: Compute candidate subnet ids + chosen subnet
       set_fact:
-        _candidate_ids: "{{ candidate_subnets | map(attribute='id') | list }}"
-        _desired_mode: "{{ iface.desired_mode | default(maas_iface_mode_default | default('DHCP')) }}"
+        _candidate_ids:    "{{ candidate_subnets | map(attribute='id') | list }}"
+        _chosen_subnet:    "{{ candidate_subnets[0] }}"
         _chosen_subnet_id: "{{ candidate_subnets[0].id }}"
+
+    # Pick the inventory *_ip that falls inside this subnet's CIDR (if any).
+    # Uses ansible.utils.ipaddr; if your control node only has the legacy
+    # filter, change 'ansible.utils.ipaddr' to plain 'ipaddr'.
+    - name: Find desired static IP for this subnet from inventory
+      set_fact:
+        _desired_static_ip: >-
+          {{ ( hostvars[inv_host] | dict2items
+               | selectattr('key','search','_ip$')
+               | map(attribute='value') | map('string')
+               | map('ansible.utils.ipaddr', _chosen_subnet.cidr)
+               | select('string')
+               | list | first ) | default('') }}
+
+    - name: Decide desired mode (STATIC when we have a matching IP)
+      set_fact:
+        _desired_mode: >-
+          {{ iface.desired_mode
+             | default( 'STATIC' if (_desired_static_ip | length > 0)
+                        else (maas_iface_mode_default | default('LINK_UP')) ) }}
 
     - name: Normalize current links on iface
       set_fact:
@@ -72,7 +104,7 @@
                   else (l.subnet if (l.subnet is defined) else omit)
                 ),
                 'mode': (l.mode | default('AUTO')),
-                'ip_address': l.ip_address | default(omit),
+                'ip_address': l.ip_address | default(''),
                 'default_gateway': l.default_gateway | default(false)
               }
             ]
@@ -93,28 +125,114 @@
 
     - name: Select first existing link (if any)
       set_fact:
-        _existing_link: "{{ (_existing_on_vlan | first) | default({}) }}"
+        _existing_link:    "{{ (_existing_on_vlan | first) | default({}) }}"
         _has_link_on_vlan: "{{ (_existing_on_vlan | length | int) > 0 }}"
-        _current_mode: "{{ (_existing_on_vlan | first).mode | default(None) if (_existing_on_vlan | length | int) > 0 else None }}"
+        _current_mode:     "{{ (_existing_on_vlan | first).mode | default(None) if (_existing_on_vlan | length | int) > 0 else None }}"
+        _current_ip:       "{{ (_existing_on_vlan | first).ip_address | default('') if (_existing_on_vlan | length | int) > 0 else '' }}"
+
+    # Relink if the mode differs, OR if we want a specific STATIC IP and the
+    # interface isn't already STATIC on exactly that address.
+    - name: Decide whether a relink is needed
+      set_fact:
         _mode_mismatch: >-
           {{
-            (_existing_on_vlan | length | int) > 0 and
-            (((_existing_on_vlan | first).mode | default('') | upper)
-              != (_desired_mode | upper))
+            _has_link_on_vlan and
+            ((_current_mode | default('') | upper) != (_desired_mode | upper))
+          }}
+        _ip_mismatch: >-
+          {{
+            _has_link_on_vlan
+            and (_desired_mode | upper == 'STATIC')
+            and (_desired_static_ip | length > 0)
+            and ((_current_ip | default('')) != _desired_static_ip)
+          }}
+
+    - name: Combine into relink flag
+      set_fact:
+        _needs_relink: "{{ _mode_mismatch or _ip_mismatch }}"
+
+    - name: Build link body (adds ip_address only for STATIC)
+      set_fact:
+        _link_body: >-
+          {{
+            {'mode': (_desired_mode | upper), 'subnet': _chosen_subnet_id}
+            | combine(
+                {'ip_address': _desired_static_ip}
+                if (_desired_mode | upper == 'STATIC' and _desired_static_ip | length > 0)
+                else {}
+              )
+          }}
+
+    # MAAS keeps a DISCOVERED StaticIPAddress record for a machine's active
+    # DHCP lease (shown in the iface's `discovered` field). link_subnet with
+    # mode=STATIC rejects with 404 "IP address is already in use." while any
+    # record holds that IP — and unlink_subnet does NOT remove the discovered
+    # one. When the IP we want is already seen on this same interface, release
+    # the discovered record first so the STATIC claim can succeed. If another
+    # machine holds the IP, we don't release anything and the link fails loud.
+    - name: Collect IPs MAAS already sees on this iface (links + discovered)
+      set_fact:
+        _iface_seen_ips: >-
+          {{
+            ((_if_detail.json.links | default([], true))
+             | selectattr('ip_address', 'defined')
+             | map(attribute='ip_address') | list)
+            +
+            ((_if_detail.json.discovered | default([], true))
+             | selectattr('ip_address', 'defined')
+             | map(attribute='ip_address') | list)
+          }}
+
+    - name: Decide whether the desired STATIC IP must be released first
+      set_fact:
+        _needs_ip_release: >-
+          {{
+            (_desired_mode | upper == 'STATIC')
+            and (_desired_static_ip | length > 0)
+            and (_desired_static_ip in _iface_seen_ips)
           }}
 
     - name: Show link decision inputs
       debug:
         msg:
+          iface: "{{ iface.name }}"
           has_link_on_vlan: "{{ _has_link_on_vlan }}"
-          candidate_ids: "{{ _candidate_ids }}"
           desired_mode: "{{ _desired_mode }}"
-          mode_mismatch: "{{ _mode_mismatch }}"
+          desired_static_ip: "{{ _desired_static_ip }}"
+          current_mode: "{{ _current_mode }}"
+          current_ip: "{{ _current_ip }}"
+          needs_relink: "{{ _needs_relink }}"
+          needs_ip_release: "{{ _needs_ip_release }}"
         verbosity: 1
 
     # ---------------------------------------------------------------
-    # Case 1: no link on this VLAN → link with desired mode
+    # Case 1: no link on this VLAN → link with desired mode (+ IP)
     # ---------------------------------------------------------------
+    - include_tasks: ../_auth_header.yml
+      when:
+        - not _has_link_on_vlan
+        - _needs_ip_release
+
+    - name: Release discovered IP record blocking STATIC link
+      when:
+        - not _has_link_on_vlan
+        - _needs_ip_release
+      uri:
+        url: "{{ _maas_api }}/ipaddresses/?op=release"
+        method: POST
+        headers:
+          Authorization: "{{ maas_auth_header }}"
+          Accept: application/json
+          Content-Type: application/x-www-form-urlencoded
+        body_format: form-urlencoded
+        body:
+          ip: "{{ _desired_static_ip }}"
+          force: "true"
+          discovered: "true"
+        # 404 = no discovered record with this IP; nothing to release
+        status_code: [200, 204, 404]
+      no_log: false
+
     - include_tasks: ../_auth_header.yml
       when: not _has_link_on_vlan
 
@@ -128,25 +246,23 @@
           Accept: application/json
           Content-Type: application/x-www-form-urlencoded
         body_format: form-urlencoded
-        body:
-          mode: "{{ _desired_mode | upper }}"
-          subnet: "{{ _chosen_subnet_id }}"
+        body: "{{ _link_body }}"
         status_code: [200, 201, 409]
         return_content: yes
       register: _link_resp
-      no_log: true
+      no_log: false
 
     # ---------------------------------------------------------------
-    # Case 2: link exists but wrong mode → unlink, then relink
+    # Case 2: link exists but wrong mode/IP → unlink, then relink
     # ---------------------------------------------------------------
     - include_tasks: ../_auth_header.yml
       when:
-        - _mode_mismatch
+        - _needs_relink
         - _existing_link.id is defined
 
-    - name: Unlink existing subnet (mode mismatch)
+    - name: Unlink existing subnet (mode/IP mismatch)
       when:
-        - _mode_mismatch
+        - _needs_relink
         - _existing_link.id is defined
       uri:
         url: "{{ _maas_api }}/nodes/{{ system_id }}/interfaces/{{ iface.id }}/?op=unlink_subnet"
@@ -162,10 +278,35 @@
       no_log: true
 
     - include_tasks: ../_auth_header.yml
-      when: _mode_mismatch
+      when:
+        - _needs_relink
+        - _needs_ip_release
+
+    - name: Release discovered IP record blocking STATIC relink
+      when:
+        - _needs_relink
+        - _needs_ip_release
+      uri:
+        url: "{{ _maas_api }}/ipaddresses/?op=release"
+        method: POST
+        headers:
+          Authorization: "{{ maas_auth_header }}"
+          Accept: application/json
+          Content-Type: application/x-www-form-urlencoded
+        body_format: form-urlencoded
+        body:
+          ip: "{{ _desired_static_ip }}"
+          force: "true"
+          discovered: "true"
+        # 404 = no discovered record with this IP; nothing to release
+        status_code: [200, 204, 404]
+      no_log: false
+
+    - include_tasks: ../_auth_header.yml
+      when: _needs_relink
 
     - name: Relink subnet with desired mode (after unlink)
-      when: _mode_mismatch
+      when: _needs_relink
       uri:
         url: "{{ _maas_api }}/nodes/{{ system_id }}/interfaces/{{ iface.id }}/?op=link_subnet"
         method: POST
@@ -174,9 +315,7 @@
           Accept: application/json
           Content-Type: application/x-www-form-urlencoded
         body_format: form-urlencoded
-        body:
-          mode: "{{ _desired_mode | upper }}"
-          subnet: "{{ _chosen_subnet_id }}"
+        body: "{{ _link_body }}"
         status_code: [200, 201, 409]
       no_log: true
 
@@ -186,9 +325,9 @@
     - name: Note existing correct link
       when:
         - _has_link_on_vlan
-        - not _mode_mismatch
+        - not _needs_relink
       debug:
         msg: >-
-          {{ iface.name }} already linked to VLAN {{ iface.vlan_id }} subnet
-          with mode {{ _current_mode }}; skipping.
+          {{ iface.name }} already linked to VLAN {{ iface.vlan_id }}
+          ({{ _current_mode }}{{ ' ' ~ _current_ip if _current_ip else '' }}); skipping.
         verbosity: 1
