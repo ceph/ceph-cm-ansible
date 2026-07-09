@@ -68,6 +68,11 @@ ntp_servers:
 # Set to true in group_vars if the testnode/machine type should have an NVMe device
 check_for_nvme: false
 
+# Micron NVMe firmware update settings
+micron_nvme_firmware_base_url: "https://{{ mirror_host }}/lab-extras/micron-nvme-firmware"
+micron_nvme_firmware_workdir: "/tmp/micron-nvme-firmware"
+micron_nvme_firmware_slot: 2
+
 # packages to install via pip
 pip_packages_to_install: []
 

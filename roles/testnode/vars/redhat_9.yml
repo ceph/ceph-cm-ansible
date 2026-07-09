@@ -44,6 +44,10 @@ packages:
   - lvm2
   - python3-pip
   - NetworkManager-initscripts-updown
+  # for nvme firmware updates
+  - nvme-cli
+  - curl
+
 
 ceph_dependency_packages_to_remove:
   - boost-random

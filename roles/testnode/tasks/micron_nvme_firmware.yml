@@ -1,0 +1,205 @@
+---
+- name: Create Micron NVMe firmware workdir
+  file:
+    path: "{{ micron_nvme_firmware_workdir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  ignore_errors: true
+  failed_when: false
+
+- name: Discover and update Micron NVMe firmware
+  shell: |
+    set +e
+
+    BASE_URL="{{ micron_nvme_firmware_base_url }}"
+    WORKDIR="{{ micron_nvme_firmware_workdir }}"
+    SLOT="{{ micron_nvme_firmware_slot | default(2) }}"
+
+    mkdir -p "$WORKDIR"
+
+    echo "Micron NVMe firmware base URL: $BASE_URL"
+    echo "Micron NVMe firmware workdir: $WORKDIR"
+
+    nvme_help="$(nvme help 2>&1)"
+
+    if echo "$nvme_help" | grep -q "fw-commit"; then
+      NVME_COMMIT_CMD="fw-commit"
+    elif echo "$nvme_help" | grep -q "fw-activate"; then
+      NVME_COMMIT_CMD="fw-activate"
+    else
+      NVME_COMMIT_CMD=""
+    fi
+
+    echo "NVMe firmware activation command: ${NVME_COMMIT_CMD:-none}"
+
+    for dev in /dev/nvme[0-9]; do
+      [ -e "$dev" ] || continue
+
+      echo
+      echo "===== Checking $dev ====="
+
+      id_ctrl="$(nvme id-ctrl "$dev" 2>&1)"
+      if [ "$?" -ne 0 ]; then
+        echo "WARN: failed to read controller info for $dev"
+        echo "$id_ctrl"
+        continue
+      fi
+
+      model="$(echo "$id_ctrl" | sed -n 's/^mn[[:space:]]*:[[:space:]]*//p' | head -n1 | xargs)"
+      current_fw="$(echo "$id_ctrl" | sed -n 's/^fr[[:space:]]*:[[:space:]]*//p' | head -n1 | xargs)"
+      serial="$(echo "$id_ctrl" | sed -n 's/^sn[[:space:]]*:[[:space:]]*//p' | head -n1 | xargs)"
+      subnqn="$(echo "$id_ctrl" | sed -n 's/^subnqn[[:space:]]*:[[:space:]]*//p' | head -n1 | xargs)"
+
+      echo "Device: $dev"
+      echo "Serial: $serial"
+      echo "Model: $model"
+      echo "Current firmware: $current_fw"
+      echo "SubNQN: $subnqn"
+
+      echo "$model $subnqn" | grep -qi micron
+      if [ "$?" -ne 0 ]; then
+        echo "SKIP: $dev is not detected as Micron"
+        continue
+      fi
+
+      case "$model" in
+        *Micron_7450*)
+          family="7450"
+          firmware_file="Micron_7450_E2MU300_release.ubi"
+          ;;
+        *MTFDKCC1T9TGP*)
+          family="7500"
+          firmware_file="Micron_7500_E3MQ005_release.ubi"
+          ;;
+        *)
+          echo "SKIP: unsupported Micron model: $model"
+          continue
+          ;;
+      esac
+
+      target_fw="$(curl -k -fsSL "$BASE_URL/$family/" 2>/dev/null | \
+        sed -n 's/.*href="\([^"?/][^"?]*\)\/".*/\1/p' | \
+        grep -v '^\.\.$' | sort -V | tail -n1)"
+
+      if [ -z "$target_fw" ]; then
+        echo "WARN: could not determine latest firmware for $family"
+        continue
+      fi
+
+      firmware_url="$BASE_URL/$family/$target_fw/$firmware_file"
+      local_firmware="$WORKDIR/$firmware_file"
+
+      echo "Detected Micron family: $family"
+      echo "Target firmware: $target_fw"
+
+      if [ "$current_fw" = "$target_fw" ]; then
+        echo "SKIP: $dev already running $target_fw"
+        continue
+      fi
+
+      echo "Checking firmware file URL: $firmware_url"
+      curl -k -fI "$firmware_url"
+      if [ "$?" -ne 0 ]; then
+        echo "WARN: firmware file is not reachable: $firmware_url"
+        continue
+      fi
+
+      echo "Downloading firmware file"
+      curl -k -fL "$firmware_url" -o "$local_firmware"
+      if [ "$?" -ne 0 ]; then
+        echo "WARN: failed to download $firmware_url"
+        continue
+      fi
+
+      target_dev="${dev}n1"
+      [ -e "$target_dev" ] || target_dev="$dev"
+
+      if [ -z "$NVME_COMMIT_CMD" ]; then
+        echo "WARN: nvme-cli supports neither fw-commit nor fw-activate"
+        continue
+      fi
+
+      echo "Updating $target_dev from $current_fw to $target_fw"
+
+      echo "Running: nvme fw-download $target_dev --fw=$local_firmware"
+      fw_download_output="$(nvme fw-download "$target_dev" --fw="$local_firmware" 2>&1)"
+      fw_download_rc=$?
+      echo "$fw_download_output"
+
+      if [ "$fw_download_rc" -ne 0 ]; then
+        echo "WARN: fw-download failed for $target_dev"
+        continue
+      fi
+
+      echo "Running: nvme $NVME_COMMIT_CMD $target_dev -s $SLOT -a 3"
+      fw_commit_output="$(nvme "$NVME_COMMIT_CMD" "$target_dev" -s "$SLOT" -a 3 2>&1)"
+      fw_commit_rc=$?
+      echo "$fw_commit_output"
+
+      if [ "$fw_commit_rc" -ne 0 ]; then
+        echo "WARN: $NVME_COMMIT_CMD failed for $target_dev"
+        continue
+      fi
+
+      echo "UPDATED: $target_dev $model $current_fw -> $target_fw"
+    done
+
+    exit 0
+  args:
+    executable: /bin/bash
+  register: micron_nvme_firmware_update
+  changed_when: "'UPDATED:' in micron_nvme_firmware_update.stdout"
+  ignore_errors: true
+  failed_when: false
+
+- name: Show Micron NVMe firmware update output
+  debug:
+    var: micron_nvme_firmware_update.stdout_lines
+  ignore_errors: true
+  failed_when: false
+
+- name: Reboot after Micron NVMe firmware update
+  reboot:
+    msg: "Rebooting after Micron NVMe firmware update"
+    reboot_timeout: 900
+  when:
+    - micron_nvme_firmware_update is defined
+    - micron_nvme_firmware_update.stdout is search("UPDATED:")
+  ignore_errors: true
+  failed_when: false
+
+- name: Refresh Ansible facts after NVMe firmware reboot
+  setup:
+  when:
+    - micron_nvme_firmware_update is defined
+    - micron_nvme_firmware_update.stdout is search("UPDATED:")
+  ignore_errors: true
+  failed_when: false
+
+- name: Verify Micron NVMe firmware after update
+  shell: |
+    set +e
+
+    for dev in /dev/nvme[0-9]; do
+      [ -e "$dev" ] || continue
+      echo
+      echo "===== $dev ====="
+      nvme id-ctrl "$dev" | egrep "sn|mn|fr|subnqn"
+      nvme fw-log "$dev"
+    done
+
+    exit 0
+  args:
+    executable: /bin/bash
+  register: micron_nvme_firmware_verify
+  changed_when: false
+  ignore_errors: true
+  failed_when: false
+
+- name: Show Micron NVMe firmware verification
+  debug:
+    var: micron_nvme_firmware_verify.stdout_lines
+  ignore_errors: true
+  failed_when: false
