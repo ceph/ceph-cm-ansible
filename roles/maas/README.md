@@ -135,6 +135,11 @@ maas_networking:
         description: "..."           # Optional, stored on the VLAN
         mtu: 1500                    # Optional, applied during VLAN update
         dhcp_on: false               # Optional. If true, MAAS DHCP is enabled for the VLAN
+        relay_vlan: 1338             # Optional. VID (same fabric) that DHCP/PXE traffic for this
+                                     # VLAN is relayed through. Tells MAAS not to move this VLAN's
+                                     # subnets to the VLAN the boot traffic was observed on.
+                                     # Mutually exclusive with dhcp_on. Set to '' to clear a relay;
+                                     # omit to leave MAAS untouched.
         primary_rack_controller: ""  # Optional per-VLAN override of the global primary rack controller
         subnets:
           - cidr: 10.20.192.0/20     # Required
@@ -162,13 +167,13 @@ maas_overwrite_ipranges: Optional, defaults to `false`. When `true`, overlapping
 
 What `tasks/networking.yml` does, in order:
 
-1. Validates the inventory before making any API calls. It fails fast if any DHCP-enabled VLAN is missing a `dynamic` ip_range, if any VLAN name violates the `^[a-z0-9-]+$` rule, or if `maas_global_primary_rack_controller` is unset and any VLAN omits `primary_rack_controller`.
+1. Validates the inventory before making any API calls. It fails fast if any DHCP-enabled VLAN is missing a `dynamic` ip_range, if any VLAN name violates the `^[a-z0-9-]+$` rule, if any `relay_vlan` setting is invalid (combined with `dhcp_on`, pointing at itself, or pointing at a VLAN that is itself relayed), or if `maas_global_primary_rack_controller` is unset and any VLAN omits `primary_rack_controller`.
 2. Reads the existing MAAS Domains and creates any new domains found in `maas_networking[*].vlans[*].subnets[*].domain` (`networking/domain_create.yml`).
 3. Reads the existing MAAS Spaces and creates any new spaces found in the subnet definitions (`networking/space_create.yml`).
 4. Reads the existing Fabrics and creates any missing fabrics named in `maas_networking[*].fabric` (`networking/fabric_create.yml`).
 5. Reads each fabric's VLANs (`networking/fabric_vlans_read_from_maas.yml`) and builds a `_vlan_index` keyed by fabric and VID (`networking/vlan_build_index.yml`). Missing VLANs are created with their `vid`, `name`, `description`, `mtu`, and `space`, but not yet with `dhcp_on` (`networking/vlan_create.yml`). The index is then rebuilt to pick up newly-created VLANs.
 6. For every (fabric, vlan, subnet) triple, applies the subnet (`networking/subnet_apply.yml`): creates it if missing or updates it in place, sets `gateway_ip` and `managed`, applies DNS servers (subnet-level first, then `maas_global_dns_servers`), and reconciles its IP ranges (`networking/subnet_range_create.yml`). The range task skips exact matches, refuses to create a `dynamic` range on an unmanaged subnet, and either fails on overlaps or replaces them depending on `maas_overwrite_ipranges`.
-7. Finally, updates each VLAN's mutable properties — `name`, `mtu`, `space`, `primary_rack`, and `dhcp_on` — only after IP ranges exist, since MAAS will reject `dhcp_on=true` on a VLAN with no dynamic range (`networking/vlan_update.yml`).
+7. Finally, updates each VLAN's mutable properties — `name`, `mtu`, `space`, `primary_rack`, `dhcp_on`, and `relay_vlan` — only after IP ranges exist, since MAAS will reject `dhcp_on=true` on a VLAN with no dynamic range (`networking/vlan_update.yml`). A `relay_vlan` VID is resolved to the target VLAN's MAAS database id via the `_vlan_index`, and the task asserts the target exists on the fabric before issuing the PUT.
 
 Machines variables include:
 

@@ -86,6 +86,44 @@
       DHCP is enabled but no dynamic range is defined on these VLANs:
       {{ (_dhcp_missing_dynamic | default([])) | to_nice_json }}
 
+# --- Check relay_vlan settings -------------------------------------------------
+
+# MAAS rejects dhcp_on=true together with relay_vlan, self-relays, and relays
+# whose target is itself relayed (no chaining). Catch what we can before any
+# API call; existence of the target VLAN in MAAS is asserted per-VLAN later in
+# networking/vlan_update.yml once the index has been built.
+- name: Build list of invalid relay_vlan settings
+  set_fact:
+    _relay_vlan_violations: |
+      {% set bad = [] %}
+      {% for pair in (maas_networking | subelements('vlans', skip_missing=True)) %}
+      {%   set fab = pair[0] %}
+      {%   set v   = pair[1] %}
+      {%   set rvid = v.relay_vlan | default('', true) | string | trim %}
+      {%   if rvid | length > 0 %}
+      {%     if v.dhcp_on | default(false) | bool %}
+      {%       set _ = bad.append(fab.fabric ~ ":VID " ~ (v.vid | string) ~ " sets both dhcp_on and relay_vlan (mutually exclusive in MAAS)") %}
+      {%     endif %}
+      {%     if rvid == (v.vid | string) %}
+      {%       set _ = bad.append(fab.fabric ~ ":VID " ~ (v.vid | string) ~ " relays to itself") %}
+      {%     endif %}
+      {%     for tv in fab.vlans | default([]) %}
+      {%       if (tv.vid | string) == rvid and (tv.relay_vlan | default('', true) | string | trim) | length > 0 %}
+      {%         set _ = bad.append(fab.fabric ~ ":VID " ~ (v.vid | string) ~ " relays to VID " ~ rvid ~ " which is itself relayed (MAAS forbids chained relays)") %}
+      {%       endif %}
+      {%     endfor %}
+      {%   endif %}
+      {% endfor %}
+      {{ bad }}
+
+- name: Fail on invalid relay_vlan settings
+  assert:
+    that:
+      - (_relay_vlan_violations | default([])) | length == 0
+    fail_msg: >-
+      Invalid relay_vlan configuration:
+      {{ (_relay_vlan_violations | default([])) | to_nice_json }}
+
 # --- Check for undefined primary rack controller per VLAN ---------------------
 
 # 1) Capture global if provided (and non-empty)
