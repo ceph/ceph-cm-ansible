@@ -67,6 +67,10 @@ packages:
   # for test-crash.sh
   - gdb
   - iozone
+  # for nvme firmware updates
+  - nvme-cli
+  - curl
+
 
 epel_packages:
   - dbench

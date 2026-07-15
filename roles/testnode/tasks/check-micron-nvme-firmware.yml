@@ -1,0 +1,48 @@
+---
+- name: Check if Micron NVMe firmware update is needed
+  shell: |
+    set +e
+
+    BASE_URL="{{ micron_nvme_firmware_base_url }}"
+
+    for dev in /dev/nvme[0-9]; do
+      [ -e "$dev" ] || continue
+
+      id_ctrl="$(nvme id-ctrl "$dev" 2>/dev/null)"
+      [ "$?" -eq 0 ] || continue
+
+      model="$(echo "$id_ctrl" | sed -n 's/^mn[[:space:]]*:[[:space:]]*//p' | head -n1 | xargs)"
+      current_fw="$(echo "$id_ctrl" | sed -n 's/^fr[[:space:]]*:[[:space:]]*//p' | head -n1 | xargs)"
+      subnqn="$(echo "$id_ctrl" | sed -n 's/^subnqn[[:space:]]*:[[:space:]]*//p' | head -n1 | xargs)"
+
+      echo "$model $subnqn" | grep -qi micron || continue
+
+      case "$model" in
+        *Micron_7450*) family="7450" ;;
+        *MTFDKCC1T9TGP*) family="7500" ;;
+        *) continue ;;
+      esac
+
+      latest_fw="$(curl -k -fsSL "$BASE_URL/$family/" 2>/dev/null | \
+        sed -n 's/.*href="\([^"?/][^"?]*\)\/".*/\1/p' | \
+        grep -v '^\.\.$' | sort -V | tail -n1)"
+
+      if [ -z "$latest_fw" ]; then
+        echo "WARN: could not determine latest firmware for $family"
+        continue
+      fi
+
+      echo "$dev model=$model current=$current_fw latest=$latest_fw"
+
+      if [ "$current_fw" != "$latest_fw" ]; then
+        echo "UPDATE_NEEDED: $dev $current_fw -> $latest_fw"
+      fi
+    done
+
+    exit 0
+  args:
+    executable: /bin/bash
+  register: micron_nvme_firmware_check
+  changed_when: false
+  failed_when: false
+  ignore_errors: true

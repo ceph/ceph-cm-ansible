@@ -59,6 +59,10 @@ packages:
   # for test-crash.sh
   - gdb
   - iozone
+  # for nvme firmware updates
+  - nvme-cli
+  - curl
+
 
   # centos stream additions start here
   - lvm2

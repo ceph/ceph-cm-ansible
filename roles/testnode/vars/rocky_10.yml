@@ -89,6 +89,9 @@ packages:
   - bzip2
   - bind-utils
   - iozone
+  # for nvme firmware updates
+  - nvme-cli
+  - curl
 
 epel_packages:
   - dbench

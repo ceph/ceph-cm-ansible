@@ -79,6 +79,13 @@
 - import_tasks: check-for-nvme.yml
   when: check_for_nvme == true
 
+- import_tasks: check-micron-nvme-firmware.yml
+
+- import_tasks: micron_nvme_firmware.yml
+  when:
+    - micron_nvme_firmware_check is defined
+    - micron_nvme_firmware_check.stdout is search("UPDATE_NEEDED:")
+
 - import_tasks: zap_disks.yml
   tags:
     - zap
