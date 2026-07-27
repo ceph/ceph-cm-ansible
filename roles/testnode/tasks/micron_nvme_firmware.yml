@@ -16,6 +16,7 @@
     BASE_URL="{{ micron_nvme_firmware_base_url }}"
     WORKDIR="{{ micron_nvme_firmware_workdir }}"
     SLOT="{{ micron_nvme_firmware_slot | default(2) }}"
+    firmware_update_failed=0
 
     mkdir -p "$WORKDIR"
 
@@ -117,7 +118,8 @@
       [ -e "$target_dev" ] || target_dev="$dev"
 
       if [ -z "$NVME_COMMIT_CMD" ]; then
-        echo "WARN: nvme-cli supports neither fw-commit nor fw-activate"
+        echo "FATAL: nvme-cli supports neither fw-commit nor fw-activate"
+        firmware_update_failed=1
         continue
       fi
 
@@ -129,7 +131,8 @@
       echo "$fw_download_output"
 
       if [ "$fw_download_rc" -ne 0 ]; then
-        echo "WARN: fw-download failed for $target_dev"
+        echo "FATAL: fw-download failed for $target_dev"
+        firmware_update_failed=1
         continue
       fi
 
@@ -139,24 +142,30 @@
       echo "$fw_commit_output"
 
       if [ "$fw_commit_rc" -ne 0 ]; then
-        echo "WARN: $NVME_COMMIT_CMD failed for $target_dev"
+        echo "FATAL: $NVME_COMMIT_CMD failed for $target_dev"
+        firmware_update_failed=1
         continue
       fi
 
       echo "UPDATED: $target_dev $model $current_fw -> $target_fw"
     done
 
+    if [ "$firmware_update_failed" -ne 0 ]; then
+      echo
+      echo "FATAL: one or more Micron NVMe firmware updates failed"
+      exit 1
+    fi
+
     exit 0
   args:
     executable: /bin/bash
   register: micron_nvme_firmware_update
   changed_when: "'UPDATED:' in micron_nvme_firmware_update.stdout"
-  ignore_errors: true
-  failed_when: false
 
 - name: Show Micron NVMe firmware update output
   debug:
     var: micron_nvme_firmware_update.stdout_lines
+  when: micron_nvme_firmware_update is defined
   ignore_errors: true
   failed_when: false
 
