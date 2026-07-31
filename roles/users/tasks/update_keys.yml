@@ -22,12 +22,47 @@
   retries: 5
   delay: 10
 
+- name: Find the pubkeys available in the keys repo
+  find:
+    paths: "{{ keys_repo_path }}/ssh"
+    patterns: "*.pub"
+  delegate_to: localhost
+  become: false
+  connection: local
+  run_once: true
+  register: found_pubkeys
+  when: keys_repo is defined
+
+- name: Build the list of users with a pubkey in the keys repo
+  set_fact:
+    keys_repo_pubkeys: >-
+      {{
+        found_pubkeys.files | default([])
+        | map(attribute='path')
+        | map('basename')
+        | map('regex_replace', '\.pub$', '')
+        | list
+      }}
+
+# A missing pubkey shouldn't be fatal; the user simply doesn't get access.
+- name: Warn about users with no pubkey in the keys repo
+  debug:
+    msg: "WARNING: No pubkey found for '{{ item.name }}' in {{ keys_repo }}; skipping their authorized_keys."
+  with_items: "{{ pubkey_users }}"
+  when:
+    - keys_repo is defined
+    - item.key is undefined
+    - item.name not in keys_repo_pubkeys
+
 - name: Update authorized_keys using the keys repo
   authorized_key:
     user: "{{ item.name }}"
     key: "{{ lookup('file', keys_repo_path + '/ssh/' + item.name + '.pub') }}"
   with_items: "{{ pubkey_users }}"
-  when: item.key is undefined and keys_repo is defined
+  when:
+    - item.key is undefined
+    - keys_repo is defined
+    - item.name in keys_repo_pubkeys
 
 - name: Update authorized_keys for each user with literal keys
   authorized_key:
