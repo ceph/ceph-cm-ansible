@@ -8,6 +8,39 @@ common_yum_repos:
     enabled: 1
     gpgcheck: 0
 
+# CentOS 9 only exists as Stream so the -stream suffix is safe to hardcode.
+# The local mirror is listed first; dnf falls back to the public mirror if
+# it's unreachable or missing a repo.
+yum_repos:
+  baseos:
+    name: "CentOS Stream $releasever - BaseOS"
+    baseurls:
+      - "https://{{ distro_mirror_host }}/centos/{{ ansible_distribution_major_version }}-stream/BaseOS/{{ ansible_architecture }}/os/"
+      - "https://mirror.stream.centos.org/{{ ansible_distribution_major_version }}-stream/BaseOS/{{ ansible_architecture }}/os/"
+    enabled: 1
+    gpgcheck: 0
+
+  appstream:
+    name: "CentOS Stream $releasever - AppStream"
+    baseurls:
+      - "https://{{ distro_mirror_host }}/centos/{{ ansible_distribution_major_version }}-stream/AppStream/{{ ansible_architecture }}/os/"
+      - "https://mirror.stream.centos.org/{{ ansible_distribution_major_version }}-stream/AppStream/{{ ansible_architecture }}/os/"
+    enabled: 1
+    gpgcheck: 0
+
+  crb:
+    name: "CentOS Stream $releasever - CRB"
+    baseurls:
+      - "https://{{ distro_mirror_host }}/centos/{{ ansible_distribution_major_version }}-stream/CRB/{{ ansible_architecture }}/os/"
+      - "https://mirror.stream.centos.org/{{ ansible_distribution_major_version }}-stream/CRB/{{ ansible_architecture }}/os/"
+    enabled: 1
+    gpgcheck: 0
+
+# The stock centos.repo defines the same repo ids (baseos, appstream, crb)
+# and would override the definitions above because dnf reads repo files in
+# alphabetical order.  centos-addons.repo (extras-common, etc.) is left alone.
+yum_repos_to_remove:
+  - centos.repo
 
 # When mirrors become available, these will be filenames in roles/testnodes/templates/mirrorlists/9/
 yum_mirrorlists: []

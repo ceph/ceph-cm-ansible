@@ -1,5 +1,9 @@
 ---
 mirror_host: apt-mirror.sepia.ceph.com
+# Local distro package mirror.  Listed first in baseurls so it's tried
+# before the public mirrors; dnf falls back to the next URL if it's
+# unreachable or missing a repo.
+distro_mirror_host: distro-mirror.front.sepia.ceph.com
 git_mirror_host: git.ceph.com
 key_host: download.ceph.com
 gitbuilder_host: gitbuilder.ceph.com

@@ -12,6 +12,7 @@ yum_repos:
   baseos:
     name: "Rocky Linux $releasever - BaseOS"
     baseurls:
+      - "https://{{ distro_mirror_host }}/rocky/{{ ansible_distribution_major_version }}/BaseOS/{{ ansible_architecture }}/os/"
       - "https://nyc.mirrors.clouvider.net/rocky/{{ ansible_distribution_major_version }}/BaseOS/{{ ansible_architecture }}/os/"
       - "https://plug-mirror.rcac.purdue.edu/rocky/{{ ansible_distribution_major_version }}/BaseOS/{{ ansible_architecture }}/os/"
       - "https://rocky-linux-us-east4.production.gcp.mirrors.ctrliq.cloud/pub/rocky/{{ ansible_distribution_major_version }}/BaseOS/{{ ansible_architecture }}/os/"
@@ -21,6 +22,7 @@ yum_repos:
   appstream:
     name: "Rocky Linux $releasever - AppStream"
     baseurls:
+      - "https://{{ distro_mirror_host }}/rocky/{{ ansible_distribution_major_version }}/AppStream/{{ ansible_architecture }}/os/"
       - "https://nyc.mirrors.clouvider.net/rocky/{{ ansible_distribution_major_version }}/AppStream/{{ ansible_architecture }}/os/"
       - "https://plug-mirror.rcac.purdue.edu/rocky/{{ ansible_distribution_major_version }}/AppStream/{{ ansible_architecture }}/os/"
       - "https://rocky-linux-us-east4.production.gcp.mirrors.ctrliq.cloud/pub/rocky/{{ ansible_distribution_major_version }}/AppStream/{{ ansible_architecture }}/os/"
@@ -30,6 +32,7 @@ yum_repos:
   crb:
     name: "Rocky Linux $releasever - CRB"
     baseurls:
+      - "https://{{ distro_mirror_host }}/rocky/{{ ansible_distribution_major_version }}/CRB/{{ ansible_architecture }}/os/"
       - "https://nyc.mirrors.clouvider.net/rocky/{{ ansible_distribution_major_version }}/CRB/{{ ansible_architecture }}/os/"
       - "https://plug-mirror.rcac.purdue.edu/rocky/{{ ansible_distribution_major_version }}/CRB/{{ ansible_architecture }}/os/"
       - "https://rocky-linux-us-east4.production.gcp.mirrors.ctrliq.cloud/pub/rocky/{{ ansible_distribution_major_version }}/CRB/{{ ansible_architecture }}/os/"
