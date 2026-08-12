@@ -1,0 +1,130 @@
+// {{ ansible_managed }}
+//
+// Grafana Alloy -> LokiStack on the pok OpenShift cluster.
+//
+// This collects the systemd journal, auditd, and an explicit allowlist of extra
+// files. It does NOT collect all of /var/log, on purpose:
+//
+//   - /var/log/messages, secure, cron (RedHat) and syslog, auth.log (Debian) are
+//     rsyslog copies of the journal. Collecting them alongside the journal
+//     double-ingests every line.
+//   - wtmp, btmp, lastlog and tallylog are binary. The login events they hold
+//     are already in the journal in text form.
+//   - /var/log/journal/** is the binary journal, read below via
+//     loki.source.journal.
+//   - Rotated and compressed files (*.1, *.gz) would re-ingest the whole history
+//     on every logrotate run.
+//
+// Anything else that matters goes in alloy_extra_log_paths, per group.
+
+logging {
+  level  = "{{ alloy_log_level }}"
+  format = "logfmt"
+}
+
+loki.write "lokistack" {
+  endpoint {
+    url               = "{{ alloy_lokistack_url }}"
+    bearer_token_file = "{{ alloy_token_file }}"
+
+    tls_config {
+      ca_file = "{{ alloy_ca_file }}"
+    }
+  }
+
+  // Keep these few and low-cardinality. Loki indexes every label, and a
+  // high-cardinality label (pid, request id, message content) is the classic way
+  // to make a Loki install unqueryable.
+  //
+  // inventory_hostname, NOT ansible_fqdn. ansible_fqdn reflects whatever the
+  // host's /etc/hostname says, which is inconsistent across this fleet -- soko05
+  // reports the bare "soko05" while other hosts report a full FQDN. That makes
+  // {host="..."} queries unguessable: you would have to know how each individual
+  // machine was configured. inventory_hostname is the canonical name from the
+  // sepia inventory and is identical in form for all hosts.
+  external_labels = {
+    host   = "{{ inventory_hostname }}",
+    lab    = "{{ lab_name | default('sepia') }}",
+    origin = "baremetal",
+  }
+}
+
+// ---------------------------------------------------------------- journal ---
+// The primary source. Covers sshd, sudo, su, systemd units, the kernel, cron,
+// and anything a service logs to stdout under systemd.
+
+loki.relabel "journal" {
+  forward_to = []
+
+  rule {
+    source_labels = ["__journal__systemd_unit"]
+    target_label  = "unit"
+  }
+
+  rule {
+    source_labels = ["__journal__hostname"]
+    target_label  = "journal_host"
+  }
+
+  rule {
+    source_labels = ["__journal_syslog_identifier"]
+    target_label  = "syslog_identifier"
+  }
+}
+
+loki.source.journal "read" {
+  path = "/var/log/journal"
+
+  // On a cold start, don't replay more than this. Otherwise standing up a new
+  // host dumps its entire retained journal into Loki in one burst.
+  max_age = "{{ alloy_journal_max_age }}"
+
+  relabel_rules = loki.relabel.journal.rules
+  labels        = { job = "systemd-journal" }
+  forward_to    = [loki.write.lokistack.receiver]
+}
+
+{% if alloy_auditd_enabled %}
+// ----------------------------------------------------------------- auditd ---
+// auditd writes outside the journal, so it has to be named explicitly. This is
+// the record of syscall-level activity -- who ran what as whom.
+
+local.file_match "auditd" {
+  path_targets = [
+    {
+      __path__ = "/var/log/audit/audit.log",
+      job      = "auditd",
+    },
+  ]
+}
+
+loki.source.file "auditd" {
+  targets    = local.file_match.auditd.targets
+  forward_to = [loki.write.lokistack.receiver]
+}
+{% endif %}
+
+{% if alloy_extra_log_paths %}
+// ------------------------------------------------------------ extra files ---
+// Per-group allowlist from alloy_extra_log_paths.
+
+local.file_match "extra" {
+  path_targets = [
+{% for path in alloy_extra_log_paths %}
+    {
+      __path__         = "{{ path }}",
+      __path_exclude__ = "**/*.gz,**/*.[0-9]",
+      job              = "varlog",
+    },
+{% endfor %}
+  ]
+
+  // Re-glob periodically so newly created files get picked up without a restart.
+  sync_period = "1m"
+}
+
+loki.source.file "extra" {
+  targets    = local.file_match.extra.targets
+  forward_to = [loki.write.lokistack.receiver]
+}
+{% endif %}

@@ -1,0 +1,53 @@
+---
+# Grafana repositories. Same URLs the grafana_agent role uses -- on hosts that
+# already run grafana-agent these repos are configured and the tasks no-op.
+grafana_apt_repo_url: "https://apt.grafana.com"
+grafana_apt_repo_key_url: "https://apt.grafana.com/gpg.key"
+grafana_rpm_repo_url: "https://rpm.grafana.com"
+grafana_rpm_repo_key_url: "https://rpm.grafana.com/gpg.key"
+
+# Alloy and grafana-agent both default their HTTP server to 127.0.0.1:12345.
+# Every host in scope already runs grafana-agent for metrics, so leaving this at
+# the default means Alloy fails to bind and the service never starts.
+alloy_listen_addr: "127.0.0.1:12346"
+
+# LokiStack gateway. The tenant is part of the URL path, not a header.
+alloy_lokistack_host: "logging-loki-openshift-logging.apps.pok.os.sepia.ceph.com"
+alloy_tenant: "infrastructure"
+alloy_lokistack_url: "https://{{ alloy_lokistack_host }}/api/logs/v1/{{ alloy_tenant }}/loki/api/v1/push"
+
+alloy_config_dir: "/etc/alloy"
+alloy_data_dir: "/var/lib/alloy/data"
+alloy_token_file: "{{ alloy_config_dir }}/loki.token"
+alloy_ca_file: "{{ alloy_config_dir }}/lokistack-ca.crt"
+
+# Bearer token comes from the vault-encrypted secrets repo (secrets_path).
+alloy_token_vars_file: "loki_token.yml"
+# The CA is a public certificate, so it ships with the role (roles/alloy/files/).
+alloy_ca_src: "lokistack-ingress-ca.crt"
+
+# Only ship journal entries newer than this on a cold start, so standing up a new
+# host doesn't replay weeks of backlog into Loki in one burst.
+alloy_journal_max_age: "12h"
+
+# auditd. Guarded by a stat check at runtime, so this stays true even on hosts
+# where auditd isn't installed (common on the Ubuntu boxes).
+alloy_collect_auditd: true
+
+# Explicit allowlist of extra files to tail, for apps that write to disk instead
+# of the journal. Set per group in the secrets repo group_vars.
+#
+# Do NOT add /var/log/messages, secure, syslog or auth.log -- those are rsyslog
+# copies of the journal and adding them double-ingests every line. Do not add
+# rotated (*.1, *.gz) or binary (wtmp, btmp, lastlog) files either.
+#
+# Each entry is a glob:
+#   alloy_extra_log_paths:
+#     - /var/log/nginx/*.log
+alloy_extra_log_paths: []
+
+alloy_log_level: "warn"
+
+# Package env file sourced by the alloy systemd unit. Debian ships
+# /etc/default/alloy, RedHat /etc/sysconfig/alloy.
+alloy_env_file: "{{ '/etc/default/alloy' if ansible_pkg_mgr == 'apt' else '/etc/sysconfig/alloy' }}"
