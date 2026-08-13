@@ -39,6 +39,22 @@ The host to use as a package mirror::
 
     mirror_host: apt-mirror.sepia.ceph.com
 
+The local distro mirror, tried before the public mirrors with automatic
+fallback (dnf: ordered baseurls; apt: the ``mirror+file:`` method with
+``/etc/apt/mirrorlist``)::
+
+    distro_mirror_host: distro-mirror.front.sepia.ceph.com
+
+Ubuntu releases carried by the local distro mirror.  On these releases the
+stock apt sources are replaced with mirror-first ones
+(``/etc/apt/sources.list.d/sepia-mirror.sources``); other releases keep
+their stock sources::
+
+    distro_mirror_ubuntu_releases:
+      - jammy
+      - noble
+      - resolute
+
 The host to use as a github mirror::
 
     git_mirror_host: git.ceph.com

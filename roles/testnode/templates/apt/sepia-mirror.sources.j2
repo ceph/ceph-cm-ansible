@@ -1,0 +1,11 @@
+# {{ ansible_managed }}
+# Mirror-first base Ubuntu sources: the local distro mirror is tried
+# first, with automatic fallback to the public archive.  Mirror order
+# lives in /etc/apt/mirrorlist.  Signatures are the stock Ubuntu archive
+# signatures (the mirror serves upstream metadata verbatim), verified
+# against the ubuntu-keyring shipped with the OS.
+Types: deb
+URIs: mirror+file:/etc/apt/mirrorlist
+Suites: {{ ansible_distribution_release }} {{ ansible_distribution_release }}-updates {{ ansible_distribution_release }}-security
+Components: main restricted universe multiverse
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg

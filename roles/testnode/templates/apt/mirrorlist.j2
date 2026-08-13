@@ -1,0 +1,12 @@
+# {{ ansible_managed }}
+# Ordered mirror list for APT's mirror method (referenced from
+# sepia-mirror.sources).  APT tries entries in priority order and falls
+# back automatically if the local mirror is unreachable or missing a
+# file — the APT equivalent of dnf trying baseurls in order.
+{% if ansible_architecture == "aarch64" %}
+https://{{ distro_mirror_host }}/ubuntu-ports/ priority:1
+http://ports.ubuntu.com/ubuntu-ports/
+{% else %}
+https://{{ distro_mirror_host }}/ubuntu/ priority:1
+http://archive.ubuntu.com/ubuntu/
+{% endif %}
