@@ -15,8 +15,10 @@
       current_fw="$(echo "$id_ctrl" | sed -n 's/^fr[[:space:]]*:[[:space:]]*//p' | head -n1 | xargs)"
       subnqn="$(echo "$id_ctrl" | sed -n 's/^subnqn[[:space:]]*:[[:space:]]*//p' | head -n1 | xargs)"
 
-      echo "$model $subnqn" | grep -qi micron || continue
-
+      # The model allowlist below is the real Micron gate; a generic
+      # "grep -i micron" test breaks on drives like the 7500 whose model
+      # string (MTFDKCC1T9TGP) doesn't contain "Micron" and whose subnqn
+      # is empty
       case "$model" in
         *Micron_7450*) family="7450" ;;
         *MTFDKCC1T9TGP*) family="7500" ;;
@@ -35,7 +37,13 @@
       echo "$dev model=$model current=$current_fw latest=$latest_fw"
 
       if [ "$current_fw" != "$latest_fw" ]; then
-        echo "UPDATE_NEEDED: $dev $current_fw -> $latest_fw"
+        # If the target firmware is already staged in a slot it will
+        # activate at the next reboot; don't re-flash on every job
+        if nvme fw-log "$dev" 2>/dev/null | grep -q "$latest_fw"; then
+          echo "PENDING_RESET: $dev $current_fw -> $latest_fw staged, awaiting reboot"
+        else
+          echo "UPDATE_NEEDED: $dev $current_fw -> $latest_fw"
+        fi
       fi
     done
 
