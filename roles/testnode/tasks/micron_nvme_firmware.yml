@@ -59,12 +59,9 @@
       echo "Current firmware: $current_fw"
       echo "SubNQN: $subnqn"
 
-      echo "$model $subnqn" | grep -qi micron
-      if [ "$?" -ne 0 ]; then
-        echo "SKIP: $dev is not detected as Micron"
-        continue
-      fi
-
+      # The model allowlist below is the real Micron gate; a generic
+      # "grep -i micron" test is fragile when the model string lacks
+      # "Micron" (7500 = MTFDKCC1T9TGP) and subnqn reads back empty
       case "$model" in
         *Micron_7450*)
           family="7450"
@@ -97,6 +94,11 @@
 
       if [ "$current_fw" = "$target_fw" ]; then
         echo "SKIP: $dev already running $target_fw"
+        continue
+      fi
+
+      if nvme fw-log "$dev" 2>/dev/null | grep -q "$target_fw"; then
+        echo "SKIP: $target_fw already staged on $dev, activates at next reboot"
         continue
       fi
 
@@ -136,18 +138,38 @@
         continue
       fi
 
-      echo "Running: nvme $NVME_COMMIT_CMD $target_dev -s $SLOT -a 3"
-      fw_commit_output="$(nvme "$NVME_COMMIT_CMD" "$target_dev" -s "$SLOT" -a 3 2>&1)"
+      # Stage the update instead of activating it live: commit the
+      # downloaded image to the slot (-a 0), then schedule activation at
+      # the next controller reset (-a 2). Immediate activation (-a 3)
+      # against a drive the OS is using can drop the controller out from
+      # under the running system; it bricked the trial114/trial195 boot
+      # drives on 2026-08-13. Testnodes reboot at every reimage, so the
+      # staged firmware takes effect on the next job cycle.
+      echo "Running: nvme $NVME_COMMIT_CMD $target_dev -s $SLOT -a 0"
+      fw_commit_output="$(nvme "$NVME_COMMIT_CMD" "$target_dev" -s "$SLOT" -a 0 2>&1)"
       fw_commit_rc=$?
       echo "$fw_commit_output"
 
       if [ "$fw_commit_rc" -ne 0 ]; then
-        echo "FATAL: $NVME_COMMIT_CMD failed for $target_dev"
+        echo "FATAL: $NVME_COMMIT_CMD -a 0 (commit to slot) failed for $target_dev"
         firmware_update_failed=1
         continue
       fi
 
-      echo "UPDATED: $target_dev $model $current_fw -> $target_fw"
+      echo "Running: nvme $NVME_COMMIT_CMD $target_dev -s $SLOT -a 2"
+      fw_activate_output="$(nvme "$NVME_COMMIT_CMD" "$target_dev" -s "$SLOT" -a 2 2>&1)"
+      fw_activate_rc=$?
+      echo "$fw_activate_output"
+
+      # A "firmware requires ... reset" status here is success: the
+      # image is committed and will activate at the reset it asks for
+      if [ "$fw_activate_rc" -ne 0 ] && ! echo "$fw_activate_output" | grep -qi "reset"; then
+        echo "FATAL: $NVME_COMMIT_CMD -a 2 (activate at next reset) failed for $target_dev"
+        firmware_update_failed=1
+        continue
+      fi
+
+      echo "STAGED: $target_dev $model $current_fw -> $target_fw (activates at next reboot)"
     done
 
     if [ "$firmware_update_failed" -ne 0 ]; then
@@ -160,7 +182,7 @@
   args:
     executable: /bin/bash
   register: micron_nvme_firmware_update
-  changed_when: "'UPDATED:' in micron_nvme_firmware_update.stdout"
+  changed_when: "'STAGED:' in micron_nvme_firmware_update.stdout"
 
 - name: Show Micron NVMe firmware update output
   debug:
