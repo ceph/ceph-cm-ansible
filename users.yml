@@ -1,5 +1,7 @@
 ---
 - hosts: all
+  # The users role reads no ansible_* facts, so skip the setup module.
+  gather_facts: false
   roles:
     - users
   become: true

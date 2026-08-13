@@ -45,28 +45,29 @@
       }}
 
 # A missing pubkey shouldn't be fatal; the user simply doesn't get access.
+# The warning is about the keys repo rather than the host, so emit it once on
+# the controller instead of once per user per host.
 - name: Warn about users with no pubkey in the keys repo
   debug:
     msg: "WARNING: No pubkey found for '{{ item.name }}' in {{ keys_repo }}; skipping their authorized_keys."
   with_items: "{{ pubkey_users }}"
+  delegate_to: localhost
+  become: false
+  run_once: true
   when:
     - keys_repo is defined
     - item.key is undefined
     - item.name not in keys_repo_pubkeys
 
-- name: Update authorized_keys using the keys repo
+# NOTE: the key has to be a conditional expression rather than
+# "item.key | default(lookup(...))" -- Jinja evaluates default()'s argument
+# eagerly, so the lookup would run (and fail) for literal-key users who have no
+# file in the keys repo.
+- name: Update authorized_keys
   authorized_key:
     user: "{{ item.name }}"
-    key: "{{ lookup('file', keys_repo_path + '/ssh/' + item.name + '.pub') }}"
+    key: "{{ item.key if item.key is defined else lookup('file', keys_repo_path + '/ssh/' + item.name + '.pub') }}"
   with_items: "{{ pubkey_users }}"
-  when:
-    - item.key is undefined
-    - keys_repo is defined
-    - item.name in keys_repo_pubkeys
-
-- name: Update authorized_keys for each user with literal keys
-  authorized_key:
-    user: "{{ item.name }}"
-    key: "{{ item.key }}"
-  with_items: "{{ pubkey_users }}"
-  when: item.key is defined
+  when: >-
+    item.key is defined
+    or (keys_repo is defined and item.name in keys_repo_pubkeys)

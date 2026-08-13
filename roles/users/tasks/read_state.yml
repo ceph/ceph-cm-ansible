@@ -1,0 +1,23 @@
+---
+# Reading passwd and the sudo group once lets create_users.yml and
+# revoke_users.yml skip their per-user 'user' module calls for accounts that are
+# already in the desired state. Each of those calls is a full round trip, so on
+# a testnode with ~300 managed users this replaces ~360 round trips with 2.
+- name: Read the existing passwd database
+  getent:
+    database: passwd
+
+- name: Read the existing sudo group
+  getent:
+    database: group
+    key: sudo
+    fail_key: false
+
+- name: Build the list of current sudo group members
+  set_fact:
+    sudo_group_members: >-
+      {{
+        (((getent_group | default({})).get('sudo') or ['', '', ''])[2]).split(',')
+        | select
+        | list
+      }}
