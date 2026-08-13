@@ -26,16 +26,20 @@
     mode: "0755"
   loop:
     - { script: fsck_before_capture.sh, dir: /images/dev/postinitscripts }
+    - { script: clean_cephlab_flags.sh, dir: /images/dev/postinitscripts }
     - { script: inject_jenkins_key.sh, dir: /images/postdownloadscripts }
 
-- name: Source fsck_before_capture.sh from fog.postinit
+- name: Source postinit scripts from fog.postinit
   lineinfile:
     path: /images/dev/postinitscripts/fog.postinit
-    line: ". ${postinitpath}fsck_before_capture.sh"
+    line: ". ${postinitpath}{{ item }}"
     create: yes
     owner: "{{ fog_user }}"
     group: "{{ fog_user }}"
     mode: "0755"
+  loop:
+    - clean_cephlab_flags.sh
+    - fsck_before_capture.sh
 
 - name: Source inject_jenkins_key.sh from fog.postdownload
   lineinfile:
