@@ -1,0 +1,58 @@
+---
+- name: Include secrets
+  include_vars: "{{ secrets_path | mandatory }}/wireguard.yml"
+  no_log: true
+  tags:
+    - always
+
+# The wg/wg-quick userland; the kernel module is in-tree on modern kernels.
+# Deliberately not the 'wireguard' meta-package from universe, which can
+# pull in wireguard-dkms
+- name: Install wireguard-tools
+  apt:
+    name: wireguard-tools
+    state: latest
+    update_cache: yes
+  tags:
+    - packages
+
+- name: Enable IPv4 forwarding
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: "1"
+    sysctl_set: yes
+    state: present
+    reload: yes
+  when: wireguard_ip_forward|bool
+
+- name: Ensure config directory exists
+  file:
+    path: "{{ wireguard_conf_dir }}"
+    state: directory
+    mode: 0700
+
+# The private key is kept out of the main config (it's loaded via PostUp)
+# so the peer list can be diffed with --check --diff. Tagged users so the
+# key file the config references always exists when the config is written
+- name: Write WireGuard private key
+  copy:
+    content: "{{ wireguard_private_key }}\n"
+    dest: "{{ wireguard_conf_dir }}/{{ wireguard_interface }}.key"
+    owner: root
+    group: root
+    mode: 0600
+  no_log: true
+  notify: restart wireguard
+  tags:
+    - users
+
+# Manage WireGuard config and peer list using secrets repo
+- import_tasks: users.yml
+  tags:
+    - users
+
+- name: Make sure WireGuard service is running and enabled
+  service:
+    name: "wg-quick@{{ wireguard_interface }}"
+    state: started
+    enabled: yes

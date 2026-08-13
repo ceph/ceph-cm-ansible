@@ -1,0 +1,16 @@
+---
+- name: Update WireGuard config and peer list
+  template:
+    src: wg.conf.j2
+    dest: "{{ wireguard_conf_dir }}/{{ wireguard_interface }}.conf"
+    owner: root
+    group: root
+    mode: 0600
+    # wg-quick only accepts paths named like an interface, so the candidate
+    # config gets copied to a well-formed name before parsing it
+    validate: /bin/bash -c 'install -m 0600 "$1" /run/wgcheck.conf && wg-quick strip /run/wgcheck.conf > /dev/null' -- %s
+  # The config contains peer preshared keys, so logging/diff output is
+  # suppressed by default. Pass -e wireguard_force_diff=true to see the
+  # diff anyway (e.g., with --check --diff to preview peer changes)
+  no_log: "{{ not wireguard_force_diff|default(false)|bool }}"
+  notify: sync wireguard config
