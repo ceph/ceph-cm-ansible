@@ -1,0 +1,51 @@
+---
+# FOS-environment hooks sourced during FOG capture/deploy tasks.  The
+# sepia-fog-images job in ceph-build.git relies on both:
+# - fsck_before_capture.sh fscks the root fs right before a capture, so no
+#   extra reboot into a rescue environment is needed
+# - inject_jenkins_key.sh lets the job ssh to nodes deployed from images
+#   captured before the jenkins-build key existed
+
+- name: Ensure postinit and postdownload script dirs exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ fog_user }}"
+    group: "{{ fog_user }}"
+    mode: "0775"
+  loop:
+    - /images/dev/postinitscripts
+    - /images/postdownloadscripts
+
+- name: Install FOS hook scripts
+  copy:
+    src: "{{ item.script }}"
+    dest: "{{ item.dir }}/{{ item.script }}"
+    owner: "{{ fog_user }}"
+    group: "{{ fog_user }}"
+    mode: "0755"
+  loop:
+    - { script: fsck_before_capture.sh, dir: /images/dev/postinitscripts }
+    - { script: clean_cephlab_flags.sh, dir: /images/dev/postinitscripts }
+    - { script: inject_jenkins_key.sh, dir: /images/postdownloadscripts }
+
+- name: Source postinit scripts from fog.postinit
+  lineinfile:
+    path: /images/dev/postinitscripts/fog.postinit
+    line: ". ${postinitpath}{{ item }}"
+    create: yes
+    owner: "{{ fog_user }}"
+    group: "{{ fog_user }}"
+    mode: "0755"
+  loop:
+    - clean_cephlab_flags.sh
+    - fsck_before_capture.sh
+
+- name: Source inject_jenkins_key.sh from fog.postdownload
+  lineinfile:
+    path: /images/postdownloadscripts/fog.postdownload
+    line: ". ${postdownpath}inject_jenkins_key.sh"
+    create: yes
+    owner: "{{ fog_user }}"
+    group: "{{ fog_user }}"
+    mode: "0755"

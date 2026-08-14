@@ -46,3 +46,6 @@
   file:
     path: "/home/{{ fog_user }}/temp_settings"
     state: absent
+
+# Safe to run on a live FOG server; not gated behind fog_force
+- import_tasks: hooks.yml
