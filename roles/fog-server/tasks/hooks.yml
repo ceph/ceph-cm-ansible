@@ -28,6 +28,7 @@
     - { script: fsck_before_capture.sh, dir: /images/dev/postinitscripts }
     - { script: clean_cephlab_flags.sh, dir: /images/dev/postinitscripts }
     - { script: inject_jenkins_key.sh, dir: /images/postdownloadscripts }
+    - { script: clean_foreign_boot.sh, dir: /images/postdownloadscripts }
 
 - name: Source postinit scripts from fog.postinit
   lineinfile:
@@ -41,11 +42,14 @@
     - clean_cephlab_flags.sh
     - fsck_before_capture.sh
 
-- name: Source inject_jenkins_key.sh from fog.postdownload
+- name: Source postdownload scripts from fog.postdownload
   lineinfile:
     path: /images/postdownloadscripts/fog.postdownload
-    line: ". ${postdownpath}inject_jenkins_key.sh"
+    line: ". ${postdownpath}{{ item }}"
     create: yes
     owner: "{{ fog_user }}"
     group: "{{ fog_user }}"
     mode: "0755"
+  loop:
+    - inject_jenkins_key.sh
+    - clean_foreign_boot.sh
