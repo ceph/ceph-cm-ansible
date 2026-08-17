@@ -35,6 +35,11 @@
   tags:
     - always
 
+- import_tasks: read_state.yml
+  when: perform_users_role|bool
+  tags:
+    - always
+
 - import_tasks: create_users.yml
   when: perform_users_role|bool
   tags:

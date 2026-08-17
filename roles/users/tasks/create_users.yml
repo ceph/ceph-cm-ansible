@@ -16,6 +16,7 @@
     append: yes
     home: "{{ ('teuthology' in group_names) | ternary('/tank/home', '/home') }}/{{ item.name }}"
   with_items: "{{ managed_admin_users }}"
+  when: item.name not in getent_passwd or item.name not in sudo_group_members
 
 - name: Create all users without sudo access.
   user:
@@ -24,3 +25,4 @@
     state: present
     home: "{{ ('teuthology' in group_names) | ternary('/tank/home', '/home') }}/{{ item.name }}"
   with_items: "{{ managed_users }}"
+  when: item.name not in getent_passwd
