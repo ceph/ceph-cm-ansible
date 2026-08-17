@@ -34,15 +34,36 @@
 # The private key is kept out of the main config (it's loaded via PostUp)
 # so the peer list can be diffed with --check --diff. Tagged users so the
 # key file the config references always exists when the config is written
+#
+# Resolve the (vaulted) key into a plain fact first: on ansible-core 2.17,
+# passing a !vault value straight into copy's content under no_log fails
+# during result censoring, which is opaque and led to the 2026-08-17 outage
+# investigation. Also: a key change must NOT restart the service (that
+# drops every tunnel); `wg set` applies it live, and the restart handler is
+# reserved for genuine [Interface] changes.
+- name: Resolve WireGuard private key
+  set_fact:
+    _wg_private_key: "{{ wireguard_private_key | string | trim }}"
+  no_log: true
+  tags:
+    - users
+
+- name: Refuse to proceed without a WireGuard private key
+  fail:
+    msg: "wireguard_private_key is empty/undefined; refusing to touch the gateway"
+  when: _wg_private_key | length < 40
+  tags:
+    - users
+
 - name: Write WireGuard private key
   copy:
-    content: "{{ wireguard_private_key }}\n"
+    content: "{{ _wg_private_key }}\n"
     dest: "{{ wireguard_conf_dir }}/{{ wireguard_interface }}.key"
     owner: root
     group: root
     mode: 0600
   no_log: true
-  notify: restart wireguard
+  notify: sync wireguard config
   tags:
     - users
 
