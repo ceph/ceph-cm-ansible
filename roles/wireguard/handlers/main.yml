@@ -1,0 +1,19 @@
+---
+# Apply config changes (e.g., peer additions/removals) to the running
+# interface without tearing down existing tunnels
+# Strip first and only sync if that succeeded; piping a failed strip
+# straight into syncconf would wipe all peers
+- name: sync wireguard config
+  shell: |
+    set -euo pipefail
+    stripped="$(wg-quick strip {{ wireguard_interface }})"
+    wg syncconf {{ wireguard_interface }} /dev/stdin <<< "$stripped"
+  args:
+    executable: /bin/bash
+
+# Full restart. Drops existing tunnels; only needed for [Interface]
+# changes (Address, ListenPort, etc.)
+- name: restart wireguard
+  service:
+    name: "wg-quick@{{ wireguard_interface }}"
+    state: restarted

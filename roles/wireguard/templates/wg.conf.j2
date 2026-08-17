@@ -1,0 +1,57 @@
+# {{ ansible_managed }}
+[Interface]
+Address = {{ wireguard_address }}
+ListenPort = {{ wireguard_port }}
+{% if wireguard_mtu is defined %}
+MTU = {{ wireguard_mtu }}
+{% endif %}
+{% for cmd in wireguard_preup|default([]) %}
+PreUp = {{ cmd }}
+{% endfor %}
+PostUp = wg set %i private-key {{ wireguard_conf_dir }}/%i.key
+{% for cmd in wireguard_postup|default([]) %}
+PostUp = {{ cmd }}
+{% endfor %}
+{% for cmd in wireguard_predown|default([]) %}
+PreDown = {{ cmd }}
+{% endfor %}
+{% for cmd in wireguard_postdown|default([]) %}
+PostDown = {{ cmd }}
+{% endfor %}
+
+{# Peers tied to user accounts (wireguard key on lab_users/admin_users entries) #}
+{% for user in admin_users|default([])|list + lab_users|default([])|list %}
+{% for device in user.wireguard|default([]) %}
+# {{ user.name }} ({{ device.name }})
+[Peer]
+PublicKey = {{ device.public_key }}
+{% if device.preshared_key is defined %}
+PresharedKey = {{ device.preshared_key }}
+{% endif %}
+AllowedIPs = {{ device.allowed_ips }}
+{% if device.endpoint is defined %}
+Endpoint = {{ device.endpoint }}
+{% endif %}
+{% if device.persistent_keepalive is defined %}
+PersistentKeepalive = {{ device.persistent_keepalive }}
+{% endif %}
+
+{% endfor %}
+{% endfor %}
+{# Standalone peers not tied to a user account (hosts, external users) #}
+{% for peer in wireguard_peers %}
+# {{ peer.name }}
+[Peer]
+PublicKey = {{ peer.public_key }}
+{% if peer.preshared_key is defined %}
+PresharedKey = {{ peer.preshared_key }}
+{% endif %}
+AllowedIPs = {{ peer.allowed_ips }}
+{% if peer.endpoint is defined %}
+Endpoint = {{ peer.endpoint }}
+{% endif %}
+{% if peer.persistent_keepalive is defined %}
+PersistentKeepalive = {{ peer.persistent_keepalive }}
+{% endif %}
+
+{% endfor %}

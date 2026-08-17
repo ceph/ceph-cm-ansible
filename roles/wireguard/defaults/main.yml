@@ -1,0 +1,19 @@
+---
+# These defaults are present to allow certain tasks to no-op if a secrets repo
+# hasn't been defined. If you want to override these, do so in the secrets repo
+# itself.
+secrets_repo:
+  name: UNDEFINED
+  url: null
+
+wireguard_interface: wg0
+
+wireguard_conf_dir: /etc/wireguard
+
+wireguard_port: 51820
+
+# Enable IPv4 forwarding so peers can reach hosts behind the gateway
+wireguard_ip_forward: true
+
+# List of peers (users). Defined in the secrets repo. See README.rst
+wireguard_peers: []
