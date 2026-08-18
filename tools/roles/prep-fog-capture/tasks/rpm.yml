@@ -1,9 +1,18 @@
 ---
+# Stay within the point release the image is already running.  Rocky's
+# default $releasever tracks the newest minor (the /pub/rocky/10/ symlink),
+# so an unpinned `state: latest` walks a rocky_10.1 image up to 10.2 during
+# capture prep and the captured image no longer matches its name.
+# Override deliberately to move an image between point releases, e.g.
+#   ansible-playbook ... -e fog_capture_releasever=10.2
+# or pass the major version (-e fog_capture_releasever=10) for the old
+# always-latest behavior.
 - name: Upgrade all packages to latest (dnf)
   dnf:
     name: "*"
     state: latest
     update_cache: true
+    releasever: "{{ fog_capture_releasever | default(ansible_facts.distribution_version) }}"
   when: ansible_facts.os_family == "RedHat"
 
 - name: Ensure dnf-utils present (for needs-restarting)
