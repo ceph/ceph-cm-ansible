@@ -1,10 +1,32 @@
 ---
+# On Rocky the node's repos pin to the deployed point release, so this
+# stays within the minor; everything else just goes to latest.
 - name: Upgrade all packages to latest (dnf)
   dnf:
     name: "*"
     state: latest
     update_cache: true
-  when: ansible_facts.os_family == "RedHat"
+  when:
+    - ansible_facts.os_family == "RedHat"
+    - not (ansible_facts.distribution == "Rocky" and rocky_upgrade_scope == "major")
+
+# Capturing a major-tracking image (trial_rocky_10): the pinned repos
+# would hold the node on its minor, so upgrade against the major tree on
+# the internal mirror instead.  The stale pinned repo files in the
+# captured image are harmless -- the testnode role rewrites them from the
+# running (new) minor on every job.
+- name: Upgrade Rocky to the newest minor (dnf)
+  command: >-
+    dnf -y upgrade --refresh --nogpgcheck
+    --disablerepo=baseos,appstream,crb
+    --repofrompath=baseos-major,https://{{ distro_mirror_host }}/rocky/{{ ansible_facts.distribution_major_version }}/BaseOS/{{ ansible_facts.architecture }}/os/
+    --repofrompath=appstream-major,https://{{ distro_mirror_host }}/rocky/{{ ansible_facts.distribution_major_version }}/AppStream/{{ ansible_facts.architecture }}/os/
+    --repofrompath=crb-major,https://{{ distro_mirror_host }}/rocky/{{ ansible_facts.distribution_major_version }}/CRB/{{ ansible_facts.architecture }}/os/
+  register: rocky_major_upgrade
+  changed_when: "'Nothing to do' not in rocky_major_upgrade.stdout"
+  when:
+    - ansible_facts.distribution == "Rocky"
+    - rocky_upgrade_scope == "major"
 
 - name: Ensure dnf-utils present (for needs-restarting)
   package:
