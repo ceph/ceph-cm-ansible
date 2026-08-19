@@ -16,6 +16,9 @@
     append: yes
     home: "{{ ('teuthology' in group_names) | ternary('/tank/home', '/home') }}/{{ item.name }}"
   with_items: "{{ managed_admin_users }}"
+  # The user dicts carry emails and WireGuard peer info; only log the username
+  loop_control:
+    label: "{{ item.name }}"
   when: item.name not in getent_passwd or item.name not in sudo_group_members
 
 - name: Create all users without sudo access.
@@ -25,4 +28,7 @@
     state: present
     home: "{{ ('teuthology' in group_names) | ternary('/tank/home', '/home') }}/{{ item.name }}"
   with_items: "{{ managed_users }}"
+  # The user dicts carry emails and WireGuard peer info; only log the username
+  loop_control:
+    label: "{{ item.name }}"
   when: item.name not in getent_passwd
