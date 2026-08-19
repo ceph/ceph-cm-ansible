@@ -29,7 +29,7 @@
       # A drive that has failed into its safe mode (SMART critical_warning
       # set -- 0xc = reliability degraded + media read-only, all counters
       # zeroed, no usable namespace) rejects fw-download with an Internal
-      # Error no matter what.  Flashing won't fix it, so don't flag it as
+      # Error no matter what.  Flashing will not fix it, so do not flag it as
       # UPDATE_NEEDED; report it as UNHEALTHY instead so main.yml can fail
       # the play with a message teuthology recognises and marks the node
       # down on (trial012/094/163, 2026-08-19).
