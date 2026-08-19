@@ -1,0 +1,55 @@
+---
+# The alloy RPM's %post runs `useradd -r -m -d /var/lib/alloy`, and useradd
+# copying /etc/skel into a var_lib_t directory is denied under the targeted
+# policy. grafana-agent's RPM did the same thing with /var/lib/grafana-agent,
+# which is where this module came from. Load it before installing the package.
+
+- name: useradd - Install SELinux dependencies
+  ansible.builtin.package:
+    name: "{{ useradd_selinux_packages | list }}"
+    state: present
+
+# ignore_errors in case we don't have any repos
+- name: useradd - Ensure SELinux policy is up to date
+  ansible.builtin.package:
+    name: selinux-policy-targeted
+    state: latest
+  ignore_errors: true
+
+- name: useradd - Check whether the module is already loaded
+  ansible.builtin.command: semodule -l
+  register: semodule_list
+  changed_when: false
+  check_mode: false  # read-only; needed so the block below can decide under --check
+
+- name: useradd - Build and load the module
+  when: "'customuseradd' not in semodule_list.stdout"
+  block:
+    - name: useradd - Copy SELinux type enforcement file
+      ansible.builtin.copy:
+        src: customuseradd.te
+        dest: /tmp/customuseradd.te
+        mode: '0644'
+
+    - name: useradd - Compile SELinux module file
+      ansible.builtin.command: checkmodule -M -m -o /tmp/customuseradd.mod /tmp/customuseradd.te
+
+    - name: useradd - Build SELinux policy package
+      ansible.builtin.command: semodule_package -o /tmp/customuseradd.pp -m /tmp/customuseradd.mod
+
+    - name: useradd - Load SELinux policy package
+      ansible.builtin.command: semodule -i /tmp/customuseradd.pp
+
+    - name: useradd - Remove temporary files
+      ansible.builtin.file:
+        path: "/tmp/customuseradd.{{ item }}"
+        state: absent
+      loop: [te, mod, pp]
+
+    - name: useradd - Verify SELinux module is installed
+      ansible.builtin.command: semodule -l
+      register: semodule_verify
+      changed_when: false
+      failed_when:
+        - not ansible_check_mode
+        - "'customuseradd' not in semodule_verify.stdout"

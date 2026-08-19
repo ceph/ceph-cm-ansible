@@ -1,5 +1,7 @@
 ---
 dependencies:
   - role: secrets
-  - role: grafana_agent
-    when: run_grafana_agent_role is defined and run_grafana_agent_role
+  - role: alloy
+    # Metrics only: testnodes are out of scope for the LokiStack.
+    alloy_logs_enabled: false
+    when: run_alloy_role is defined and run_alloy_role

@@ -1,9 +1,23 @@
 ---
-- name: Include secrets
+- name: Include the LokiStack push token
   ansible.builtin.include_vars: "{{ secrets_path | mandatory }}/{{ alloy_token_vars_file }}"
   no_log: true
+  when: alloy_logs_enabled | bool
   tags:
     - always
+
+- name: Include the Mimir credentials
+  ansible.builtin.include_vars: "{{ secrets_path | mandatory }}/{{ alloy_mimir_vars_file }}"
+  no_log: true
+  when: alloy_metrics_enabled | bool
+  tags:
+    - always
+
+# The alloy RPM's useradd trips SELinux under the targeted policy; load the
+# workaround module before the package install.
+- name: Load the useradd SELinux module
+  ansible.builtin.import_tasks: useradd-selinux.yml
+  when: ansible_os_family == "RedHat"
 
 - name: Configure the Grafana APT repository
   ansible.builtin.include_tasks: repo-debian.yml
@@ -18,6 +32,10 @@
     name: alloy
     state: present
 
+- name: Install node_exporter
+  ansible.builtin.include_tasks: node-exporter.yml
+  when: alloy_metrics_enabled | bool
+
 # Everything below depends on the `alloy` user, which the package creates.
 
 - name: Add alloy to the groups it needs to read logs
@@ -30,6 +48,7 @@
     # entries. adm covers the group-readable files under /var/log on Debian and
     # Ubuntu; RedHat has no equivalent group.
     alloy_read_groups: "{{ ['systemd-journal'] + (['adm'] if ansible_os_family == 'Debian' else []) }}"
+  when: alloy_logs_enabled | bool
   notify: "Restart alloy"
 
 - name: Check whether auditd is present
@@ -37,15 +56,13 @@
     path: /etc/audit/auditd.conf
   register: auditd_conf
 
-- name: Configure auditd log access
-  ansible.builtin.include_tasks: auditd.yml
-  when:
-    - alloy_collect_auditd|bool
-    - auditd_conf.stat.exists
-
 - name: Record whether auditd logs will be collected
   ansible.builtin.set_fact:
-    alloy_auditd_enabled: "{{ alloy_collect_auditd|bool and auditd_conf.stat.exists }}"
+    alloy_auditd_enabled: "{{ alloy_logs_enabled | bool and alloy_collect_auditd | bool and auditd_conf.stat.exists }}"
+
+- name: Configure auditd log access
+  ansible.builtin.include_tasks: auditd.yml
+  when: alloy_auditd_enabled | bool
 
 - name: Create the alloy data directory
   ansible.builtin.file:
@@ -55,13 +72,13 @@
     group: alloy
     mode: '0750'
 
-- name: Install the LokiStack ingress CA
+- name: Install the pok ingress CA
   ansible.builtin.copy:
-    # The gateway route is served by the cluster's own ingress CA
-    # (CN=*.apps.pok.os.sepia.ceph.com, self-signed by ingress-operator), so the
-    # host CA bundle will not verify it. This is deliberately not
-    # insecure_skip_verify -- this connection carries log data including the
-    # audit trail.
+    # The LokiStack gateway and the Mimir route are both served by the
+    # cluster's own ingress CA (CN=*.apps.pok.os.sepia.ceph.com, self-signed
+    # by ingress-operator), so the host CA bundle will not verify them. This is
+    # deliberately not insecure_skip_verify -- these connections carry log data
+    # including the audit trail.
     #
     # Lives in the role rather than the secrets repo because a CA certificate is
     # public. Refresh it when the cluster ingress cert rotates:
@@ -82,6 +99,22 @@
     group: alloy
     mode: '0640'
   no_log: true
+  when: alloy_logs_enabled | bool
+  notify: "Restart alloy"
+
+- name: Record whether Mimir basic auth is configured
+  ansible.builtin.set_fact:
+    alloy_mimir_basic_auth: "{{ alloy_metrics_enabled | bool and mimir_username is defined and mimir_password is defined }}"
+
+- name: Install the Mimir password
+  ansible.builtin.copy:
+    content: "{{ mimir_password }}"
+    dest: "{{ alloy_mimir_password_file }}"
+    owner: root
+    group: alloy
+    mode: '0640'
+  no_log: true
+  when: alloy_mimir_basic_auth | bool
   notify: "Restart alloy"
 
 - name: Configure alloy
@@ -91,13 +124,12 @@
     owner: root
     group: alloy
     mode: '0640'
-    validate: "/usr/bin/alloy fmt %s"
+    validate: "/usr/bin/alloy validate %s"
   notify: "Restart alloy"
 
 - name: Move alloy off the default HTTP port
   ansible.builtin.lineinfile:
-    # grafana-agent (metrics) already owns 127.0.0.1:12345 on these hosts, and
-    # both default to it. Without this alloy fails to bind and never starts.
+    # See alloy_listen_addr in defaults for why this isn't the package default.
     #
     # create:true so the role does not depend on the package having shipped this
     # file -- without it the task hard-fails under --check (where the package
@@ -121,6 +153,12 @@
   loop_control:
     label: "{{ item.key }}"
   notify: "Restart alloy"
+
+# Before Alloy starts pushing metrics, not after: both would push the same
+# series under the same labels, and Mimir would reject one side's samples as
+# out-of-order for as long as they overlapped.
+- name: Remove grafana-agent
+  ansible.builtin.import_tasks: remove-grafana-agent.yml
 
 - name: Enable and start alloy
   ansible.builtin.service:

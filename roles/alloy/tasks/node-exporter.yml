@@ -1,0 +1,53 @@
+---
+# node_exporter for the host. Alloy scrapes it on localhost and remote_writes
+# to Mimir; see the metrics section of config.alloy.j2.
+
+- name: node_exporter - Gather facts on listening ports
+  community.general.listen_ports_facts:
+
+- name: node_exporter - Gather package facts
+  ansible.builtin.package_facts:
+    manager: auto
+
+# If :9100 is already taken and the distro package isn't what's taking it,
+# something else owns node_exporter on this host -- on the LRC that's the
+# node-exporter container cephadm deploys. Installing the distro package there
+# would just leave two exporters fighting over the port after every reboot, so
+# leave it alone and scrape the one that's there.
+- name: node_exporter - Decide whether to manage the distro package
+  ansible.builtin.set_fact:
+    alloy_node_exporter_foreign: >-
+      {{ (ansible_facts.tcp_listen | default([])
+          | selectattr('port', 'equalto', alloy_node_exporter_port | int)
+          | list | length > 0)
+         and (alloy_node_exporter_known_packages | select('in', ansible_facts.packages) | list | length == 0) }}
+
+- name: node_exporter - Note when an existing exporter is being reused
+  ansible.builtin.debug:
+    msg: >-
+      Something other than the distro node_exporter package already listens on
+      :{{ alloy_node_exporter_port }}; leaving it alone and scraping it as-is.
+  when: alloy_node_exporter_foreign | bool
+
+- name: node_exporter - Install and start the distro package
+  when:
+    - alloy_manage_node_exporter | bool
+    - not alloy_node_exporter_foreign | bool
+  block:
+    - name: node_exporter - Install EPEL repository (RedHat)
+      ansible.builtin.dnf:
+        name: epel-release
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: node_exporter - Install {{ alloy_node_exporter_package }}
+      ansible.builtin.package:
+        name: "{{ alloy_node_exporter_package }}"
+        state: present
+
+    - name: node_exporter - Enable and start {{ alloy_node_exporter_service }}
+      ansible.builtin.systemd:
+        name: "{{ alloy_node_exporter_service }}"
+        enabled: true
+        state: started
+        daemon_reload: true

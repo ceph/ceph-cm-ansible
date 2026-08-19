@@ -1,15 +1,22 @@
 ---
-# Ship journald + auditd from the lab's bare-metal and VM infra hosts to the
-# LokiStack on the pok OpenShift cluster.
+# Grafana Alloy on the lab's bare-metal and VM infra hosts:
+#
+#   * node_exporter metrics -> Mimir on the pok OpenShift cluster. This is the
+#     job the grafana_agent role used to do; this play removes grafana-agent
+#     from every host it runs on. Every host here ends up in the "Node Exporter
+#     Full" dashboard in Grafana.
+#   * journald + auditd -> the LokiStack on the same cluster.
 #
 # The exclusions are load-bearing. [infrastructure:children] in the sepia
 # inventory pulls in cnv, infra_compute and infra_storage -- those are the 21
-# RHCOS nodes of the pok cluster itself. Their journals and auditd logs are
-# already collected in-cluster by the ClusterLogForwarder, so running this
-# against them would both fail (immutable RHCOS) and double-ingest.
+# RHCOS nodes of the pok cluster itself. Their metrics, journals and auditd
+# logs are already collected in-cluster (cluster monitoring and the
+# ClusterLogForwarder), so running this against them would both fail
+# (immutable RHCOS) and double-ingest.
 #
 # Testnodes are out of scope entirely and are not in any group listed here
-# ([testnodes:children] is smithi, ovh, gibba and trial).
+# ([testnodes:children] is smithi, ovh, gibba and trial). The testnode role can
+# pull this role in for metrics only with run_alloy_role: true.
 #
 # Groups, and why each is here:
 #   infrastructure       lab services (hv01-04, store01, satellite, chacra, ...)
