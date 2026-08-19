@@ -5,9 +5,7 @@
 [{{ item.key }}]
 {% for k, v in item.value.items() | sort %}
 {% if k == "baseurls" %}
-{%   for url in v %}
-baseurl={{ url }}
-{%   endfor %}
+baseurl={{ v | join(',') }}
 {% else %}
 {{ k }}={{ v }}
 {% endif %}
