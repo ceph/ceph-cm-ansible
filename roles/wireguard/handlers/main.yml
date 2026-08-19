@@ -1,15 +1,46 @@
 ---
 # Apply config changes (e.g., peer additions/removals) to the running
-# interface without tearing down existing tunnels
-# Strip first and only sync if that succeeded; piping a failed strip
-# straight into syncconf would wipe all peers
+# interface without tearing down existing tunnels.
+#
+# INCIDENT 2026-08-17: `wg syncconf` REPLACES the interface's entire config
+# from its input, and `wg-quick strip` drops PostUp lines. Because the
+# rendered wg.conf deliberately carries no PrivateKey (it is loaded by
+# `PostUp = wg set %i private-key %i.key`), syncing the stripped conf left
+# the live interface with NO private key -- every peer's handshake failed
+# and the lab lost VPN until the key was re-set by hand from the console.
+#
+# So: strip, then re-append the private key from the key file, verify the
+# resulting config still yields the public key the interface has NOW, and
+# only then sync. Any failure leaves the running interface untouched.
 - name: sync wireguard config
   shell: |
     set -euo pipefail
-    stripped="$(wg-quick strip {{ wireguard_interface }})"
-    wg syncconf {{ wireguard_interface }} /dev/stdin <<< "$stripped"
+    iface="{{ wireguard_interface }}"
+    keyfile="{{ wireguard_conf_dir }}/${iface}.key"
+    stripped="$(wg-quick strip "$iface")"
+    if grep -q '^PrivateKey' <<< "$stripped"; then
+      conf="$stripped"
+    else
+      # Insert the key right after [Interface] so syncconf keeps it.
+      conf="$(awk -v key="$(cat "$keyfile")" \
+        '{print} /^\[Interface\]/ && !done {print "PrivateKey = " key; done=1}' <<< "$stripped")"
+    fi
+    want="$(wg show "$iface" public-key)"
+    have="$(grep '^PrivateKey' <<< "$conf" | head -1 | awk '{print $3}' | wg pubkey)"
+    if [ "$want" != "(none)" ] && [ "$want" != "$have" ]; then
+      echo "refusing to sync: config public key $have != live $want" >&2
+      exit 1
+    fi
+    wg syncconf "$iface" /dev/stdin <<< "$conf"
+    after="$(wg show "$iface" public-key)"
+    if [ "$after" != "$have" ]; then
+      echo "post-sync public key mismatch; restoring from key file" >&2
+      wg set "$iface" private-key "$keyfile"
+      exit 1
+    fi
   args:
     executable: /bin/bash
+  no_log: true
 
 # Full restart. Drops existing tunnels; only needed for [Interface]
 # changes (Address, ListenPort, etc.)

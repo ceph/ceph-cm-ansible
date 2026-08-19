@@ -8,6 +8,10 @@ MTU = {{ wireguard_mtu }}
 {% for cmd in wireguard_preup|default([]) %}
 PreUp = {{ cmd }}
 {% endfor %}
+{# The key lives in the conf too (not only via PostUp): `wg-quick strip`
+   drops PostUp lines, so a strip|syncconf with only the PostUp form left
+   the live interface keyless on 2026-08-17. Belt and braces: both. #}
+PrivateKey = {{ _wg_private_key | default(wireguard_private_key) | string | trim }}
 PostUp = wg set %i private-key {{ wireguard_conf_dir }}/%i.key
 {% for cmd in wireguard_postup|default([]) %}
 PostUp = {{ cmd }}
