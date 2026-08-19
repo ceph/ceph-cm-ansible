@@ -13,6 +13,7 @@
 
       model="$(echo "$id_ctrl" | sed -n 's/^mn[[:space:]]*:[[:space:]]*//p' | head -n1 | xargs)"
       current_fw="$(echo "$id_ctrl" | sed -n 's/^fr[[:space:]]*:[[:space:]]*//p' | head -n1 | xargs)"
+      serial="$(echo "$id_ctrl" | sed -n 's/^sn[[:space:]]*:[[:space:]]*//p' | head -n1 | xargs)"
       subnqn="$(echo "$id_ctrl" | sed -n 's/^subnqn[[:space:]]*:[[:space:]]*//p' | head -n1 | xargs)"
 
       # The model allowlist below is the real Micron gate; a generic
@@ -23,6 +24,24 @@
         *Micron_7450*) family="7450" ;;
         *MTFDKCC1T9TGP*) family="7500" ;;
         *) continue ;;
+      esac
+
+      # A drive that has failed into its safe mode (SMART critical_warning
+      # set -- 0xc = reliability degraded + media read-only, all counters
+      # zeroed, no usable namespace) rejects fw-download with an Internal
+      # Error no matter what.  Flashing will not fix it, so do not flag it as
+      # UPDATE_NEEDED; report it as UNHEALTHY instead so main.yml can fail
+      # the play with a message teuthology recognises and marks the node
+      # down on (trial012/094/163, 2026-08-19).
+      critical_warning="$(nvme smart-log "$dev" 2>/dev/null | \
+        sed -n 's/^critical_warning[[:space:]]*:[[:space:]]*//p' | head -n1 | xargs)"
+      case "$critical_warning" in
+        ""|0|0x0|0x00)
+          ;;
+        *)
+          echo "UNHEALTHY: $dev model=$model sn=$serial fw=$current_fw critical_warning=$critical_warning"
+          continue
+          ;;
       esac
 
       latest_fw="$(curl -k -fsSL "$BASE_URL/$family/" 2>/dev/null | \

@@ -1,0 +1,11 @@
+---
+# minor (default): upgrade within whatever the node's repos allow -- the
+# testnode role pins Rocky repos to the deployed point release, so a
+# trial_rocky_10.1 capture stays 10.1.
+# major: walk the node to the newest minor of its major first; used by
+# sepia-fog-images when capturing a major-tracking image (trial_rocky_10).
+rocky_upgrade_scope: minor
+
+# Internal distro mirror; carries a tree per Rocky minor plus the
+# /rocky/<major> symlink to the newest one.
+distro_mirror_host: distro-mirror.front.sepia.ceph.com

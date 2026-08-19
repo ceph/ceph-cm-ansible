@@ -81,6 +81,23 @@
 
 - import_tasks: check-micron-nvme-firmware.yml
 
+# A failed scratch drive makes the node useless to most jobs (see the
+# "Wanted N disks" disable pattern), so fail here with a message teuthology's
+# disable_targets.ansible_failure_patterns can match -- the supervisor matches
+# the failure record's msg, which for a plain shell failure is just "non-zero
+# return code".  Pattern: 'Micron NVMe .* failed into safe mode'
+- name: Fail the play when a Micron NVMe has failed into safe mode
+  fail:
+    msg: >-
+      Micron NVMe {{ micron_nvme_firmware_check.stdout_lines
+      | select('search', '^UNHEALTHY:')
+      | map('regex_replace', '^UNHEALTHY: ', '')
+      | join('; ') }} failed into safe mode (SMART critical_warning set,
+      rejects fw-download): RMA candidate
+  when:
+    - micron_nvme_firmware_check is defined
+    - micron_nvme_firmware_check.stdout is search("UNHEALTHY:")
+
 - import_tasks: micron_nvme_firmware.yml
   when:
     - micron_nvme_firmware_check is defined
