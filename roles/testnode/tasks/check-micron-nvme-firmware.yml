@@ -25,6 +25,23 @@
         *) continue ;;
       esac
 
+      # A drive that has failed into its safe mode (SMART critical_warning
+      # set -- 0xc = reliability degraded + media read-only, all counters
+      # zeroed, no usable namespace) rejects fw-download with an Internal
+      # Error no matter what.  Flashing won't fix it and flagging it as
+      # UPDATE_NEEDED would fail the play on every job that lands on the
+      # node (trial012/094/163, 2026-08-19).  Report it and leave it alone.
+      critical_warning="$(nvme smart-log "$dev" 2>/dev/null | \
+        sed -n 's/^critical_warning[[:space:]]*:[[:space:]]*//p' | head -n1 | xargs)"
+      case "$critical_warning" in
+        ""|0|0x0|0x00)
+          ;;
+        *)
+          echo "UNHEALTHY: $dev model=$model fw=$current_fw critical_warning=$critical_warning, skipping firmware update (RMA candidate)"
+          continue
+          ;;
+      esac
+
       latest_fw="$(curl -k -fsSL "$BASE_URL/$family/" 2>/dev/null | \
         sed -n 's/.*href="\([^"?/][^"?]*\)\/".*/\1/p' | \
         grep -v '^\.\.$' | sort -V | tail -n1)"

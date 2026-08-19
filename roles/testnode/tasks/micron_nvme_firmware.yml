@@ -77,6 +77,21 @@
           ;;
       esac
 
+      # Same health gate as the check task: a drive that has failed into
+      # safe mode (SMART critical_warning set) rejects fw-download with an
+      # Internal Error (0x4006) and nothing we do here will change that.
+      # Skip it without failing the play; it's an RMA, not a flash.
+      critical_warning="$(nvme smart-log "$dev" 2>/dev/null | \
+        sed -n 's/^critical_warning[[:space:]]*:[[:space:]]*//p' | head -n1 | xargs)"
+      case "$critical_warning" in
+        ""|0|0x0|0x00)
+          ;;
+        *)
+          echo "UNHEALTHY: $dev critical_warning=$critical_warning, skipping firmware update (RMA candidate)"
+          continue
+          ;;
+      esac
+
       target_fw="$(curl -k -fsSL "$BASE_URL/$family/" 2>/dev/null | \
         sed -n 's/.*href="\([^"?/][^"?]*\)\/".*/\1/p' | \
         grep -v '^\.\.$' | sort -V | tail -n1)"
