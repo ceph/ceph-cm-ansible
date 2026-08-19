@@ -32,6 +32,10 @@
           ]
       }}
   loop: "{{ extra_admin_users }}"
+  # Items may be full user dicts (with emails/WireGuard peer info) or bare
+  # names; only log the name either way
+  loop_control:
+    label: "{{ item.name | default(item) }}"
   when:
     - extra_admin_users is defined
     - extra_admin_users | length > 0

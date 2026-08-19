@@ -51,6 +51,9 @@
   debug:
     msg: "WARNING: No pubkey found for '{{ item.name }}' in {{ keys_repo }}; skipping their authorized_keys."
   with_items: "{{ pubkey_users }}"
+  # The user dicts carry emails and WireGuard peer info; only log the username
+  loop_control:
+    label: "{{ item.name }}"
   delegate_to: localhost
   become: false
   run_once: true
@@ -68,6 +71,9 @@
     user: "{{ item.name }}"
     key: "{{ item.key if item.key is defined else lookup('file', keys_repo_path + '/ssh/' + item.name + '.pub') }}"
   with_items: "{{ pubkey_users }}"
+  # The user dicts carry emails and WireGuard peer info; only log the username
+  loop_control:
+    label: "{{ item.name }}"
   when: >-
     item.key is defined
     or (keys_repo is defined and item.name in keys_repo_pubkeys)
