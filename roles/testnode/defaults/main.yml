@@ -4,6 +4,12 @@ mirror_host: apt-mirror.sepia.ceph.com
 # before the public mirrors; dnf falls back to the next URL if it's
 # unreachable or missing a repo.
 distro_mirror_host: distro-mirror.front.sepia.ceph.com
+# Ubuntu releases carried by the local distro mirror.  Releases not in
+# this list keep their stock apt sources (public archive only).
+distro_mirror_ubuntu_releases:
+  - jammy
+  - noble
+  - resolute
 git_mirror_host: git.ceph.com
 key_host: download.ceph.com
 gitbuilder_host: gitbuilder.ceph.com

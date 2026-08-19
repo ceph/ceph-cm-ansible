@@ -1,4 +1,57 @@
 ---
+# Mirror-first base Ubuntu sources.  APT's mirror method (mirror+file:)
+# tries the local distro mirror first and falls back to the public
+# archive automatically — the apt equivalent of the dnf mirror-first
+# baseurls used on the RPM distros.
+- name: Point base Ubuntu sources at the local distro mirror
+  when:
+    - ansible_distribution == "Ubuntu"
+    - ansible_distribution_release in distro_mirror_ubuntu_releases
+  tags:
+    - repos
+  block:
+    - name: Write apt mirrorlist
+      template:
+        dest: /etc/apt/mirrorlist
+        src: apt/mirrorlist.j2
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Write mirror-first base apt sources
+      template:
+        dest: /etc/apt/sources.list.d/sepia-mirror.sources
+        src: apt/sepia-mirror.sources.j2
+        owner: root
+        group: root
+        mode: 0644
+
+    # The local mirror serves canonical index paths (debmirror does not
+    # populate by-hash/), so make APT fetch indexes by canonical name.
+    - name: Disable APT by-hash index fetching
+      copy:
+        content: |
+          Acquire::By-Hash "no";
+        dest: /etc/apt/apt.conf.d/90sepia-mirror
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Neuter stock sources.list (replaced by sepia-mirror.sources)
+      copy:
+        content: |
+          # Base sources are managed in
+          # /etc/apt/sources.list.d/sepia-mirror.sources (ceph-cm-ansible)
+        dest: /etc/apt/sources.list
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Remove stock ubuntu.sources (replaced by sepia-mirror.sources)
+      file:
+        path: /etc/apt/sources.list.d/ubuntu.sources
+        state: absent
+
 - name: Set apt preferences
   template:
     dest: "/etc/apt/preferences.d/ceph.pref"
