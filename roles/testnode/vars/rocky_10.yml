@@ -1,20 +1,22 @@
 ---
 # vars specific to any rocky 10.x version
 
-# The BaseOS/AppStream/CRB baseurls below use ansible_distribution_version (the
-# full 10.x) rather than the major version on purpose.  Upstream's /rocky/10 is
-# a symlink to the newest point release, so pointing at it lets a routine
-# `dnf update` walk a node from 10.1 to 10.2 -- which is how the rocky_10.1 FOG
-# image ended up containing an el10_2 kernel.  Pinning the baseurl to the minor
-# keeps a node on the point release it was deployed with.
+# The BaseOS/AppStream/CRB baseurls below point at the *major* (/rocky/10/),
+# which upstream and the internal mirror keep as a symlink to the newest point
+# release.  That is deliberate: Rocky only maintains its newest minor, shaman's
+# rocky/10 ceph builds are compiled on that newest minor and inherit its
+# library versions (2026-08: ceph-osd-crimson needs c-ares >= 1.28, which only
+# 10.2 ships), so a testnode held back on an older minor can't install ceph at
+# all -- `nothing provides c-ares(x86-64) >= 1.28.0`.  Rocky 10 is therefore
+# treated like CentOS Stream here: the image is named by major (rocky_10),
+# jobs ask for os_version "10", the sepia-fog-images capture job upgrades the
+# image to whatever the newest minor is, and a job's own installs/upgrades
+# from these repos are per-job and gone at the next reimage.  Don't pin these
+# to ansible_distribution_version (f2c9440 did, and broke every Rocky job).
 #
-# Pinning here rather than in /etc/dnf/vars/releasever is deliberate: releasever
-# applies to every repo on the box and EPEL's URLs are major-only (epel-10), so
-# a global pin would break EPEL.
-#
-# The internal mirror carries a tree per minor (see distro-mirror in
-# sepia-openshift); the public fallbacks below carry point releases too, though
-# they may drop older ones once upstream moves them to vault.
+# The internal mirror carries a tree per minor plus the /rocky/10 symlink (see
+# distro-mirror in sepia-openshift).  The public fallbacks only carry the
+# current minor under /rocky/10/; older minors move to vault.
 
 common_yum_repos:
   lab-extras:
@@ -27,30 +29,30 @@ yum_repos:
   baseos:
     name: "Rocky Linux $releasever - BaseOS"
     baseurls:
-      - "https://{{ distro_mirror_host }}/rocky/{{ ansible_distribution_version }}/BaseOS/{{ ansible_architecture }}/os/"
-      - "https://nyc.mirrors.clouvider.net/rocky/{{ ansible_distribution_version }}/BaseOS/{{ ansible_architecture }}/os/"
-      - "https://plug-mirror.rcac.purdue.edu/rocky/{{ ansible_distribution_version }}/BaseOS/{{ ansible_architecture }}/os/"
-      - "https://rocky-linux-us-east4.production.gcp.mirrors.ctrliq.cloud/pub/rocky/{{ ansible_distribution_version }}/BaseOS/{{ ansible_architecture }}/os/"
+      - "https://{{ distro_mirror_host }}/rocky/{{ ansible_distribution_major_version }}/BaseOS/{{ ansible_architecture }}/os/"
+      - "https://nyc.mirrors.clouvider.net/rocky/{{ ansible_distribution_major_version }}/BaseOS/{{ ansible_architecture }}/os/"
+      - "https://plug-mirror.rcac.purdue.edu/rocky/{{ ansible_distribution_major_version }}/BaseOS/{{ ansible_architecture }}/os/"
+      - "https://rocky-linux-us-east4.production.gcp.mirrors.ctrliq.cloud/pub/rocky/{{ ansible_distribution_major_version }}/BaseOS/{{ ansible_architecture }}/os/"
     enabled: 1
     gpgcheck: 0
 
   appstream:
     name: "Rocky Linux $releasever - AppStream"
     baseurls:
-      - "https://{{ distro_mirror_host }}/rocky/{{ ansible_distribution_version }}/AppStream/{{ ansible_architecture }}/os/"
-      - "https://nyc.mirrors.clouvider.net/rocky/{{ ansible_distribution_version }}/AppStream/{{ ansible_architecture }}/os/"
-      - "https://plug-mirror.rcac.purdue.edu/rocky/{{ ansible_distribution_version }}/AppStream/{{ ansible_architecture }}/os/"
-      - "https://rocky-linux-us-east4.production.gcp.mirrors.ctrliq.cloud/pub/rocky/{{ ansible_distribution_version }}/AppStream/{{ ansible_architecture }}/os/"
+      - "https://{{ distro_mirror_host }}/rocky/{{ ansible_distribution_major_version }}/AppStream/{{ ansible_architecture }}/os/"
+      - "https://nyc.mirrors.clouvider.net/rocky/{{ ansible_distribution_major_version }}/AppStream/{{ ansible_architecture }}/os/"
+      - "https://plug-mirror.rcac.purdue.edu/rocky/{{ ansible_distribution_major_version }}/AppStream/{{ ansible_architecture }}/os/"
+      - "https://rocky-linux-us-east4.production.gcp.mirrors.ctrliq.cloud/pub/rocky/{{ ansible_distribution_major_version }}/AppStream/{{ ansible_architecture }}/os/"
     enabled: 1
     gpgcheck: 0
 
   crb:
     name: "Rocky Linux $releasever - CRB"
     baseurls:
-      - "https://{{ distro_mirror_host }}/rocky/{{ ansible_distribution_version }}/CRB/{{ ansible_architecture }}/os/"
-      - "https://nyc.mirrors.clouvider.net/rocky/{{ ansible_distribution_version }}/CRB/{{ ansible_architecture }}/os/"
-      - "https://plug-mirror.rcac.purdue.edu/rocky/{{ ansible_distribution_version }}/CRB/{{ ansible_architecture }}/os/"
-      - "https://rocky-linux-us-east4.production.gcp.mirrors.ctrliq.cloud/pub/rocky/{{ ansible_distribution_version }}/CRB/{{ ansible_architecture }}/os/"
+      - "https://{{ distro_mirror_host }}/rocky/{{ ansible_distribution_major_version }}/CRB/{{ ansible_architecture }}/os/"
+      - "https://nyc.mirrors.clouvider.net/rocky/{{ ansible_distribution_major_version }}/CRB/{{ ansible_architecture }}/os/"
+      - "https://plug-mirror.rcac.purdue.edu/rocky/{{ ansible_distribution_major_version }}/CRB/{{ ansible_architecture }}/os/"
+      - "https://rocky-linux-us-east4.production.gcp.mirrors.ctrliq.cloud/pub/rocky/{{ ansible_distribution_major_version }}/CRB/{{ ansible_architecture }}/os/"
     enabled: 1
     gpgcheck: 0
 
