@@ -1,0 +1,48 @@
+---
+# grafana-agent static mode went EOL in November 2025. Alloy now does the
+# node_exporter scrape and Mimir remote_write it used to do, so take it off the
+# host: service, package, config, WAL, and the user the package created. Every
+# task here is a no-op on a host that never had it.
+
+- name: grafana-agent - Gather service facts
+  ansible.builtin.service_facts:
+
+- name: grafana-agent - Stop and disable the service
+  ansible.builtin.systemd:
+    name: grafana-agent
+    state: stopped
+    enabled: false
+  when: "'grafana-agent.service' in ansible_facts.services"
+
+- name: grafana-agent - Remove the package (apt)
+  ansible.builtin.apt:
+    name: grafana-agent
+    state: absent
+    purge: true
+  when: ansible_pkg_mgr == "apt"
+
+- name: grafana-agent - Remove the package
+  ansible.builtin.package:
+    name: grafana-agent
+    state: absent
+  when: ansible_pkg_mgr != "apt"
+
+- name: grafana-agent - Remove config, WAL and env file
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/grafana-agent.yaml
+    - /var/lib/grafana-agent
+    - /etc/default/grafana-agent
+    - /etc/sysconfig/grafana-agent
+
+- name: grafana-agent - Remove the service user and group
+  ansible.builtin.user:
+    name: grafana-agent
+    state: absent
+
+- name: grafana-agent - Remove the group
+  ansible.builtin.group:
+    name: grafana-agent
+    state: absent

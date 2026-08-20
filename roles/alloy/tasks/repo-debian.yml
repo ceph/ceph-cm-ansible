@@ -1,0 +1,31 @@
+---
+# Mirrors the repo setup in roles/grafana_agent. On hosts that already run
+# grafana-agent these are no-ops; the role has to stand on its own for hosts
+# that don't.
+
+- name: "Ensure /etc/apt/keyrings exists"
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: "Import Grafana GPG key"
+  ansible.builtin.get_url:
+    url: "{{ grafana_apt_repo_key_url }}"
+    dest: /etc/apt/keyrings/grafana.gpg
+    mode: '0644'
+  register: grafana_key
+
+- name: "Ensure the Grafana key is a binary keyring"
+  ansible.builtin.shell: |
+    gpg --dearmor < /etc/apt/keyrings/grafana.gpg > /etc/apt/keyrings/grafana.gpg.tmp
+    mv /etc/apt/keyrings/grafana.gpg.tmp /etc/apt/keyrings/grafana.gpg
+  # The key ships ASCII-armored; apt wants binary. gpg --dearmor is a no-op on an
+  # already-binary keyring, but only re-run it when the key actually changed so
+  # the role stays idempotent.
+  when: grafana_key is changed
+
+- name: "Add Grafana's repository to APT sources"
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/grafana.gpg] {{ grafana_apt_repo_url }} stable main"
+    state: present

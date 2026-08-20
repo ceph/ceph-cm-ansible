@@ -1,0 +1,14 @@
+---
+- name: "Restart alloy"
+  become: true
+  ansible.builtin.service:
+    name: alloy
+    state: restarted
+
+# auditd refuses `systemctl restart` on RHEL ("Operation refused, unit
+# auditd.service may be requested by dependency only") -- the sysv wrapper is
+# the supported way to restart it.
+- name: "Restart auditd"
+  become: true
+  ansible.builtin.command: service auditd restart
+  changed_when: true

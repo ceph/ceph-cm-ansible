@@ -363,9 +363,10 @@ Configure ``cachefilesd``.  See https://tracker.ceph.com/issues/6373.  Defaults 
     cachefilesd_fstop
     cachefilesd_secctx
 
-Include the grafana_agent role to report testnode resource statistics to Grafana.  Defaults to ``false``::
+Include the alloy role to ship testnode node_exporter metrics to Mimir (logs
+stay off; testnodes are out of scope for the LokiStack).  Defaults to ``false``::
 
-    run_grafana_agent_role: true
+    run_alloy_role: true
 
 Enable firewalld.  Defaults to ``false``::
 

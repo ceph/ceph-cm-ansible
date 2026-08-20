@@ -1,6 +1,0 @@
----
-- hosts: all
-  strategy: free
-  roles:
-    - grafana_agent
-  become: true

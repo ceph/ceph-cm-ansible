@@ -1,0 +1,30 @@
+---
+# /var/log/audit/audit.log is 0600 root:root inside a 0700 directory, so group
+# membership alone can't reach it. auditd's own `log_group` setting is the
+# supported fix: it relaxes the log file to 0640 root:<group> and the directory
+# to 0750, and it survives log rotation (a manual chmod does not).
+
+- name: "auditd - Set log_group so alloy can read audit.log"
+  ansible.builtin.lineinfile:
+    path: /etc/audit/auditd.conf
+    regexp: '^\s*log_group\s*='
+    line: "log_group = alloy"
+    state: present
+  notify: "Restart auditd"
+
+# Belt and braces: auditd applies the new ownership when it next opens or rotates
+# the log, which may not be until the handler fires at the end of the play. These
+# two tasks make the current file readable immediately, and match exactly what
+# auditd will set itself, so they settle to no-ops on subsequent runs.
+- name: "auditd - Ensure the log directory is traversable by the alloy group"
+  ansible.builtin.file:
+    path: /var/log/audit
+    state: directory
+    group: alloy
+    mode: '0750'
+
+- name: "auditd - Ensure the current log file is group-readable"
+  ansible.builtin.file:
+    path: /var/log/audit/audit.log
+    group: alloy
+    mode: '0640'

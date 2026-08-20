@@ -1,0 +1,137 @@
+---
+# Grafana repositories. Same URLs the old grafana_agent role used, so on hosts
+# that already have them configured these tasks no-op.
+grafana_apt_repo_url: "https://apt.grafana.com"
+grafana_apt_repo_key_url: "https://apt.grafana.com/gpg.key"
+grafana_rpm_repo_url: "https://rpm.grafana.com"
+grafana_rpm_repo_key_url: "https://rpm.grafana.com/gpg.key"
+
+# What this Alloy instance does. Both default on; the testnode role runs it with
+# logs off (testnodes are out of scope for the LokiStack).
+alloy_metrics_enabled: true   # node_exporter -> Mimir
+alloy_logs_enabled: true      # journald/auditd -> LokiStack
+
+# Alloy's own HTTP server. Deliberately NOT the package default of 12345: that
+# is also grafana-agent's default, and this role removes grafana-agent from the
+# same hosts it installs Alloy on. Debian starts a service the moment its
+# package is installed, so on a host that is still running grafana-agent an
+# Alloy on 12345 would fail to bind and crash-loop until the removal and the
+# config handler catch up. 12346 sidesteps that window entirely.
+alloy_listen_addr: "127.0.0.1:12346"
+
+alloy_config_dir: "/etc/alloy"
+alloy_data_dir: "/var/lib/alloy/data"
+
+# The pok cluster's ingress CA. Both the LokiStack gateway and the Mimir route
+# are served by the cluster's default ingress certificate
+# (CN=*.apps.pok.os.sepia.ceph.com), which the host CA bundle will not verify.
+# A CA certificate is public, so it ships with the role (roles/alloy/files/).
+alloy_ca_src: "lokistack-ingress-ca.crt"
+alloy_ca_file: "{{ alloy_config_dir }}/lokistack-ca.crt"
+
+alloy_log_level: "warn"
+
+# Package env file sourced by the alloy systemd unit. Debian ships
+# /etc/default/alloy, RedHat /etc/sysconfig/alloy.
+alloy_env_file: "{{ '/etc/default/alloy' if ansible_pkg_mgr == 'apt' else '/etc/sysconfig/alloy' }}"
+
+# Packages needed to build and load the useradd SELinux module on RedHat.
+useradd_selinux_packages:
+  - policycoreutils
+  - checkpolicy
+
+# ---------------------------------------------------------------- metrics ---
+# node_exporter on every host, scraped locally and remote_written to Mimir.
+# This is what was roles/grafana_agent; the label set is kept identical so the
+# "Node Exporter Full" dashboard (grafana.com 1860, deployed as
+# jenkins-grafana/dashboards/node-exporter-lab.yaml in ceph/sepia-openshift)
+# and the provisioned node-exporter alerts keep working across the cutover
+# with no gap in series.
+
+# Install and manage the distro node_exporter package. The role also skips the
+# install automatically when something else already listens on :9100 and the
+# distro package isn't installed -- cephadm's node-exporter container on the
+# LRC hosts is the case that matters -- and just scrapes whatever is there.
+alloy_manage_node_exporter: true
+alloy_node_exporter_package: "{{ 'prometheus-node-exporter' if ansible_pkg_mgr == 'apt' else 'node_exporter' }}"
+alloy_node_exporter_service: "{{ alloy_node_exporter_package }}"
+# Names the distro package can show up under in package facts. EPEL 9 ships it
+# as "node-exporter" (with Provides: node_exporter and a node_exporter.service
+# alias), EPEL 8 and Debian/Ubuntu under the names above.
+alloy_node_exporter_known_packages:
+  - prometheus-node-exporter
+  - node_exporter
+  - node-exporter
+alloy_node_exporter_port: 9100
+alloy_node_exporter_address: "localhost:{{ alloy_node_exporter_port }}"
+
+# The job/instance/nodename labels grafana-agent produced, verbatim.
+#
+# These stay on ansible_fqdn, even though the log pipeline below uses
+# inventory_hostname, because the metrics have history: ~60 hosts have been
+# pushing under these exact instance values, and the provisioned alerts in
+# sepia-openshift match on them (instance=~"chacra[123]:9100",
+# instance="soko04.front.sepia.ceph.com:9100"). Changing them would orphan the
+# existing series and silently unhook those alerts. The canonical name is
+# carried on the `host` external label instead, which is the same label the
+# log pipeline uses, so metrics and logs for a host can be joined on it.
+alloy_node_job: "node"
+alloy_node_instance: "{{ ansible_fqdn }}:{{ alloy_node_exporter_port }}"
+alloy_node_nodename: "{{ ansible_fqdn }}"
+alloy_node_scrape_interval: "60s"
+
+# Mimir remote_write target. The default is the in-cluster route; the
+# public_facing group (docs, tracker, lists, ...) overrides agent_mimir_url in
+# its group_vars in the secrets repo with the internet-facing
+# https://mimir.ceph.com/api/v1/push. The variable name is unchanged from the
+# grafana_agent role so that override keeps working as-is.
+#
+# (The grafana_agent role lost this default in 7cb459c, which left every
+# non-public_facing host with an undefined URL. Hosts deployed before that
+# still run with this exact value.)
+agent_mimir_url: "https://mimir-jenkins-monitoring.apps.pok.os.sepia.ceph.com/api/v1/push"
+alloy_mimir_url: "{{ agent_mimir_url }}"
+
+# Basic auth is configured only when BOTH mimir_username and mimir_password are
+# defined, as before -- the vault-encrypted mimir_password.yml in the secrets
+# repo is where they'd come from. The in-cluster route does no auth today.
+alloy_mimir_vars_file: "mimir_password.yml"
+alloy_mimir_password_file: "{{ alloy_config_dir }}/mimir.password"
+
+# TLS to Mimir. The in-cluster route is served by the pok ingress CA above, so
+# verify against it; mimir.ceph.com has a public (Let's Encrypt) certificate,
+# so the system bundle is used. grafana-agent used insecure_skip_verify for
+# this; there's no need to. The knob is kept as an escape hatch only.
+alloy_mimir_ca_file: "{{ alloy_ca_file if '.apps.pok.os.sepia.ceph.com' in alloy_mimir_url else '' }}"
+alloy_mimir_insecure_skip_verify: false
+
+# ------------------------------------------------------------------- logs ---
+# LokiStack gateway. The tenant is part of the URL path, not a header.
+alloy_lokistack_host: "logging-loki-openshift-logging.apps.pok.os.sepia.ceph.com"
+alloy_tenant: "infrastructure"
+alloy_lokistack_url: "https://{{ alloy_lokistack_host }}/api/logs/v1/{{ alloy_tenant }}/loki/api/v1/push"
+
+alloy_token_file: "{{ alloy_config_dir }}/loki.token"
+
+# Bearer token comes from the vault-encrypted secrets repo (secrets_path).
+alloy_token_vars_file: "loki_token.yml"
+
+# Only ship journal entries newer than this on a cold start, so standing up a new
+# host doesn't replay weeks of backlog into Loki in one burst.
+alloy_journal_max_age: "12h"
+
+# auditd. Guarded by a stat check at runtime, so this stays true even on hosts
+# where auditd isn't installed (common on the Ubuntu boxes).
+alloy_collect_auditd: true
+
+# Explicit allowlist of extra files to tail, for apps that write to disk instead
+# of the journal. Set per group in the secrets repo group_vars.
+#
+# Do NOT add /var/log/messages, secure, syslog or auth.log -- those are rsyslog
+# copies of the journal and adding them double-ingests every line. Do not add
+# rotated (*.1, *.gz) or binary (wtmp, btmp, lastlog) files either.
+#
+# Each entry is a glob:
+#   alloy_extra_log_paths:
+#     - /var/log/nginx/*.log
+alloy_extra_log_paths: []
