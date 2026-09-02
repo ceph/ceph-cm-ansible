@@ -3,10 +3,15 @@
 # sepia-mirror.sources).  APT tries entries in priority order and falls
 # back automatically if the local mirror is unreachable or missing a
 # file — the APT equivalent of dnf trying baseurls in order.
+#
+# The URI and its tags MUST be separated by a TAB: apt splits each line
+# on '\t' only (apt-transport-mirror(1)).  With a space, " priority:1"
+# becomes part of the URI, every request to the mirror 404s and APT
+# silently falls through to the public archive (tracker #80192).
 {% if ansible_architecture == "aarch64" %}
-https://{{ distro_mirror_host }}/ubuntu-ports/ priority:1
+https://{{ distro_mirror_host }}/ubuntu-ports/	priority:1
 http://ports.ubuntu.com/ubuntu-ports/
 {% else %}
-https://{{ distro_mirror_host }}/ubuntu/ priority:1
+https://{{ distro_mirror_host }}/ubuntu/	priority:1
 http://archive.ubuntu.com/ubuntu/
 {% endif %}
