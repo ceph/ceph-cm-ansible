@@ -65,19 +65,17 @@ alloy_node_exporter_known_packages:
 alloy_node_exporter_port: 9100
 alloy_node_exporter_address: "localhost:{{ alloy_node_exporter_port }}"
 
-# The job/instance/nodename labels grafana-agent produced, verbatim.
-#
-# These stay on ansible_fqdn, even though the log pipeline below uses
-# inventory_hostname, because the metrics have history: ~60 hosts have been
-# pushing under these exact instance values, and the provisioned alerts in
-# sepia-openshift match on them (instance=~"chacra[123]:9100",
-# instance="soko04.front.sepia.ceph.com:9100"). Changing them would orphan the
-# existing series and silently unhook those alerts. The canonical name is
-# carried on the `host` external label instead, which is the same label the
-# log pipeline uses, so metrics and logs for a host can be joined on it.
+# instance/nodename come from inventory_hostname -- the same canonical name
+# the `host` external label and the log pipeline use -- NOT ansible_fqdn.
+# ansible_fqdn reflects whatever /etc/hostname and the resolver say, which
+# drifts: during the 2026-09 rollout the adami hosts silently flipped from
+# .front.sepia.ceph.com to .maas because MAAS DNS changed underneath them,
+# orphaning their series. inventory_hostname is stable and identical in form
+# for every host. The provisioned node-exporter alerts in ceph/sepia-openshift
+# match these labels; change them in lockstep or alerts silently unhook.
 alloy_node_job: "node"
-alloy_node_instance: "{{ ansible_fqdn }}:{{ alloy_node_exporter_port }}"
-alloy_node_nodename: "{{ ansible_fqdn }}"
+alloy_node_instance: "{{ inventory_hostname }}:{{ alloy_node_exporter_port }}"
+alloy_node_nodename: "{{ inventory_hostname }}"
 alloy_node_scrape_interval: "60s"
 
 # Mimir remote_write target. The default is the in-cluster route; the
