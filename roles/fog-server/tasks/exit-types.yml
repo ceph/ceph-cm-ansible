@@ -1,0 +1,38 @@
+---
+# Stamp the FOG per-host boot "exit type" onto testnodes by machine type.
+#
+# FOG has no concept of a machine type, but our testnodes are named
+# <type><NNN> (smithi042, trial079, gibba014), and different hardware needs
+# a different iPXE exit method to hand off to the freshly-imaged local disk:
+# the BIOS sleds (smithi, gibba) boot reliably with `sanboot` while the UEFI
+# trial sleds use `exit`.  When the method is wrong the node images fine but
+# never boots the result.
+#
+# fog_machine_type_exit_types maps a machine-type prefix to the exit
+# method(s) for its hosts:
+#
+#   fog_machine_type_exit_types:
+#     smithi:     { bios: sanboot }          # efi left at the FOG global
+#     trial:      { bios: exit, efi: exit }
+#     gibba:      { bios: sanboot }
+#
+# Only the keys given for a type are enforced; an omitted key is left alone
+# (so the FOG global default keeps applying).  hostExitBios/hostExitEfi are
+# read live by FOG's boot menu at PXE time, so no cache rebuild or restart is
+# needed.  Safe on a running FOG server: it only UPDATEs those two columns
+# and is a no-op once they already match.
+
+- name: Apply FOG exit types per machine type
+  script: apply-fog-exit-types.sh
+  environment:
+    FOG_MTYPE: "{{ item.key }}"
+    FOG_EXIT_BIOS: "{{ item.value.bios | default('') }}"
+    FOG_EXIT_EFI: "{{ item.value.efi | default('') }}"
+  register: fog_exit_apply
+  changed_when: fog_exit_apply.stdout is search('CHANGED')
+  loop: "{{ fog_machine_type_exit_types | dict2items }}"
+  loop_control:
+    label: "{{ item.key }} -> {{ item.value }}"
+  when: fog_machine_type_exit_types | length > 0
+  tags:
+    - exit-types

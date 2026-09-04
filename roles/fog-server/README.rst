@@ -44,5 +44,36 @@ If none of these are set, the FOG defaults will be used.  For simplicity's sake,
 * fog_webroot
 * fog_httpproto
 
+Per-machine-type boot exit types
+++++++++++++++++++++++++++++++++
+
+FOG's per-host boot "exit type" is the iPXE method used to hand off to the
+freshly-imaged local disk, and different testnode hardware needs a different
+one (the older BIOS sleds boot reliably with ``exit`` while smithi uses
+``sanboot``).  ``fog_machine_type_exit_types`` maps a machine-type prefix
+(hosts named ``<type><NNN>``) to the exit method(s) for its hosts and stamps
+them onto every matching FOG host::
+
+    fog_machine_type_exit_types:
+      smithi:     { bios: sanboot }          # efi left at the FOG global
+      trial:      { bios: exit, efi: exit }
+      trial-perf: { bios: exit, efi: exit }
+      gibba:      { bios: exit, efi: exit }
+
+Only the keys given for a type are enforced; omit ``bios`` or ``efi`` to
+leave that one at the FOG global default.  It defaults to ``{}`` (nothing
+managed) and is safe to run against a live FOG server -- it only updates
+``hostExitBios``/``hostExitEfi``, which FOG reads live at PXE time, and is a
+no-op once they already match.  Define the map in group_vars for the FOG
+server (see ceph-sepia-secrets).
+
+The task is tagged so it can be run on its own::
+
+    ansible-playbook fog-server.yml --tags exit-types
+
+``tools/generate-fog-csv.yml`` reads the same map, so hosts imported into
+FOG via CSV get their exit types from day one; this task converges hosts
+that already exist.
+
 .. _FOG: https://fogproject.org/
 .. _fogsettings: https://wiki.fogproject.org/wiki/index.php?title=.fogsettings
