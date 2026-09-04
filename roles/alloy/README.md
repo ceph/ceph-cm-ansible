@@ -31,18 +31,22 @@ The dashboard and alerts select hosts by three labels, and the role emits them
 | Label | Value | Why it's this |
 | --- | --- | --- |
 | `job` | `node` | What dashboard 1860's `$job` variable and every alert filter on. |
-| `instance` | `<ansible_fqdn>:9100` | Dashboard's `$node` variable. Alerts match literal values (`instance=~"chacra[123]:9100"`, `instance="soko04.front.sepia.ceph.com:9100"`). |
-| `nodename` | `<ansible_fqdn>` | Dashboard's `$nodename` variable (`node_uname_info{job="$job"}` by `nodename`). |
-| `host` | `inventory_hostname` | **New.** The same canonical name the log pipeline uses, so metrics and logs join on one label. |
+| `instance` | `<inventory_hostname>:9100` | Dashboard's `$node` variable. Alerts match literal values (`instance=~"[123].chacra.ceph.com:9100"`, `instance="soko04.front.sepia.ceph.com:9100"`). |
+| `nodename` | `<inventory_hostname>` | Dashboard's `$nodename` variable (`node_uname_info{job="$job"}` by `nodename`). |
+| `host` | `inventory_hostname` | The same name on both pipelines, so metrics and logs join on one label. |
 
-`instance` and `nodename` deliberately stay on `ansible_fqdn`, even though the
-logs use `inventory_hostname` and `ansible_fqdn` is inconsistent across the fleet
-(bare `soko05` on some hosts, full FQDN on others). ~60 hosts have months of
-history under those exact values, and changing them would orphan every existing
-series and silently unhook the alerts in `sepia-openshift` that match on them.
-The canonical name rides along as `host` instead. If you ever do want to move
-`instance` to the inventory name, it's one variable (`alloy_node_instance`) --
-but update the alert expressions in `sepia-openshift` in the same change.
+Everything is `inventory_hostname` -- the canonical name from the sepia
+inventory -- never `ansible_fqdn`. grafana-agent used `ansible_fqdn`, which
+reflects whatever `/etc/hostname` and the resolver say and therefore drifts:
+during the 2026-09 rollout the adami hosts silently flipped from
+`.front.sepia.ceph.com` to `.maas` because MAAS DNS changed underneath them,
+orphaning their series and proving the "continuity" it offered was an illusion.
+The provisioned node-exporter alerts in `ceph/sepia-openshift` match these
+instance values; if you change `alloy_node_instance`, update the alert
+expressions there in the same change or they silently unhook. (During the
+fqdn->inventory_hostname cutover the alerts matched both spellings, so no
+alert went NoData; the old-spelling halves can be dropped once the stale
+series age out.)
 
 ### When the role does not install node_exporter
 
@@ -182,8 +186,8 @@ alloy_extra_log_paths:
 | `alloy_manage_node_exporter` | `true` | Install/start the distro node_exporter (auto-skipped when something else already owns `:9100`) |
 | `alloy_node_exporter_address` | `localhost:9100` | What Alloy scrapes |
 | `alloy_node_job` | `node` | `job` label |
-| `alloy_node_instance` | `<ansible_fqdn>:9100` | `instance` label — see the label contract above before changing |
-| `alloy_node_nodename` | `<ansible_fqdn>` | `nodename` label |
+| `alloy_node_instance` | `<inventory_hostname>:9100` | `instance` label — see the label contract above before changing |
+| `alloy_node_nodename` | `<inventory_hostname>` | `nodename` label |
 | `alloy_node_scrape_interval` | `60s` | |
 | `alloy_mimir_url` | `{{ agent_mimir_url }}` | remote_write URL (from secrets) |
 | `alloy_mimir_ca_file` | ingress CA when the URL is under `.apps.pok.os.sepia.ceph.com`, else empty (system bundle) | |

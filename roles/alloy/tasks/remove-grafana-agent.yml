@@ -4,15 +4,29 @@
 # host: service, package, config, WAL, and the user the package created. Every
 # task here is a no-op on a host that never had it.
 
-- name: grafana-agent - Gather service facts
-  ansible.builtin.service_facts:
+# service_facts can't tell an installed-but-crashed grafana-agent from a
+# leftover in-memory "not-found, failed" stub whose unit file is already gone
+# (both report status=failed; several hosts had July-era stubs). `systemctl
+# cat` succeeds only when a real unit file exists, so probe with that.
+- name: grafana-agent - Check whether a unit file exists
+  ansible.builtin.command: systemctl cat grafana-agent.service
+  register: grafana_agent_unit
+  failed_when: false
+  changed_when: false
 
 - name: grafana-agent - Stop and disable the service
   ansible.builtin.systemd:
     name: grafana-agent
     state: stopped
     enabled: false
-  when: "'grafana-agent.service' in ansible_facts.services"
+  when: grafana_agent_unit.rc == 0
+
+- name: grafana-agent - Clear a leftover failed unit stub
+  ansible.builtin.command: systemctl reset-failed grafana-agent.service
+  register: grafana_agent_reset
+  failed_when: false
+  changed_when: grafana_agent_reset.rc == 0
+  when: grafana_agent_unit.rc != 0
 
 - name: grafana-agent - Remove the package (apt)
   ansible.builtin.apt:
