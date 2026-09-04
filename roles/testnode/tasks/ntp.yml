@@ -7,6 +7,20 @@
   tags:
     - packages
 
+# On Ubuntu >= 24.04 "ntp" is a transitional package for ntpsec, and the
+# preinstalled systemd-timesyncd Conflicts with the time-daemon it provides,
+# so apt refuses the install on a freshly-installed node.  Nodes imaged from
+# existing captures never hit this because ntp is already present.
+- name: Remove systemd-timesyncd so ntp/ntpsec can install on Ubuntu >= 24.04
+  apt:
+    name: systemd-timesyncd
+    state: absent
+  when: ansible_pkg_mgr == "apt" and
+        ansible_distribution == "Ubuntu" and
+        ansible_distribution_major_version | int >= 24
+  tags:
+    - packages
+
 - name: Install ntp package on apt based systems.
   apt:
     name: ntp
