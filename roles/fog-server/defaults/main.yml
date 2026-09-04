@@ -2,3 +2,11 @@
 fog_user: fog
 fog_branch: stable
 fog_dhcp_server: false
+
+# Per-machine-type FOG boot exit types; see tasks/exit-types.yml.  Empty by
+# default (no host exit types are managed); set it in group_vars for the FOG
+# server.  Example:
+#   fog_machine_type_exit_types:
+#     smithi: { bios: sanboot }
+#     trial:  { bios: exit, efi: exit }
+fog_machine_type_exit_types: {}

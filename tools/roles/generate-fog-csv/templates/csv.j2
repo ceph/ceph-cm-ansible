@@ -1,5 +1,13 @@
+{# Columns follow FOG's Host databaseFields order (mac first, id skipped):
+   ..., 27 = biosexit, 28 = efiexit, 29 = enforce.  The exit types come from
+   fog_machine_type_exit_types (group_vars for the FOG server, keyed by
+   machine-type prefix) so newly imported hosts boot with the right iPXE
+   handoff from day one; the fog-server role converges existing hosts. #}
+{% set _fogsrv = (groups['fog_server'] | default([])) | first | default('') %}
+{% set fog_exit_map = hostvars[_fogsrv]['fog_machine_type_exit_types'] | default({}) if _fogsrv else {} %}
 {% for host in groups['cobbler_managed'] %}
 {% if hostvars[host]['mac'] is defined %}
-"{{ hostvars[host]['mac'] }}","{{ hostvars[host]['inventory_hostname_short'] }}","","","1","0","","","fog","","","","","","","","","{{ hostvars[host]['kernel_options'] }}","","{{ hostvars[host]['fog_install_drive']|default('/dev/sda') }}","","","","","0000-00-00 00:00:00","110","","",""
+{% set fog_exits = fog_exit_map.get(hostvars[host]['inventory_hostname_short'] | regex_replace('[0-9]+$', ''), {}) %}
+"{{ hostvars[host]['mac'] }}","{{ hostvars[host]['inventory_hostname_short'] }}","","","1","0","","","fog","","","","","","","","","{{ hostvars[host]['kernel_options'] }}","","{{ hostvars[host]['fog_install_drive']|default('/dev/sda') }}","","","","","0000-00-00 00:00:00","110","{{ fog_exits.get('bios', '') }}","{{ fog_exits.get('efi', '') }}",""
 {% endif %}
 {% endfor %}
