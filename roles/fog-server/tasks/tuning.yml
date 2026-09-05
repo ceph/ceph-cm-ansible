@@ -1,0 +1,32 @@
+---
+# When the dispatcher reimages many testnodes at once, every node hammers
+# FOG's checkin/progress endpoints.  The distro php-fpm default of
+# pm.max_children = 50 saturates during those storms: FOS clients print
+# "Attempting to check in... Failed" / "No Active Task found", eventually
+# give up, and boot the old OS from disk, which teuthology reports as
+# "Expected <os> but found <other os>".  php-fpm workers are ~25MB each,
+# so the sizing below costs a few GB of RAM at full load.
+
+- name: Get PHP version
+  command: php -r 'echo PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION;'
+  changed_when: false
+  register: php_version
+
+- name: Tune php-fpm pool for reimage storms
+  lineinfile:
+    path: "/etc/php/{{ php_version.stdout }}/fpm/pool.d/www.conf"
+    regexp: '^;?{{ item.key }} = '
+    line: "{{ item.key }} = {{ item.value }}"
+  loop: "{{ fog_php_fpm_pm_settings | dict2items }}"
+  notify: reload php-fpm
+
+# More php-fpm workers need more database connection headroom than the
+# MariaDB default of 151.
+- name: Raise MariaDB connection limit for reimage storms
+  copy:
+    dest: /etc/mysql/mariadb.conf.d/99-fog-tuning.cnf
+    content: |
+      # Managed by the ceph-cm-ansible fog-server role
+      [mysqld]
+      max_connections = {{ fog_mysql_max_connections }}
+  notify: restart mariadb
