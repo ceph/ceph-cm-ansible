@@ -95,3 +95,11 @@
   command: netplan apply
   changed_when: true
   failed_when: false
+
+# netplan apply restarts networkd and renegotiates DHCP; give the node
+# time to come back instead of failing the next task on a blip (resolute
+# drops the address noticeably longer than noble here).
+- name: Wait for the connection to settle after netplan apply
+  wait_for_connection:
+    delay: 5
+    timeout: 300
