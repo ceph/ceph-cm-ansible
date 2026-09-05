@@ -12,6 +12,3 @@ packages:
   ## VPN-specific stuff
   - openvpn
   - easy-rsa
-  ## monitoring
-  - nrpe
-  - nagios-plugins-all

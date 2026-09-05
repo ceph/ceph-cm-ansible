@@ -42,35 +42,6 @@
   tags:
     - kerberos
 
-# upload custom disk monitoring scripts
-- import_tasks: disk_monitoring.yml
-  tags:
-    - monitoring-scripts
-    - nagios
-
-# configure nagios (Except Rocky)
-- import_tasks: nagios.yml
-  when: ansible_distribution != "Rocky"
-  tags:
-    - nagios
-
-- name: Get SELinux status
-  command: getenforce
-  register: selinux_status
-  when: ansible_os_family == "RedHat"
-  tags:
-    - nagios
-
-# configure selinux for nagios
-# We don't use nagios anymore and none of the nrpe packages are available anyway so skip it on Rocky
-- import_tasks: nrpe-selinux.yml
-  when:
-    - ansible_os_family == "RedHat"
-    - ansible_distribution != "Rocky"
-    - (selinux_status is defined and selinux_status.stdout != "Disabled")
-  tags:
-    - nagios
-
 - name: include secondary NIC config tasks
   import_tasks: secondary_nic.yml
   when: secondary_nic_mac is defined

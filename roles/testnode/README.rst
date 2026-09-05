@@ -430,7 +430,7 @@ ssh
     Manage things ssh related.  Will upload the distro specific sshd_config, ssh_config and addition of pubkeys for the ``teuthology_user``. 
 
 sudoers
-    Manage the /etc/sudoers and the nagios suders.d files.
+    Manage the /etc/sudoers file.
 
 user
     Manages the ``teuthology_user`` and ``xfstests_user``.
