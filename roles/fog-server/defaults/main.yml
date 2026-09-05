@@ -10,3 +10,11 @@ fog_dhcp_server: false
 #     smithi: { bios: sanboot }
 #     trial:  { bios: exit, efi: exit }
 fog_machine_type_exit_types: {}
+
+# php-fpm pool sizing for parallel reimage storms; see tasks/tuning.yml
+fog_php_fpm_pm_settings:
+  pm.max_children: 250
+  pm.start_servers: 20
+  pm.min_spare_servers: 15
+  pm.max_spare_servers: 40
+fog_mysql_max_connections: 350
