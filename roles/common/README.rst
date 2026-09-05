@@ -65,10 +65,6 @@ Tags
 timezone
     Sets the timezone
 
-monitoring-scripts
-    Installs smartmontools (if necessary) and uploads custom monitoring scripts.
-    See ``roles/common/tasks/disk_monitoring.yml``.
-
 entitlements
     Registers a Red Hat host then subscribes and enables repos.  See
     ``roles/common/tasks/rhel-entitlements.yml``.

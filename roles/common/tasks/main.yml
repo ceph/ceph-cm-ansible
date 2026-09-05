@@ -42,11 +42,6 @@
   tags:
     - kerberos
 
-# upload custom disk monitoring scripts
-- import_tasks: disk_monitoring.yml
-  tags:
-    - monitoring-scripts
-
 - name: include secondary NIC config tasks
   import_tasks: secondary_nic.yml
   when: secondary_nic_mac is defined
