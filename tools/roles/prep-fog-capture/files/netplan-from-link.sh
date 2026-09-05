@@ -12,6 +12,9 @@ exec > >(tee -a "$LOG") 2>&1
 
 log() {
   echo "$(date -u +%FT%T.%N | cut -c1-23) netplan-from-link: $*" >&2
+  # Best-effort copy to the serial console so a node that loses its
+  # network can still be diagnosed over SOL
+  echo "netplan-from-link: $*" > /dev/console 2>/dev/null || true
 }
 
 log "starting"

@@ -1,6 +1,8 @@
 ---
+# Ubuntu >= 25.10 no longer ships /etc/timezone; the /etc/localtime
+# symlink (read via timedatectl) is the source of truth there.
 - name: Get the current timezone
-  shell: cat /etc/timezone
+  shell: cat /etc/timezone 2>/dev/null || timedatectl show -p Timezone --value
   register: current_tz
   changed_when: false
   tags:

@@ -35,6 +35,26 @@
   import_tasks: apt.yml
   when: ansible_os_family == "Debian"
 
+# FOG's "exit" boot type hands control back to the firmware, which walks
+# BootOrder from where PXE left off.  A MAAS/curtin-seeded node ends up
+# with the firmware's built-in EFI shell *ahead* of the OS entry, so a
+# plain reboot parks in the shell (trial001/trial025/trial045,
+# sepia-fog-images #31).  On the trial Supermicro (AMI) firmware a
+# BootOrder rewrite from the OS does not survive POST, but a one-shot
+# BootNext does, so point the next boot straight at the OS entry for the
+# reboot below (no FOG task is pending, so skipping PXE once is fine).
+# The lasting fix is `bcfg boot mv <os> <shell>` from the UEFI shell over
+# SOL; FOS does not repair it on deploy either.
+- name: Point the next boot at the OS entry (seed nodes park in the EFI shell otherwise)
+  shell: |
+    set -e
+    [ -d /sys/firmware/efi ] && command -v efibootmgr >/dev/null || exit 0
+    cur=$(efibootmgr | awk -F': ' '/^BootCurrent/{print $2}')
+    [ -n "$cur" ] || exit 0
+    efibootmgr -n "$cur" >/dev/null && echo "BootNext=$cur"
+  register: efi_bootnext
+  changed_when: "'BootNext' in efi_bootnext.stdout"
+
 # If we updated the kernel in apt/rpm.yml
 - name: Reboot if required
   reboot:
@@ -72,9 +92,11 @@
 # if the time is off, it slowly drifts back in sync.  Since our testnodes
 # are ephemeral, they don't ever have enough time to correctly drift
 # back to the correct time.  So we'll force it in the captured OS images.
+# Ubuntu >= 26.04 only ships ntpsec-ntpdate (no Provides: ntpdate), which
+# still installs the ntpdate command the task below relies on.
 - name: Install ntpdate command if missing
   package:
-    name: ntpdate
+    name: "{{ 'ntpsec-ntpdate' if (ansible_distribution == 'Ubuntu' and ansible_distribution_major_version | int >= 26) else 'ntpdate' }}"
     state: present
   when: '"ntp" in ntp_service'
 

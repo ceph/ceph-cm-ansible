@@ -1,5 +1,7 @@
 # {{ ansible_managed }}
 %sudo ALL=(ALL) NOPASSWD: ALL
+{% if not (ansible_distribution == 'Ubuntu' and ansible_distribution_major_version | int >= 26) %}
 # For ansible pipelining
 Defaults !requiretty
 Defaults visiblepw
+{% endif %}

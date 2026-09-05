@@ -1,0 +1,120 @@
+---
+packages:
+  - mpich
+  - qemu-system-x86
+#  - blkin
+  - lttng-tools
+  # for building xfstests #18067
+  - libtool-bin
+  # for ceph-daemon (no podman on ubuntu/debian, yet)
+  - docker.io
+  # qa/workunits/rbd/test_librbd_python.sh
+  - python3-nose
+  # python3 version of deps
+  - python3-venv
+  - python3-virtualenv
+  - python3-configobj
+  - python3-gevent
+  - python3-numpy
+  - python3-matplotlib
+  - python3-setuptools
+  - python3-dev
+
+non_aarch64_packages:
+  - libgoogle-perftools4t64
+  - iozone3
+
+non_aarch64_packages_to_upgrade: []
+
+python_apt_package_name: python3-apt
+
+# Overrides ubuntu.yml's list: resolute dropped smbios-utils (libsmbios is
+# gone upstream) and the bare "libfcgi" name (time_t transition).
+non_aarch64_common_packages:
+  - libfcgi0t64
+  - sysprof
+
+# Overrides ubuntu.yml's common_packages for resolute renames/removals:
+# libfcgi0ldbl->libfcgi0t64, git-core->git, libncurses5-dev->libncurses-dev,
+# libgnutls30->libgnutls30t64.
+common_packages:
+  # for apache
+  - libfcgi0t64
+  ###
+  # for s3 tests
+  - libev-dev
+  ###
+  # for cpan
+  - perl
+  - libwww-perl
+  ###
+  - lsb-release
+  - build-essential
+  - sysstat
+  - gdb
+  # for running ceph
+  - libedit2
+  - cryptsetup-bin
+  - xfsprogs
+  - gdisk
+  - parted
+  ###
+  # for setting BIOS settings
+  ###
+  - libuuid1
+  # for compiling helpers and such
+  - libatomic-ops-dev
+  ###
+  # used by workunits
+  - git
+  - attr
+  - dbench
+  - bonnie++
+  - valgrind
+  - ant
+  ###
+  # used by the xfstests tasks
+  - libtool
+  - automake
+  - gettext
+  - uuid-dev
+  - libacl1-dev
+  - bc
+  - xfsdump
+  - xfslibs-dev
+  - libattr1-dev
+  - quota
+  - libcap2-bin
+  - libncurses-dev
+  - lvm2
+  ###
+  - vim
+  - pdsh
+  # for blktrace and seekwatcher
+  - blktrace
+  ###
+  # qemu
+  - genisoimage
+  ###
+  # for json_xs to investigate JSON by hand
+  - libjson-xs-perl
+  # for pretty-printing xml
+  - xml-twig-tools
+  # for java bindings, hadoop, etc.
+  - default-jdk
+  - junit4
+  ###
+  # for samba testing
+  - cifs-utils
+  # for Static IP
+  - ipcalc
+  # nfs
+  - nfs-common
+  - nfs-kernel-server
+  # for add-apt-repository
+  - software-properties-common
+  # for https://twitter.com/letsencrypt/status/1443621997288767491
+  - libgnutls30t64
+  # for nvme firmware updates
+  - nvme-cli
+  - curl
