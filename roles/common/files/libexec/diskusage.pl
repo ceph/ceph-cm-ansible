@@ -4,9 +4,9 @@
 
 #******************************************************************************************
 #
-# NRPE DISK USAGE PLUGIN
+# DISK USAGE PLUGIN
 #
-# Program: Disk Usage plugin written to be used with Netsaint and NRPE
+# Program: Disk Usage plugin written to be used with Netsaint
 # License: GPL
 # Copyright (c) 2000 Jeremy Hanmer (jeremy@newdream.net)
 #

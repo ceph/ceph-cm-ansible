@@ -52,31 +52,6 @@ Defined in ``roles/common/defaults/main.yml``.
 ``yum_timeout`` is an integer used to set the yum timeout.  Defined in
 ``roles/common/defaults/main.yml``.
 
-``nagios_allowed_hosts`` should be a comma-separated list of hosts allowed to query NRPE.  Override in the secrets repo.
-
-The following variables are used to configure NRPE_ (Nagios Remote Plugin
-Executor) on hosts in ``/etc/nagios/nrpe.cfg``.  The system defaults differ between distros (``nrpe`` in
-RHEL vs ``nagios-nrpe-server`` in Ubuntu).  Setting these allows us to make
-tasks OS-agnostic.  They variables are mostly self-explanatory and defined in
-``roles/common/vars/{yum,apt}_systems.yml``::
-
-    ## Ubuntu variables are used in this example
-
-    # Used to install the package and start/stop the service
-    nrpe_service_name: nagios-nrpe-server
-
-    # NRPE service runs as this user/group
-    nrpe_user: nagios
-    nrpe_group: nagios
-
-    # Where nagios plugins can be found
-    nagios_plugins_directory: /usr/lib/nagios/plugins
-
-    # List of packages needed for NRPE use
-    nrpe_packages:
-      - nagios-nrpe-server
-      - nagios-plugins-basic
-
 Definining ``secondary_nic_mac`` as a hostvar will configure the corresponding NIC to use DHCP.  This 
 assumes you've configured a static IP definition on your DHCP server and the NIC is cabled.
 The tasks will automatically set the MTU to 9000 if the NIC is 10Gb or 25Gb. Override in ``groups_vars/group.yml`` as ``secondary_nic_mtu=1500``
@@ -101,11 +76,6 @@ entitlements
 kerberos
     Configures kerberos.  See ``roles/common/tasks/kerberos.yml``.
 
-nagios
-    Installs and configures nrpe service (including firewalld and SELinux if
-    applicable).  ``monitoring-scripts`` is also always run with this tag since
-    NRPE isn't very useful without them.
-
 secondary-nic
     Configure secondary NIC if ``secondary_nic_mac`` is defined.
 
@@ -116,5 +86,4 @@ To Do
   redhat_subscription_module_.
 
 .. _here: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-.. _NRPE: https://github.com/NagiosEnterprises/nrpe
 .. _redhat_subscription_module: https://docs.ansible.com/ansible/redhat_subscription_module.html
