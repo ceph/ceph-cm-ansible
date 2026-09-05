@@ -72,9 +72,11 @@
 # if the time is off, it slowly drifts back in sync.  Since our testnodes
 # are ephemeral, they don't ever have enough time to correctly drift
 # back to the correct time.  So we'll force it in the captured OS images.
+# Ubuntu >= 26.04 only ships ntpsec-ntpdate (no Provides: ntpdate), which
+# still installs the ntpdate command the task below relies on.
 - name: Install ntpdate command if missing
   package:
-    name: ntpdate
+    name: "{{ 'ntpsec-ntpdate' if (ansible_distribution == 'Ubuntu' and ansible_distribution_major_version | int >= 26) else 'ntpdate' }}"
     state: present
   when: '"ntp" in ntp_service'
 
