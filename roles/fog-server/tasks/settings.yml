@@ -1,0 +1,27 @@
+---
+# FOG settings the lab deliberately changed from the FOG defaults.  FOG
+# keeps these in its database, so a reinstall or a fresh FOG server would
+# silently revert them; enforce them here instead.  Values are quoted for
+# the shell but not escaped for SQL, so keep them to simple tokens.
+
+- name: Apply FOG global settings
+  command: >
+    mysql fog -N -B -e
+    "UPDATE globalSettings
+     SET settingValue = '{{ item.value }}'
+     WHERE settingKey = '{{ item.key }}'
+       AND settingValue != '{{ item.value }}';
+     SELECT ROW_COUNT();"
+  register: fog_global_setting
+  changed_when: fog_global_setting.stdout | int > 0
+  loop: "{{ fog_global_settings | dict2items }}"
+
+- name: Set storage node max clients
+  command: >
+    mysql fog -N -B -e
+    "UPDATE nfsGroupMembers
+     SET ngmMaxClients = {{ fog_storage_max_clients }}
+     WHERE ngmMaxClients != {{ fog_storage_max_clients }};
+     SELECT ROW_COUNT();"
+  register: fog_max_clients
+  changed_when: fog_max_clients.stdout | int > 0

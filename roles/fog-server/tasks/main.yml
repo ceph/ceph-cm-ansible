@@ -56,3 +56,6 @@
 
 # Safe to run on a live FOG server; not gated behind fog_force
 - import_tasks: tuning.yml
+
+# Safe to run on a live FOG server; not gated behind fog_force
+- import_tasks: settings.yml

@@ -18,3 +18,19 @@ fog_php_fpm_pm_settings:
   pm.min_spare_servers: 15
   pm.max_spare_servers: 40
 fog_mysql_max_connections: 350
+
+# Deliberate deviations from the FOG defaults, enforced in the FOG
+# database; see tasks/settings.yml
+fog_global_settings:
+  # teuthology drives FOG through the REST API
+  FOG_API_ENABLED: 1
+  # BIOS hosts exit the boot menu via sanboot when they have no task
+  FOG_BOOT_EXIT_TYPE: sanboot
+  # verbose kernel console output for debugging via conserver
+  FOG_KERNEL_LOGLEVEL: 7
+  # zstd image compression (FOG default is gzip)
+  FOG_IMAGE_COMPRESSION_FORMAT_DEFAULT: 5
+  FOG_PIGZ_COMP: 6
+# Concurrent unicast deploys before further nodes wait in line
+# (FOG default: 10)
+fog_storage_max_clients: 30
