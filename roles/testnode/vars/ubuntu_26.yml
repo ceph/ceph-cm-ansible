@@ -33,3 +33,88 @@ python_apt_package_name: python3-apt
 non_aarch64_common_packages:
   - libfcgi0t64
   - sysprof
+
+# Overrides ubuntu.yml's common_packages for resolute renames/removals:
+# libfcgi0ldbl->libfcgi0t64, git-core->git, libncurses5-dev->libncurses-dev,
+# libgnutls30->libgnutls30t64.
+common_packages:
+  # for apache
+  - libfcgi0t64
+  ###
+  # for s3 tests
+  - libev-dev
+  ###
+  # for cpan
+  - perl
+  - libwww-perl
+  ###
+  - lsb-release
+  - build-essential
+  - sysstat
+  - gdb
+  # for running ceph
+  - libedit2
+  - cryptsetup-bin
+  - xfsprogs
+  - gdisk
+  - parted
+  ###
+  # for setting BIOS settings
+  ###
+  - libuuid1
+  # for compiling helpers and such
+  - libatomic-ops-dev
+  ###
+  # used by workunits
+  - git
+  - attr
+  - dbench
+  - bonnie++
+  - valgrind
+  - ant
+  ###
+  # used by the xfstests tasks
+  - libtool
+  - automake
+  - gettext
+  - uuid-dev
+  - libacl1-dev
+  - bc
+  - xfsdump
+  - xfslibs-dev
+  - libattr1-dev
+  - quota
+  - libcap2-bin
+  - libncurses-dev
+  - lvm2
+  ###
+  - vim
+  - pdsh
+  # for blktrace and seekwatcher
+  - blktrace
+  ###
+  # qemu
+  - genisoimage
+  ###
+  # for json_xs to investigate JSON by hand
+  - libjson-xs-perl
+  # for pretty-printing xml
+  - xml-twig-tools
+  # for java bindings, hadoop, etc.
+  - default-jdk
+  - junit4
+  ###
+  # for samba testing
+  - cifs-utils
+  # for Static IP
+  - ipcalc
+  # nfs
+  - nfs-common
+  - nfs-kernel-server
+  # for add-apt-repository
+  - software-properties-common
+  # for https://twitter.com/letsencrypt/status/1443621997288767491
+  - libgnutls30t64
+  # for nvme firmware updates
+  - nvme-cli
+  - curl
