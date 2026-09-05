@@ -27,3 +27,9 @@ non_aarch64_packages:
 non_aarch64_packages_to_upgrade: []
 
 python_apt_package_name: python3-apt
+
+# Overrides ubuntu.yml's list: resolute dropped smbios-utils (libsmbios is
+# gone upstream) and the bare "libfcgi" name (time_t transition).
+non_aarch64_common_packages:
+  - libfcgi0t64
+  - sysprof
