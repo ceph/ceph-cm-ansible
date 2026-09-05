@@ -83,6 +83,11 @@
         insertafter: EOF
         block: |2
             88_create_sudo_group: ["curtin", "in-target", "--", "sh", "-c", "groupadd -f sudo"]
+            # Claim UID 1000 for the teuthology user at deploy time so nothing
+            # else (a package postinst on a golden node, for example) can squat
+            # on it before cloud-init's first boot.  Ceph tests expect the
+            # teuthology user to have UID 1000.
+            89_create_teuthology_user: ["curtin", "in-target", "--", "sh", "-c", "id {{ teuthology_user | default('ubuntu') }} > /dev/null 2>&1 || useradd {{ teuthology_user | default('ubuntu') }} -u 1000 -m -s /bin/bash"]
             90_create_cm_user: ["curtin", "in-target", "--", "sh", "-c", "useradd {{ cm_user }} -u 1001 -m -s /bin/bash -g sudo"]
             92_delete_cm_pass: ["curtin", "in-target", "--", "sh", "-c", "passwd -d cm"]
             94_configure_sudo: ["curtin", "in-target", "--", "sh", "-c", "printf '%%sudo ALL=(ALL) NOPASSWD: ALL\nDefaults !requiretty\nDefaults visiblepw' >> /etc/sudoers.d/cephlab_sudo"]
