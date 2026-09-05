@@ -36,27 +36,24 @@
   when: ansible_os_family == "Debian"
 
 # FOG's "exit" boot type hands control back to the firmware, which walks
-# BootOrder from where PXE left off.  A MAAS/curtin install (and a grub
-# reinstall on it) leaves the OS entry *behind* the firmware's built-in
-# EFI shell, so every reboot parks in the shell instead of reaching the
-# OS (trial025, sepia-fog-images #31).  FOS recreates the OS entry at the
-# front on image deploy, so imaged nodes are fine; fix the seed node's
-# NVRAM here by moving the shell to the end.  PXE-first is preserved.
-- name: Keep the firmware EFI shell last in BootOrder
+# BootOrder from where PXE left off.  A MAAS/curtin-seeded node ends up
+# with the firmware's built-in EFI shell *ahead* of the OS entry, so a
+# plain reboot parks in the shell (trial001/trial025/trial045,
+# sepia-fog-images #31).  On the trial Supermicro (AMI) firmware a
+# BootOrder rewrite from the OS does not survive POST, but a one-shot
+# BootNext does, so point the next boot straight at the OS entry for the
+# reboot below (no FOG task is pending, so skipping PXE once is fine).
+# The lasting fix is `bcfg boot mv <os> <shell>` from the UEFI shell over
+# SOL; FOS does not repair it on deploy either.
+- name: Point the next boot at the OS entry (seed nodes park in the EFI shell otherwise)
   shell: |
     set -e
     [ -d /sys/firmware/efi ] && command -v efibootmgr >/dev/null || exit 0
-    entries=$(efibootmgr)
-    order=$(echo "$entries" | awk -F': ' '/^BootOrder/{print $2}')
-    shell=$(echo "$entries" | awk '/Built-in EFI Shell/{print substr($1,5,4)}' | head -n1)
-    [ -n "$order" ] && [ -n "$shell" ] || exit 0
-    new=$(echo "$order" | tr ',' '\n' | grep -vx "$shell" | paste -sd, -)
-    new="${new},${shell}"
-    [ "$new" != "$order" ] || exit 0
-    efibootmgr -o "$new" >/dev/null
-    echo "changed: $order -> $new"
-  register: efi_bootorder
-  changed_when: "'changed' in efi_bootorder.stdout"
+    cur=$(efibootmgr | awk -F': ' '/^BootCurrent/{print $2}')
+    [ -n "$cur" ] || exit 0
+    efibootmgr -n "$cur" >/dev/null && echo "BootNext=$cur"
+  register: efi_bootnext
+  changed_when: "'BootNext' in efi_bootnext.stdout"
 
 # If we updated the kernel in apt/rpm.yml
 - name: Reboot if required
