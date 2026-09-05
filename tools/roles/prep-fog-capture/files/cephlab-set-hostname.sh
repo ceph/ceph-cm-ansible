@@ -17,7 +17,7 @@ LOG="/var/log/cephlab-set-hostname.log"
 
 NAMESERVER="${NAMESERVER:-${1:-${DEFAULT_NAMESERVER}}}"
 
-MAX_WAIT_SECONDS="300"        # wait for /.cephlab_net_configured
+MAX_WAIT_SECONDS="900"        # netplan-from-link can take >5min on a slow first boot
 PING_WINDOW_SECONDS="600"     # 10 minutes
 DNS_WINDOW_SECONDS="600"      # 10 minutes
 LOOP_SLEEP_SECONDS="2"

@@ -1,6 +1,6 @@
 [Unit]
 Description=Ceph Lab hostname configuration
-After=network-online.target nss-lookup.target
+After=network-online.target nss-lookup.target netplan-from-link.service
 Wants=nss-lookup.target
 
 [Service]
