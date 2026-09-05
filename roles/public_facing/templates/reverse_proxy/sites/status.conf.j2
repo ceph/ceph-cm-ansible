@@ -1,0 +1,55 @@
+{% set site = reverse_proxy_site_catalog['status'] %}
+# {{ ansible_managed }}
+# status.sepia.ceph.com — public Sepia lab status page (`status` namespace
+# on OpenShift; sepia-openshift repo, status/README.md).
+#
+# No Anubis on purpose: the page is two small cached documents, and the 30s
+# micro-cache below means the backend sees at most ~2 req/min per URL no
+# matter what the internet does — the same cache-beats-challenge rationale
+# as pulpito's /_paddles bypass (2026-08-10).
+#
+# Cert: *.sepia.ceph.com names can't use the plain dns-nsone authenticator
+# (the sepia zone lives on vpn-pub/soko03, not NS1); issuance rides the
+# _acme-challenge.status.sepia -> _acme-challenge.status.ceph.com CNAME:
+#   sudo certbot certonly --authenticator manual \
+#     --manual-auth-hook /etc/letsencrypt/hooks/nsone-auth-sepia.sh \
+#     --manual-cleanup-hook /etc/letsencrypt/hooks/nsone-cleanup-sepia.sh \
+#     --preferred-challenges dns -d status.sepia.ceph.com -n
+proxy_cache_path /var/cache/nginx/status levels=1:2 keys_zone=status_cache:1m max_size=10m inactive=10m;
+
+server {
+  listen 80;
+  server_name status.sepia.ceph.com;
+  return 301 https://$host$request_uri;
+}
+
+server {
+  listen 443 ssl;
+  server_name status.sepia.ceph.com;
+
+  ssl_certificate     /etc/letsencrypt/live/status.sepia.ceph.com/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/status.sepia.ceph.com/privkey.pem;
+  include /etc/letsencrypt/options-ssl-nginx.conf;
+
+  access_log /var/log/nginx/status-access.log;
+  error_log  /var/log/nginx/status-error.log;
+
+  location / {
+    proxy_pass http://{{ site.upstream }};
+
+    # Make the OpenShift router match the correct route.
+    proxy_set_header Host {{ site.upstream }};
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_http_version 1.1;
+
+    # Micro-cache: the app refreshes its data every 60s anyway, so 30s
+    # staleness is invisible and the shock absorber is total.
+    proxy_cache status_cache;
+    proxy_cache_valid 200 30s;
+    proxy_cache_use_stale error timeout updating;
+    proxy_cache_lock on;
+  }
+}

@@ -123,6 +123,13 @@ Things the playbook does NOT manage:
       --dns-nsone-credentials /etc/letsencrypt/nsone.ini \
       --dns-nsone-propagation-seconds 60 -d newsite.ceph.com -n
 
+  ``*.sepia.ceph.com`` names are different: the sepia zone lives on
+  vpn-pub/soko03 (not NS1), so those certs use ``--authenticator manual``
+  with the ``/etc/letsencrypt/hooks/nsone-{auth,cleanup}-sepia.sh`` hooks
+  and a ``_acme-challenge.<name>.sepia.ceph.com`` →
+  ``_acme-challenge.<name>.ceph.com`` CNAME in the sepia zone
+  (ceph-sepia-secrets ``nameserver.yml``).  Never ``--authenticator nginx``
+  with dns-01 — it silently never renews (apt-mirror, 2026-08-31).
 - ``/etc/letsencrypt/nsone.ini`` (NS1 API key for DNS-01 challenges) is left
   in place on the host; it is not templated by ansible.
 - The nginx ``default`` site (serves iPXE bits on the lab-internal IP) and
@@ -134,15 +141,6 @@ host's ``reverse_proxy_sites`` plus a new key in ``anubis_ed25519_keys``
 (both in ceph-sepia-secrets host_vars), issue the cert (above), then run the
 role with ``--tags reverse_proxy``.
 
-To-Do
-+++++
-
-status.sepia.ceph.com
----------------------
-
- - Install and update Cachet_?
-
 .. _Anubis: https://anubis.techaro.lol
 .. _UFW: https://wiki.ubuntu.com/UncomplicatedFirewall
 .. _fail2ban: http://www.fail2ban.org/wiki/index.php/Main_Page
-.. _Cachet: https://cachethq.io

@@ -144,3 +144,10 @@ reverse_proxy_site_catalog:
     # answer challenges.
     conf: quay.ceph.io.conf
     upstream: quay-quay-app.apps.pok.os.sepia.ceph.com
+  status:
+    # No Anubis: the page is two small documents behind a 30s micro-cache
+    # (see the template), so the backend sees ~2 req/min per URL no matter
+    # what the internet does - cache-beats-challenge, like pulpito's
+    # /_paddles bypass.
+    conf: status.conf
+    upstream: status-status.apps.pok.os.sepia.ceph.com
