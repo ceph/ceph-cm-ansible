@@ -1,0 +1,37 @@
+{% set site = reverse_proxy_site_catalog['mimir'] %}
+# {{ ansible_managed }}
+server {
+    listen 80;
+    server_name mimir.ceph.com;
+    return 301 https://$host$request_uri;
+}
+server {
+    listen 443 ssl http2;
+    server_name mimir.ceph.com;
+    ssl_certificate /etc/letsencrypt/live/mimir.ceph.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/mimir.ceph.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+    add_header Strict-Transport-Security "max-age=63072000" always;
+    # Mimir remote write tuning
+    client_max_body_size 100m;
+    proxy_buffering off;
+    proxy_request_buffering on;
+    proxy_read_timeout 90s;
+    proxy_send_timeout 90s;
+    # === Main Push Endpoint ===
+    location = /api/v1/push {
+        # 2026-08-10 dgalloway: route through Anubis (anubis@mimir).
+        # Remote-write clients (Prometheus etc.) are not challenged
+        # (non-browser UAs pass).  Host must be set explicitly ($proxy_host
+        # would resolve to the local Anubis address).
+        proxy_pass http://127.0.0.1:{{ site.anubis.port }};
+        proxy_set_header Host {{ site.upstream }};
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+    }
+}

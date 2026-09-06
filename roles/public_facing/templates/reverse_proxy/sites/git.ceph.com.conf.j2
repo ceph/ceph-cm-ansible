@@ -1,0 +1,56 @@
+{% set site = reverse_proxy_site_catalog['git'] %}
+# {{ ansible_managed }}
+server {
+  listen 80;
+  server_name git.ceph.com;
+
+  location ^~ /.well-known/acme-challenge/ {
+    root /var/www/letsencrypt;
+    default_type "text/plain";
+  }
+
+  location / {
+    return 301 https://$host$request_uri;
+  }
+}
+
+server {
+  listen 443 ssl http2;
+  server_name git.ceph.com;
+
+  ssl_certificate     /etc/letsencrypt/live/git.ceph.com/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/git.ceph.com/privkey.pem;
+  include /etc/letsencrypt/options-ssl-nginx.conf;
+
+  access_log /var/log/nginx/git-access.log;
+  error_log  /var/log/nginx/git-error.log;
+
+  # OpenShift Route host (no scheme, no slash)
+  set $upstream_host {{ site.upstream }};
+
+  location / {
+    # 2026-08-10 dgalloway: route through Anubis (anubis@git) to stop scraper
+    # botnet (>1M unique IPs/day crawling gitweb).  Anubis connects to the
+    # route over TLS itself (SSL_CERT_FILE in /etc/anubis/git.env).
+    proxy_pass http://127.0.0.1:{{ site.anubis.port }};
+    proxy_buffering off;
+
+    # OpenShift router needs Host match
+    proxy_set_header Host $upstream_host;
+
+    # Rewrite backend redirects that leak the internal route hostname
+    proxy_redirect http://$upstream_host/ /;
+    proxy_redirect https://$upstream_host/ /;
+
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    proxy_read_timeout 600s;
+  }
+
+  # 2026-08-10 dgalloway: tell polite crawlers to go away
+  location = /robots.txt {
+    alias /srv/robots.txt;
+  }
+}

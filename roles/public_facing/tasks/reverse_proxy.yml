@@ -1,0 +1,152 @@
+---
+# Manages the nginx + Anubis + certbot reverse proxy stack.
+# Reverse-engineered from the hand-built config on soko01 (2026-09).
+#
+# Which sites a host serves is controlled by reverse_proxy_sites in inventory
+# host_vars (ceph-sepia-secrets), picking entries out of
+# reverse_proxy_site_catalog in defaults/main.yml.  Private bits (Anubis
+# signing keys) also live in ceph-sepia-secrets host_vars.
+#
+# Let's Encrypt certs are NOT issued by this playbook.  certbot (snap) renews
+# existing certs on its own; issuing a cert for a new site is a one-time
+# manual step documented in the README.
+
+- name: Install nginx
+  apt:
+    name: nginx
+    state: present
+    update_cache: yes
+
+# certbot is installed as a snap; the Ubuntu deb was removed in favor of the
+# snap + certbot-dns-nsone plugin (most certs renew via NS1 DNS-01).
+- name: Install certbot snap
+  community.general.snap:
+    name: certbot
+    classic: true
+
+- name: Install certbot-dns-nsone snap
+  community.general.snap:
+    name: certbot-dns-nsone
+
+- name: Check certbot snap plugin connections
+  command: snap connections certbot
+  register: certbot_connections
+  changed_when: false
+  check_mode: false
+
+- name: Allow certbot snap plugins to run as root
+  command: snap set certbot trust-plugin-with-root=ok
+  when: "'certbot-dns-nsone' not in certbot_connections.stdout"
+
+- name: Connect certbot-dns-nsone plugin to certbot
+  command: snap connect certbot:plugin certbot-dns-nsone
+  when: "'certbot-dns-nsone' not in certbot_connections.stdout"
+
+- name: Check installed Anubis version
+  command: dpkg-query --show --showformat '${Version}' anubis
+  register: anubis_installed
+  failed_when: false
+  changed_when: false
+  check_mode: false
+
+- name: Install Anubis {{ anubis_version }}
+  apt:
+    deb: "{{ anubis_deb_url }}"
+  when: anubis_installed.stdout != anubis_version
+
+# Anubis needs to trust the OpenShift ingress router cert to reach https
+# upstreams (SSL_CERT_FILE in the instance env files).
+- name: Install OpenShift ingress CA cert
+  copy:
+    src: reverse_proxy/openshift-ingress-ca.pem
+    dest: /usr/local/share/ca-certificates/openshift-ingress-ca.pem
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Deploy nginx.conf
+  template:
+    src: reverse_proxy/nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: reload nginx
+
+- name: Deploy robots.txt served to polite crawlers
+  copy:
+    src: reverse_proxy/robots.txt
+    dest: /srv/robots.txt
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Create letsencrypt http-01 webroot
+  file:
+    path: /var/www/letsencrypt
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Deploy nginx site configs
+  template:
+    src: "reverse_proxy/sites/{{ reverse_proxy_site_catalog[item].conf }}.j2"
+    dest: "/etc/nginx/sites-available/{{ reverse_proxy_site_catalog[item].conf }}"
+    owner: root
+    group: root
+    mode: '0644'
+  with_items: "{{ reverse_proxy_sites }}"
+  notify: reload nginx
+
+- name: Enable nginx site configs
+  file:
+    src: "../sites-available/{{ reverse_proxy_site_catalog[item].conf }}"
+    dest: "/etc/nginx/sites-enabled/{{ reverse_proxy_site_catalog[item].conf }}"
+    state: link
+    force: yes
+  with_items: "{{ reverse_proxy_sites }}"
+  notify: reload nginx
+
+- name: Deploy Anubis bot policies
+  copy:
+    src: "reverse_proxy/{{ item }}"
+    dest: "/etc/anubis/{{ item }}"
+    owner: root
+    group: root
+    mode: '0644'
+  with_items:
+    - botPolicies.yaml
+    - botPolicies-permissive.yaml
+  notify: restart anubis
+
+# Contains the per-instance ED25519 signing key.
+- name: Deploy Anubis instance env files
+  template:
+    src: reverse_proxy/anubis.env.j2
+    dest: "/etc/anubis/{{ item }}.env"
+    owner: root
+    group: root
+    mode: '0600'
+  with_items: "{{ reverse_proxy_sites }}"
+  when: reverse_proxy_site_catalog[item].anubis is defined
+  no_log: true
+  notify: restart anubis
+
+- name: Enable and start Anubis instances
+  service:
+    name: "anubis@{{ item }}"
+    enabled: yes
+    state: started
+  with_items: "{{ reverse_proxy_sites }}"
+  when: reverse_proxy_site_catalog[item].anubis is defined
+
+- name: Validate nginx configuration
+  command: nginx -t
+  changed_when: false
+
+- name: Enable and start nginx
+  service:
+    name: nginx
+    enabled: yes
+    state: started

@@ -1,0 +1,63 @@
+{% set site = reverse_proxy_site_catalog['onboarding'] %}
+# {{ ansible_managed }}
+# onboarding.sepia.ceph.com -> sepia user-onboarding service on OpenShift.
+server {
+  server_name onboarding.sepia.ceph.com;
+
+  access_log /var/log/nginx/onboarding-access.log;
+  error_log  /var/log/nginx/onboarding-error.log;
+
+  # GitHub webhook deliveries can't solve an Anubis challenge; requests are
+  # HMAC-verified by the app (WEBHOOK_SECRET), so bypass Anubis here and go
+  # straight to the route.
+  location = /webhooks/github {
+    proxy_pass http://{{ site.upstream }};
+    proxy_set_header Host {{ site.upstream }};
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_http_version 1.1;
+  }
+
+  location / {
+    # Per-site Anubis instance (anubis@onboarding), same pattern as the
+    # 2026-08-10 all-sites rollout.
+    proxy_pass http://127.0.0.1:{{ site.anubis.port }};
+
+    # Rewrite backend redirects that leak the internal route hostname.
+    proxy_redirect http://{{ site.upstream }}/ /;
+    proxy_redirect https://{{ site.upstream }}/ /;
+
+    # Make the OpenShift router match the correct route.
+    proxy_set_header Host {{ site.upstream }};
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+
+    proxy_http_version 1.1;
+    proxy_read_timeout 120s;
+    proxy_buffering off;
+  }
+
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/onboarding.sepia.ceph.com/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/onboarding.sepia.ceph.com/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+}
+
+server {
+    if ($host = onboarding.sepia.ceph.com) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+
+  listen 80;
+  server_name onboarding.sepia.ceph.com;
+    return 404; # managed by Certbot
+
+
+}

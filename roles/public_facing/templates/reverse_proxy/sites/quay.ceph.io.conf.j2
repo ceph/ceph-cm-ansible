@@ -1,0 +1,68 @@
+{% set site = reverse_proxy_site_catalog['quay'] %}
+# {{ ansible_managed }}
+# quay.ceph.io — public reverse proxy.
+#
+# Backend is the *passthrough* Route on the pok cluster: nginx re-encrypts
+# with SNI quay.ceph.io, the router matches the quay-ceph-io Route by SNI,
+# and the quay pod terminates with its own LE quay.ceph.io cert (publicly
+# trusted, so no custom proxy_ssl_trusted_certificate needed).
+#
+# NO Anubis: registry protocol clients (podman/docker/skopeo) cannot answer
+# challenges. Non-browser UAs are weight-0 anyway; revisit only if the web
+# UI gets scraped.
+
+server {
+  listen 80;
+  server_name quay.ceph.io;
+
+  location ^~ /.well-known/acme-challenge/ {
+    root /var/www/letsencrypt;
+    default_type "text/plain";
+  }
+
+  location / {
+    return 301 https://$host$request_uri;
+  }
+}
+
+server {
+  listen 443 ssl http2;
+  server_name quay.ceph.io;
+
+  ssl_certificate     /etc/letsencrypt/live/quay.ceph.io/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/quay.ceph.io/privkey.pem;
+  include /etc/letsencrypt/options-ssl-nginx.conf;
+
+  access_log /var/log/nginx/quay-access.log;
+  error_log  /var/log/nginx/quay-error.log;
+
+  # container image layers are multi-GB; stream, don't buffer or cap
+  client_max_body_size 0;
+  proxy_buffering off;
+  proxy_request_buffering off;
+  proxy_read_timeout 900s;
+  proxy_send_timeout 900s;
+
+  # any name that resolves to the ingress VIP works; the router matches the
+  # passthrough Route by SNI, which we pin to quay.ceph.io below
+  set $upstream_host {{ site.upstream }};
+
+  location / {
+    proxy_pass https://$upstream_host;
+    proxy_set_header Host quay.ceph.io;
+    proxy_ssl_server_name on;
+    proxy_ssl_name quay.ceph.io;
+
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+
+    # docker/podman send large auth headers on big pushes
+    proxy_http_version 1.1;
+  }
+
+  location = /robots.txt {
+    default_type text/plain;
+    return 200 "User-agent: *\nDisallow: /\n";
+  }
+}

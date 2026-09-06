@@ -35,3 +35,119 @@ f2b_services:
     maxretry: 3
     filter: "sshd-ddos"
     logpath: "{{ sshd_logpath }}"
+
+## Reverse proxy vars.  See the "Reverse proxies" section of the README.
+
+# Which sites from reverse_proxy_site_catalog to deploy on a host.  Set in
+# inventory host_vars (ceph-sepia-secrets).  An empty list skips all of the
+# reverse proxy tasks.
+reverse_proxy_sites: []
+
+# Lab-internal IP the host binds Anubis metrics endpoints to and uses as the
+# DNS resolver in nginx.conf.  `ip` comes from the inventory host line.
+reverse_proxy_internal_ip: "{{ ip }}"
+
+# Anubis (https://anubis.techaro.lol) shields most sites from scraper bots.
+# There's no apt repo; we install the .deb published on GitHub.
+anubis_version: "1.26.2"
+anubis_deb_url: "https://github.com/TecharoHQ/anubis/releases/download/v{{ anubis_version }}/anubis_{{ anubis_version }}_amd64.deb"
+
+# Per-instance ED25519 signing keys (hex) used to sign Anubis challenge
+# cookies.  PRIVATE - define in ceph-sepia-secrets host_vars.  Keys are site
+# names from reverse_proxy_site_catalog.  Generate a new one with:
+#   openssl rand -hex 32
+anubis_ed25519_keys: {}
+
+# Catalog of reverse proxy sites this role knows how to deploy.
+#   conf:     filename in /etc/nginx/sites-available (template of the same
+#             name + .j2 must exist in templates/reverse_proxy/sites/)
+#   upstream: backend hostname (no scheme) - usually an OpenShift route
+#   anubis:   present if the site sits behind a local Anubis instance
+#     port:         Anubis listens on 127.0.0.1:<port>; nginx proxies to it
+#     metrics_port: Prometheus metrics on reverse_proxy_internal_ip:<port>
+#     scheme:       how Anubis connects to the upstream (https upstreams also
+#                   need cacert: true so Anubis trusts the OpenShift router)
+#     policy:       alternate bot policy file (default botPolicies.yaml)
+reverse_proxy_site_catalog:
+  pulpito:
+    conf: pulpito.conf
+    upstream: pulpito-pulpito.apps.pok.os.sepia.ceph.com
+    anubis:
+      port: 8923
+      metrics_port: 9983
+      scheme: http
+  pulpito-ng:
+    conf: pulpito-ng.conf
+    upstream: pulpito-ng-pulpito-ng.apps.pok.os.sepia.ceph.com
+    anubis:
+      port: 8924
+      metrics_port: 9984
+      scheme: http
+  git:
+    conf: git.ceph.com.conf
+    upstream: git-server-git.apps.pok.os.sepia.ceph.com
+    anubis:
+      port: 8925
+      metrics_port: 9985
+      scheme: https
+      cacert: true
+  githelper:
+    conf: githelper.conf
+    upstream: githelper-git.apps.pok.os.sepia.ceph.com
+    anubis:
+      port: 8926
+      metrics_port: 9986
+      scheme: https
+      cacert: true
+  apt-mirror:
+    conf: apt-mirror.conf
+    upstream: apt-mirror-apt-mirror.apps.pok.os.sepia.ceph.com
+    anubis:
+      port: 8927
+      metrics_port: 9987
+      scheme: http
+  ci-metrics:
+    conf: ci-metrics.conf
+    upstream: grafana-route-jenkins-monitoring.apps.pok.os.sepia.ceph.com
+    anubis:
+      port: 8928
+      metrics_port: 9988
+      scheme: https
+      cacert: true
+  mimir:
+    conf: mimir.ceph.com
+    upstream: mimir-jenkins-monitoring.apps.pok.os.sepia.ceph.com
+    anubis:
+      port: 8929
+      metrics_port: 9989
+      scheme: https
+      cacert: true
+  qa-proxy:
+    conf: qa-proxy.conf
+    upstream: soko04.front.sepia.ceph.com
+    anubis:
+      port: 8930
+      metrics_port: 9990
+      scheme: http
+      # Registry-style non-browser clients (wget/curl in teuthology jobs) plus
+      # good search crawlers stay allowed on qa-proxy.
+      policy: botPolicies-permissive.yaml
+  onboarding:
+    conf: onboarding.conf
+    upstream: user-onboarding-user-onboarding.apps.pok.os.sepia.ceph.com
+    anubis:
+      port: 8931
+      metrics_port: 9991
+      scheme: http
+  quay:
+    # No Anubis: registry protocol clients (podman/docker/skopeo) cannot
+    # answer challenges.
+    conf: quay.ceph.io.conf
+    upstream: quay-quay-app.apps.pok.os.sepia.ceph.com
+  status:
+    # No Anubis: the page is two small documents behind a 30s micro-cache
+    # (see the template), so the backend sees ~2 req/min per URL no matter
+    # what the internet does - cache-beats-challenge, like pulpito's
+    # /_paddles bypass.
+    conf: status.conf
+    upstream: status-status.apps.pok.os.sepia.ceph.com
