@@ -45,6 +45,15 @@ server {
     proxy_set_header X-Forwarded-Proto https;
     proxy_http_version 1.1;
 
+    # Belt and braces: if the router ever adds Set-Cookie again, ignore it
+    # rather than silently poisoning the cache (the real fix is the Route's
+    # haproxy.router.openshift.io/disable_cookies annotation — the affinity
+    # cookie plus its "cache-control: private" made refreshes uncacheable,
+    # and use_stale updating then served a stale page forever, 2026-09-06).
+    proxy_ignore_headers Set-Cookie;
+    proxy_hide_header Set-Cookie;
+    add_header X-Cache-Status $upstream_cache_status;
+
     # Micro-cache: the app refreshes its data every 60s anyway, so 30s
     # staleness is invisible and the shock absorber is total.
     proxy_cache status_cache;
