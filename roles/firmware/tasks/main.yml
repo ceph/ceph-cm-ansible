@@ -9,10 +9,6 @@
     - bmc
   when: '"mira" in ansible_hostname'
 
-- import_tasks: areca/main.yml
-  tags:
-    - areca
-
 - import_tasks: smithi/bmc.yml
   tags:
     - bmc
