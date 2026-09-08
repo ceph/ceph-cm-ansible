@@ -1,0 +1,10 @@
+---
+- name: reload php-fpm
+  service:
+    name: "php{{ php_version.stdout }}-fpm"
+    state: reloaded
+
+- name: restart mariadb
+  service:
+    name: mariadb
+    state: restarted

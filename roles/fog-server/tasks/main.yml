@@ -53,3 +53,9 @@
 # Also safe on a live server: only stamps per-host exit types (read live at
 # PXE time), and is a no-op once they match
 - import_tasks: exit-types.yml
+
+# Safe to run on a live FOG server; not gated behind fog_force
+- import_tasks: tuning.yml
+
+# Safe to run on a live FOG server; not gated behind fog_force
+- import_tasks: settings.yml
