@@ -144,6 +144,16 @@ reverse_proxy_site_catalog:
     # answer challenges.
     conf: quay.ceph.io.conf
     upstream: quay-quay-app.apps.pok.os.sepia.ceph.com
+  sentry:
+    conf: sentry.ceph.com.conf
+    upstream: sentry-sentry.apps.pok.os.sepia.ceph.com
+    anubis:
+      port: 8932
+      metrics_port: 9992
+      # https + cacert: the sentry Routes redirect http, so Anubis must
+      # talk TLS to the router (default wildcard cert, ingress CA).
+      scheme: https
+      cacert: true
   status:
     # No Anubis: the page is two small documents behind a 30s micro-cache
     # (see the template), so the backend sees ~2 req/min per URL no matter
