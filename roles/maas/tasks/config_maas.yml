@@ -83,12 +83,65 @@
         insertafter: EOF
         block: |2
             88_create_sudo_group: ["curtin", "in-target", "--", "sh", "-c", "groupadd -f sudo"]
+            # Claim UID 1000 for the teuthology user at deploy time so nothing
+            # else (a package postinst on a golden node, for example) can squat
+            # on it before cloud-init's first boot.  Ceph tests expect the
+            # teuthology user to have UID 1000.
+            89_create_teuthology_user: ["curtin", "in-target", "--", "sh", "-c", "id {{ teuthology_user | default('ubuntu') }} > /dev/null 2>&1 || useradd {{ teuthology_user | default('ubuntu') }} -u 1000 -m -s /bin/bash"]
             90_create_cm_user: ["curtin", "in-target", "--", "sh", "-c", "useradd {{ cm_user }} -u 1001 -m -s /bin/bash -g sudo"]
             92_delete_cm_pass: ["curtin", "in-target", "--", "sh", "-c", "passwd -d cm"]
             94_configure_sudo: ["curtin", "in-target", "--", "sh", "-c", "printf '%%sudo ALL=(ALL) NOPASSWD: ALL\nDefaults !requiretty\nDefaults visiblepw' >> /etc/sudoers.d/cephlab_sudo"]
             96_create_ssh_directory: ["curtin", "in-target", "--", "sh", "-c", "mkdir -p /home/cm/.ssh"]
             98_copy_ssh_keys_cm: ["curtin", "in-target", "--", "sh", "-c", "echo '{{ cm_user_ssh_keys|join('\n') }}' >> /home/cm/.ssh/authorized_keys"]
       when: "cm_user_ssh_keys is defined and cm_user is defined"
+
+    # The RHEL-family and custom-image preseeds are hand-managed but need the
+    # same UID 1000 guarantees.  The CentOS preseed's
+    # 99_create_ubuntu_if_testnode block predates these tasks: it created the
+    # teuthology user without pinning the UID and only matched trial nodes.
+    - name: Check for hand-managed preseeds
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: extra_preseeds
+      loop:
+        - /etc/maas/preseeds/curtin_userdata_centos
+        - /etc/maas/preseeds/curtin_userdata_custom_amd64_generic_rocky9
+        - /etc/maas/preseeds/curtin_userdata_custom_amd64_generic_rocky10
+        - /etc/maas/preseeds/curtin_userdata_ubuntu_amd64_generic_focal
+
+    - name: Pin the teuthology user to UID 1000 in hand-managed preseeds
+      ansible.builtin.replace:
+        path: "{{ item.item }}"
+        regexp: 'useradd ubuntu -m -s /bin/bash'
+        replace: 'useradd ubuntu -u 1000 -m -s /bin/bash'
+      loop: "{{ extra_preseeds.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when: item.stat.exists
+
+    - name: Match all testnode machine types in the CentOS preseed
+      ansible.builtin.replace:
+        path: "{{ item.item }}"
+        regexp: "types=trial;"
+        replace: "types=\"trial gibba smithi trial-perf\";"
+      loop: "{{ extra_preseeds.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when: item.stat.exists
+
+    # The CentOS preseed already creates the teuthology user via its
+    # 99_create_ubuntu_if_testnode block (pinned to UID 1000 above)
+    - name: Create the teuthology user with UID 1000 in the custom-image preseeds
+      ansible.builtin.lineinfile:
+        path: "{{ item.item }}"
+        insertbefore: '^  90_create_cm_user:'
+        line: "  89_create_teuthology_user: [\"curtin\", \"in-target\", \"--\", \"sh\", \"-c\", \"id {{ teuthology_user | default('ubuntu') }} > /dev/null 2>&1 || useradd {{ teuthology_user | default('ubuntu') }} -u 1000 -m -s /bin/bash\"]"
+      loop: "{{ extra_preseeds.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when:
+        - item.stat.exists
+        - "'centos' not in item.item"
 
     - name: Configure global kernel options
       command: "maas {{ maas_admin_username }} maas set-config name=kernel_opts value='{{ global_kernel_opt }}'"
