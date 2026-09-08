@@ -21,9 +21,12 @@
   tags:
     - packages
 
+# Ubuntu 26.04 dropped the transitional "ntp" package outright; ntpsec is
+# the replacement and its unit ships Alias=ntp.service, so the service
+# tasks below keep working with ntp_service_name unchanged.
 - name: Install ntp package on apt based systems.
   apt:
-    name: ntp
+    name: "{{ 'ntpsec' if (ansible_distribution == 'Ubuntu' and ansible_distribution_major_version | int >= 26) else 'ntp' }}"
     state: present
   when: ansible_pkg_mgr  == "apt"
   tags:
