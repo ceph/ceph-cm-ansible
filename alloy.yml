@@ -29,6 +29,10 @@
 - hosts: >-
     infrastructure:ci_infrastructure:public_facing:long_running_cluster:officinalis:mako:folio:sockeni:vossi:!infra_compute:!infra_storage:!cnv
   strategy: free
+  # A failed task (e.g. the wedged dpkg on soko02) must not eat the queued
+  # "Restart alloy" handler -- that leaves alloy running an old config while
+  # the file on disk says otherwise, which took days to notice.
+  force_handlers: true
   roles:
     - alloy
   become: true
