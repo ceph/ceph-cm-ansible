@@ -25,16 +25,12 @@
   tags:
    - user
 
-- name: Ensure includedir is present in sudoers.
-  lineinfile:
-    dest: /etc/sudoers
-    line: "#includedir /etc/sudoers.d"
-    state: present
-    validate: visudo -cf %s
-  tags:
-    - sudoers
-    - user
-
+# Write our sudoers.d fragment BEFORE validating /etc/sudoers below.  A node
+# imaged from an older capture can carry a stale /etc/sudoers.d/cephlab_sudo
+# that newer sudo rejects (e.g. Ubuntu 26.04 dropped `requiretty`), which
+# makes `visudo -cf /etc/sudoers` -- and thus the includedir task -- fail on
+# the pre-existing file before we ever get a chance to replace it.  Writing
+# the current template first clears that.
 - name: Create the cephlab_sudo sudoers.d file.
   template:
     src: cephlab_sudo
@@ -42,6 +38,16 @@
     owner: root
     group: root
     mode: 0440
+    validate: visudo -cf %s
+  tags:
+    - sudoers
+    - user
+
+- name: Ensure includedir is present in sudoers.
+  lineinfile:
+    dest: /etc/sudoers
+    line: "#includedir /etc/sudoers.d"
+    state: present
     validate: visudo -cf %s
   tags:
     - sudoers
