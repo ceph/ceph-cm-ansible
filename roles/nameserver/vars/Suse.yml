@@ -11,9 +11,6 @@ packages:
   - bind-utils
   ## firewall
   - firewalld
-  ## monitoring
-  - nrpe
-  - nagios-plugins-all
   ## for NTP
   - ntp
   #- ntpdate
