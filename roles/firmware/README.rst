@@ -9,8 +9,6 @@ Prerequisites
 
 Prerequisites are ordered by machine type (smithi, mira, etc.) then device type (BIOS, BMC, etc.)
 
-Universal device types (RAID controllers) are listed separately last.
-
 Mira
 ----
 **BIOS**
@@ -48,17 +46,6 @@ RHEL and CentOS are the only supported distros for NVMe firmware flashing.  Inte
 #. Extract the appropriate architecture RPM (probably x86_64) from the zip archive and upload it somewhere http-accessible within the lab.
 #. Define ``nvme_firmware_package`` in the secrets repo as the HTTP path to the RPM.
 
-----
-
-Areca RAID Controllers
-----------------------
-We have multiple different model controllers but the firmware update process is the same for the models we have.  Following these steps carefully allow the process to be used for any model controller.
-
-#. Download firmware archives for each model RAID controller you have from Areca_'s website.
-#. Create an empty directory on your http server and upload each archive there.
-#. Rename each zip archive to match the model output you get from ``cli64 sys info | grep Controller Name`` (e.g., ARC-1222.zip).
-#. Define a ``latest_{{ model_lower_pretty }}_version`` variable for each model controller you have.  This *must* match the ``Firmware Version`` output of ``cli64 sys info``.  See examples under the *Variables* section.
-
 Variables
 +++++++++
 
@@ -86,17 +73,6 @@ Variables
   # From ansible/inventory/group_vars/mira.yml
   bmc_location: "http://drop.front.sepia.ceph.com/firmware/mira/ipmi_316.zip"
 
-``areca_download_location: null`` should be the HTTP path to a directory serving all your Areca firmware zip archives.  Override in your ansible inventory.  See example::
-
-  # From ansible/inventory/group_vars/all.yml
-  areca_download_location: "http://drop.front.sepia.ceph.com/firmware/areca"
-
-You should have a ``latest_{{ areca_lower_pretty }}_version`` variable for each model Areca controller you have.  ``areca_lower_pretty`` should be lowercase with no special characters.  Obtain the firmware version format and model from ``cli64 sys info`` output.  Override in your ansible inventory.  See examples::
-
-  # From ansible/inventory/group_vars/all.yml
-  latest_arc1222_version: "V1.51"
-  latest_arc1880_version: "V1.53"
-
 ``nvme_firmware_package: null`` should be overridden in your ansible inventory.  It is the direct HTTP path to Intel's SSD Datacenter Tool RPM.  We only have NVMe drives in our ``smithi`` machine type so we define it in ``group_vars``.  See example::
 
   # From ansible/inventory/group_vars/smithi.yml
@@ -112,9 +88,6 @@ bios
 bmc
     If the system(s) you're running this role against supports flashing the BMC from the OS (Supermicro provides an executable and firmare binary), this tag will update the BMC if an update is required.
 
-areca
-    Updates only Areca RAID controller firmwares/BIOS
-
 nvme
     Updates Intel NVMe device firmware.  Supports RHEL/CentOS only.
 
@@ -126,4 +99,3 @@ To Do
 .. _Sepia: https://ceph.github.io/sepia/
 .. _Supermicro: https://www.supermicro.com/ResourceApps/BIOS_IPMI.aspx
 .. _Intel: https://downloadcenter.intel.com/download/26221/Intel-SSD-Data-Center-Tool
-.. _Areca: http://www.areca.us/support/main.htm
