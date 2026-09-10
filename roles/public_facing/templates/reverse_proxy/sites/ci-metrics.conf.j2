@@ -1,0 +1,120 @@
+{% set site = reverse_proxy_site_catalog['ci-metrics'] %}
+# {{ ansible_managed }}
+#
+# Reverse proxy: ci-metrics.ceph.com -> Grafana on OpenShift
+# Grafana is configured with auth.anonymous.enabled=true (Viewer role),
+# so all paths are safe to expose — viewers cannot edit, save, or admin.
+
+# --- HTTP -> HTTPS redirect ---
+server {
+    listen 80;
+    listen [::]:80;
+    server_name ci-metrics.ceph.com;
+
+    # Let's Encrypt / certbot ACME challenges (if you use certbot)
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# --- HTTPS reverse proxy to Grafana ---
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name ci-metrics.ceph.com;
+
+    ssl_certificate     /etc/letsencrypt/live/ci-metrics.ceph.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/ci-metrics.ceph.com/privkey.pem;
+
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache   shared:SSL:10m;
+    ssl_session_timeout 1d;
+
+    # Logs
+    access_log /var/log/nginx/ci-metrics.access.log;
+    error_log  /var/log/nginx/ci-metrics.error.log;
+
+    # Allow larger query payloads from Grafana panels
+    client_max_body_size 25m;
+
+    # --- Lock down Alerting for anonymous Viewers ---
+    # Anonymous users never receive a grafana_session cookie; authenticated
+    # users (including Viewers) do. Block the alerting UI and all related
+    # alertmanager / ruler / alert-rule API paths unless a session is present.
+{% for path in ['/alerting/', '/api/alertmanager/', '/api/ruler/', '/api/v1/provisioning/', '/api/alerts/'] %}
+    location ^~ {{ path }} {
+        if ($cookie_grafana_session = "") { return 404; }
+        proxy_pass         http://127.0.0.1:{{ site.anubis.port }};  # via anubis@ci-metrics
+        proxy_http_version 1.1;
+        proxy_set_header Host              {{ site.upstream }};
+        proxy_ssl_server_name on;
+        proxy_ssl_name        {{ site.upstream }};
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host  $host;
+        proxy_set_header Connection "";
+    }
+
+{% endfor %}
+    # BEGIN ANSIBLE MANAGED: friendly dashboard paths
+    # Friendly, memorable paths -> Grafana public-dashboard token URLs.
+    # Public dashboards are panel-scoped server-side (no /api/ds/query, no
+    # arbitrary datasource uid), so these are safe to hand out.
+    # To add another: enable a public dashboard on the target dashboard in
+    # Grafana, then add one line here with its access token.
+    location = /jenkins {
+        return 302 /public-dashboards/70128b2178f64c918c3db05e09b94beb;
+    }
+    # END ANSIBLE MANAGED: friendly dashboard paths
+    # --- Main proxy: everything goes to Grafana ---
+    location / {
+        proxy_pass         http://127.0.0.1:{{ site.anubis.port }};  # via anubis@ci-metrics
+        proxy_http_version 1.1;
+
+        # Required so the OpenShift router serves the right route
+        proxy_set_header Host              {{ site.upstream }};
+        proxy_ssl_server_name on;
+        proxy_ssl_name        {{ site.upstream }};
+
+        # Forwarded client info
+        proxy_set_header X-Real-IP          $remote_addr;
+        proxy_set_header X-Forwarded-For    $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto  $scheme;
+        proxy_set_header X-Forwarded-Host   $host;
+
+        # Long-running dashboard queries
+        proxy_read_timeout  120s;
+        proxy_send_timeout  120s;
+        proxy_connect_timeout 30s;
+
+        # Keepalive to upstream
+        proxy_set_header Connection "";
+    }
+
+    # --- Grafana Live (WebSocket) ---
+    location /api/live/ {
+        proxy_pass         http://127.0.0.1:{{ site.anubis.port }};  # via anubis@ci-metrics
+        proxy_http_version 1.1;
+
+        proxy_set_header Host              {{ site.upstream }};
+        proxy_ssl_server_name on;
+        proxy_ssl_name        {{ site.upstream }};
+
+        proxy_set_header Upgrade    $http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host  $host;
+
+        proxy_read_timeout 3600s;
+    }
+}

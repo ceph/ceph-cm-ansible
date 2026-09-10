@@ -1,0 +1,79 @@
+{% set site = reverse_proxy_site_catalog['pulpito'] %}
+# {{ ansible_managed }}
+# 2026-08-10 dgalloway: bumped inactive 60s->10m along with longer cache TTL
+# below; the cache is what shields paddles from the botnet on these endpoints
+# (Anubis alone is not enough -- the botnet solves the PoW challenges).
+proxy_cache_path /var/cache/nginx/paddles levels=1:2 keys_zone=paddles_cache:1m max_size=50m inactive=10m;
+
+server {
+  listen 80;
+  server_name pulpito.ceph.com;
+  return 301 https://$host$request_uri;
+}
+
+server {
+  listen 443 ssl http2;
+  server_name pulpito.ceph.com;
+
+  ssl_certificate     /etc/letsencrypt/live/pulpito.ceph.com/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/pulpito.ceph.com/privkey.pem;
+  include /etc/letsencrypt/options-ssl-nginx.conf;
+
+  access_log /var/log/nginx/pulpito-access.log;
+  error_log  /var/log/nginx/pulpito-error.log;
+
+  # Cache the heavy read-only paddles endpoints.  Crawlers like to abuse the paddles DB by hitting these.
+  # 2026-08-10 dgalloway: kept as an intentional Anubis bypass AND raised the
+  # cache TTL 60s->300s.  Rationale: with proxy_cache_lock, paddles sees at
+  # most ~1 request per endpoint per TTL no matter how hard the botnet hits
+  # this; routing it through Anubis instead would break the pulpito filter
+  # dropdowns' XHR and (worse) let challenge-solving bots reach paddles
+  # uncached.  Bots can only ever get 5-min-stale dropdown JSON here.
+  location ~* ^/_paddles/(branches|suites|machine_types)/ {
+    proxy_pass https://{{ site.upstream }};
+    proxy_set_header Host {{ site.upstream }};
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_ssl_server_name on;
+    proxy_ssl_name {{ site.upstream }};
+    proxy_http_version 1.1;
+
+    proxy_cache paddles_cache;
+    proxy_cache_valid 200 300s;
+    proxy_cache_use_stale error timeout updating;
+    proxy_cache_lock on;
+    add_header X-Cache-Status $upstream_cache_status;
+  }
+
+  location / {
+    # 2026-08-05 dgalloway: route through Anubis (anubis@pulpito) to stop
+    # scraper botnet.
+    proxy_pass http://127.0.0.1:{{ site.anubis.port }};
+
+    # 2026-08-06 dgalloway: rewrite backend redirects that leak the internal
+    # route hostname (nginx only does this automatically when proxy_pass
+    # matches the Location host, which stopped being true with the Anubis hop)
+    proxy_redirect http://{{ site.upstream }}/ /;
+    proxy_redirect https://{{ site.upstream }}/ /;
+
+    # Make OpenShift router match the correct route
+    proxy_set_header Host {{ site.upstream }};
+
+    # Preserve original public host for the app (if it cares)
+    proxy_set_header X-Forwarded-Host $host;
+
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+
+    proxy_http_version 1.1;
+    proxy_read_timeout 600s;
+    proxy_buffering off;
+  }
+
+  location = /robots.txt {
+    alias /srv/robots.txt;
+  }
+}

@@ -1,0 +1,39 @@
+{% set site = reverse_proxy_site_catalog['apt-mirror'] %}
+# {{ ansible_managed }}
+server {
+  listen 443 ssl http2;
+  server_name apt-mirror.front.sepia.ceph.com
+	      apt-mirror.sepia.ceph.com
+	      gitbuilder.ceph.com;
+
+  ssl_certificate     /etc/letsencrypt/live/apt-mirror.sepia.ceph.com/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/apt-mirror.sepia.ceph.com/privkey.pem;
+  include /etc/letsencrypt/options-ssl-nginx.conf;
+
+  add_header Strict-Transport-Security "max-age=31536000" always;
+
+  access_log /var/log/nginx/apt-mirror-access.log;
+  error_log  /var/log/nginx/apt-mirror-error.log;
+
+  location = /lab-extras {
+    return 301 /lab-extras/;
+  }
+
+  location / {
+    # 2026-08-10 dgalloway: route through Anubis (anubis@apt-mirror).
+    # apt/dnf/curl are not challenged (non-browser UAs pass); only browser-UA
+    # scrapers get challenged.
+    proxy_pass http://127.0.0.1:{{ site.anubis.port }};
+    proxy_http_version 1.1;
+
+    proxy_set_header Host {{ site.upstream }};
+
+    # Standard reverse-proxy headers
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_set_header X-Forwarded-Host $host;
+
+    proxy_read_timeout 600s;
+  }
+}

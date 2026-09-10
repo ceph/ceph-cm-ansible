@@ -86,14 +86,61 @@ fail2ban
 --------
 If ``use_fail2ban`` is set to ``true`` this role will install, configure, and enable fail2ban.
 
-To-Do
-+++++
+Reverse proxies
++++++++++++++++
 
-status.sepia.ceph.com
----------------------
+``tasks/reverse_proxy.yml`` manages the nginx + Anubis_ + certbot reverse
+proxy stack.  It was reverse-engineered from the hand-built config on
+soko01.front.sepia.ceph.com (2026-09) and only runs on hosts that define
+``reverse_proxy_sites`` in inventory host_vars.  Most sites proxy to
+OpenShift routes on the pok cluster and sit behind a per-site Anubis
+instance (``anubis@<site>.service``) to fend off scraper botnets.
 
- - Install and update Cachet_?
+Variables (see ``defaults/main.yml``):
 
+- ``reverse_proxy_site_catalog`` describes every site the role knows how to
+  deploy: the config filename in ``/etc/nginx/sites-available``, the upstream
+  host, and (if the site is behind Anubis) the local Anubis port, metrics
+  port, upstream scheme, and bot policy.  The nginx site templates in
+  ``templates/reverse_proxy/sites/`` pull ports/upstreams from the catalog so
+  the nginx and Anubis halves can't drift apart.
+- ``reverse_proxy_sites`` (host_vars, ceph-sepia-secrets) lists which catalog
+  entries to deploy on a host.
+- ``anubis_ed25519_keys`` (host_vars, ceph-sepia-secrets) is a dict of
+  per-instance ED25519 signing keys (``openssl rand -hex 32``).  These are
+  private; never commit them here.
+- ``reverse_proxy_internal_ip`` defaults to the inventory ``ip=`` var and is
+  used for the nginx resolver and Anubis metrics binds.
+
+Things the playbook does NOT manage:
+
+- **Let's Encrypt certs.**  certbot is installed as a snap along with the
+  ``certbot-dns-nsone`` plugin, and ``snap.certbot.renew.timer`` keeps
+  existing certs renewed.  Issuing a cert for a new site is a one-time manual
+  step, e.g.::
+
+    sudo certbot certonly --authenticator dns-nsone \
+      --dns-nsone-credentials /etc/letsencrypt/nsone.ini \
+      --dns-nsone-propagation-seconds 60 -d newsite.ceph.com -n
+
+  ``*.sepia.ceph.com`` names are different: the sepia zone lives on
+  vpn-pub/soko03 (not NS1), so those certs use ``--authenticator manual``
+  with the ``/etc/letsencrypt/hooks/nsone-{auth,cleanup}-sepia.sh`` hooks
+  and a ``_acme-challenge.<name>.sepia.ceph.com`` →
+  ``_acme-challenge.<name>.ceph.com`` CNAME in the sepia zone
+  (ceph-sepia-secrets ``nameserver.yml``).  Never ``--authenticator nginx``
+  with dns-01 — it silently never renews (apt-mirror, 2026-08-31).
+- ``/etc/letsencrypt/nsone.ini`` (NS1 API key for DNS-01 challenges) is left
+  in place on the host; it is not templated by ansible.
+- The nginx ``default`` site (serves iPXE bits on the lab-internal IP) and
+  the disabled ``teuthology-api.conf``.
+
+Adding a new proxied site: add a catalog entry to ``defaults/main.yml``, a
+matching template under ``templates/reverse_proxy/sites/``, an entry in the
+host's ``reverse_proxy_sites`` plus a new key in ``anubis_ed25519_keys``
+(both in ceph-sepia-secrets host_vars), issue the cert (above), then run the
+role with ``--tags reverse_proxy``.
+
+.. _Anubis: https://anubis.techaro.lol
 .. _UFW: https://wiki.ubuntu.com/UncomplicatedFirewall
 .. _fail2ban: http://www.fail2ban.org/wiki/index.php/Main_Page
-.. _Cachet: https://cachethq.io
