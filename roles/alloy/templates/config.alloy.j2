@@ -5,13 +5,12 @@
 //   metrics  node_exporter on localhost -> Mimir   (alloy_metrics_enabled)
 //   logs     journald + auditd + allowlist -> LokiStack  (alloy_logs_enabled)
 //
-// Both carry host = inventory_hostname, the canonical name from the sepia
-// inventory, so a host's metrics and logs can be joined on one label.
-// ansible_fqdn is NOT used for that: it reflects whatever /etc/hostname says,
-// which is inconsistent across this fleet -- soko05 reports the bare "soko05"
-// while other hosts report a full FQDN -- which makes {host="..."} queries
-// unguessable. The metrics `instance`/`nodename` labels are the one exception,
-// on purpose; see below.
+// Everything carries inventory_hostname, the canonical name from the sepia
+// inventory: the host external label on both pipelines, and the metrics
+// instance/nodename labels. ansible_fqdn is never used -- it reflects whatever
+// /etc/hostname and the resolver say, which drifts (the adami hosts flipped
+// .front -> .maas mid-2026 when MAAS DNS changed) and is inconsistent across
+// the fleet, making {host="..."} and {instance="..."} queries unguessable.
 
 logging {
   level  = "{{ alloy_log_level }}"
@@ -20,14 +19,14 @@ logging {
 
 {% if alloy_metrics_enabled | bool %}
 // ==================================================================== metrics
-// Exactly what grafana-agent did: scrape node_exporter on localhost and
-// remote_write to Mimir. The label set is kept identical -- job="node",
-// instance="<fqdn>:9100", nodename="<fqdn>" -- because the "Node Exporter
-// Full" dashboard (grafana.com 1860, jenkins-grafana/dashboards/
-// node-exporter-lab.yaml in ceph/sepia-openshift) selects hosts by exactly
-// those labels, the provisioned node-exporter alerts there match on literal
-// instance values, and ~60 hosts have history under them. Changing them would
-// orphan every existing series and silently unhook the alerts.
+// What grafana-agent did: scrape node_exporter on localhost and remote_write
+// to Mimir, with the same label shape -- job="node", instance="<name>:9100",
+// nodename="<name>" -- because the "Node Exporter Full" dashboard
+// (grafana.com 1860, jenkins-grafana/dashboards/node-exporter-lab.yaml in
+// ceph/sepia-openshift) selects hosts by those labels and the provisioned
+// node-exporter alerts there match literal instance values. <name> is
+// inventory_hostname; the alert expressions in sepia-openshift were updated
+// in the same change that made it so. Change one only with the other.
 
 prometheus.scrape "node" {
   targets = [
