@@ -146,6 +146,31 @@
         - item.stat.exists
         - "'centos' not in item.item"
 
+    # The hand-managed preseeds carry a frozen copy of the cm key list, so
+    # keys added to cm_user_ssh_keys after the file was written never reach
+    # hosts imaged from them (sockeni02 came up on 2026-09-08 without the
+    # jenkins-build@soko04 and login-monitor keys).  Rewrite the whole
+    # 98_copy_ssh_keys_cm line from the variable so the list can't drift.
+    # The keys are joined with a literal \n; curtin's YAML parse of the
+    # double-quoted scalar turns those back into real newlines, so echo
+    # appends one key per line to authorized_keys.
+    - name: Rewrite the cm user key list in hand-managed preseeds
+      ansible.builtin.replace:
+        path: "{{ item.item }}"
+        regexp: '^(\s*)98_copy_ssh_keys_cm:.*$'
+        # A backslash is an escape character both to Jinja and to the
+        # regex-replacement parser, so four of them here yield the two
+        # characters '\n' in the file.
+        replace: >-
+          \g<1>98_copy_ssh_keys_cm: ["curtin", "in-target", "--", "sh", "-c",
+          "echo '{{ cm_user_ssh_keys | join('\\\\n') }}' >> /home/cm/.ssh/authorized_keys"]
+      loop: "{{ extra_preseeds.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when:
+        - item.stat.exists
+        - cm_user_ssh_keys is defined
+
     - name: Configure global kernel options
       command: "maas {{ maas_admin_username }} maas set-config name=kernel_opts value='{{ global_kernel_opt }}'"
       when: "global_kernel_opt is defined"
