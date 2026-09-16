@@ -1,7 +1,7 @@
 ---
 - name: Listen on all interfaces
-  postgresql_set:
-    name: listen_addresses
+  community.postgresql.postgresql_alter_system:
+    param: listen_addresses
     value: "*"
   become_user: postgres
   register: pg_listen
@@ -13,16 +13,26 @@
   when: pg_listen is changed
 
 - name: Create the postgresql database
-  postgresql_db:
+  community.postgresql.postgresql_db:
     name: paddles
   become_user: postgres
   register: create_db
 
 - name: Set up access to the database
-  postgresql_user:
-    db: paddles
+  community.postgresql.postgresql_user:
+    login_db: paddles
     name: "{{ paddles_db_user }}"
     password: "{{ db_pass }}"
+  become_user: postgres
+  when: create_db is changed
+
+- name: Grant the paddles user privileges on the public schema
+  community.postgresql.postgresql_privs:
+    login_db: paddles
+    type: schema
+    objs: public
+    roles: "{{ paddles_db_user }}"
+    privs: ALL
   become_user: postgres
   when: create_db is changed
 
@@ -52,11 +62,11 @@
   when: not paddles_containerized
 
 - name: Set the alembic revision
-  shell: |
-    source virtualenv/bin/activate
-    alembic stamp head
+  command: alembic stamp head
   args:
     chdir: "{{ paddles_repo_path }}"
+  environment:
+    PATH: "{{ paddles_repo_path }}/virtualenv/bin:{{ ansible_env.PATH }}"
   when:
     - alembic_ini is changed
     - not paddles_containerized

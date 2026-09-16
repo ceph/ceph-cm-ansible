@@ -13,6 +13,12 @@
     mode: 0755
   register: supervisor_conf
 
+- name: Ensure supervisord is running
+  service:
+    name: supervisor
+    enabled: yes
+    state: started
+
 - name: Read supervisord config
   command: supervisorctl update
   when: supervisor_conf is changed
