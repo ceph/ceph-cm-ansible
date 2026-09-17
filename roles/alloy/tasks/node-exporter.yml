@@ -38,7 +38,10 @@
       ansible.builtin.dnf:
         name: epel-release
         state: present
-      when: ansible_os_family == "RedHat"
+      # Fedora carries node_exporter in its own repos and has no epel-release.
+      when:
+        - ansible_os_family == "RedHat"
+        - ansible_distribution != "Fedora"
 
     - name: node_exporter - Install {{ alloy_node_exporter_package }}
       ansible.builtin.package:

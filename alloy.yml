@@ -18,6 +18,13 @@
 # ([testnodes:children] is smithi, ovh, gibba and trial). The testnode role can
 # pull this role in for metrics only with run_alloy_role: true.
 #
+# The trailing exclusions are DNS aliases, not machines: teuthology.front is a
+# CNAME for soko04.front, and o01/o02.front are CNAMEs for their .vlan107
+# names. Running the play against both names of one machine makes the last
+# writer win the instance/host labels, so the box flaps identities between
+# runs (that is how "teuthology" spent a week reporting as soko04 and vice
+# versa). One name per machine: the real hostname stays, the alias goes.
+#
 # Groups, and why each is here:
 #   infrastructure       lab services (hv01-04, store01, satellite, chacra, ...)
 #   ci_infrastructure    shaman, chacra, jenkins controllers and builders
@@ -27,8 +34,12 @@
 #   folio, sockeni       dev boxes
 #   vossi                dev boxes
 - hosts: >-
-    infrastructure:ci_infrastructure:public_facing:long_running_cluster:officinalis:mako:folio:sockeni:vossi:!infra_compute:!infra_storage:!cnv
+    infrastructure:ci_infrastructure:public_facing:long_running_cluster:officinalis:mako:folio:sockeni:vossi:!infra_compute:!infra_storage:!cnv:!teuthology:!o01.front.sepia.ceph.com:!o02.front.sepia.ceph.com
   strategy: free
+  # A failed task (e.g. the wedged dpkg on soko02) must not eat the queued
+  # "Restart alloy" handler -- that leaves alloy running an old config while
+  # the file on disk says otherwise, which took days to notice.
+  force_handlers: true
   roles:
     - alloy
   become: true
