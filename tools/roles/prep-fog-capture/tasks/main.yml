@@ -133,6 +133,14 @@
     - apt-daily-upgrade.service
     - apt-daily.timer
     - apt-daily-upgrade.timer
+    - apt-news.service
+    - esm-cache.service
+    - motd-news.service
+    - motd-news.timer
+    - update-notifier-download.service
+    - update-notifier-download.timer
+    - update-notifier-motd.service
+    - update-notifier-motd.timer
   failed_when: false
 
 - name: Disable cloud init networking config
