@@ -10,6 +10,17 @@ Both use postgresql for the database and nginx as a reverse proxy.
 It has been tested on:
 
 - Ubuntu 18.04
+- Ubuntu 24.04 (PostgreSQL 16, non-containerized path)
+
+Requirements
+++++++++++++
+
+- ``community.postgresql`` collection **>= 3.13.0**.  The role uses
+  ``postgresql_alter_system``, which was added in 3.13.0; the module it
+  replaced (``postgresql_set``) was removed in 5.0.0.  teuthology installs the
+  collection unpinned via its ``requirements.yml``, so it gets the newest.
+- PostgreSQL **>= 14** on the target (a ``postgresql_alter_system``
+  requirement).
 
 Usage
 +++++
