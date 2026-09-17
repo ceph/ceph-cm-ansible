@@ -1,0 +1,79 @@
+{% set site = reverse_proxy_site_catalog['sentry'] %}
+# {{ ansible_managed }}
+# sentry.ceph.com -> Sentry on OpenShift ('sentry' namespace, edge Route).
+# Public entry point so the GitHub app (sentrycephcom) OAuth callbacks and
+# webhook deliveries work; sentry's system.url-prefix is this name.
+# Lab/VPN users can also browse via sentry.front.sepia.ceph.com directly.
+server {
+  listen 80;
+  server_name sentry.ceph.com;
+
+  location ^~ /.well-known/acme-challenge/ {
+    root /var/www/letsencrypt;
+    default_type "text/plain";
+  }
+
+  location / {
+    return 301 https://$host$request_uri;
+  }
+}
+
+server {
+  listen 443 ssl http2;
+  server_name sentry.ceph.com;
+
+  ssl_certificate     /etc/letsencrypt/live/sentry.ceph.com/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/sentry.ceph.com/privkey.pem;
+  include /etc/letsencrypt/options-ssl-nginx.conf;
+
+  access_log /var/log/nginx/sentry-access.log;
+  error_log  /var/log/nginx/sentry-error.log;
+
+  # OpenShift Route host (no scheme, no slash)
+  set $upstream_host {{ site.upstream }};
+
+  # SDK event envelopes can be chunky (matches the in-cluster nginx cap)
+  client_max_body_size 100m;
+
+  # Machine endpoints that can't answer an Anubis challenge: SDK ingestion
+  # and API clients (/api/...) plus GitHub webhook/setup deliveries
+  # (/extensions/...). Straight to the route over TLS; requests are
+  # DSN/token/HMAC-authenticated by sentry itself.
+  location ~ ^/(api|extensions)/ {
+    proxy_pass https://$upstream_host;
+    proxy_set_header Host $upstream_host;
+    proxy_ssl_server_name on;
+    proxy_ssl_name $upstream_host;
+
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+
+    proxy_http_version 1.1;
+    proxy_buffering off;
+  }
+
+  location / {
+    # Per-site Anubis instance (anubis@sentry), same pattern as the
+    # 2026-08-10 all-sites rollout. Anubis connects to the route over TLS
+    # itself (SSL_CERT_FILE in /etc/anubis/sentry.env).
+    proxy_pass http://127.0.0.1:{{ site.anubis.port }};
+
+    # Rewrite backend redirects that leak the internal route hostname.
+    proxy_redirect http://{{ site.upstream }}/ /;
+    proxy_redirect https://{{ site.upstream }}/ /;
+
+    # Make the OpenShift router match the correct route; sentry rebuilds
+    # the public name from X-Forwarded-Host (USE_X_FORWARDED_HOST).
+    proxy_set_header Host {{ site.upstream }};
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+
+    proxy_http_version 1.1;
+    proxy_read_timeout 120s;
+    proxy_buffering off;
+  }
+}
