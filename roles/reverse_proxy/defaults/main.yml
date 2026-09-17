@@ -1,0 +1,20 @@
+---
+# nginx vhosts on the public reverse proxy (soko01) that this role manages.
+# Each entry is a file in /etc/nginx/sites-available rendered from
+# templates/<name>.j2.  Vhosts not listed here stay hand-managed on the host.
+reverse_proxy_sites:
+  - pulpito.conf
+
+# Source addresses allowed to use the GET-only paddles proxy on
+# pulpito.ceph.com (location ~* ^/_paddles/runs/).  paddles has no auth of
+# its own, so this location is limited to GET and to these addresses; it
+# exists so read-only consumers (external CI dashboards) never need a
+# WireGuard peer into the lab.  Each entry is {cidr, comment}.
+reverse_proxy_paddles_readonly_allow:
+  - cidr: 192.86.31.0/24
+    comment: lab public /24 (soko01 self-test, vpn-pub)
+
+# Additional allowed addresses for third parties.  Define in the secrets
+# repo host_vars for the proxy host so external IPs stay out of this public
+# repo.  Same {cidr, comment} shape.
+reverse_proxy_paddles_readonly_allow_extra: []

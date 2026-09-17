@@ -1,0 +1,7 @@
+---
+# Graceful reload; existing connections (and Anubis challenge state, which
+# lives in the anubis@* services, not nginx) are unaffected.
+- name: reload nginx
+  service:
+    name: nginx
+    state: reloaded

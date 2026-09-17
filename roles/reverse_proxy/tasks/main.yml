@@ -1,0 +1,27 @@
+---
+# The vhost is validated with a full `nginx -t` after it is written (a lone
+# vhost can't be validated in isolation because it's included from
+# nginx.conf).  If the test fails the play stops before the reload handler
+# runs and the timestamped backup next to the file has the previous version.
+- name: Render managed nginx vhosts
+  template:
+    src: "{{ item }}.j2"
+    dest: "/etc/nginx/sites-available/{{ item }}"
+    owner: root
+    group: root
+    mode: 0644
+    backup: yes
+  loop: "{{ reverse_proxy_sites }}"
+  notify: reload nginx
+
+- name: Enable managed nginx vhosts
+  file:
+    src: "../sites-available/{{ item }}"
+    dest: "/etc/nginx/sites-enabled/{{ item }}"
+    state: link
+  loop: "{{ reverse_proxy_sites }}"
+  notify: reload nginx
+
+- name: Validate nginx configuration
+  command: nginx -t
+  changed_when: false
