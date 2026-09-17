@@ -58,6 +58,19 @@ anubis_deb_url: "https://github.com/TecharoHQ/anubis/releases/download/v{{ anubi
 #   openssl rand -hex 32
 anubis_ed25519_keys: {}
 
+# GET-only paddles proxy on pulpito.ceph.com (location ~* ^/_paddles/runs/
+# in sites/pulpito.conf.j2) for external consumers that only need to *read*
+# test results and would otherwise ask for a WireGuard peer.  paddles has no
+# auth of its own, so the location is limited to GET and to these source
+# addresses ({cidr, comment} entries).  Third-party addresses go in
+# reverse_proxy_paddles_readonly_allow_extra in ceph-sepia-secrets host_vars
+# so they stay out of this public repo.
+reverse_proxy_paddles_upstream: paddles.front.sepia.ceph.com
+reverse_proxy_paddles_readonly_allow:
+  - cidr: 192.86.31.0/24
+    comment: lab public /24 (soko01 self-test, vpn-pub)
+reverse_proxy_paddles_readonly_allow_extra: []
+
 # Catalog of reverse proxy sites this role knows how to deploy.
 #   conf:     filename in /etc/nginx/sites-available (template of the same
 #             name + .j2 must exist in templates/reverse_proxy/sites/)

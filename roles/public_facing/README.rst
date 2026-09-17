@@ -111,6 +111,14 @@ Variables (see ``defaults/main.yml``):
   private; never commit them here.
 - ``reverse_proxy_internal_ip`` defaults to the inventory ``ip=`` var and is
   used for the nginx resolver and Anubis metrics binds.
+- ``reverse_proxy_paddles_readonly_allow`` / ``..._allow_extra`` (the latter
+  in host_vars, ceph-sepia-secrets) list the source addresses allowed to use
+  the GET-only paddles proxy at ``https://pulpito.ceph.com/_paddles/runs/...``
+  (same paths paddles serves under ``/runs/``; 60s cache; bypasses Anubis).
+  paddles has no auth of its own, so the location is limited to ``GET``.
+  External CI dashboards that only need to read results get an entry here,
+  not a WireGuard peer.  The ``href`` fields paddles returns point at the
+  internal paddles name; consumers should build URLs from run/job names.
 
 Things the playbook does NOT manage:
 

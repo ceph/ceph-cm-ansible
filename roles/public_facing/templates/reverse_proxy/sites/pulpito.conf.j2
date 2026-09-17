@@ -47,6 +47,36 @@ server {
     add_header X-Cache-Status $upstream_cache_status;
   }
 
+  # 2026-09-17 dgalloway: GET-only paddles proxy for external CI dashboards
+  # (first consumer: the nvmeof team's Jenkins in IBM Cloud).  paddles has no
+  # auth of its own, so this is limited to GET and to an allowlist of source
+  # addresses.  It exists so read-only consumers never need a WireGuard peer
+  # into the lab.  Third-party addresses are added via
+  # reverse_proxy_paddles_readonly_allow_extra in ceph-sepia-secrets host_vars.
+  location ~* ^/_paddles/runs/ {
+    limit_except GET { deny all; }
+{% for entry in reverse_proxy_paddles_readonly_allow + reverse_proxy_paddles_readonly_allow_extra %}
+    allow {{ entry.cidr }};  # {{ entry.comment }}
+{% endfor %}
+    deny all;
+
+    rewrite ^/_paddles/(.*)$ /$1 break;
+    proxy_pass https://{{ reverse_proxy_paddles_upstream }};
+    proxy_set_header Host {{ reverse_proxy_paddles_upstream }};
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_ssl_server_name on;
+    proxy_ssl_name {{ reverse_proxy_paddles_upstream }};
+    proxy_http_version 1.1;
+
+    proxy_cache paddles_cache;
+    proxy_cache_valid 200 60s;
+    proxy_cache_use_stale error timeout updating;
+    proxy_cache_lock on;
+    add_header X-Cache-Status $upstream_cache_status;
+  }
+
   location / {
     # 2026-08-05 dgalloway: route through Anubis (anubis@pulpito) to stop
     # scraper botnet.
