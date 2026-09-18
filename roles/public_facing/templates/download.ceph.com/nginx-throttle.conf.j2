@@ -1,0 +1,20 @@
+# {{ ansible_managed }}
+#
+# Per-source-IP limits for the subnets in download_throttled_subnets.
+# An empty key means "not limited", so no other client is affected.
+# All directives live at http level so the vhost needs no changes.
+geo $throttled_subnet {
+    default 0;
+{% for subnet in download_throttled_subnets %}
+    {{ subnet }} 1;
+{% endfor %}
+}
+map $throttled_subnet $throttle_key  { 0 ""; 1 $binary_remote_addr; }
+map $throttled_subnet $throttle_rate { 0 0;  1 {{ download_throttle_rate_per_conn }}; }
+
+limit_conn_zone $throttle_key zone=throttle_conn:1m;
+limit_req_zone  $throttle_key zone=throttle_req:1m rate={{ download_throttle_req_per_sec }}r/s;
+
+limit_conn throttle_conn {{ download_throttle_conn_per_ip }};
+limit_req  zone=throttle_req burst={{ download_throttle_req_burst }} nodelay;
+limit_rate $throttle_rate;

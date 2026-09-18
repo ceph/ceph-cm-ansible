@@ -16,3 +16,14 @@
   service:
     name: sshd
     state: restarted
+
+# Reload nginx, but only if the config is valid
+- name: reload nginx
+  shell: nginx -t && systemctl reload nginx
+
+# Re-apply tc egress shaping
+- name: restart egress shaper
+  systemd:
+    name: egress-shaper
+    state: restarted
+    daemon_reload: yes

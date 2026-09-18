@@ -35,3 +35,24 @@ f2b_services:
     maxretry: 3
     filter: "sshd-ddos"
     logpath: "{{ sshd_logpath }}"
+
+## download.ceph.com
+# OVH caps each instance's public bandwidth.  These keep one heavy client
+# from starving everyone else.  See README.
+download_public_iface: "{{ ansible_default_ipv4.interface }}"
+
+# Aggregate egress for rsyncd (tcp/873).  tc syntax, e.g. 20mbit.
+download_rsync_egress_limit: "20mbit"
+
+# Subnets that are allowed but throttled, both in nginx (per source IP) and
+# in tc (aggregate).  GoDaddy's package-mirror hosts saturated the service
+# over HTTPS in Sep 2026 (~560 connections, 2TB/day).
+download_throttled_subnets:
+  - "64.202.160.0/24"
+  - "64.202.174.0/24"
+download_throttled_subnets_egress_limit: "50mbit"
+download_throttle_conn_per_ip: 2
+download_throttle_req_per_sec: 5
+download_throttle_req_burst: 20
+# nginx size syntax, per connection
+download_throttle_rate_per_conn: "2m"

@@ -68,4 +68,35 @@
     minute: "0"
     job: "/usr/libexec/make_timestamp"
 
+# Per-source-IP limits for download_throttled_subnets.  Everything is at
+# http level so the (unmanaged) vhost does not need to change.
+- name: Put nginx throttle config in place
+  template:
+    src: templates/download.ceph.com/nginx-throttle.conf.j2
+    dest: /etc/nginx/conf.d/throttle.conf
+    mode: 0644
+  notify: reload nginx
+
+# Caps rsyncd and download_throttled_subnets egress with tc
+- name: Put egress shaper script in place
+  template:
+    src: templates/download.ceph.com/egress-shaper.sh.j2
+    dest: /usr/local/sbin/egress-shaper.sh
+    mode: 0755
+  notify: restart egress shaper
+
+- name: Put egress shaper unit in place
+  template:
+    src: templates/download.ceph.com/egress-shaper.service.j2
+    dest: /etc/systemd/system/egress-shaper.service
+    mode: 0644
+  notify: restart egress shaper
+
+- name: Enable and start egress shaper
+  systemd:
+    name: egress-shaper
+    enabled: yes
+    state: started
+    daemon_reload: yes
+
 - import_tasks: letsencrypt_nginx.yml
