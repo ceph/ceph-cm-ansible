@@ -1,0 +1,31 @@
+#!/bin/sh
+# {{ ansible_managed }}
+#
+# Egress shaping for download.ceph.com.  OVH caps the instance's public
+# bandwidth, so a single heavy mirror can starve everyone else.
+#   1:10  rsyncd (tcp/873)                 {{ download_rsync_egress_limit }}
+#   1:30  download_throttled_subnets       {{ download_throttled_subnets_egress_limit }} (aggregate)
+#   1:20  everything else                  unshaped
+DEV={{ download_public_iface }}
+
+tc qdisc del dev $DEV root 2>/dev/null || true
+tc qdisc add dev $DEV root handle 1: htb default 20
+tc class add dev $DEV parent 1:  classid 1:1  htb rate 10gbit ceil 10gbit
+tc class add dev $DEV parent 1:1 classid 1:10 htb rate {{ download_rsync_egress_limit }} ceil {{ download_rsync_egress_limit }}
+tc class add dev $DEV parent 1:1 classid 1:20 htb rate 9gbit ceil 10gbit
+tc qdisc add dev $DEV parent 1:10 handle 10: fq_codel
+tc qdisc add dev $DEV parent 1:20 handle 20: fq_codel
+tc filter add dev $DEV parent 1: protocol ip   prio 1 u32 match ip  sport 873 0xffff flowid 1:10
+tc filter add dev $DEV parent 1: protocol ipv6 prio 2 u32 match ip6 sport 873 0xffff flowid 1:10
+{% if download_throttled_subnets %}
+
+tc class add dev $DEV parent 1:1 classid 1:30 htb rate {{ download_throttled_subnets_egress_limit }} ceil {{ download_throttled_subnets_egress_limit }}
+tc qdisc add dev $DEV parent 1:30 handle 30: fq_codel
+{% for subnet in download_throttled_subnets %}
+{% if ':' in subnet %}
+tc filter add dev $DEV parent 1: protocol ipv6 prio 4 u32 match ip6 dst {{ subnet }} flowid 1:30
+{% else %}
+tc filter add dev $DEV parent 1: protocol ip   prio 3 u32 match ip  dst {{ subnet }} flowid 1:30
+{% endif %}
+{% endfor %}
+{% endif %}

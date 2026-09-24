@@ -50,6 +50,12 @@ Defined in ``roles/public_facing/defaults/main.yml``  Override these in the ansi
 
     # Note: sshd_logpath gets defined automatically in roles/public_facing/tasks/fail2ban.yml
 
+``download_rsync_egress_limit: "20mbit"`` caps rsyncd (tcp/873) egress on download.ceph.com using ``tc``.
+
+``download_throttled_subnets: []`` is a list of IPv4/IPv6 CIDRs that are allowed but throttled on download.ceph.com.  ``download_throttled_subnets_egress_limit: "50mbit"`` is their aggregate ``tc`` cap.  ``download_throttle_conn_per_ip: 2``, ``download_throttle_req_per_sec: 5``, ``download_throttle_req_burst: 20`` and ``download_throttle_rate_per_conn: "2m"`` are the per-source-IP nginx limits.  See `download.ceph.com`_ below.
+
+``download_public_iface`` is the interface ``tc`` shapes.  Defaults to the interface holding the default IPv4 route.
+
 host_vars
 ---------
 If required, define these in your ansible inventory ``host_vars`` file.
@@ -85,6 +91,15 @@ Despite having network port ACLs defined for each host in our cloud provider's i
 fail2ban
 --------
 If ``use_fail2ban`` is set to ``true`` this role will install, configure, and enable fail2ban.
+
+download.ceph.com
+-----------------
+The host-specific tasks create the ``signer`` and ``bitergia`` users, install the hourly ``/usr/libexec/make_timestamp`` cron (mirrors use ``/timestamp`` to check freshness), keep the letsencrypt cert renewed, and protect the instance's capped public bandwidth:
+
+- ``/usr/local/sbin/egress-shaper.sh`` (``egress-shaper.service``) builds an HTB tree on ``download_public_iface``: one class for rsyncd, one aggregate class for ``download_throttled_subnets``, everything else unshaped.
+- ``/etc/nginx/conf.d/throttle.conf`` limits connections, request rate and per-connection rate for each source IP in ``download_throttled_subnets``.  All directives are at ``http`` level and keyed on an empty string for everyone else, so other clients are not limited and the vhost (which this role does not manage) needs no changes.
+
+A bandwidth cap alone is not enough: the data volume is IOPS-limited, so hundreds of slow connections can stall nginx even when the pipe is not full.  To block a client outright instead, use ``ufw deny from <cidr>``.
 
 To-Do
 +++++
