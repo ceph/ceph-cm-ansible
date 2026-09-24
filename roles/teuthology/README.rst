@@ -37,3 +37,22 @@ Variables
   ``SystemMaxUse`` (e.g. ``1G``, ``2G``).
 
   Default: ``2G``
+
+``teuthology_old_lrc_fallback``
+  When true, the nginx vhost gets a ``try_files`` fallback so requests for
+  logs not found under ``archive_base`` are served from a read-only mount of
+  the old (pre-migration) LRC cephfs at ``teuthology_old_lrc_root``.  Set to
+  true in host_vars (in the secrets repo) for ``soko04.front.sepia.ceph.com``,
+  which serves the pre-migration teuthology log archive.
+
+  The mount itself is not managed by this role.  On soko04 it is a manually
+  maintained fstab entry using ``ceph-fuse`` (``fuse.ceph``, ``ro,allow_other``)
+  because the old LRC cluster issues aes256k service tickets that the host's
+  kernel client does not support.
+
+  Default: ``false``
+
+``teuthology_old_lrc_root``
+  Filesystem path of the old LRC cephfs mount used by the fallback above.
+
+  Default: ``/www-data/old-lrc``
