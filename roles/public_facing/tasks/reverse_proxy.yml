@@ -42,6 +42,26 @@
   command: snap connect certbot:plugin certbot-dns-nsone
   when: "'certbot-dns-nsone' not in certbot_connections.stdout"
 
+# The dns-nsone and manual authenticators have no installer, so nothing tells
+# nginx about a renewed cert; it kept serving the old one until someone
+# happened to reload it.  certbot runs everything in renewal-hooks/deploy
+# after each successful renewal.
+- name: Create certbot deploy hook directory
+  file:
+    path: /etc/letsencrypt/renewal-hooks/deploy
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Deploy certbot deploy hook to reload nginx
+  copy:
+    src: reverse_proxy/certbot-reload-nginx.sh
+    dest: /etc/letsencrypt/renewal-hooks/deploy/reload-nginx.sh
+    owner: root
+    group: root
+    mode: '0755'
+
 - name: Check installed Anubis version
   command: dpkg-query --show --showformat '${Version}' anubis
   register: anubis_installed

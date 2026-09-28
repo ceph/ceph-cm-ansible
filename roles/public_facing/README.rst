@@ -138,6 +138,16 @@ Things the playbook does NOT manage:
   ``_acme-challenge.<name>.ceph.com`` CNAME in the sepia zone
   (ceph-sepia-secrets ``nameserver.yml``).  Never ``--authenticator nginx``
   with dns-01 — it silently never renews (apt-mirror, 2026-08-31).
+
+  After issuing, check that ``/etc/letsencrypt/renewal/<name>.conf`` has
+  ``dns_nsone_credentials = /etc/letsencrypt/nsone.ini`` under
+  ``authenticator = dns-nsone``.  Without it every renewal fails asking for
+  the credentials path (git + pulpito, 2026-09-28).
+
+  The role does install a certbot deploy hook
+  (``/etc/letsencrypt/renewal-hooks/deploy/reload-nginx.sh``) so nginx is
+  reloaded after each successful renewal; none of the authenticators above
+  have an installer, so without the hook nginx keeps serving the old cert.
 - ``/etc/letsencrypt/nsone.ini`` (NS1 API key for DNS-01 challenges) is left
   in place on the host; it is not templated by ansible.
 - The nginx ``default`` site (serves iPXE bits on the lab-internal IP) and
