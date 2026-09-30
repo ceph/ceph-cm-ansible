@@ -72,6 +72,11 @@ server {
     location = /jenkins {
         return 302 /public-dashboards/70128b2178f64c918c3db05e09b94beb;
     }
+    # redmine-itil-public: variable-free clone of the Redmine ITIL dashboard
+    # (sepia-openshift jenkins-grafana/dashboards/redmine-itil-public.yaml)
+    location = /redmine {
+        return 302 /public-dashboards/dd7806d9d9b445238ac63c568db49d9e;
+    }
     # END ANSIBLE MANAGED: friendly dashboard paths
     # --- Main proxy: everything goes to Grafana ---
     location / {
