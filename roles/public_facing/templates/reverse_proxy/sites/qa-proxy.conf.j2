@@ -1,0 +1,62 @@
+{% set site = reverse_proxy_site_catalog['qa-proxy'] %}
+# {{ ansible_managed }}
+server {
+  listen 80;
+  server_name qa-proxy.ceph.com;
+  return 301 https://$host$request_uri;
+}
+
+server {
+  listen 443 ssl http2;
+  server_name qa-proxy.ceph.com;
+  ssl_certificate     /etc/letsencrypt/live/qa-proxy.ceph.com/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/qa-proxy.ceph.com/privkey.pem;
+  include /etc/letsencrypt/options-ssl-nginx.conf;
+  add_header Strict-Transport-Security "max-age=31536000" always;
+  access_log /var/log/nginx/qa-proxy-access.log;
+  error_log  /var/log/nginx/qa-proxy-error.log;
+
+  # Block known aggressive crawlers
+  # Microsoft/Azure crawler (caused outage 2026-05-07)
+  deny 74.7.128.0/17;
+  # Baidu crawler
+  deny 220.181.0.0/16;
+  deny 119.249.0.0/16;
+
+  # Rate limiting: 20 req/s per IP with a burst of 50
+  # Generous enough for legitimate users, limits crawlers that slip through
+  # (zones defined in nginx.conf)
+  limit_req zone=qa_proxy_req burst=50 nodelay;
+
+  # Per-connection bandwidth cap: full speed for first 50 MB, then 20 MB/s
+  # A human downloading a log file won't notice; a bulk crawler will be slowed
+  limit_rate_after 50m;
+  limit_rate 20m;
+
+  # Cap concurrent connections per IP
+  limit_conn qa_proxy_conn 8;
+
+  location / {
+    # 2026-08-10 dgalloway: route through Anubis (anubis@qa-proxy) in
+    # addition to the IP denies / rate limits above.
+    proxy_pass http://127.0.0.1:{{ site.anubis.port }};
+    proxy_http_version 1.1;
+    # REQUIRED so {{ site.upstream }} matches the correct vhost
+    proxy_set_header Host {{ site.upstream }};
+    # Standard reverse-proxy headers
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_read_timeout 600s;
+  }
+
+  # dgalloway added.  No real reason to have qa-proxy.ceph.com require the /teuthology.
+  # Now either will work
+  location = / {
+    return 302 /teuthology/;
+  }
+
+  location = /robots.txt {
+    alias /srv/robots.txt;
+  }
+}

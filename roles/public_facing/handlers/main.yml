@@ -16,3 +16,17 @@
   service:
     name: sshd
     state: restarted
+
+# Reload nginx
+- name: reload nginx
+  service:
+    name: nginx
+    state: reloaded
+
+# Restart all deployed Anubis instances
+- name: restart anubis
+  service:
+    name: "anubis@{{ item }}"
+    state: restarted
+  with_items: "{{ reverse_proxy_sites }}"
+  when: reverse_proxy_site_catalog[item].anubis is defined
