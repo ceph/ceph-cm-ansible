@@ -17,5 +17,11 @@ archive_base: "/home/{{ teuthology_execution_user }}/archive"
 
 remote_crontab_url: "https://raw.githubusercontent.com/ceph/ceph/main/qa/crontab/teuthology-cronjobs"
 
+# Serve pre-migration teuthology logs from a read-only mount of the old
+# LRC cephfs if they're not found under archive_base.
+# Set to true in host_vars (e.g., soko04) in the secrets repo.
+teuthology_old_lrc_fallback: false
+teuthology_old_lrc_root: /www-data/old-lrc
+
 journald_max_retention: 7day
 journald_max_use: 2G
