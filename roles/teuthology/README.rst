@@ -45,10 +45,23 @@ Variables
   true in host_vars (in the secrets repo) for ``soko04.front.sepia.ceph.com``,
   which serves the pre-migration teuthology log archive.
 
-  The mount itself is not managed by this role.  On soko04 it is a manually
-  maintained fstab entry using ``ceph-fuse`` (``fuse.ceph``, ``ro,allow_other``)
-  because the old LRC cluster issues aes256k service tickets that the host's
-  kernel client does not support.
+  When enabled, the role also manages the mount itself: it ships
+  ``/etc/ceph/old-lrc.conf`` and ``/etc/ceph/old-lrc.keyring`` (the cephx
+  key for ``client.teuthology-ro``, aka ``teuthology_old_lrc_client``, comes from
+  ``old_lrc.yml`` in the secrets repo via ``secrets_path``) and mounts the
+  filesystem read-only with ``ceph-fuse`` (``fuse.ceph``, ``ro,allow_other``)
+  via fstab.  ``ceph-fuse`` is used because the old LRC issues aes256k
+  service tickets that the host's kernel client does not support; the
+  aes256k (type 2) client key additionally requires ceph >= 20.x
+  (tentacle) userspace — Ubuntu noble's 19.2.3 cannot parse the keyring.
+
+  The old LRC rotates its client keys.  After a rotation, update
+  ``old_lrc_teuthology_ro_key`` in the secrets repo and re-run this role
+  (tag ``old-lrc``); a keyring change triggers a handler that kills the
+  running ceph-fuse client and remounts, since a client holding a
+  rotated-away key lingers on its established sessions for days and then
+  wedges nginx in D-state once they finally drop (2026-09-10 and
+  2026-09-30 outages).
 
   Default: ``false``
 
