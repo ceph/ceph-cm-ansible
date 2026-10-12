@@ -41,8 +41,15 @@ f2b_services:
 # from starving everyone else.  See README.
 download_public_iface: "{{ ansible_default_ipv4.interface }}"
 
-# Aggregate egress for rsyncd (tcp/873).  tc syntax, e.g. 20mbit.
-download_rsync_egress_limit: "20mbit"
+# Aggregate egress for rsyncd (tcp/873).  tc syntax, e.g. 200mbit.
+# Don't set this too low: at 20mbit, full-tree mirror syncs took days, piled
+# up, and pinned all of rsyncd's connection slots (Oct 2026).
+download_rsync_egress_limit: "200mbit"
+
+# rsyncd connection slots and idle timeout (seconds).  The timeout reaps
+# wedged sessions that would otherwise hold slots for weeks.
+download_rsync_max_connections: 128
+download_rsync_timeout: 1800
 
 # Subnets that are allowed but throttled, both in nginx (per source IP) and
 # in tc (aggregate).  GoDaddy's package-mirror hosts saturated the service

@@ -1,0 +1,11 @@
+# {{ ansible_managed }}
+uid = nobody
+gid = nogroup
+use chroot = yes
+max connections = {{ download_rsync_max_connections }}
+timeout = {{ download_rsync_timeout }}
+munge symlinks = no
+
+[ceph]
+	path = /data/download.ceph.com/www/
+	comment = ceph packages

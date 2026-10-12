@@ -68,6 +68,21 @@
     minute: "0"
     job: "/usr/libexec/make_timestamp"
 
+# Mirrors sync from us on tcp/873.  No restart handler on purpose: rsyncd
+# re-reads this file for every new connection, and a restart would kill
+# in-flight mirror syncs.
+- name: Put rsyncd config in place
+  template:
+    src: templates/download.ceph.com/rsyncd.conf.j2
+    dest: /etc/rsyncd.conf
+    mode: 0644
+
+- name: Enable and start rsync daemon
+  systemd:
+    name: rsync
+    enabled: yes
+    state: started
+
 # Per-source-IP limits for download_throttled_subnets.  Everything is at
 # http level so the (unmanaged) vhost does not need to change.
 - name: Put nginx throttle config in place
