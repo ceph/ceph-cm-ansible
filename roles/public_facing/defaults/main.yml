@@ -36,6 +36,39 @@ f2b_services:
     filter: "sshd-ddos"
     logpath: "{{ sshd_logpath }}"
 
+## download.ceph.com
+# OVH caps each instance's public bandwidth.  These keep one heavy client
+# from starving everyone else.  See README.
+download_public_iface: "{{ ansible_default_ipv4.interface }}"
+
+# The instance's actual public bandwidth (tc syntax).  Used for the root HTB
+# class so the shaper models the real bottleneck; update it if the flavor or
+# OVH cap changes.  b3-16 = 1gbit.
+download_egress_rate: "1gbit"
+
+# Aggregate egress for rsyncd (tcp/873).  tc syntax, e.g. 200mbit.
+# Don't set this too low: at 20mbit, full-tree mirror syncs took days, piled
+# up, and pinned all of rsyncd's connection slots (Oct 2026).
+download_rsync_egress_limit: "200mbit"
+
+# rsyncd connection slots and idle timeout (seconds).  The timeout reaps
+# wedged sessions that would otherwise hold slots for weeks.
+download_rsync_max_connections: 128
+download_rsync_timeout: 1800
+
+# Subnets that are allowed but throttled, both in nginx (per source IP) and
+# in tc (aggregate).  GoDaddy's package-mirror hosts saturated the service
+# over HTTPS in Sep 2026 (~560 connections, 2TB/day).
+download_throttled_subnets:
+  - "64.202.160.0/24"
+  - "64.202.174.0/24"
+download_throttled_subnets_egress_limit: "50mbit"
+download_throttle_conn_per_ip: 2
+download_throttle_req_per_sec: 5
+download_throttle_req_burst: 20
+# nginx size syntax, per connection
+download_throttle_rate_per_conn: "2m"
+
 ## Reverse proxy vars.  See the "Reverse proxies" section of the README.
 
 # Which sites from reverse_proxy_site_catalog to deploy on a host.  Set in

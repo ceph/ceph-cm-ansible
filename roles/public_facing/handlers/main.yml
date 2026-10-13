@@ -17,11 +17,16 @@
     name: sshd
     state: restarted
 
-# Reload nginx
+# Reload nginx, but only if the config is valid
 - name: reload nginx
-  service:
-    name: nginx
-    state: reloaded
+  shell: nginx -t && systemctl reload nginx
+
+# Re-apply tc egress shaping
+- name: restart egress shaper
+  systemd:
+    name: egress-shaper
+    state: restarted
+    daemon_reload: yes
 
 # Restart all deployed Anubis instances
 - name: restart anubis
