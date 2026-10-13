@@ -27,3 +27,11 @@
     name: egress-shaper
     state: restarted
     daemon_reload: yes
+
+# Restart all deployed Anubis instances
+- name: restart anubis
+  service:
+    name: "anubis@{{ item }}"
+    state: restarted
+  with_items: "{{ reverse_proxy_sites }}"
+  when: reverse_proxy_site_catalog[item].anubis is defined

@@ -1,0 +1,49 @@
+{% set site = reverse_proxy_site_catalog['githelper'] %}
+# {{ ansible_managed }}
+server {
+  listen 80;
+  server_name githelper.ceph.com;
+
+  return 301 https://$host$request_uri;
+}
+
+server {
+  listen 443 ssl http2;
+  server_name githelper.ceph.com;
+
+  ssl_certificate     /etc/letsencrypt/live/githelper.ceph.com/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/githelper.ceph.com/privkey.pem;
+  include /etc/letsencrypt/options-ssl-nginx.conf;
+
+  add_header Strict-Transport-Security "max-age=31536000" always;
+
+  access_log /var/log/nginx/githelper-access.log;
+  error_log  /var/log/nginx/githelper-error.log;
+
+  # OpenShift route host (no scheme, no slash)
+  set $upstream_host {{ site.upstream }};
+
+  location / {
+    # 2026-08-10 dgalloway: route through Anubis (anubis@githelper).  Anubis
+    # verifies the route TLS via SSL_CERT_FILE in /etc/anubis/githelper.env.
+    proxy_pass http://127.0.0.1:{{ site.anubis.port }};
+
+    proxy_buffering off;
+
+    # OpenShift route match
+    proxy_set_header Host $upstream_host;
+
+    # Normal proxy headers
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+
+    proxy_http_version 1.1;
+
+    proxy_read_timeout 600s;
+
+    # Rewrite upstream redirects back to public name
+    proxy_redirect https://$upstream_host/ https://$host/;
+    proxy_redirect http://$upstream_host/  https://$host/;
+  }
+}

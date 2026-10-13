@@ -1,4 +1,45 @@
 ---
+# The user dicts from the secrets repo carry emails, notes, and WireGuard
+# peer details (public_key, allowed_ips, sometimes preshared_key).  This
+# role only needs the username and an optional literal pubkey, and
+# teuthology runs ansible-playbook with -v, where every set_fact and
+# per-item loop result is dumped in full into the public per-run
+# ansible.log -- loop_control labels don't help there.  Strip everything
+# else up front so no later task in this role can leak it.
+# (The wireguard role reads the raw admin_users/lab_users inventory vars,
+# not these facts, so gateway peer configs are unaffected.)
+- name: Strip unneeded and sensitive fields from user dicts
+  set_fact:
+    managed_users: >-
+      {{
+        managed_users
+        | map('dict2items')
+        | map('selectattr', 'key', 'in', users_kept_fields)
+        | map('items2dict')
+        | list
+      }}
+    managed_admin_users: >-
+      {{
+        managed_admin_users | default([])
+        | map('dict2items')
+        | map('selectattr', 'key', 'in', users_kept_fields)
+        | map('items2dict')
+        | list
+      }}
+    # extra_admin_users may mix full dicts with bare name strings; strip
+    # the dicts and pass the strings through untouched
+    extra_admin_users: >-
+      {{
+        (
+          extra_admin_users | default([]) | select('mapping')
+          | map('dict2items')
+          | map('selectattr', 'key', 'in', users_kept_fields)
+          | map('items2dict')
+          | list
+        )
+        + (extra_admin_users | default([]) | reject('mapping') | list)
+      }}
+
 # make a lookup of all users from name to dict
 - name: Build user lookup table
   set_fact:
@@ -26,14 +67,14 @@
       {{
         expanded_admin_users
         + [
-            managed_users_by_name[item.name]
-            if item.name in managed_users_by_name
+            managed_users_by_name[item.name | default(item)]
+            if (item.name | default(item)) in managed_users_by_name
             else item
           ]
       }}
   loop: "{{ extra_admin_users }}"
-  # Items may be full user dicts (with emails/WireGuard peer info) or bare
-  # names; only log the name either way
+  # Items may be (stripped) user dicts or bare names; only label with the
+  # name either way
   loop_control:
     label: "{{ item.name | default(item) }}"
   when:
@@ -96,7 +137,11 @@
     - users | length > 0
 
 #
-# debug; enable by adding '--tags=debug' when running
+# debug; enable with -e users_role_debug=true
+#
+# NB: these used to be 'tags: never', but main.yml imports this file with
+# 'tags: always', which every task here inherits -- and 'always' overrides
+# 'never', so they ran (and dumped every user's details) on every play.
 #
 - name: show filtered users types
   debug:
@@ -105,33 +150,28 @@
       - "managed_users type={{ managed_users | type_debug }}"
       - "managed_admin_users type={{ managed_admin_users | type_debug }}"
       - "extra_admin_users type={{ extra_admin_users | type_debug }}"
-  tags:
-    - never
+  when: users_role_debug | bool
 
 - name: show users
   debug:
     var: users
-  tags:
-    - never
   when:
-    users is defined
+    - users_role_debug | bool
+    - users is defined
 
 - name: show managed_users
   debug:
     var: managed_users
-  tags:
-    - never
+  when: users_role_debug | bool
 
 - name: show managed_admin_users
   debug:
     var: managed_admin_users
-  tags:
-    - never
+  when: users_role_debug | bool
 
 - name: show extra_admin_users
   debug:
     var: extra_admin_users
-  tags:
-    - never
   when:
-    extra_admin_users is defined
+    - users_role_debug | bool
+    - extra_admin_users is defined

@@ -32,6 +32,12 @@
   notify: restart sshd 
   tags: ssh_config 
 
+# Reverse proxy stack (nginx + Anubis + certbot).  Only runs on hosts that
+# define reverse_proxy_sites in host_vars (soko01 for now).
+- import_tasks: reverse_proxy.yml
+  when: reverse_proxy_sites | length > 0
+  tags: reverse_proxy
+
 ## Individual host tasks
 
 # local_action in the task after this causes 'ansible_host' to change to 'localhost'

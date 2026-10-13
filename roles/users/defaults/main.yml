@@ -13,6 +13,18 @@ managed_users: []
 # are given sudo access
 managed_admin_users: []
 
+# The only fields of the user dicts this role uses.  The dicts in the
+# secrets repo also carry emails, notes, and WireGuard peer details;
+# filter_users.yml strips everything not listed here so verbose runs
+# (teuthology runs ansible-playbook with -v) can't leak them into logs.
+users_kept_fields:
+  - name
+  - key
+
+# Dump the users/managed_users/managed_admin_users/extra_admin_users
+# variables while filtering; enable with -e users_role_debug=true
+users_role_debug: false
+
 # A list of usernames to filter managed_users and
 # managed_admin_users by.  For example, if given ['user1']
 # both managed_users and managed_admin_users would be filtered
