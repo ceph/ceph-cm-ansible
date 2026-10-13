@@ -58,6 +58,8 @@ Defined in ``roles/public_facing/defaults/main.yml``  Override these in the ansi
 
 ``download_public_iface`` is the interface ``tc`` shapes.  Defaults to the interface holding the default IPv4 route.
 
+``download_egress_rate: "1gbit"`` is the instance's actual public bandwidth, used for the root HTB class so the shaper models the real bottleneck.  Update it if the flavor or OVH cap changes.
+
 host_vars
 ---------
 If required, define these in your ansible inventory ``host_vars`` file.
@@ -98,7 +100,7 @@ download.ceph.com
 -----------------
 The host-specific tasks create the ``signer`` and ``bitergia`` users, install the hourly ``/usr/libexec/make_timestamp`` cron (mirrors use ``/timestamp`` to check freshness), keep the letsencrypt cert renewed, and protect the instance's capped public bandwidth:
 
-- ``/usr/local/sbin/egress-shaper.sh`` (``egress-shaper.service``) builds an HTB tree on ``download_public_iface``: one class for rsyncd, one aggregate class for ``download_throttled_subnets``, everything else unshaped.
+- ``/usr/local/sbin/egress-shaper.sh`` (``egress-shaper.service``) builds an HTB tree on ``download_public_iface``, with the root class sized to ``download_egress_rate``: one class for rsyncd, one aggregate class for ``download_throttled_subnets``, everything else limited only by the root class.  The script runs with ``set -eu`` so a failed ``tc`` command fails the (oneshot) unit instead of leaving a half-applied tree.
 - ``/etc/rsyncd.conf`` serves the ``[ceph]`` module mirrors sync from.  There is intentionally no restart handler: rsyncd re-reads the config for every new connection, and restarting the daemon would kill in-flight mirror syncs.
 - ``/etc/nginx/conf.d/throttle.conf`` limits connections, request rate and per-connection rate for each source IP in ``download_throttled_subnets``.  All directives are at ``http`` level and keyed on an empty string for everyone else, so other clients are not limited and the vhost (which this role does not manage) needs no changes.
 

@@ -41,6 +41,11 @@ f2b_services:
 # from starving everyone else.  See README.
 download_public_iface: "{{ ansible_default_ipv4.interface }}"
 
+# The instance's actual public bandwidth (tc syntax).  Used for the root HTB
+# class so the shaper models the real bottleneck; update it if the flavor or
+# OVH cap changes.  b3-16 = 1gbit.
+download_egress_rate: "1gbit"
+
 # Aggregate egress for rsyncd (tcp/873).  tc syntax, e.g. 200mbit.
 # Don't set this too low: at 20mbit, full-tree mirror syncs took days, piled
 # up, and pinned all of rsyncd's connection slots (Oct 2026).
