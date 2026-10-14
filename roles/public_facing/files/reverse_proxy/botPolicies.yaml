@@ -11,6 +11,9 @@
 ## /usr/share/docs/anubis/data or in the tarball you extracted Anubis from.
 
 bots:
+  # Keep in sync with git_ratelimit_exempt_sources in defaults/main.yml.
+  # 192.86.31.0/24 includes .2, the border NAT egress that every lab host
+  # appears as from the public side -- do not narrow this range.
   - name: lab-and-monitoring
     action: ALLOW
     remote_addresses:
