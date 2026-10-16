@@ -98,7 +98,7 @@ If ``use_fail2ban`` is set to ``true`` this role will install, configure, and en
 
 download.ceph.com
 -----------------
-The host-specific tasks create the ``signer`` and ``bitergia`` users, install the hourly ``/usr/libexec/make_timestamp`` cron (mirrors use ``/timestamp`` to check freshness), keep the letsencrypt cert renewed, and protect the instance's capped public bandwidth:
+The host-specific tasks create the ``signer`` user, install the hourly ``/usr/libexec/make_timestamp`` cron (mirrors use ``/timestamp`` to check freshness), keep the letsencrypt cert renewed, and protect the instance's capped public bandwidth:
 
 - ``/usr/local/sbin/egress-shaper.sh`` (``egress-shaper.service``) builds an HTB tree on ``download_public_iface``, with the root class sized to ``download_egress_rate``: one class for rsyncd, one aggregate class for ``download_throttled_subnets``, everything else limited only by the root class.  The script runs with ``set -eu`` so a failed ``tc`` command fails the (oneshot) unit instead of leaving a half-applied tree.
 - ``/etc/rsyncd.conf`` serves the ``[ceph]`` module mirrors sync from.  There is intentionally no restart handler: rsyncd re-reads the config for every new connection, and restarting the daemon would kill in-flight mirror syncs.
