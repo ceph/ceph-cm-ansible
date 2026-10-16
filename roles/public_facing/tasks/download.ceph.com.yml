@@ -44,8 +44,10 @@
     name: rsync
     state: latest
 
+# rsync >= 3.2.7 (Ubuntu 24.04) ships rrsync as /usr/bin/rrsync; older
+# releases only have the gzipped doc script
 - name: Put rrsync script in place for bitergia user
-  shell: "gunzip /usr/share/doc/rsync/scripts/rrsync.gz --to-stdout > /home/bitergia/bin/rrsync"
+  shell: "if [ -x /usr/bin/rrsync ]; then cp /usr/bin/rrsync /home/bitergia/bin/rrsync; else gunzip /usr/share/doc/rsync/scripts/rrsync.gz --to-stdout > /home/bitergia/bin/rrsync; fi"
   changed_when: false
 
 - name: Set permissions for bitergia rrsync script
