@@ -1,0 +1,6 @@
+# {{ ansible_managed }}
+# minimal ceph.conf for the old (pre-migration) LRC
+[global]
+        fsid = {{ teuthology_old_lrc_fsid }}
+        mon_host = {{ teuthology_old_lrc_mon_host }}
+        keyring = /etc/ceph/old-lrc.keyring

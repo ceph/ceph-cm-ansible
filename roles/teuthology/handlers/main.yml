@@ -3,3 +3,17 @@
   service:
     name: systemd-journald
     state: restarted
+
+# A keyring change only takes effect for a fresh ceph-fuse process, and a
+# client running with a rotated-away key can wedge (its established
+# sessions linger while every reconnect fails auth), so kill it rather
+# than trust a plain remount.
+- name: remount old lrc archive
+  shell: |
+    set -e
+    if mountpoint -q {{ teuthology_old_lrc_root }}; then
+      umount -l {{ teuthology_old_lrc_root }}
+    fi
+    pkill -f "ceph-fuse.*{{ teuthology_old_lrc_root }}" || true
+    sleep 2
+    mount {{ teuthology_old_lrc_root }}
