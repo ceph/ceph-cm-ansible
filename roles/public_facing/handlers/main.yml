@@ -11,10 +11,11 @@
     name: fail2ban
     state: reloaded
 
-# Restart sshd
+# Restart sshd (Debian/Ubuntu name the unit ssh, and the sshd alias is
+# missing on socket-activated installs like Ubuntu 24.04)
 - name: restart sshd
   service:
-    name: sshd
+    name: "{{ 'ssh' if ansible_os_family == 'Debian' else 'sshd' }}"
     state: restarted
 
 # Reload nginx, but only if the config is valid
