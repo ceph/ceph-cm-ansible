@@ -11,10 +11,14 @@
     regexp: '(.*)letsencrypt(.*)'
     state: absent
 
+# Both names this cron has had over the years
 - name: Remove obsolete cron forcing IPv4 to acme-v01
   cron:
-    name: "Forces letsencrypt to use IPv4 when accessing acme-v01.api.letsencrypt.org"
+    name: "{{ item }}"
     state: absent
+  with_items:
+    - "Forces letsencrypt to use IPv4 when accessing acme-v01.api.letsencrypt.org"
+    - "Force using IPv4 to resolve acme-v01.api.letsencrypt.org"
 
 # The certbot PPA is long dead; the distro packages are current enough
 - name: install certbot
