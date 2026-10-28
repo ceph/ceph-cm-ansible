@@ -1,0 +1,81 @@
+{% set site = reverse_proxy_site_catalog['pad'] %}
+# {{ ansible_managed }}
+# pad.ceph.com -> etherpad on OpenShift ('etherpad' namespace, edge Route;
+# sepia-openshift repo, etherpad/README.md).
+#
+# Cert (one-time, dns-01 via NS1 since the name is in the ceph.com zone):
+#   sudo certbot certonly --authenticator dns-nsone \
+#     --dns-nsone-credentials /etc/letsencrypt/nsone.ini \
+#     --dns-nsone-propagation-seconds 60 -d pad.ceph.com -n
+server {
+  listen 80;
+  server_name pad.ceph.com;
+
+  location ^~ /.well-known/acme-challenge/ {
+    root /var/www/letsencrypt;
+    default_type "text/plain";
+  }
+
+  location / {
+    return 301 https://$host$request_uri;
+  }
+}
+
+server {
+  listen 443 ssl http2;
+  server_name pad.ceph.com;
+
+  ssl_certificate     /etc/letsencrypt/live/pad.ceph.com/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/pad.ceph.com/privkey.pem;
+  include /etc/letsencrypt/options-ssl-nginx.conf;
+
+  access_log /var/log/nginx/pad-access.log;
+  error_log  /var/log/nginx/pad-error.log;
+
+  # etherpad's import limit is 50 MB
+  client_max_body_size 50m;
+
+  # socket.io (websocket + long-polling) carries every keystroke.  It can't
+  # answer an Anubis challenge and only ever follows a pad page load that
+  # already did, so it goes straight to the route with the Upgrade headers.
+  location /socket.io/ {
+    proxy_pass http://{{ site.upstream }};
+    proxy_set_header Host {{ site.upstream }};
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_read_timeout 3600s;
+    proxy_send_timeout 3600s;
+    proxy_buffering off;
+  }
+
+  location / {
+    # Per-site Anubis instance (anubis@pad), same pattern as the other sites.
+    proxy_pass http://127.0.0.1:{{ site.anubis.port }};
+
+    # Rewrite backend redirects that leak the internal route hostname.
+    proxy_redirect http://{{ site.upstream }}/ /;
+    proxy_redirect https://{{ site.upstream }}/ /;
+
+    # Make the OpenShift router match the correct route; etherpad rebuilds
+    # the public name from X-Forwarded-Host (TRUST_PROXY).
+    proxy_set_header Host {{ site.upstream }};
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+
+    proxy_http_version 1.1;
+    proxy_read_timeout 120s;
+    proxy_buffering off;
+  }
+
+  location = /robots.txt {
+    alias /srv/robots.txt;
+  }
+}
