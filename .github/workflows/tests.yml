@@ -19,7 +19,9 @@ jobs:
         sed -i /^vault_password_file/d ansible.cfg
         ansible-playbook -i localhost, cephlab.yml --syntax-check
   ansible-lint:
-    runs-on: ubuntu-latest
+    # setup-python has no 3.9 build for the Ubuntu 26.04 image behind
+    # ubuntu-latest; 24.04 still carries it.
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-python@v5
