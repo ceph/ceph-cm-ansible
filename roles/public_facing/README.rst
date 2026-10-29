@@ -139,6 +139,17 @@ Variables (see ``defaults/main.yml``):
   External CI dashboards that only need to read results get an entry here,
   not a WireGuard peer.  The ``href`` fields paddles returns point at the
   internal paddles name; consumers should build URLs from run/job names.
+- ``git_ratelimit_exempt_sources`` / ``git_ratelimit_exempt_sources_extra``
+  (the latter in host_vars, ceph-sepia-secrets, for personal/third-party
+  addresses) / ``git_ratelimit_rate`` / ``git_ratelimit_burst`` control the
+  per-IP nginx rate limit on git.ceph.com gitweb (HTML) paths.  Lab sources
+  -- including
+  ``192.86.31.2``, the border NAT egress every lab host appears as -- are
+  exempt, and git smart-HTTP paths (``info/refs``, ``git-upload-pack``,
+  ``git-receive-pack``) are never limited, so clones/fetches and CI are
+  unaffected anywhere.  Over-budget requests get a 429.  Keep the exempt
+  list in sync with the ``lab-and-monitoring`` allowlist in
+  ``files/reverse_proxy/botPolicies.yaml``.
 
 Things the playbook does NOT manage:
 
