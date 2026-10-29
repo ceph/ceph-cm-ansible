@@ -17,43 +17,19 @@
     state: present
     key: "{{ signer_pubkey }}"
 
-# Used to rsync download.ceph.com http logs and compile metrics
-# for metrics.ceph.com
-- name: Create Bitergia user
+# Bitergia used to rsync our http logs to compile metrics for
+# metrics.ceph.com; that integration is long dead
+- name: Remove bitergia user
   user:
     name: bitergia
-    groups: adm
+    state: absent
+    remove: yes
 
-# bitergia_pubkey defined in inventory host_vars
-- name: Update bitergia user's authorized_keys
-  authorized_key:
-    user: bitergia
-    state: present
-    key: "{{ bitergia_pubkey }}"
-
-- name: Create ~/bin dir for bitergia user
-  file:
-    path: /home/bitergia/bin
-    state: directory
-    owner: bitergia
-    group: bitergia
-
-# Rsync is almost certainly already installed but it's required for the next task
+# Mirrors sync from the rsyncd below
 - name: Make sure rsync is installed
   apt:
     name: rsync
     state: latest
-
-- name: Put rrsync script in place for bitergia user
-  shell: "gunzip /usr/share/doc/rsync/scripts/rrsync.gz --to-stdout > /home/bitergia/bin/rrsync"
-  changed_when: false
-
-- name: Set permissions for bitergia rrsync script
-  file:
-    dest: /home/bitergia/bin/rrsync
-    owner: bitergia
-    group: bitergia
-    mode: 0774
 
 # Updates download.ceph.com/timestamp
 - name: Put make_timestamp script in place
@@ -114,4 +90,4 @@
     state: started
     daemon_reload: yes
 
-- import_tasks: letsencrypt_nginx.yml
+- include_tasks: letsencrypt_nginx.yml
