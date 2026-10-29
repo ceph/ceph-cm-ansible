@@ -200,6 +200,13 @@ reverse_proxy_site_catalog:
       # talk TLS to the router (default wildcard cert, ingress CA).
       scheme: https
       cacert: true
+  pad:
+    conf: pad.ceph.com.conf
+    upstream: etherpad-etherpad.apps.pok.os.sepia.ceph.com
+    anubis:
+      port: 8933
+      metrics_port: 9993
+      scheme: http
   status:
     # No Anubis: the page is two small documents behind a 30s micro-cache
     # (see the template), so the backend sees ~2 req/min per URL no matter
