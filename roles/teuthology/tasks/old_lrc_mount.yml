@@ -1,0 +1,53 @@
+---
+# Manage the read-only ceph-fuse mount of the old (pre-migration) LRC
+# teuthology archive that backs the nginx @old_lrc fallback.
+#
+# The cephx key for client.teuthology-ro lives in the secrets repo
+# (old_lrc.yml) because the old LRC rotates its client keys; after a
+# rotation, update the secret and re-run this role to re-ship the keyring
+# and remount.  A stale key leaves the running client half-alive for days
+# (established MDS sessions keep renewing) and then wedges nginx in
+# D-state when the mon session finally drops, so the remount handler
+# fires whenever the keyring changes.
+#
+# NOTE: the old LRC issues aes256k (type 2) cephx keys and service
+# tickets; both ceph-fuse and the keyring parser need ceph >= 20.x
+# (tentacle).  Ubuntu noble's 19.2.3 cannot parse the keyring at all.
+
+- name: Load old LRC secrets
+  include_vars: "{{ secrets_path | mandatory }}/old_lrc.yml"
+  no_log: true
+
+- name: Ship old LRC ceph.conf
+  template:
+    src: old-lrc.conf.j2
+    dest: /etc/ceph/old-lrc.conf
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Ship old LRC keyring
+  template:
+    src: old-lrc.keyring.j2
+    dest: /etc/ceph/old-lrc.keyring
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+  notify: remount old lrc archive
+
+- name: Create old LRC mountpoint
+  file:
+    path: "{{ teuthology_old_lrc_root }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Mount old LRC archive (ceph-fuse)
+  ansible.posix.mount:
+    path: "{{ teuthology_old_lrc_root }}"
+    src: none
+    fstype: fuse.ceph
+    opts: "ceph.id={{ teuthology_old_lrc_client }},ceph.conf=/etc/ceph/old-lrc.conf,ceph.client_fs={{ teuthology_old_lrc_fs }},ceph.client_mountpoint={{ teuthology_old_lrc_mountpoint }},ro,allow_other,_netdev"
+    state: mounted

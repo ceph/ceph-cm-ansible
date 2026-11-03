@@ -23,5 +23,13 @@ remote_crontab_url: "https://raw.githubusercontent.com/ceph/ceph/main/qa/crontab
 teuthology_old_lrc_fallback: false
 teuthology_old_lrc_root: /www-data/old-lrc
 
+# Connection details for the old LRC cephfs behind the fallback.  The
+# cephx key comes from old_lrc.yml in the secrets repo (secrets_path).
+teuthology_old_lrc_fsid: 28f7427e-5558-4ffd-ae1a-51ec3042759a
+teuthology_old_lrc_mon_host: "[v2:172.21.2.221:3300/0,v1:172.21.2.221:6789/0] [v2:172.21.2.222:3300/0,v1:172.21.2.222:6789/0] [v2:172.21.2.223:3300/0,v1:172.21.2.223:6789/0]"
+teuthology_old_lrc_client: teuthology-ro
+teuthology_old_lrc_fs: teuthology
+teuthology_old_lrc_mountpoint: /teuthology-archive
+
 journald_max_retention: 7day
 journald_max_use: 2G
