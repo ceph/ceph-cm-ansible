@@ -1,0 +1,40 @@
+{% set site = reverse_proxy_site_catalog['loki'] %}
+# {{ ansible_managed }}
+#
+# Public front for the LokiStack gateway, for off-lab alloy instances (the OVH
+# hosts: jenkins controllers, chacra, shaman).  Only the infrastructure tenant's
+# push path is exposed; the gateway still requires the sepia-hosts bearer token.
+server {
+    listen 80;
+    server_name loki.ceph.com;
+    return 301 https://$host$request_uri;
+}
+server {
+    listen 443 ssl http2;
+    server_name loki.ceph.com;
+    ssl_certificate /etc/letsencrypt/live/loki.ceph.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/loki.ceph.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+    add_header Strict-Transport-Security "max-age=63072000" always;
+    # loki.write batches are 1 MiB by default; leave headroom.
+    client_max_body_size 16m;
+    proxy_buffering off;
+    proxy_request_buffering on;
+    proxy_read_timeout 90s;
+    proxy_send_timeout 90s;
+    # === Push endpoint, infrastructure tenant only ===
+    location = /api/logs/v1/infrastructure/loki/api/v1/push {
+        # Through Anubis (anubis@loki) like mimir.ceph.com; non-browser
+        # clients such as alloy are not challenged.  Host must be set
+        # explicitly ($proxy_host would resolve to the local Anubis address).
+        proxy_pass http://127.0.0.1:{{ site.anubis.port }};
+        proxy_set_header Host {{ site.upstream }};
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+    }
+}

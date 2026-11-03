@@ -168,6 +168,18 @@ reverse_proxy_site_catalog:
       metrics_port: 9989
       scheme: https
       cacert: true
+  loki:
+    # Push-only public front for the LokiStack gateway, for the off-lab hosts
+    # (OVH: jenkins controllers, chacra, shaman) whose alloy cannot route to
+    # the pok *.apps VIP.  Same shape as mimir; the site template exposes only
+    # the infrastructure tenant's push path.
+    conf: loki.ceph.com
+    upstream: logging-loki-openshift-logging.apps.pok.os.sepia.ceph.com
+    anubis:
+      port: 8934
+      metrics_port: 9994
+      scheme: https
+      cacert: true
   qa-proxy:
     conf: qa-proxy.conf
     upstream: soko04.front.sepia.ceph.com
