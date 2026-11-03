@@ -83,6 +83,21 @@ by `password_file`, so the rendered config contains no secrets.
 
 ## Logs: journald + auditd -> LokiStack
 
+### LokiStack endpoint and TLS
+
+`alloy_lokistack_host` defaults to the in-lab gateway route
+(`logging-loki-openshift-logging.apps.pok.os.sepia.ceph.com`), verified
+against `files/lokistack-ingress-ca.crt`. The off-lab hosts (OVH:
+`jenkins_controllers`, `chacra`, `shaman`) cannot route to that VIP; their
+group_vars in the secrets repo point `alloy_lokistack_host` at
+`loki.ceph.com`, a push-only nginx + Anubis front on soko01 (the `loki` entry
+of `reverse_proxy_site_catalog` in `roles/public_facing`, exposing only the
+`infrastructure` tenant's push path), exactly as `agent_mimir_url` goes out
+via `mimir.ceph.com` for metrics. `loki.ceph.com` has a public certificate, so
+`alloy_loki_ca_file` is empty for it and the system bundle is used. The bearer
+token is the same `loki_push_token` either way; the proxy passes it through
+and the gateway still enforces it.
+
 **It does not collect all of `/var/log`.** Alloy collects only what is declared.
 Three sources:
 
@@ -194,6 +209,7 @@ alloy_extra_log_paths:
 | `alloy_mimir_insecure_skip_verify` | `false` | Escape hatch only |
 | `alloy_lokistack_host` | `logging-loki-openshift-logging.apps.pok.os.sepia.ceph.com` | Gateway route |
 | `alloy_tenant` | `infrastructure` | LokiStack tenant. Part of the URL path, not a header. |
+| `alloy_loki_ca_file` | ingress CA when the URL is under `.apps.pok.os.sepia.ceph.com`, else empty (system bundle) | |
 | `alloy_journal_max_age` | `12h` | Cold-start backlog limit |
 | `alloy_collect_auditd` | `true` | Auto-skipped on hosts without auditd |
 | `alloy_extra_log_paths` | `[]` | Allowlist of extra globs to tail |

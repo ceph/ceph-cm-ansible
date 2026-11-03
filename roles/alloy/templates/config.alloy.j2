@@ -92,10 +92,12 @@ loki.write "lokistack" {
   endpoint {
     url               = "{{ alloy_lokistack_url }}"
     bearer_token_file = "{{ alloy_token_file }}"
+{% if alloy_loki_ca_file %}
 
     tls_config {
-      ca_file = "{{ alloy_ca_file }}"
+      ca_file = "{{ alloy_loki_ca_file }}"
     }
+{% endif %}
   }
 
   // Keep these few and low-cardinality. Loki indexes every label, and a

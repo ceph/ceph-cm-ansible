@@ -105,9 +105,19 @@ alloy_mimir_insecure_skip_verify: false
 
 # ------------------------------------------------------------------- logs ---
 # LokiStack gateway. The tenant is part of the URL path, not a header.
+#
+# Off-lab hosts (OVH: jenkins_controllers, chacra, shaman) cannot route to the
+# in-lab route; they set alloy_lokistack_host: loki.ceph.com in their group_vars
+# in the secrets repo, the push-only front on soko01 (roles/public_facing,
+# reverse_proxy_site_catalog.loki), same as agent_mimir_url -> mimir.ceph.com.
 alloy_lokistack_host: "logging-loki-openshift-logging.apps.pok.os.sepia.ceph.com"
 alloy_tenant: "infrastructure"
 alloy_lokistack_url: "https://{{ alloy_lokistack_host }}/api/logs/v1/{{ alloy_tenant }}/loki/api/v1/push"
+
+# TLS to the LokiStack: the in-cluster route is served by the pok ingress CA
+# above; loki.ceph.com has a public (Let's Encrypt) certificate, so the system
+# bundle is used. Same rule as alloy_mimir_ca_file.
+alloy_loki_ca_file: "{{ alloy_ca_file if '.apps.pok.os.sepia.ceph.com' in alloy_lokistack_url else '' }}"
 
 alloy_token_file: "{{ alloy_config_dir }}/loki.token"
 
