@@ -1,0 +1,12 @@
+# {{ ansible_managed }}
+[Unit]
+Description=Pending package updates for the node_exporter textfile collector
+Documentation=https://github.com/ceph/ceph-cm-ansible/tree/main/roles/alloy
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart={{ alloy_pending_updates_script_dir }}/pending-updates
+# dnf waits on another dnf's lock; don't let a stuck one pile up runs.
+TimeoutStartSec=15min
+Nice=10

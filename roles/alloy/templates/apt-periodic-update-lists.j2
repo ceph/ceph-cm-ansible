@@ -1,0 +1,6 @@
+// {{ ansible_managed }}
+// apt_info.py reads the package lists as they are and never runs apt update.
+// This makes apt-daily.timer refresh them once a day, so the pending-updates
+// metrics follow reality on hosts nothing else keeps current. It does not
+// enable unattended upgrades.
+APT::Periodic::Update-Package-Lists "1";

@@ -54,3 +54,11 @@
         enabled: true
         state: started
         daemon_reload: true
+
+# Same gate as the block above: only a node_exporter this role installed reads
+# the textfile directory the collector writes to.
+- name: node_exporter - Pending-updates textfile collector
+  ansible.builtin.include_tasks: pending-updates.yml
+  when:
+    - alloy_manage_node_exporter | bool
+    - not alloy_node_exporter_foreign | bool
