@@ -57,6 +57,29 @@ distro package next to it would leave two exporters fighting over the port after
 every reboot. Set `alloy_manage_node_exporter: false` to force the same
 behaviour on a host or group.
 
+### Pending updates (textfile collector)
+
+Where the role manages the distro node_exporter, it also installs an hourly
+systemd timer (`node-exporter-pending-updates.timer`) that writes
+`/var/lib/prometheus/node-exporter/pending-updates.prom`, the directory both
+distro packages compile in as node_exporter's textfile default. apt hosts run
+the upstream `apt_info.py` (vendored in `files/`, commit pinned in its header):
+`apt_upgrades_pending{origin,arch}`, `apt_upgrades_held`,
+`apt_autoremove_pending`, `apt_package_cache_timestamp_seconds`,
+`node_reboot_required`. dnf hosts run `files/dnf_info.sh`:
+`dnf_upgrades_pending{repo}`, `dnf_security_upgrades_pending{repo}`,
+`node_reboot_required`. The `security-updates` alert group in
+`ceph/sepia-openshift` reads the `-security` origins and the dnf security
+count.
+
+On Ubuntu the `prometheus-node-exporter-collectors` package (pulled in as a
+Recommends) ships its own apt timer writing `apt.prom` to the same directory;
+the role masks that timer and removes its file so there is one writer of the
+`apt_*` series. It also drops `APT::Periodic::Update-Package-Lists "1"` into
+`/etc/apt/apt.conf.d/`, because `apt_info.py` reads the lists as they are and
+some hosts have nothing else refreshing them. That is list refresh only, not
+unattended upgrades. `alloy_pending_updates_enabled: false` removes all of it.
+
 ### Mimir endpoint and TLS
 
 `agent_mimir_url` defaults to the in-lab route
@@ -184,6 +207,9 @@ alloy_extra_log_paths:
 | `alloy_logs_enabled` | `true` | journald/auditd -> LokiStack |
 | `alloy_listen_addr` | `127.0.0.1:12346` | Alloy's HTTP server. **Not** the default 12345 — see below. |
 | `alloy_manage_node_exporter` | `true` | Install/start the distro node_exporter (auto-skipped when something else already owns `:9100`) |
+| `alloy_pending_updates_enabled` | `true` | Hourly pending-updates textfile collector (only where the distro node_exporter is managed; `false` removes it) |
+| `alloy_pending_updates_interval` | `1h` | Timer period |
+| `alloy_node_exporter_textfile_dir` | `/var/lib/prometheus/node-exporter` | Where the `.prom` file goes; the distro packages' compiled-in default |
 | `alloy_node_exporter_address` | `localhost:9100` | What Alloy scrapes |
 | `alloy_node_job` | `node` | `job` label |
 | `alloy_node_instance` | `<inventory_hostname>:9100` | `instance` label — see the label contract above before changing |
@@ -266,6 +292,8 @@ systemctl status grafana-agent         # Unit grafana-agent.service could not be
 ss -lntp | grep -E '12346|9100'        # alloy and node_exporter
 journalctl -u alloy -n 50              # no permission-denied, no 401/403
 curl -s localhost:9100/metrics | grep node_uname_info
+curl -s localhost:9100/metrics | grep -E '^(apt|dnf)_.*upgrades_pending|^node_reboot_required'
+systemctl list-timers node-exporter-pending-updates.timer
 ```
 
 In Grafana (`https://ci-metrics.ceph.com`), the host should appear in the

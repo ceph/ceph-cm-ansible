@@ -1,0 +1,138 @@
+---
+# Pending-updates textfile collector for the distro node_exporter: an hourly
+# systemd timer writes <textfile dir>/pending-updates.prom. See the pending
+# updates section of defaults/main.yml for the metrics.
+
+- name: pending-updates - Install the collector's dependencies
+  ansible.builtin.package:
+    name: "{{ alloy_pending_updates_packages }}"
+    state: present
+  when: alloy_pending_updates_enabled | bool
+
+- name: pending-updates - Create the script directory
+  ansible.builtin.file:
+    path: "{{ alloy_pending_updates_script_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: alloy_pending_updates_enabled | bool
+
+- name: pending-updates - Make sure the textfile directory exists
+  ansible.builtin.file:
+    path: "{{ alloy_node_exporter_textfile_dir }}"
+    state: directory
+    mode: '0755'
+  when: alloy_pending_updates_enabled | bool
+
+- name: pending-updates - Install {{ alloy_pending_updates_collector }}
+  ansible.builtin.copy:
+    src: "{{ alloy_pending_updates_collector }}"
+    dest: "{{ alloy_pending_updates_script_dir }}/{{ alloy_pending_updates_collector }}"
+    owner: root
+    group: root
+    mode: '0755'
+  when: alloy_pending_updates_enabled | bool
+
+- name: pending-updates - Install the wrapper
+  ansible.builtin.template:
+    src: pending-updates.sh.j2
+    dest: "{{ alloy_pending_updates_script_dir }}/pending-updates"
+    owner: root
+    group: root
+    mode: '0755'
+  when: alloy_pending_updates_enabled | bool
+
+- name: pending-updates - Install the systemd units
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "/etc/systemd/system/{{ item }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - node-exporter-pending-updates.service
+    - node-exporter-pending-updates.timer
+  register: alloy_pending_updates_units
+  when: alloy_pending_updates_enabled | bool
+
+- name: pending-updates - Enable and start the timer
+  ansible.builtin.systemd:
+    name: node-exporter-pending-updates.timer
+    enabled: true
+    state: started
+    daemon_reload: "{{ alloy_pending_updates_units is changed }}"
+  when: alloy_pending_updates_enabled | bool
+
+# Ubuntu's prometheus-node-exporter Recommends prometheus-node-exporter-collectors,
+# whose own timer writes apt.prom (apt_info.py on noble, the older apt.sh on
+# jammy) into the same directory every 15 minutes. Two writers of
+# apt_upgrades_pending give node_exporter duplicate series, so that timer is
+# masked and its file removed; the vendored copy here is the one writer.
+- name: pending-updates - Mask the distro collectors' apt timer
+  ansible.builtin.systemd:
+    name: prometheus-node-exporter-apt.timer
+    enabled: false
+    state: stopped
+    masked: true
+  when:
+    - alloy_pending_updates_enabled | bool
+    - ansible_pkg_mgr == "apt"
+    - "'prometheus-node-exporter-collectors' in ansible_facts.packages"
+
+- name: pending-updates - Remove the distro collectors' apt.prom
+  ansible.builtin.file:
+    path: "{{ alloy_node_exporter_textfile_dir }}/apt.prom"
+    state: absent
+  when:
+    - alloy_pending_updates_enabled | bool
+    - ansible_pkg_mgr == "apt"
+
+- name: pending-updates - Let apt-daily refresh the package lists
+  ansible.builtin.template:
+    src: apt-periodic-update-lists.j2
+    dest: /etc/apt/apt.conf.d/99node-exporter-pending-updates
+    owner: root
+    group: root
+    mode: '0644'
+  when:
+    - alloy_pending_updates_enabled | bool
+    - ansible_pkg_mgr == "apt"
+
+# Turning the flag off takes the collector back out, so a host or group that
+# opts out doesn't keep a stale timer running.
+- name: pending-updates - Check for a timer to remove
+  ansible.builtin.stat:
+    path: /etc/systemd/system/node-exporter-pending-updates.timer
+  register: alloy_pending_updates_timer
+  when: not alloy_pending_updates_enabled | bool
+
+- name: pending-updates - Stop and disable the timer
+  ansible.builtin.systemd:
+    name: node-exporter-pending-updates.timer
+    enabled: false
+    state: stopped
+  when:
+    - not alloy_pending_updates_enabled | bool
+    - alloy_pending_updates_timer.stat.exists
+
+- name: pending-updates - Remove the collector
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/systemd/system/node-exporter-pending-updates.timer
+    - /etc/systemd/system/node-exporter-pending-updates.service
+    - "{{ alloy_pending_updates_script_dir }}/pending-updates"
+    - "{{ alloy_pending_updates_script_dir }}/{{ alloy_pending_updates_collector }}"
+    - "{{ alloy_node_exporter_textfile_dir }}/{{ alloy_pending_updates_prom_file }}"
+    - /etc/apt/apt.conf.d/99node-exporter-pending-updates
+  register: alloy_pending_updates_removed
+  when: not alloy_pending_updates_enabled | bool
+
+- name: pending-updates - Reload systemd after removing the units
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when:
+    - not alloy_pending_updates_enabled | bool
+    - alloy_pending_updates_removed is changed

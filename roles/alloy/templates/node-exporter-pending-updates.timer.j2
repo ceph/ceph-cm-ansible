@@ -1,0 +1,11 @@
+# {{ ansible_managed }}
+[Unit]
+Description=Collect pending package updates for node_exporter every {{ alloy_pending_updates_interval }}
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec={{ alloy_pending_updates_interval }}
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target

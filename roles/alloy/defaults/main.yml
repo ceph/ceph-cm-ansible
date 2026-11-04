@@ -133,3 +133,30 @@ alloy_collect_auditd: true
 #   alloy_extra_log_paths:
 #     - /var/log/nginx/*.log
 alloy_extra_log_paths: []
+
+# ------------------------------------------------------ pending updates ---
+# A node_exporter textfile collector that says which hosts have package
+# updates waiting, written hourly by a systemd timer so Grafana can alert on
+# security updates nobody applied (the 2026-11-03 jenkins.ceph.com break-in
+# was an unpatched core; the distro side had the same blind spot).
+#   apt hosts: upstream apt_info.py (files/, commit pinned in its header):
+#              apt_upgrades_pending{origin,arch}, apt_upgrades_held,
+#              apt_autoremove_pending, apt_package_cache_timestamp_seconds,
+#              node_reboot_required
+#   dnf hosts: files/dnf_info.sh: dnf_upgrades_pending{repo},
+#              dnf_security_upgrades_pending{repo}, node_reboot_required
+# Only installed where this role manages the distro node_exporter; a foreign
+# exporter (cephadm's container on the LRC) never reads our directory.
+alloy_pending_updates_enabled: true
+alloy_pending_updates_interval: "1h"
+# Both distro packages patch node_exporter's built-in default for
+# --collector.textfile.directory to this path (Debian's 0001-Debian-defaults
+# patch, EPEL's 0001-Set-defaults-that-make-sense-for-Fedora-RHEL-systems) and
+# ship ARGS='' in /etc/default/prometheus-node-exporter, so no flag is needed.
+alloy_node_exporter_textfile_dir: "/var/lib/prometheus/node-exporter"
+alloy_pending_updates_prom_file: "pending-updates.prom"
+alloy_pending_updates_script_dir: "/usr/local/libexec/node-exporter"
+alloy_pending_updates_collector: "{{ 'apt_info.py' if ansible_pkg_mgr == 'apt' else 'dnf_info.sh' }}"
+# apt_info.py imports apt and prometheus_client; dnf-plugins-core provides
+# `dnf needs-restarting` for node_reboot_required.
+alloy_pending_updates_packages: "{{ ['python3-apt', 'python3-prometheus-client'] if ansible_pkg_mgr == 'apt' else ['dnf-plugins-core'] }}"
