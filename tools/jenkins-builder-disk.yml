@@ -135,6 +135,20 @@
       state: unmounted
     ignore_errors: true
 
+  # A busy mount survives the unmount above; zapping it would zero the live XFS superblock.
+  - name: List mounts on the target disk after unmount
+    command: lsblk -nro MOUNTPOINT "{{ disk }}"
+    register: disk_mounts_after
+    changed_when: false
+    when: not ansible_check_mode
+
+  - name: Refuse to wipe a disk that is still mounted
+    assert:
+      that:
+        - disk_mounts_after.stdout_lines | reject('equalto', '') | list | length == 0
+      fail_msg: "{{ disk }} is still mounted at {{ disk_mounts_after.stdout_lines | reject('equalto', '') | list }}; stop what is using it first"
+    when: not ansible_check_mode
+
   - name: Zap disk
     command: "sgdisk -Z {{ disk }}"
 
