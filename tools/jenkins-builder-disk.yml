@@ -7,8 +7,16 @@
     - adami
     - toko
     - bath
+    # soko01-07 are infrastructure hosts, not builders
+    - soko
+    - '!~soko0[1-7]\.'
   become: true
   tasks:
+
+  - name: Refuse to run on soko01-07
+    fail:
+      msg: "{{ inventory_hostname }} is not a Jenkins builder"
+    when: inventory_hostname is match('soko0[1-7]\.')
 
 # CentOS 9 on these nodes likes to flip around which disk is sda and which is sdb.
 # We pick the ~400GB disk by choosing the one < 500 GiB.
@@ -51,15 +59,27 @@
       - sdb_parted.disk.size is defined
       - sdb_parted.disk.size < 500
 
-  - set_fact:
-      disk: /dev/nvme0n1
-      mount_point: /home/jenkins-build
-    when: ansible_hostname is search("incerta|toko")
+  # Every disk that / lives on (walks up through partitions, LVM and md).
+  - name: Find the disk(s) holding /
+    shell: lsblk -nrso NAME,TYPE "$(findmnt -n -o SOURCE /)" | awk '$2 == "disk" {print "/dev/" $1}'
+    register: root_disks_out
+    changed_when: false
+    check_mode: false
 
   - set_fact:
-      disk: /dev/nvme1n1
+      root_disks: "{{ root_disks_out.stdout_lines }}"
+
+  # NVMe names are not stable across boots, so take the first candidate that
+  # exists and does not hold /.
+  - set_fact:
+      nvme_candidates: "{{ ['/dev/nvme1n1', '/dev/nvme0n1'] if 'bath' in ansible_hostname else ['/dev/nvme0n1', '/dev/nvme1n1'] }}"
       mount_point: /home/jenkins-build
-    when: ansible_hostname is search("bath")
+    when: ansible_hostname is search("incerta|toko|bath")
+
+  - name: Select the NVMe that does not hold / (incerta/toko/bath)
+    set_fact:
+      disk: "{{ nvme_candidates | select('in', ansible_devices.keys() | map('regex_replace', '^', '/dev/') | list) | reject('in', root_disks) | first | default('') }}"
+    when: ansible_hostname is search("incerta|toko|bath")
 
 # Setting the mountpoint to libvirt/images on irvinigi because I'm adding two
 # right now as CentOS7 Vagrant builders.
@@ -67,6 +87,36 @@
       disk: /dev/sdc
       mount_point: /var/lib/libvirt/images
     when: '"irvingi" in ansible_hostname'
+
+  # soko: OS on the BOSS card, home on the first 1.5T U.2 NVMe that does not hold /.
+  - name: List large NVMe disks (soko)
+    shell: lsblk -dnbo NAME,SIZE,TYPE | awk '$3 == "disk" && $1 ~ /^nvme/ && $2 > 1000000000000 {print "/dev/" $1}' | sort -V
+    register: soko_nvme
+    changed_when: false
+    check_mode: false
+    when: ansible_hostname is search("soko")
+
+  - name: Select the large NVMe that does not hold / (soko)
+    set_fact:
+      disk: "{{ soko_nvme.stdout_lines | reject('in', root_disks) | first | default('') }}"
+      mount_point: /home/jenkins-build
+    when: ansible_hostname is search("soko")
+
+  - name: List mounts on the target disk
+    command: lsblk -nro MOUNTPOINT "{{ disk }}"
+    register: disk_mounts
+    changed_when: false
+    check_mode: false
+    when: disk | default('') | length > 0
+
+  # The disk is zapped below; never let that be the OS disk.
+  - name: Refuse to wipe the OS disk or a disk with other mounts
+    assert:
+      that:
+        - disk | default('') | length > 0
+        - disk not in root_disks
+        - disk_mounts.stdout_lines | reject('equalto', '') | reject('equalto', mount_point) | list | length == 0
+      fail_msg: "Refusing to wipe {{ disk | default('(none selected)') }}: / is on {{ root_disks }}, mounts on it: {{ disk_mounts.stdout_lines | default([]) | reject('equalto', '') | list }}"
 
   - name: "Create {{ mount_point }} home dir"
     file:
