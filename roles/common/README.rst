@@ -46,6 +46,9 @@ your own local epel mirror.
 
 ``epel_repos`` is a dictionary used to create epel repo files.  Defined in ``roles/common/defaults/main.yml``.
 
+The EPEL mirror must provide both ``10`` and ``10z`` paths and follow their
+upstream targets as minor releases change.
+
 ``enable_epel`` is a boolean that sets whether epel repos should be enabled.
 Defined in ``roles/common/defaults/main.yml``.
 
