@@ -46,6 +46,10 @@ your own local epel mirror.
 
 ``epel_repos`` is a dictionary used to create epel repo files.  Defined in ``roles/common/defaults/main.yml``.
 
+On EL 10, EPEL publishes one branch per RHEL minor (plus a separate CentOS
+Stream branch); the repo URL selects the branch matching the node's own
+version, so the mirror must provide the per-minor ``10.x`` branches.
+
 ``enable_epel`` is a boolean that sets whether epel repos should be enabled.
 Defined in ``roles/common/defaults/main.yml``.
 

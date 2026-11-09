@@ -17,7 +17,11 @@ epel_mirror_baseurl: "http://dl.fedoraproject.org/pub/epel"
 epel_repos:
   epel:
     name: "Extra Packages for Enterprise Linux"
-    baseurl: "https://epel-mirror.front.sepia.ceph.com/epel/{{ ansible_distribution_major_version }}/$basearch"
+    # EPEL 10 publishes one branch per RHEL minor for released EL, and a
+    # separate branch for CentOS Stream.  Match the node's own minor, so a
+    # Rocky 10.2 node keeps pulling epel/10.2 after RHEL 10.3 ships; CentOS
+    # Stream 10 reports version "10" and keeps using the stream branch.
+    baseurl: "https://epel-mirror.front.sepia.ceph.com/epel/{{ ansible_distribution_version if ansible_distribution_major_version|int >= 10 else ansible_distribution_major_version }}/$basearch"
     # ternary requires ansible >= 1.9
     enabled: "{{ enable_epel | ternary(1, 0) }}"
     gpgcheck: 0
