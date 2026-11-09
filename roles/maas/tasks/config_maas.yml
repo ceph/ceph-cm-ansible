@@ -155,15 +155,13 @@
     # double-quoted scalar turns those back into real newlines, so echo
     # appends one key per line to authorized_keys.
     - name: Rewrite the cm user key list in hand-managed preseeds
-      ansible.builtin.replace:
+      ansible.builtin.lineinfile:
         path: "{{ item.item }}"
-        regexp: '^(\s*)98_copy_ssh_keys_cm:.*$'
-        # A backslash is an escape character both to Jinja and to the
-        # regex-replacement parser, so four of them here yield the two
-        # characters '\n' in the file.
-        replace: >-
-          \g<1>98_copy_ssh_keys_cm: ["curtin", "in-target", "--", "sh", "-c",
-          "echo '{{ cm_user_ssh_keys | join('\\\\n') }}' >> /home/cm/.ssh/authorized_keys"]
+        regexp: '^\s*98_copy_ssh_keys_cm:'
+        # Same line as in the curtin_userdata block above.  lineinfile writes
+        # it as is; replace would unescape the \n a second time.
+        line: |2-
+            98_copy_ssh_keys_cm: ["curtin", "in-target", "--", "sh", "-c", "echo '{{ cm_user_ssh_keys|join('\n') }}' >> /home/cm/.ssh/authorized_keys"]
       loop: "{{ extra_preseeds.results }}"
       loop_control:
         label: "{{ item.item }}"
