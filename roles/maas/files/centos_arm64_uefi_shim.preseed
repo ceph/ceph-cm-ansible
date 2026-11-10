@@ -1,0 +1,28 @@
+  # arm64 UEFI only: boot through shim.  The image ships the shim and grub
+  # RPMs without their ESP files, and the Ampere firmware discards curtin's
+  # boot entry for the grub2-install grubaa64.efi.
+  40_arm64_uefi_shim:
+    - curtin
+    - in-target
+    - --
+    - bash
+    - -c
+    - |
+      set -eu
+      [ "$(uname -m)" = aarch64 ] && [ -d /sys/firmware/efi ] || exit 0
+      . /etc/os-release
+      esp=/boot/efi
+      dir=$esp/EFI/$ID
+      pkgs="shim-aa64 grub2-efi-aa64"
+      if [ ! -e $dir/shimaa64.efi ]; then
+        dnf -y upgrade $pkgs || true
+        [ -e $dir/shimaa64.efi ] || dnf -y reinstall $pkgs
+      fi
+      # The RPM grub reads the stub on the ESP, not /boot/grub2/grub.cfg.
+      [ -s $dir/grub.cfg ] || gen_grub_cfgstub /boot/grub2 $dir
+      # Fail the deploy here rather than hang in the UEFI Shell.
+      ls -l $dir/shimaa64.efi $dir/grubaa64.efi $dir/grub.cfg $esp/EFI/BOOT/BOOTAA64.EFI
+      part=$(findmnt -no SOURCE $esp)
+      efibootmgr -c -d /dev/$(lsblk -no PKNAME $part) \
+        -p $(cat /sys/class/block/${part##*/}/partition) \
+        -L "$NAME" -l /EFI/$ID/shimaa64.efi

@@ -169,6 +169,20 @@
         - item.stat.exists
         - cm_user_ssh_keys is defined
 
+    # Without this a CentOS arm64 deploy ends in the UEFI Shell.
+    - name: Boot CentOS arm64 deploys through shim
+      ansible.builtin.blockinfile:
+        path: "{{ item.item }}"
+        insertafter: '^late_commands:'
+        marker: "# {mark} ANSIBLE MANAGED BLOCK arm64 uefi shim"
+        block: "{{ lookup('file', 'centos_arm64_uefi_shim.preseed') }}"
+      loop: "{{ extra_preseeds.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when:
+        - item.stat.exists
+        - item.item is search('curtin_userdata_centos$')
+
     - name: Configure global kernel options
       command: "maas {{ maas_admin_username }} maas set-config name=kernel_opts value='{{ global_kernel_opt }}'"
       when: "global_kernel_opt is defined"
