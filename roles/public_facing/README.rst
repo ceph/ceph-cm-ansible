@@ -96,6 +96,16 @@ fail2ban
 --------
 If ``use_fail2ban`` is set to ``true`` this role will install, configure, and enable fail2ban.
 
+CrowdSec
+--------
+``public_facing.yml`` also runs ``roles/crowdsec_bouncer`` on the group: the
+CrowdSec firewall bouncer, which pulls ban decisions from the CrowdSec LAPI in
+the pok cluster (it reads these hosts' nginx and sshd logs out of Loki) and
+drops the banned addresses in nftables.  Each host needs a
+``crowdsec_bouncer_api_key`` in ceph-sepia-secrets host_vars; see that role's
+README.  The ``crowdsec-lapi`` catalog entry below is the public front the
+off-lab hosts reach the LAPI through.
+
 download.ceph.com
 -----------------
 The host-specific tasks create the ``signer`` and ``bitergia`` users, install the hourly ``/usr/libexec/make_timestamp`` cron (mirrors use ``/timestamp`` to check freshness), keep the letsencrypt cert renewed, and protect the instance's capped public bandwidth:
@@ -172,6 +182,12 @@ Things the playbook does NOT manage:
   in place on the host; it is not templated by ansible.
 - The nginx ``default`` site (serves iPXE bits on the lab-internal IP) and
   the disabled ``teuthology-api.conf``.
+
+``crowdsec-lapi`` (``crowdsec.ceph.com``) has no Anubis and proxies only the
+bouncer endpoints (``/v1/decisions``, ``/v1/decisions/stream``,
+``/v1/usage-metrics``) to the edge-terminated LAPI Route, verifying it
+against the ingress CA the role installs.  The LAPI authenticates every call
+with a per-bouncer API key.
 
 Adding a new proxied site: add a catalog entry to ``defaults/main.yml``, a
 matching template under ``templates/reverse_proxy/sites/``, an entry in the

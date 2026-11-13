@@ -1,0 +1,69 @@
+{% set site = reverse_proxy_site_catalog['crowdsec-lapi'] %}
+# {{ ansible_managed }}
+#
+# Public front for the CrowdSec Local API in the pok cluster (sepia-openshift
+# security/crowdsec/lapi-route.yaml), for the firewall bouncers on the
+# off-lab public_facing hosts (roles/crowdsec_bouncer).  Only the bouncer
+# endpoints are proxied; the LAPI itself authenticates every call with a
+# per-bouncer X-Api-Key.
+#
+# No Anubis: the clients are daemons.  The Route is edge-terminated with the
+# cluster's ingress certificate, hence proxy_ssl_trusted_certificate.
+#
+# Cert: NS1 zone, so the plain dns-nsone authenticator:
+#   sudo certbot certonly --authenticator dns-nsone \
+#     --dns-nsone-credentials /etc/letsencrypt/nsone.ini \
+#     --dns-nsone-propagation-seconds 60 -d crowdsec.ceph.com -n
+
+server {
+  listen 80;
+  server_name crowdsec.ceph.com;
+  return 301 https://$host$request_uri;
+}
+
+server {
+  listen 443 ssl http2;
+  server_name crowdsec.ceph.com;
+
+  ssl_certificate     /etc/letsencrypt/live/crowdsec.ceph.com/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/crowdsec.ceph.com/privkey.pem;
+  include /etc/letsencrypt/options-ssl-nginx.conf;
+  add_header Strict-Transport-Security "max-age=63072000" always;
+
+  access_log /var/log/nginx/crowdsec-lapi-access.log;
+  error_log  /var/log/nginx/crowdsec-lapi-error.log;
+
+  # Decision pulls are small; a first pull after a long outage can carry a
+  # few thousand decisions.
+  client_max_body_size 1m;
+  proxy_buffering off;
+  proxy_read_timeout 60s;
+  proxy_send_timeout 60s;
+
+  # Variable upstream so nginx re-resolves the router VIP (resolver is in
+  # nginx.conf) instead of pinning it at startup.
+  set $upstream_host {{ site.upstream }};
+
+  # GET /v1/decisions/stream (pull), GET /v1/decisions (one-shot lookups),
+  # POST /v1/usage-metrics (bouncer metrics, LAPI >= 1.6.3).
+  location ~ ^/v1/(decisions(/stream)?|usage-metrics)$ {
+    proxy_pass https://$upstream_host;
+    proxy_set_header Host {{ site.upstream }};
+    proxy_ssl_server_name on;
+    proxy_ssl_name {{ site.upstream }};
+    proxy_ssl_verify on;
+    proxy_ssl_trusted_certificate /usr/local/share/ca-certificates/openshift-ingress-ca.pem;
+
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+  }
+
+  # Everything else on the LAPI (machine login, alerts, the watcher API) is
+  # for the in-cluster log processor only.
+  location / {
+    return 404;
+  }
+}
