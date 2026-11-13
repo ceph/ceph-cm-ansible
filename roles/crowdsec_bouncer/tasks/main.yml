@@ -52,8 +52,15 @@
   no_log: true
   notify: restart crowdsec-firewall-bouncer
 
+# The bouncer exits if its first pull fails, which happens when the LAPI pod
+# is mid-rollout (the route answers 503 for ~15s); the unit has
+# Restart=always, so wait for it rather than failing the play.
 - name: Enable and start the bouncer
   ansible.builtin.service:
     name: "{{ crowdsec_bouncer_service }}"
     enabled: true
     state: started
+  register: crowdsec_bouncer_start
+  until: crowdsec_bouncer_start is not failed
+  retries: 4
+  delay: 15

@@ -69,6 +69,17 @@ tail /var/log/crowdsec-firewall-bouncer.log
 nft list set ip crowdsec crowdsec-blacklists      # what is banned right now
 ```
 
+Never run `crowdsec-firewall-bouncer -t` (the config test) while the
+service is running: it initialises the nftables backend and on exit removes
+the `crowdsec` and `crowdsec6` tables from under the live bouncer, which then
+enforces nothing until restarted. The unit runs the test itself in
+ExecStartPre, before the daemon starts, where that is harmless.
+
+The bouncer only acts on decisions whose scenario is not simulated on the
+LAPI; `cscli decisions list` marks those `(simul)ban`. A host whose ssh
+times out after a run is more likely fail2ban's ufw action (failed logins
+during the play count) than a CrowdSec ban.
+
 Decisions themselves live on the LAPI: `cscli decisions list`, and
 `cscli decisions delete --ip <addr>` lifts a ban everywhere within one pull.
 Addresses that must never be banned go in the `sepia/whitelist` parser in
