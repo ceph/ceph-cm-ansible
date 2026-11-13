@@ -40,8 +40,10 @@ Each bouncer has its own API key, created on the LAPI and shown once:
 oc -n jenkins-monitoring exec deploy/crowdsec -- cscli bouncers add <inventory_hostname>-firewall
 ```
 
-Put it in the host's `ceph-sepia-secrets` host_vars as
-`crowdsec_bouncer_api_key`. The role fails on a host without one; set
+Add it to the `crowdsec_bouncer_api_keys` dict (keyed by inventory
+hostname) in the vault-encrypted `ansible/secrets/crowdsec_bouncers.yml` of
+`ceph-sepia-secrets`; the role reads that file from `secrets_path` like the
+alloy role reads its tokens. The role fails on a host without a key; set
 `crowdsec_bouncer_enabled: false` to skip a host instead.
 `cscli bouncers list` on the LAPI shows each bouncer's last pull, which is the
 health check.
@@ -52,7 +54,7 @@ See `defaults/main.yml`. The ones worth changing per host:
 
 - `crowdsec_bouncer_enabled` (true): run the role on this host.
 - `crowdsec_lapi_url`, `crowdsec_lapi_ca_cert_src`: above.
-- `crowdsec_bouncer_api_key`: secret, host_vars.
+- `crowdsec_bouncer_api_keys`: secret, vault file in the secrets repo.
 - `crowdsec_bouncer_mode` (nftables): `iptables` (ipset + INPUT rule) for a
   host on the legacy backend.
 - `crowdsec_bouncer_deny_log` (false): log every dropped packet.

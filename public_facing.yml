@@ -3,8 +3,8 @@
   roles:
     - public_facing
     # CrowdSec firewall bouncer: enforces the ban decisions the CrowdSec
-    # LAPI in the pok cluster makes from these hosts' logs.  Needs a
-    # per-host crowdsec_bouncer_api_key in ceph-sepia-secrets host_vars;
+    # LAPI in the pok cluster makes from these hosts' logs.  Needs a key
+    # per host in the secrets repo (crowdsec_bouncers.yml);
     # crowdsec_bouncer_enabled: false leaves a host out.
     - role: crowdsec_bouncer
       when: crowdsec_bouncer_enabled | bool

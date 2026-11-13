@@ -1,13 +1,18 @@
 ---
+- name: Include the bouncer API keys
+  ansible.builtin.include_vars: "{{ secrets_path | mandatory }}/{{ crowdsec_bouncer_keys_vars_file }}"
+  no_log: true
+
 - name: Check that this host has a bouncer API key
   ansible.builtin.assert:
     that:
       - crowdsec_bouncer_api_key | length > 0
     fail_msg: >-
-      crowdsec_bouncer_api_key is empty for {{ inventory_hostname }}.  Create
-      one on the LAPI (oc -n jenkins-monitoring exec deploy/crowdsec -- cscli
-      bouncers add {{ inventory_hostname }}-firewall) and put it in the host's
-      ceph-sepia-secrets host_vars, or set crowdsec_bouncer_enabled: false.
+      No bouncer API key for {{ inventory_hostname }}.  Create one on the LAPI
+      (oc -n jenkins-monitoring exec deploy/crowdsec -- cscli bouncers add
+      {{ inventory_hostname }}-firewall), add it to crowdsec_bouncer_api_keys
+      in {{ crowdsec_bouncer_keys_vars_file }} in the secrets repo, or set
+      crowdsec_bouncer_enabled: false.
     quiet: true
 
 - name: Configure the CrowdSec APT repository

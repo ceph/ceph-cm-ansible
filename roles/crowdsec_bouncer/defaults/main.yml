@@ -16,11 +16,16 @@ crowdsec_bouncer_enabled: true
 # and set crowdsec_lapi_ca_cert_src (below).
 crowdsec_lapi_url: "https://crowdsec.ceph.com/"
 
-# Bouncer API key.  PRIVATE: define in ceph-sepia-secrets host_vars.  Create
-# one per host on the LAPI; the key is shown once:
+# Bouncer API keys, one per host, from the vault-encrypted secrets repo
+# (secrets_path, like the alloy role's tokens): a dict keyed by
+# inventory_hostname.  Create a key on the LAPI (it is shown once) and add
+# it there:
 #   oc -n jenkins-monitoring exec deploy/crowdsec -- \
 #     cscli bouncers add <inventory_hostname>-firewall
-crowdsec_bouncer_api_key: ""
+#   ansible-vault edit ansible/secrets/crowdsec_bouncers.yml
+crowdsec_bouncer_keys_vars_file: "crowdsec_bouncers.yml"
+crowdsec_bouncer_api_keys: {}
+crowdsec_bouncer_api_key: "{{ crowdsec_bouncer_api_keys.get(inventory_hostname, '') }}"
 
 # CA file (in this role's files/) to trust for the LAPI, for hosts that talk
 # to the Route directly: it is served with the cluster's ingress certificate,

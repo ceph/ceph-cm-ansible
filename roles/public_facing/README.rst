@@ -101,9 +101,9 @@ CrowdSec
 ``public_facing.yml`` also runs ``roles/crowdsec_bouncer`` on the group: the
 CrowdSec firewall bouncer, which pulls ban decisions from the CrowdSec LAPI in
 the pok cluster (it reads these hosts' nginx and sshd logs out of Loki) and
-drops the banned addresses in nftables.  Each host needs a
-``crowdsec_bouncer_api_key`` in ceph-sepia-secrets host_vars; see that role's
-README.  The ``crowdsec-lapi`` catalog entry below is the public front the
+drops the banned addresses in nftables.  Each host needs a key in the
+vault-encrypted ``crowdsec_bouncers.yml`` of ceph-sepia-secrets; see that
+role's README.  The ``crowdsec-lapi`` catalog entry below is the public front the
 off-lab hosts reach the LAPI through.
 
 download.ceph.com
