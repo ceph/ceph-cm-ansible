@@ -1,45 +1,31 @@
 ---
 # NOTE: Initial cert creation is a manual process primarily because we'll hopefully never
 # have to start from scratch again.  This playbook just keeps the existing certs up to date.
+# Renewal uses the apt certbot (nginx authenticator, per /etc/letsencrypt/renewal) driven
+# by the cron below; certbot's own schedulers are disabled so the reload hook always runs.
 
-# Get letsencrypt authority server IPv4 address
-- local_action: shell dig -4 +short acme-v01.api.letsencrypt.org | tail -n 1
-  register: letsencrypt_ipv4_address
-
-# This task really only needs to be run the first time download.ceph.com is set up.
-# An entry matching *letsencrypt* in /etc/hosts is required for the cronjob in the next task however.
-- name: Create entry for letsencrypt authority server in /etc/hosts
+# acme-v01.api.letsencrypt.org was shut down in 2021; clean up the old IPv4 pin
+- name: Remove obsolete acme-v01 letsencrypt entry from /etc/hosts
   lineinfile:
     path: /etc/hosts
     regexp: '(.*)letsencrypt(.*)'
-    line: '{{ letsencrypt_ipv4_address.stdout }}    acme-v01.api.letsencrypt.org'
-    state: present
+    state: absent
 
-# 'letsencrypt renew' fails because it can't reach the letsencrypt authority server using IPv6
-- name: Create cron entry to force IPv4 connectivity to letsencrypt authority server  # noqa no-tabs
+# Both names this cron has had over the years
+- name: Remove obsolete cron forcing IPv4 to acme-v01
   cron:
-    name: "Forces letsencrypt to use IPv4 when accessing acme-v01.api.letsencrypt.org"
-    hour: "0"
-    job: "IP=$(dig -4 +short acme-v01.api.letsencrypt.org | tail -n 1) && sed -i \"s/.*letsencrypt.*/$IP\tacme-v01.api.letsencrypt.org/g\" /etc/hosts"
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - "Forces letsencrypt to use IPv4 when accessing acme-v01.api.letsencrypt.org"
+    - "Force using IPv4 to resolve acme-v01.api.letsencrypt.org"
 
-# letsencrypt doesn't recommend using the Ubuntu-provided letsencrypt package
-# https://github.com/certbot/certbot/issues/3538
-# They do recommend using certbot from their PPA for Xenial
-# https://certbot.eff.org/#ubuntuxenial-nginx
-
-- name: install software-properties-common
-  apt:
-    name: software-properties-common
-    state: latest
-    update_cache: yes
-
-- name: add certbot PPA
-  apt_repository:
-    repo: "ppa:certbot/certbot"
-
+# The certbot PPA is long dead; the distro packages are current enough
 - name: install certbot
   apt:
-    name: python-certbot-nginx
+    name:
+      - certbot
+      - python3-certbot-nginx
     state: latest
     update_cache: yes
 

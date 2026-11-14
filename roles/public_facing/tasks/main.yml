@@ -45,8 +45,10 @@
 - set_fact:
     target_host: "{{ ansible_host }}"
 
+# become would sudo on the control machine, which may prompt for a password
 - name: Check for host-specific playbooks
   local_action: "stat path=roles/public_facing/tasks/{{ target_host }}.yml"
+  become: false
   register: host_playbook
 
 - name: Include any host-specific playbooks if present
