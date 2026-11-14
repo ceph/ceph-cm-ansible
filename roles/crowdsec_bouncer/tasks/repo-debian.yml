@@ -1,0 +1,18 @@
+---
+- name: Ensure /etc/apt/keyrings exists
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Import the CrowdSec packagecloud GPG key
+  ansible.builtin.get_url:
+    url: "{{ crowdsec_apt_repo_key_url }}"
+    dest: /etc/apt/keyrings/crowdsec.asc
+    mode: '0644'
+
+- name: Add the CrowdSec repository to APT sources
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/crowdsec.asc] {{ crowdsec_apt_repo_url }} {{ ansible_distribution_release }} main"
+    filename: crowdsec
+    state: present

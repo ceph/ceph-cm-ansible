@@ -1,0 +1,81 @@
+---
+# CrowdSec firewall bouncer (remediation component).  Pulls ban decisions
+# from the CrowdSec Local API that runs in the pok OpenShift cluster
+# (ceph/sepia-openshift security/crowdsec/) and drops the banned addresses in
+# nftables (or iptables+ipset).  Detection stays in the cluster: it reads the
+# hosts' nginx and sshd logs out of Loki, so nothing on the host feeds it.
+
+# Set false in host_vars to leave a host out.
+crowdsec_bouncer_enabled: true
+
+# Where the bouncer fetches decisions.  The LAPI Route on the pok cluster
+# (crowdsec/lapi-route.yaml) resolves to a lab-internal VIP that the OVH and
+# AWS hosts cannot reach, so the default is the public front on soko01
+# (reverse_proxy_site_catalog.crowdsec-lapi in roles/public_facing).  soko01
+# itself and other in-lab hosts override this in host_vars with the Route URL
+# and set crowdsec_lapi_ca_cert_src (below).
+crowdsec_lapi_url: "https://crowdsec.ceph.com/"
+
+# Bouncer API keys, one per host, from the vault-encrypted secrets repo
+# (secrets_path, like the alloy role's tokens): a dict keyed by
+# inventory_hostname.  Create a key on the LAPI (it is shown once) and add
+# it there:
+#   oc -n jenkins-monitoring exec deploy/crowdsec -- \
+#     cscli bouncers add <inventory_hostname>-firewall
+#   ansible-vault edit ansible/secrets/crowdsec_bouncers.yml
+crowdsec_bouncer_keys_vars_file: "crowdsec_bouncers.yml"
+crowdsec_bouncer_api_keys: {}
+crowdsec_bouncer_api_key: "{{ crowdsec_bouncer_api_keys.get(inventory_hostname, '') }}"
+
+# CA file (in this role's files/) to trust for the LAPI, for hosts that talk
+# to the Route directly: it is served with the cluster's ingress certificate,
+# which no system CA bundle verifies.  openshift-ingress-ca.pem there is a
+# symlink to the copy roles/public_facing ships.  Empty = system CA bundle
+# (the public front has a Let's Encrypt cert).
+crowdsec_lapi_ca_cert_src: ""
+crowdsec_lapi_ca_cert_path: /etc/crowdsec/bouncers/lapi-ca.crt
+
+# nftables or iptables.  nftables owns its own table (priority -10, so bans
+# apply before ufw/firewalld's filter chains) and is what every current host
+# runs; iptables uses ipset and inserts into INPUT, for a host that still has
+# the legacy backend.
+crowdsec_bouncer_mode: nftables
+crowdsec_bouncer_package: "crowdsec-firewall-bouncer-{{ crowdsec_bouncer_mode }}"
+
+# How often decisions are pulled from the LAPI.
+crowdsec_bouncer_update_frequency: 10s
+
+# DROP or REJECT.  Logging every dropped packet is off: a banned scanner can
+# generate thousands of lines an hour.
+crowdsec_bouncer_deny_action: DROP
+crowdsec_bouncer_deny_log: false
+
+# Decision types the bouncer enforces.  The LAPI profiles only issue bans.
+crowdsec_bouncer_decision_types:
+  - ban
+
+# Which nftables hooks get the drop rule.  forward matters on a host that
+# routes or runs containers; harmless otherwise.
+crowdsec_bouncer_nftables_hooks:
+  - input
+  - forward
+
+crowdsec_bouncer_ipv6: true
+
+# Prometheus metrics (fw_bouncer_* : decisions active, packets dropped).
+# Nothing scrapes them yet, so off; flip on and point alloy at the port when
+# a scrape job exists.
+crowdsec_bouncer_metrics_enabled: false
+crowdsec_bouncer_metrics_listen_addr: 127.0.0.1
+crowdsec_bouncer_metrics_listen_port: 60601
+
+crowdsec_bouncer_log_level: info
+
+# Package repositories (packagecloud, CrowdSec's official distribution).
+crowdsec_apt_repo_key_url: "https://packagecloud.io/crowdsec/crowdsec/gpgkey"
+crowdsec_apt_repo_url: "https://packagecloud.io/crowdsec/crowdsec/{{ ansible_distribution | lower }}/"
+crowdsec_rpm_repo_url: "https://packagecloud.io/crowdsec/crowdsec/el/{{ ansible_distribution_major_version }}/$basearch"
+crowdsec_rpm_repo_key_url: "https://packagecloud.io/crowdsec/crowdsec/gpgkey"
+
+crowdsec_bouncer_config: /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml
+crowdsec_bouncer_service: crowdsec-firewall-bouncer

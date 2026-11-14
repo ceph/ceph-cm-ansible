@@ -1,0 +1,55 @@
+# {{ ansible_managed }}
+# roles/crowdsec_bouncer in ceph-cm-ansible.  The LAPI is CrowdSec in the pok
+# OpenShift cluster (ceph/sepia-openshift security/crowdsec/).
+mode: {{ crowdsec_bouncer_mode }}
+update_frequency: {{ crowdsec_bouncer_update_frequency }}
+log_mode: file
+log_dir: /var/log/
+log_level: {{ crowdsec_bouncer_log_level }}
+log_compression: true
+log_max_size: 100
+log_max_backups: 3
+log_max_age: 30
+api_url: {{ crowdsec_lapi_url }}
+api_key: {{ crowdsec_bouncer_api_key }}
+{% if crowdsec_lapi_ca_cert_src | length > 0 %}
+ca_cert_path: {{ crowdsec_lapi_ca_cert_path }}
+{% endif %}
+insecure_skip_verify: false
+disable_ipv6: {{ 'false' if crowdsec_bouncer_ipv6 | bool else 'true' }}
+deny_action: {{ crowdsec_bouncer_deny_action }}
+deny_log: {{ crowdsec_bouncer_deny_log | bool | lower }}
+deny_log_prefix: "crowdsec: "
+supported_decisions_types:
+{% for t in crowdsec_bouncer_decision_types %}
+  - {{ t }}
+{% endfor %}
+# iptables mode only
+blacklists_ipv4: crowdsec-blacklists
+blacklists_ipv6: crowdsec6-blacklists
+ipset_type: nethash
+iptables_chains:
+  - INPUT
+# nftables mode: own tables, hooked before the filter chains (priority 0) of
+# ufw / firewalld so a ban wins over their accepts.
+nftables:
+  ipv4:
+    enabled: true
+    set-only: false
+    table: crowdsec
+    chain: crowdsec-chain
+    priority: -10
+  ipv6:
+    enabled: {{ crowdsec_bouncer_ipv6 | bool | lower }}
+    set-only: false
+    table: crowdsec6
+    chain: crowdsec6-chain
+    priority: -10
+nftables_hooks:
+{% for h in crowdsec_bouncer_nftables_hooks %}
+  - {{ h }}
+{% endfor %}
+prometheus:
+  enabled: {{ crowdsec_bouncer_metrics_enabled | bool | lower }}
+  listen_addr: {{ crowdsec_bouncer_metrics_listen_addr }}
+  listen_port: {{ crowdsec_bouncer_metrics_listen_port }}

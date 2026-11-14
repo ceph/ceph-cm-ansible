@@ -1,0 +1,15 @@
+---
+# packagecloud signs the repo metadata, not every RPM (same layout its own
+# install script writes).
+- name: Add the CrowdSec repository to yum/dnf systems
+  ansible.builtin.yum_repository:
+    name: crowdsec
+    description: CrowdSec (packagecloud)
+    baseurl: "{{ crowdsec_rpm_repo_url }}"
+    gpgcheck: false
+    repo_gpgcheck: true
+    gpgkey: "{{ crowdsec_rpm_repo_key_url }}"
+    sslverify: true
+    sslcacert: /etc/pki/tls/certs/ca-bundle.crt
+    metadata_expire: 300
+    state: present
