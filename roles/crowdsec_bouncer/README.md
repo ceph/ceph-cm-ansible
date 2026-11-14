@@ -69,7 +69,8 @@ See `defaults/main.yml`. The ones worth changing per host:
 ```bash
 systemctl status crowdsec-firewall-bouncer
 tail /var/log/crowdsec-firewall-bouncer.log
-nft list set ip crowdsec crowdsec-blacklists      # what is banned right now
+nft list set ip crowdsec crowdsec-blacklists-crowdsec   # what is banned right now
+nft delete element ip crowdsec crowdsec-blacklists-crowdsec { <addr> }  # lift one locally until the next restart
 ```
 
 Never run `crowdsec-firewall-bouncer -t` (the config test) while the
