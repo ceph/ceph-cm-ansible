@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# {{ ansible_managed }}
+#
+# Runs this host's pending-updates collector and swaps the result into
+# node_exporter's textfile directory atomically, so a scrape never reads a
+# half-written file. The temp file has no .prom suffix, so the textfile
+# collector ignores it until the rename.
+set -eu -o pipefail
+
+out="{{ alloy_node_exporter_textfile_dir }}/{{ alloy_pending_updates_prom_file }}"
+tmp="$(mktemp "${out}.XXXXXX")"
+trap 'rm -f "${tmp}"' EXIT
+
+"{{ alloy_pending_updates_script_dir }}/{{ alloy_pending_updates_collector }}" > "${tmp}"
+chmod 0644 "${tmp}"
+mv -f "${tmp}" "${out}"
+trap - EXIT
