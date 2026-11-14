@@ -16,6 +16,9 @@ scenarios on them. This role is the remediation half: it turns the LAPI's
 
 `public_facing.yml` runs it on the `public_facing` group after the
 `public_facing` role (`--tags crowdsec` for just this role).
+`crowdsec_bouncer.yml` runs only this role, on `public_facing` plus the
+`jenkins_controllers` group: jenkins.ceph.com is read by the LAPI but is not
+a `public_facing` host.
 
 ## Reaching the LAPI
 
