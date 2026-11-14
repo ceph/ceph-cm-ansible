@@ -76,6 +76,25 @@ download_throttle_rate_per_conn: "2m"
 # reverse proxy tasks.
 reverse_proxy_sites: []
 
+# git.ceph.com per-IP rate limit on gitweb (HTML) paths.  Lab sources are
+# exempt -- note 192.86.31.2 is the border NAT egress every lab host appears
+# as from the public side.  Keep this list in sync with the
+# lab-and-monitoring allowlist in files/reverse_proxy/botPolicies.yaml.
+# git smart-HTTP paths (info/refs, git-upload-pack, git-receive-pack) are
+# never rate limited, so external clones/fetches and CI are unaffected.
+git_ratelimit_exempt_sources:
+  - 192.86.31.0/24    # lab public /24, incl. NAT egress .2
+  - 172.16.0.0/12     # VPN + lab-internal
+  - 10.20.192.0/20
+# Personal/third-party addresses go in ceph-sepia-secrets host_vars so they
+# stay out of this public repo (same convention as
+# reverse_proxy_paddles_readonly_allow_extra).
+git_ratelimit_exempt_sources_extra: []
+# 30r/m sustained is far above human browsing speed; the burst absorbs a
+# page load's static assets.  Over-budget requests get 429.
+git_ratelimit_rate: 30r/m
+git_ratelimit_burst: 30
+
 # Lab-internal IP the host binds Anubis metrics endpoints to and uses as the
 # DNS resolver in nginx.conf.  `ip` comes from the inventory host line.
 reverse_proxy_internal_ip: "{{ ip }}"

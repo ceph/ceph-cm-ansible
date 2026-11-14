@@ -1,5 +1,25 @@
 {% set site = reverse_proxy_site_catalog['git'] %}
 # {{ ansible_managed }}
+
+# 2026-10-14 dgalloway: per-IP rate limit for non-lab sources on gitweb
+# pages (the scraper firehose is >50% of all git-server traffic and it is
+# almost entirely `GET /`).  Exempt sources get an empty key, which
+# limit_req treats as "not limited".  git smart-HTTP has its own unlimited
+# location below.  These directives live at http level (sites-enabled is
+# included from nginx.conf's http block).
+geo $git_ratelimit_exempt {
+  default 0;
+{% for src in git_ratelimit_exempt_sources + git_ratelimit_exempt_sources_extra %}
+  {{ src }} 1;
+{% endfor %}
+}
+map $git_ratelimit_exempt $git_ratelimit_key {
+  1 "";
+  0 $binary_remote_addr;
+}
+# 10m zone tracks ~160k client IPs.
+limit_req_zone $git_ratelimit_key zone=git_perip:10m rate={{ git_ratelimit_rate }};
+
 server {
   listen 80;
   server_name git.ceph.com;
@@ -28,25 +48,38 @@ server {
   # OpenShift Route host (no scheme, no slash)
   set $upstream_host {{ site.upstream }};
 
-  location / {
-    # 2026-08-10 dgalloway: route through Anubis (anubis@git) to stop scraper
-    # botnet (>1M unique IPs/day crawling gitweb).  Anubis connects to the
-    # route over TLS itself (SSL_CERT_FILE in /etc/anubis/git.env).
+  # 2026-08-10 dgalloway: route through Anubis (anubis@git) to stop scraper
+  # botnet (>1M unique IPs/day crawling gitweb).  Anubis connects to the
+  # route over TLS itself (SSL_CERT_FILE in /etc/anubis/git.env).
+  # Proxy settings are shared by both proxying locations below.
+  proxy_buffering off;
+
+  # OpenShift router needs Host match
+  proxy_set_header Host $upstream_host;
+
+  # Rewrite backend redirects that leak the internal route hostname
+  proxy_redirect http://$upstream_host/ /;
+  proxy_redirect https://$upstream_host/ /;
+
+  proxy_set_header X-Real-IP $remote_addr;
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_set_header X-Forwarded-Proto $scheme;
+
+  proxy_read_timeout 600s;
+
+  limit_req_status 429;
+
+  # git smart-HTTP: never rate limited (external clones/fetches, CI).  Same
+  # path set as Anubis's allow-git-protocol rule.
+  location ~ ^/.*/(info/refs|git-upload-pack|git-receive-pack)$ {
     proxy_pass http://127.0.0.1:{{ site.anubis.port }};
-    proxy_buffering off;
+  }
 
-    # OpenShift router needs Host match
-    proxy_set_header Host $upstream_host;
-
-    # Rewrite backend redirects that leak the internal route hostname
-    proxy_redirect http://$upstream_host/ /;
-    proxy_redirect https://$upstream_host/ /;
-
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-
-    proxy_read_timeout 600s;
+  # Everything else (gitweb) gets the per-IP budget from the http-level
+  # zone above; lab sources are exempt via $git_ratelimit_key.
+  location / {
+    limit_req zone=git_perip burst={{ git_ratelimit_burst }} nodelay;
+    proxy_pass http://127.0.0.1:{{ site.anubis.port }};
   }
 
   # 2026-08-10 dgalloway: tell polite crawlers to go away
