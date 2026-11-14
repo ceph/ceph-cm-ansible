@@ -63,6 +63,13 @@
   tags:
     - crontab
 
+# Mount the old (pre-migration) LRC archive backing the nginx fallback
+- import_tasks: old_lrc_mount.yml
+  when: teuthology_old_lrc_fallback | bool
+  tags:
+    - logs
+    - old-lrc
+
 # Serve logs over HTTP
 - import_tasks: setup_log_access.yml
   tags:
