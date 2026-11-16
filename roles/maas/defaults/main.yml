@@ -31,6 +31,10 @@ keys_repo_path: "~/.cache/src/keys"
 # Should MAAS mark machines broken in order to update their network interface configurations in MAAS?
 maas_force_machine_update: false
 
+# Hosts in this inventory group get testnode_power_user / testnode_power_pass
+# from the IPMI secrets file, when it defines them, instead of power_user / power_pass
+maas_testnode_group: testnodes
+
 # Override in secrets
 maas_ipmi_username: ADMIN
 maas_ipmi_password: ADMIN

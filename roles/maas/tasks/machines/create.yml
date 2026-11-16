@@ -19,6 +19,8 @@
 #   - mac_addresses: list of MACs collected from inventory `<prefix>_mac` vars
 #   - power_user / power_pass : optional IPMI creds loaded from secrets repo
 #                               in machines.yml
+#   - testnode_power_user / testnode_power_pass : optional, same source. Used
+#                               instead for hosts in maas_testnode_group.
 #   - hostvars[inv_host].ipmi : optional. The IPMI BMC IP address.
 #   - _maas_api, maas_auth_header
 # Returns: nothing (notifies handler).
@@ -27,6 +29,11 @@
 - include_tasks: ../_auth_header.yml
 
 - name: Build machine create body
+  vars:
+    _testnode_login: >-
+      {{ inv_host in (groups[maas_testnode_group] | default([]))
+         and testnode_power_user is defined
+         and testnode_power_pass is defined }}
   set_fact:
     maas_create_body: >-
       {{
@@ -47,8 +54,8 @@
               'commission': false,
               'power_type': 'ipmi',
               'power_parameters_power_address': hostvars[inv_host].ipmi,
-              'power_parameters_power_user': power_user,
-              'power_parameters_power_pass': power_pass,
+              'power_parameters_power_user': (testnode_power_user if _testnode_login | bool else power_user),
+              'power_parameters_power_pass': (testnode_power_pass if _testnode_login | bool else power_pass),
               'power_parameters_power_boot_type': (maas_power_boot_type | default('efi'))
             }
             or {

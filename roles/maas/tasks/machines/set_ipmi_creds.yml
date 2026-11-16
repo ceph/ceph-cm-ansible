@@ -11,6 +11,10 @@
 #      (e.g. smithi001 → smithi)
 #   3) {{ secrets_path }}/ipmi.yml
 #
+# The file found supplies power_user / power_pass. If it also defines
+# testnode_power_user / testnode_power_pass, hosts in the inventory group
+# named by maas_testnode_group (default: testnodes) get that login instead.
+#
 # Expects:
 #   - host                    : short hostname (also exposed via ipmi_short
 #                               from machines.yml's loop_var)
@@ -58,13 +62,19 @@
 
 # Build payload using inventory IPMI address + secrets user/pass
 - name: Build power configuration payload
+  vars:
+    _testnode_login: >-
+      {{ inv_host in (groups[maas_testnode_group] | default([]))
+         and ipmi_secrets.testnode_power_user is defined
+         and ipmi_secrets.testnode_power_pass is defined }}
   set_fact:
     maas_power_payload:
       power_type: "ipmi"
       power_parameters_power_address: "{{ hostvars[inv_host].ipmi }}"
-      power_parameters_power_user: "{{ ipmi_secrets.power_user }}"
-      power_parameters_power_pass: "{{ ipmi_secrets.power_pass }}"
+      power_parameters_power_user: "{{ ipmi_secrets.testnode_power_user if _testnode_login | bool else ipmi_secrets.power_user }}"
+      power_parameters_power_pass: "{{ ipmi_secrets.testnode_power_pass if _testnode_login | bool else ipmi_secrets.power_pass }}"
       power_parameters_power_boot_type: "{{ maas_power_boot_type|default('efi') }}"
+  no_log: true
 
 - include_tasks: ../_auth_header.yml
 
