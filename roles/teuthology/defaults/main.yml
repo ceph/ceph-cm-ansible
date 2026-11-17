@@ -8,6 +8,16 @@ teuthology_users:
   # for executing tests
   - "{{ teuthology_execution_user }}"
 
+# SSH key pairs to install for those users, loaded from
+# {{ secrets_path }}/teuthology_ssh_keys.yml when that file exists:
+#   teuthology_ssh_keys:
+#     - user: teuthworker
+#       name: id_ed25519        # file name under ~/.ssh, default id_ed25519
+#       public_key: "ssh-ed25519 AAAA... comment"
+#       private_key: |
+#         -----BEGIN OPENSSH PRIVATE KEY-----
+teuthology_ssh_keys: []
+
 teuthology_repo: https://github.com/ceph/teuthology.git
 teuthology_branch: "main"
 teuthology_yaml_extra: ""

@@ -27,6 +27,9 @@
 # Set up the different users that teuthology uses
 - import_tasks: setup_users.yml
 
+# Install their ssh key pairs from the secrets repo (optional)
+- import_tasks: ssh_keys.yml
+
 - name: Ship /etc/teuthology.yaml
   template:
     src: teuthology.yaml
