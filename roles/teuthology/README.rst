@@ -11,6 +11,9 @@ It also does the following:
 - Install dependencies required for ``teuthology``
 - Create the ``teuthology`` and ``teuthworker`` users which are used for
   scheduling and executing tests, respectively
+- Install those users' ssh key pairs from ``{{ secrets_path }}/teuthology_ssh_keys.yml``
+  when that vaulted file exists (tag ``ssh_keys``); teuthworker's key is what the
+  dispatchers use to reach testnodes as ``ubuntu``
 - Clone ``teuthology`` repos into ``~/src/teuthology_main`` under those user accounts
 - Run ``teuthology``'s ``bootstrap`` script
 - Manages user accounts and sudo privileges using the ``test_admins`` group_var in the secrets repo

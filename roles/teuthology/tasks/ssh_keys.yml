@@ -1,0 +1,59 @@
+---
+# Install the ssh key pairs of the teuthology users (teuthworker uses its key
+# to log in to testnodes as ubuntu). The keys come from the secrets repo; the
+# file is optional so labs without it are unaffected.
+- name: Check for ssh keys in the secrets repo
+  stat:
+    path: "{{ secrets_path | mandatory }}/teuthology_ssh_keys.yml"
+  delegate_to: localhost
+  become: false
+  register: teuthology_ssh_keys_file
+  tags:
+    - ssh_keys
+
+- name: Load ssh keys from the secrets repo
+  include_vars: "{{ secrets_path }}/teuthology_ssh_keys.yml"
+  no_log: true
+  when: teuthology_ssh_keys_file.stat.exists
+  tags:
+    - ssh_keys
+
+- name: Ensure .ssh directories exist
+  file:
+    path: "/home/{{ item.user }}/.ssh"
+    state: directory
+    owner: "{{ item.user }}"
+    group: "{{ item.user }}"
+    mode: 0700
+  loop: "{{ teuthology_ssh_keys }}"
+  loop_control:
+    label: "{{ item.user }}"
+  tags:
+    - ssh_keys
+
+- name: Install private keys
+  copy:
+    content: "{{ item.private_key }}"
+    dest: "/home/{{ item.user }}/.ssh/{{ item.name | default('id_ed25519') }}"
+    owner: "{{ item.user }}"
+    group: "{{ item.user }}"
+    mode: 0600
+  loop: "{{ teuthology_ssh_keys }}"
+  loop_control:
+    label: "{{ item.user }}"
+  no_log: true
+  tags:
+    - ssh_keys
+
+- name: Install public keys
+  copy:
+    content: "{{ item.public_key }}\n"
+    dest: "/home/{{ item.user }}/.ssh/{{ item.name | default('id_ed25519') }}.pub"
+    owner: "{{ item.user }}"
+    group: "{{ item.user }}"
+    mode: 0644
+  loop: "{{ teuthology_ssh_keys }}"
+  loop_control:
+    label: "{{ item.user }}"
+  tags:
+    - ssh_keys
