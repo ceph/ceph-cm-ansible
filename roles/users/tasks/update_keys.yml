@@ -66,10 +66,13 @@
 # "item.key | default(lookup(...))" -- Jinja evaluates default()'s argument
 # eagerly, so the lookup would run (and fail) for literal-key users who have no
 # file in the keys repo.
+# exclusive: the file is rewritten from the keys repo, so a key removed
+# there (a rotation or a departure) stops working on the next run.
 - name: Update authorized_keys
   authorized_key:
     user: "{{ item.name }}"
     key: "{{ item.key if item.key is defined else lookup('file', keys_repo_path + '/ssh/' + item.name + '.pub') }}"
+    exclusive: yes
   with_items: "{{ pubkey_users }}"
   # The user dicts carry emails and WireGuard peer info; only log the username
   loop_control:
