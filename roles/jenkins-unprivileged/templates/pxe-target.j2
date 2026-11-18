@@ -1,0 +1,26 @@
+#!/bin/bash
+# {{ ansible_managed }}
+# Point a testnode's PXE boot at FOG or MAAS by rewriting the first tag of
+# its dhcp-host line.  The only command the {{ jenkins_unprivileged_user }} user may
+# run with sudo (see /etc/sudoers.d/{{ jenkins_unprivileged_user }}).
+# Usage: pxe-target <shortname> <fog|maas>
+set -euo pipefail
+conf="{{ pxe_target_dnsmasq_conf }}"
+domain="{{ pxe_target_domain }}"
+host="${1:-}"
+target="${2:-}"
+if ! [[ "$host" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then
+  echo "pxe-target: bad hostname '$host'" >&2
+  exit 2
+fi
+if [[ "$target" != fog && "$target" != maas ]]; then
+  echo "pxe-target: target must be fog or maas" >&2
+  exit 2
+fi
+fqdn_re="${host}\.${domain//./\\.}"
+sed -i -E "s/^dhcp-host=set:(fog|maas),(.*[,=]${fqdn_re})\$/dhcp-host=set:${target},\2/" "$conf"
+if ! grep -Eq "^dhcp-host=set:${target},.*[,=]${fqdn_re}\$" "$conf"; then
+  echo "pxe-target: no dhcp-host line for ${host}.${domain} in $conf" >&2
+  exit 1
+fi
+systemctl restart dnsmasq

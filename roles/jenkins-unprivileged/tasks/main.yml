@@ -1,0 +1,37 @@
+---
+- name: Create the jenkins-unprivileged user
+  user:
+    name: "{{ jenkins_unprivileged_user }}"
+    shell: /bin/bash
+    password: '!'
+    state: present
+  tags:
+    - user
+
+- name: Set the jenkins-unprivileged authorized keys
+  authorized_key:
+    user: "{{ jenkins_unprivileged_user }}"
+    key: "{{ jenkins_unprivileged_ssh_keys | join('\n') }}"
+    exclusive: true
+  when: jenkins_unprivileged_ssh_keys | length > 0
+  tags:
+    - pubkeys
+
+- name: Install pxe-target
+  template:
+    src: pxe-target.j2
+    dest: /usr/local/sbin/pxe-target
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Allow jenkins-unprivileged to run pxe-target with sudo
+  template:
+    src: sudoers.j2
+    dest: "/etc/sudoers.d/{{ jenkins_unprivileged_user }}"
+    owner: root
+    group: root
+    mode: "0440"
+    validate: visudo -cf %s
+  tags:
+    - sudoers

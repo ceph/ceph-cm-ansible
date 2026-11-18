@@ -1,0 +1,8 @@
+---
+jenkins_unprivileged_user: jenkins-unprivileged
+# Public keys allowed to log in as jenkins_unprivileged_user (exclusive).  The lab
+# inventory sets this to the jenkins-unprivileged key of the Jenkins agent.
+jenkins_unprivileged_ssh_keys: []
+# dnsmasq config holding the dhcp-host=set:<fog|maas>,... lines pxe-target edits
+pxe_target_dnsmasq_conf: /etc/dnsmasq.d/pok/front.conf
+pxe_target_domain: "{{ lab_domain | default('front.sepia.ceph.com') }}"

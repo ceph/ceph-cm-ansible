@@ -1,0 +1,7 @@
+---
+# Limited-sudo user for the Jenkins agent on the teuthology host to reach
+# lab infrastructure (dnsmasq PXE tags on soko01).  See roles/jenkins-unprivileged.
+- hosts: jenkins_unprivileged_hosts
+  roles:
+    - jenkins-unprivileged
+  become: true
