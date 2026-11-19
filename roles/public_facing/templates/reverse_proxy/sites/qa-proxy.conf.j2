@@ -7,7 +7,7 @@ server {
 }
 
 server {
-  listen 443 ssl http2;
+  listen 443 ssl;
   server_name qa-proxy.ceph.com;
   ssl_certificate     /etc/letsencrypt/live/qa-proxy.ceph.com/fullchain.pem;
   ssl_certificate_key /etc/letsencrypt/live/qa-proxy.ceph.com/privkey.pem;
