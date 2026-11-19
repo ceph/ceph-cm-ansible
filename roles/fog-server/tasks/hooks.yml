@@ -4,7 +4,7 @@
 # - fsck_before_capture.sh fscks the root fs right before a capture, so no
 #   extra reboot into a rescue environment is needed
 # - inject_jenkins_key.sh lets the job ssh to nodes deployed from images
-#   captured before the jenkins-build key existed
+#   captured before the jenkins-unprivileged key existed
 
 - name: Ensure postinit and postdownload script dirs exist
   file:
