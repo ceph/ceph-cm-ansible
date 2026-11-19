@@ -245,3 +245,11 @@ reverse_proxy_site_catalog:
     # /_paddles bypass.
     conf: status.conf
     upstream: status-status.apps.pok.os.sepia.ceph.com
+  crowdsec-lapi:
+    # Public front for the CrowdSec Local API in the pok cluster, for the
+    # firewall bouncers on the off-lab public_facing hosts
+    # (roles/crowdsec_bouncer).  No Anubis: the clients are daemons, and
+    # the LAPI authenticates each one with its own API key.  The template
+    # proxies the bouncer endpoints only.
+    conf: crowdsec.ceph.com
+    upstream: crowdsec-lapi-jenkins-monitoring.apps.pok.os.sepia.ceph.com

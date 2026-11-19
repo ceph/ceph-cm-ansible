@@ -1,0 +1,66 @@
+---
+- name: Include the bouncer API keys
+  ansible.builtin.include_vars: "{{ secrets_path | mandatory }}/{{ crowdsec_bouncer_keys_vars_file }}"
+  no_log: true
+
+- name: Check that this host has a bouncer API key
+  ansible.builtin.assert:
+    that:
+      - crowdsec_bouncer_api_key | length > 0
+    fail_msg: >-
+      No bouncer API key for {{ inventory_hostname }}.  Create one on the LAPI
+      (oc -n jenkins-monitoring exec deploy/crowdsec -- cscli bouncers add
+      {{ inventory_hostname }}-firewall), add it to crowdsec_bouncer_api_keys
+      in {{ crowdsec_bouncer_keys_vars_file }} in the secrets repo, or set
+      crowdsec_bouncer_enabled: false.
+    quiet: true
+
+- name: Configure the CrowdSec APT repository
+  ansible.builtin.include_tasks: repo-debian.yml
+  when: ansible_pkg_mgr == "apt"
+
+- name: Configure the CrowdSec RPM repository
+  ansible.builtin.include_tasks: repo-redhat.yml
+  when: ansible_os_family == "RedHat"
+
+# The deb's postinst tries to register against a local LAPI with cscli; there
+# is none here, so it logs "cscli not found" and leaves api_key empty.  The
+# unit then fails until the config below lands, which is expected.
+- name: Install the CrowdSec firewall bouncer
+  ansible.builtin.package:
+    name: "{{ crowdsec_bouncer_package }}"
+    state: present
+
+- name: Install the LAPI CA certificate
+  ansible.builtin.copy:
+    src: "{{ crowdsec_lapi_ca_cert_src }}"
+    dest: "{{ crowdsec_lapi_ca_cert_path }}"
+    owner: root
+    group: root
+    mode: '0644'
+  when: crowdsec_lapi_ca_cert_src | length > 0
+  notify: restart crowdsec-firewall-bouncer
+
+# Contains the API key.
+- name: Write the bouncer configuration
+  ansible.builtin.template:
+    src: crowdsec-firewall-bouncer.yaml.j2
+    dest: "{{ crowdsec_bouncer_config }}"
+    owner: root
+    group: root
+    mode: '0600'
+  no_log: true
+  notify: restart crowdsec-firewall-bouncer
+
+# The bouncer exits if its first pull fails, which happens when the LAPI pod
+# is mid-rollout (the route answers 503 for ~15s); the unit has
+# Restart=always, so wait for it rather than failing the play.
+- name: Enable and start the bouncer
+  ansible.builtin.service:
+    name: "{{ crowdsec_bouncer_service }}"
+    enabled: true
+    state: started
+  register: crowdsec_bouncer_start
+  until: crowdsec_bouncer_start is not failed
+  retries: 4
+  delay: 15
