@@ -1,0 +1,50 @@
+name: "Remove inactive members from Ceph GitHub org"
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+  push:
+  pull_request:
+
+jobs:
+  analyze_and_report:
+    runs-on: ubuntu-latest
+    outputs:
+      has_inactive: ${{ steps.check_csv.outputs.has_inactive }}
+      report_path: ${{ steps.analyze_user_activity.outputs.report_csv }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 1. Run the Marketplace Action to check for 90 days of inactivity
+      - name: Analyze User Activity
+        id: analyze_user_activity
+        uses: peter-murray/inactive-users-action@v1
+        with:
+          # Token needs read:org, repo, and user:email permissions
+          token: ${{ secrets.API_TOKEN_DELETE_USERS }} 
+          organization: "Ceph"
+          activity_days: 90
+
+      # 2. Check if the CSV contains inactive members (more than just the header row)
+      - name: Check if CSV is empty
+        id: check_csv
+        run: |
+          REPORT_FILE="${{ steps.analyze_user_activity.outputs.report_csv }}"
+          if [ -s "$REPORT_FILE" ] && [ $(wc -l < "$REPORT_FILE") -gt 1 ]; then
+            echo "has_inactive=true" >> $GITHUB_OUTPUT
+            # Copy file to root for easier artifact uploading
+            cp "$REPORT_FILE" ./inactive_members.csv
+          else
+            echo "has_inactive=false" >> $GITHUB_OUTPUT
+          fi
+
+      # 3. Upload the report so you can download and review it
+      - name: Save User Activity Report
+        if: steps.check_csv.outputs.has_inactive == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: inactive-members-report
+          path: inactive_members.csv
+          retention-days: 7
