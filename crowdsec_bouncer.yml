@@ -1,0 +1,21 @@
+---
+# CrowdSec firewall bouncer on every host whose logs the CrowdSec LAPI in the
+# pok cluster reads: the public_facing group (public_facing.yml runs the role
+# there too) and the Jenkins controller, which is not in that group.  A host
+# needs a key in the secrets repo (crowdsec_bouncers.yml);
+# crowdsec_bouncer_enabled: false leaves it out.
+#
+# jenkins.ceph.com has no cm user, so pass your own:
+#
+#   ANSIBLE_SECRETS_PATH=.../ceph-sepia-secrets/ansible/secrets \
+#     ansible-playbook crowdsec_bouncer.yml --limit jenkins.ceph.com \
+#       -e ansible_user=<you>
+#
+# A wrong user here costs several failed publickey logins in a row (ssh
+# retries), which is what crowdsecurity/ssh-bf bans: every bouncer then drops
+# your address for 4h, the lab VPN endpoint included.
+- hosts: public_facing:jenkins_controllers
+  roles:
+    - role: crowdsec_bouncer
+      when: crowdsec_bouncer_enabled | bool
+  become: true
