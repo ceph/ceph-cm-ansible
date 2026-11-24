@@ -17,3 +17,7 @@ wireguard_ip_forward: true
 
 # List of peers (users). Defined in the secrets repo. See README.rst
 wireguard_peers: []
+
+# Public keys that must not be rendered as peers. An entry carrying one of
+# these keeps its allowed_ips reserved until its key is replaced.
+wireguard_revoked_keys: []
