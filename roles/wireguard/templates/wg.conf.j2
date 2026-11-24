@@ -25,7 +25,7 @@ PostDown = {{ cmd }}
 
 {# Peers tied to user accounts (wireguard key on lab_users/admin_users entries) #}
 {% for user in admin_users|default([])|list + lab_users|default([])|list %}
-{% for device in user.wireguard|default([]) %}
+{% for device in user.wireguard|default([]) if device.public_key not in wireguard_revoked_keys %}
 # {{ user.name }} ({{ device.name }})
 [Peer]
 PublicKey = {{ device.public_key }}
@@ -43,7 +43,7 @@ PersistentKeepalive = {{ device.persistent_keepalive }}
 {% endfor %}
 {% endfor %}
 {# Standalone peers not tied to a user account (hosts, external users) #}
-{% for peer in wireguard_peers %}
+{% for peer in wireguard_peers if peer.public_key not in wireguard_revoked_keys %}
 # {{ peer.name }}
 [Peer]
 PublicKey = {{ peer.public_key }}

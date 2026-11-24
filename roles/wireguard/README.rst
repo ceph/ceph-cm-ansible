@@ -123,6 +123,17 @@ standalone list::
         public_key: "base64pubkey="
         allowed_ips: "192.168.100.4/32"
 
+A peer whose ``public_key`` is listed in ``wireguard_revoked_keys`` is left
+out of the rendered config, whether it comes from a user entry or from
+``wireguard_peers``. The entry stays in the inventory, so its address stays
+reserved until the key is replaced::
+
+    wireguard_revoked_keys: []
+
+    # Example:
+    wireguard_revoked_keys:
+      - "base64pubkey="
+
 Tags
 ++++
 
