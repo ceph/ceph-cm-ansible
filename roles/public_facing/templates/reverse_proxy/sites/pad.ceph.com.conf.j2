@@ -22,7 +22,7 @@ server {
 }
 
 server {
-  listen 443 ssl http2;
+  listen 443 ssl;
   server_name pad.ceph.com;
 
   ssl_certificate     /etc/letsencrypt/live/pad.ceph.com/fullchain.pem;

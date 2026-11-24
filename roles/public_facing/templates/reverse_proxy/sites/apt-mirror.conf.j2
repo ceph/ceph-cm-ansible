@@ -1,7 +1,7 @@
 {% set site = reverse_proxy_site_catalog['apt-mirror'] %}
 # {{ ansible_managed }}
 server {
-  listen 443 ssl http2;
+  listen 443 ssl;
   server_name apt-mirror.front.sepia.ceph.com
 	      apt-mirror.sepia.ceph.com
 	      gitbuilder.ceph.com;
